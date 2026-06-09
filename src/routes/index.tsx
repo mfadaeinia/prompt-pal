@@ -348,61 +348,69 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (url.trim()) loadMutation.mutate(url.trim());
-          }}
-          className="flex flex-col gap-2 sm:flex-row"
-        >
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-            className="flex-1"
-          />
-          <Input
-            value={targetLang}
-            onChange={(e) => setTargetLang(e.target.value)}
-            placeholder="Your language"
-            className="sm:w-44"
-          />
-          <Button type="submit" disabled={loadMutation.isPending || !url.trim()}>
-            {loadMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
-              </>
-            ) : (
-              "Load video"
-            )}
-          </Button>
-        </form>
-        {loadMutation.isError && (
-          <ManualTranscriptFallback
-            url={url}
-            errorMessage={(loadMutation.error as Error).message}
-            manualText={manualText}
-            setManualText={setManualText}
-            onSubmit={() => {
-              if (url.trim() && manualText.trim()) {
-                manualMutation.mutate({ url: url.trim(), text: manualText });
-              }
+        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
+          <DemoHero
+            onStart={() => {
+              setUrl(DEMO_VIDEO_URL);
+              setTargetLang(DEMO_LANGUAGE);
+              track("demo_started", { video_id: DEMO_VIDEO_ID });
+              loadMutation.mutate(DEMO_VIDEO_URL);
             }}
-            submitting={manualMutation.isPending}
-            submitError={
-              manualMutation.isError
-                ? (manualMutation.error as Error).message
-                : null
-            }
+            loading={loadMutation.isPending}
           />
         )}
 
-        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
-          <EmptyState />
+        {loadMutation.isPending && !videoId && (
+          <div className="mt-10 flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading transcript…
+          </div>
+        )}
+
+        {loadMutation.isError && (
+          <div className="mt-6 space-y-3">
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+              <p className="font-medium text-foreground">
+                Automatic transcript loading is experimental and may fail.
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Try the Dutch demo for the reliable experience.
+              </p>
+              <Button
+                size="sm"
+                className="mt-3"
+                onClick={() => {
+                  loadMutation.reset();
+                  setUrl(DEMO_VIDEO_URL);
+                  setTargetLang(DEMO_LANGUAGE);
+                  track("demo_started", { video_id: DEMO_VIDEO_ID });
+                  loadMutation.mutate(DEMO_VIDEO_URL);
+                }}
+              >
+                <PlayCircle className="mr-2 h-4 w-4" /> Try Dutch Demo
+              </Button>
+            </div>
+            <ManualTranscriptFallback
+              url={url}
+              errorMessage={(loadMutation.error as Error).message}
+              manualText={manualText}
+              setManualText={setManualText}
+              onSubmit={() => {
+                if (url.trim() && manualText.trim()) {
+                  manualMutation.mutate({ url: url.trim(), text: manualText });
+                }
+              }}
+              submitting={manualMutation.isPending}
+              submitError={
+                manualMutation.isError
+                  ? (manualMutation.error as Error).message
+                  : null
+              }
+            />
+          </div>
         )}
 
         {videoId && (
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="space-y-3">
               <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
                 {embedSrc && (
@@ -440,44 +448,6 @@ function Index() {
                   {transcriptSource && <SourceBadge source={transcriptSource} />}
                 </div>
               </div>
-              {videoId && sentences.length > 0 && (
-                <div className="flex flex-wrap gap-2 border-b border-border bg-amber-500/5 px-3 py-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => exportTranscriptJson(videoId, sentences)}
-                  >
-                    Export Transcript JSON
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    disabled={saveDemoMutation.isPending}
-                    onClick={() =>
-                      saveDemoMutation.mutate({
-                        videoId,
-                        videoUrl: url,
-                        sentences: toExportShape(sentences),
-                      })
-                    }
-                  >
-                    {saveDemoMutation.isPending
-                      ? "Saving…"
-                      : saveDemoMutation.isSuccess
-                      ? "Saved ✓"
-                      : "Save as Demo Transcript"}
-                  </Button>
-                  {saveDemoMutation.isError && (
-                    <span className="text-[10px] text-destructive normal-case">
-                      {(saveDemoMutation.error as Error).message}
-                    </span>
-                  )}
-                </div>
-              )}
 
               <ol ref={listRef} className="flex-1 overflow-y-auto">
                 {sentences.map((s) => {
@@ -508,7 +478,50 @@ function Index() {
         )}
 
         <EarlyAccessSection />
+
+        <section className="mt-8 rounded-lg border border-dashed border-border bg-muted/20 p-4 sm:p-6">
+          <h3 className="text-sm font-semibold tracking-tight">
+            Experimental: try your own YouTube video
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Automatic transcript loading may not work for every video. If it
+            fails, fall back to the Dutch demo.
+          </p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const u = url.trim();
+              if (!u) return;
+              track("custom_video_attempted", { video_url: u });
+              loadMutation.mutate(u);
+            }}
+            className="mt-3 flex flex-col gap-2 sm:flex-row"
+          >
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
+              className="flex-1"
+            />
+            <Input
+              value={targetLang}
+              onChange={(e) => setTargetLang(e.target.value)}
+              placeholder="Your language"
+              className="sm:w-44"
+            />
+            <Button type="submit" disabled={loadMutation.isPending || !url.trim()}>
+              {loadMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+                </>
+              ) : (
+                "Load video"
+              )}
+            </Button>
+          </form>
+        </section>
       </main>
+
     </div>
   );
 }
