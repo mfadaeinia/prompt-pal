@@ -7,6 +7,7 @@ import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Repeat, Sparkles, X } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   head: () => ({
