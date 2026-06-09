@@ -55,6 +55,8 @@ function Index() {
   });
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerRef = useRef<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
   const embedSrc = useMemo(
     () =>
       videoId
@@ -63,26 +65,87 @@ function Index() {
     [videoId]
   );
 
+  // Load YT IFrame API and create player
+  useEffect(() => {
+    if (!videoId || !iframeRef.current) return;
+    let cancelled = false;
+    let pollId: number | null = null;
+
+    const ensureApi = () =>
+      new Promise<any>((resolve) => {
+        const w = window as any;
+        if (w.YT && w.YT.Player) return resolve(w.YT);
+        const prev = w.onYouTubeIframeAPIReady;
+        w.onYouTubeIframeAPIReady = () => {
+          prev?.();
+          resolve(w.YT);
+        };
+        if (!document.getElementById("yt-iframe-api")) {
+          const tag = document.createElement("script");
+          tag.id = "yt-iframe-api";
+          tag.src = "https://www.youtube.com/iframe_api";
+          document.body.appendChild(tag);
+        }
+      });
+
+    ensureApi().then((YT) => {
+      if (cancelled || !iframeRef.current) return;
+      playerRef.current = new YT.Player(iframeRef.current, {
+        events: {
+          onReady: () => {
+            pollId = window.setInterval(() => {
+              const p = playerRef.current;
+              if (p && typeof p.getCurrentTime === "function") {
+                setCurrentTime(p.getCurrentTime() || 0);
+              }
+            }, 250);
+          },
+        },
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      if (pollId) window.clearInterval(pollId);
+      try {
+        playerRef.current?.destroy?.();
+      } catch {}
+      playerRef.current = null;
+    };
+  }, [videoId]);
+
+  const playingId = useMemo(() => {
+    if (!sentences.length) return null;
+    // find last sentence whose offset <= currentTime
+    let found: TranscriptSentence | null = null;
+    for (const s of sentences) {
+      if (s.offset <= currentTime + 0.05) found = s;
+      else break;
+    }
+    return found?.id ?? null;
+  }, [currentTime, sentences]);
+
+  // Auto-scroll active sentence into view
+  const listRef = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (!playingId || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(
+      `[data-sid="${playingId}"]`
+    );
+    if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [playingId]);
+
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
     explainMutation.reset();
     explainMutation.mutate(s);
-    const iframe = iframeRef.current;
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage(
-        JSON.stringify({
-          event: "command",
-          func: "seekTo",
-          args: [Math.max(0, Math.floor(s.offset)), true],
-        }),
-        "*"
-      );
-      iframe.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: "playVideo", args: [] }),
-        "*"
-      );
+    const p = playerRef.current;
+    if (p?.seekTo) {
+      p.seekTo(Math.max(0, Math.floor(s.offset)), true);
+      p.playVideo?.();
     }
   }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
