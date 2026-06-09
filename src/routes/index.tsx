@@ -2,10 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchTranscript, type TranscriptSentence } from "@/lib/transcript.functions";
+import {
+  fetchTranscript,
+  saveManualTranscript,
+  type TranscriptSentence,
+  type TranscriptSource,
+} from "@/lib/transcript.functions";
 import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Repeat, Sparkles, X } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 
