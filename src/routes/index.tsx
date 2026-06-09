@@ -243,16 +243,20 @@ function Index() {
               <div className="border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                 Transcript · {sentences.length} sentences
               </div>
-              <ol className="flex-1 overflow-y-auto">
+              <ol ref={listRef} className="flex-1 overflow-y-auto">
                 {sentences.map((s) => {
                   const active = selected?.id === s.id;
+                  const playing = playingId === s.id;
                   return (
                     <li key={s.id}>
                       <button
+                        data-sid={s.id}
                         onClick={() => jumpTo(s)}
-                        className={`block w-full border-b border-border/60 px-3 py-2 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                          active ? "bg-accent" : ""
-                        }`}
+                        className={`block w-full border-l-2 border-b border-border/60 px-3 py-2 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                          playing
+                            ? "border-l-primary bg-primary/10 font-medium"
+                            : "border-l-transparent"
+                        } ${active ? "bg-accent" : ""}`}
                       >
                         <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
                           {formatTime(s.offset)}
