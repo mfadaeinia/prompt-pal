@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      youtube_transcript_cache: {
+        Row: {
+          created_at: string
+          language: string | null
+          source: string
+          transcript_json: Json
+          updated_at: string
+          video_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          language?: string | null
+          source?: string
+          transcript_json: Json
+          updated_at?: string
+          video_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          language?: string | null
+          source?: string
+          transcript_json?: Json
+          updated_at?: string
+          video_id?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
