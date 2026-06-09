@@ -116,10 +116,13 @@ function Index() {
 
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
-    // find last sentence whose offset <= currentTime
+    // Bias: caption offsets often lead speech by ~0.5s, which made the
+    // highlight jump one sentence ahead. Require playback to be a bit past
+    // a sentence's start before marking it active.
+    const LEAD = 0.6;
     let found: TranscriptSentence | null = null;
     for (const s of sentences) {
-      if (s.offset <= currentTime + 0.05) found = s;
+      if (s.offset <= currentTime - LEAD) found = s;
       else break;
     }
     return found?.id ?? null;
