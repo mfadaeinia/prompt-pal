@@ -114,40 +114,96 @@ function Index() {
     };
   }, [videoId]);
 
+  // Active sentence id, derived from currentTime range, with manual override
+  // when the user clicks (so the click feels instant even before the player
+  // has actually seeked).
+  const [manualActiveId, setManualActiveId] = useState<number | null>(null);
+  const manualUntilRef = useRef(0);
+
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
-    // Bias: caption offsets often lead speech by ~0.5s, which made the
-    // highlight jump one sentence ahead. Require playback to be a bit past
-    // a sentence's start before marking it active.
-    const LEAD = 0.6;
+    if (manualActiveId !== null && performance.now() < manualUntilRef.current) {
+      return manualActiveId;
+    }
+    // Binary search would be nicer; linear is fine for prototype sizes.
     let found: TranscriptSentence | null = null;
     for (const s of sentences) {
-      if (s.offset <= currentTime - LEAD) found = s;
-      else break;
+      if (currentTime >= s.offset && currentTime < s.endTime) {
+        found = s;
+        break;
+      }
+      if (s.offset > currentTime) break;
+      found = s; // fallback: latest passed
     }
     return found?.id ?? null;
-  }, [currentTime, sentences]);
+  }, [currentTime, sentences, manualActiveId]);
 
-  // Auto-scroll active sentence into view
+  // Auto-scroll active sentence into view, but pause while the user scrolls.
   const listRef = useRef<HTMLOListElement>(null);
+  const userScrollingUntilRef = useRef(0);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      // Mark as user-driven; suppress autoscroll for 2s after last interaction.
+      userScrollingUntilRef.current = performance.now() + 2000;
+    };
+    // Only treat real user gestures (wheel/touch/keys) as user scrolling, not
+    // the smooth-scroll we trigger ourselves.
+    const mark = () => onScroll();
+    el.addEventListener("wheel", mark, { passive: true });
+    el.addEventListener("touchmove", mark, { passive: true });
+    el.addEventListener("keydown", mark);
+    return () => {
+      el.removeEventListener("wheel", mark);
+      el.removeEventListener("touchmove", mark);
+      el.removeEventListener("keydown", mark);
+    };
+  }, [videoId]);
+
   useEffect(() => {
     if (!playingId || !listRef.current) return;
+    if (performance.now() < userScrollingUntilRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(
       `[data-sid="${playingId}"]`
     );
-    if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [playingId]);
+
+  // Optional auto-pause for replay-until-end-of-sentence.
+  const pauseAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    const target = pauseAtRef.current;
+    if (target !== null && currentTime >= target) {
+      pauseAtRef.current = null;
+      playerRef.current?.pauseVideo?.();
+    }
+  }, [currentTime]);
+
+  function seekAndPlay(s: TranscriptSentence, pauseAtEnd = false) {
+    const p = playerRef.current;
+    if (p?.seekTo) {
+      p.seekTo(Math.max(0, s.offset), true);
+      p.playVideo?.();
+    }
+    pauseAtRef.current = pauseAtEnd ? s.endTime : null;
+    // Make the click feel instant: pin manual highlight briefly.
+    setManualActiveId(s.id);
+    manualUntilRef.current = performance.now() + 1200;
+    setCurrentTime(s.offset);
+  }
 
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
     explainMutation.reset();
     explainMutation.mutate(s);
-    const p = playerRef.current;
-    if (p?.seekTo) {
-      p.seekTo(Math.max(0, Math.floor(s.offset)), true);
-      p.playVideo?.();
-    }
+    seekAndPlay(s);
   }
+
+  function replaySelected() {
+    if (selected) seekAndPlay(selected, true);
+  }
+
 
 
   return (
