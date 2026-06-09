@@ -49,6 +49,36 @@ function Index() {
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [manualText, setManualText] = useState("");
+  const [view, setView] = useState<"landing" | "demo">("landing");
+
+  const startDemo = () => {
+    setUrl(DEMO_VIDEO_URL);
+    setTargetLang(DEMO_LANGUAGE);
+    setView("demo");
+    track("demo_started", { video_id: DEMO_VIDEO_ID });
+    if (videoId !== DEMO_VIDEO_ID) {
+      loadMutation.mutate(DEMO_VIDEO_URL);
+    }
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
+  const goHome = () => {
+    setView("landing");
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
+  const navTo = (hash: string) => {
+    const scroll = () => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (view === "demo") {
+      setView("landing");
+      setTimeout(scroll, 80);
+    } else {
+      scroll();
+    }
+  };
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
@@ -352,51 +382,58 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <span className="text-base font-semibold tracking-tight">Lingua</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
+          <div className="flex items-center gap-2">
+            {view === "demo" && (
+              <button
+                onClick={goHome}
+                className="mr-1 inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              >
+                ← Back to Home
+              </button>
+            )}
+            <button
+              onClick={goHome}
+              className="flex items-center gap-2.5"
+              aria-label="Lingua home"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <span className="text-base font-semibold tracking-tight">Lingua</span>
+            </button>
           </div>
           <div className="flex items-center gap-3">
-            <a href="#how" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</a>
-            <a href="#why" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</a>
-            <a
-              href="#early-access"
-              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-            >
-              Early access
-            </a>
+            <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</button>
+            <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
+            {view === "landing" && (
+              <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
+                <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6">
-        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
+        {view === "landing" && (
           <>
-            <DemoHero
-              onStart={() => {
-                setUrl(DEMO_VIDEO_URL);
-                setTargetLang(DEMO_LANGUAGE);
-                track("demo_started", { video_id: DEMO_VIDEO_ID });
-                loadMutation.mutate(DEMO_VIDEO_URL);
-              }}
-              loading={loadMutation.isPending}
-            />
+            <DemoHero onStart={startDemo} loading={loadMutation.isPending} />
             <HowItWorks />
             <WhySection />
+            <EarlyAccessSection />
           </>
         )}
 
-        {loadMutation.isPending && !videoId && (
+        {view === "demo" && loadMutation.isPending && !videoId && (
           <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground shadow-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading transcript…
           </div>
         )}
 
 
-        {loadMutation.isError && (
+        {view === "demo" && loadMutation.isError && (
           <div className="mt-6 space-y-3">
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
               <p className="font-medium text-foreground">
@@ -410,10 +447,7 @@ function Index() {
                 className="mt-3"
                 onClick={() => {
                   loadMutation.reset();
-                  setUrl(DEMO_VIDEO_URL);
-                  setTargetLang(DEMO_LANGUAGE);
-                  track("demo_started", { video_id: DEMO_VIDEO_ID });
-                  loadMutation.mutate(DEMO_VIDEO_URL);
+                  startDemo();
                 }}
               >
                 <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
@@ -439,7 +473,7 @@ function Index() {
           </div>
         )}
 
-        {videoId && (
+        {view === "demo" && videoId && (
           <div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="space-y-3">
               <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
@@ -507,49 +541,50 @@ function Index() {
           </div>
         )}
 
-        <EarlyAccessSection />
-
-        <section className="mb-16 rounded-2xl border border-dashed border-border bg-muted/30 p-6 sm:p-8">
-          <h3 className="text-sm font-semibold tracking-tight">
-            Experimental · try your own YouTube video
-          </h3>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Automatic transcript loading may not work for every video. If it
-            fails, fall back to the Dutch demo.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const u = url.trim();
-              if (!u) return;
-              track("custom_video_attempted", { video_url: u });
-              loadMutation.mutate(u);
-            }}
-            className="mt-4 flex flex-col gap-2 sm:flex-row"
-          >
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-              className="h-10 flex-1 rounded-full bg-background px-4"
-            />
-            <Input
-              value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value)}
-              placeholder="Your language"
-              className="h-10 rounded-full bg-background px-4 sm:w-44"
-            />
-            <Button type="submit" disabled={loadMutation.isPending || !url.trim()} className="h-10 rounded-full px-5">
-              {loadMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
-                </>
-              ) : (
-                "Load video"
-              )}
-            </Button>
-          </form>
-        </section>
+        {view === "landing" && (
+          <section className="mb-16 rounded-2xl border border-dashed border-border bg-muted/30 p-6 sm:p-8">
+            <h3 className="text-sm font-semibold tracking-tight">
+              Experimental · try your own YouTube video
+            </h3>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Automatic transcript loading may not work for every video. If it
+              fails, fall back to the Dutch demo.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const u = url.trim();
+                if (!u) return;
+                track("custom_video_attempted", { video_url: u });
+                setView("demo");
+                loadMutation.mutate(u);
+              }}
+              className="mt-4 flex flex-col gap-2 sm:flex-row"
+            >
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
+                className="h-10 flex-1 rounded-full bg-background px-4"
+              />
+              <Input
+                value={targetLang}
+                onChange={(e) => setTargetLang(e.target.value)}
+                placeholder="Your language"
+                className="h-10 rounded-full bg-background px-4 sm:w-44"
+              />
+              <Button type="submit" disabled={loadMutation.isPending || !url.trim()} className="h-10 rounded-full px-5">
+                {loadMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+                  </>
+                ) : (
+                  "Load video"
+                )}
+              </Button>
+            </form>
+          </section>
+        )}
       </main>
 
       <footer className="border-t border-border">
