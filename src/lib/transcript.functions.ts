@@ -274,7 +274,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
     let lastErr: unknown = null;
-    const langCandidates = ["en", "nl", "en-US", "en-GB", undefined];
+    const langCandidates = ["nl", "nl-NL", "en", "en-US", "en-GB", undefined];
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
