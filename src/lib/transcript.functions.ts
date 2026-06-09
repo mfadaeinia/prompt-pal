@@ -345,3 +345,50 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
     logEvent({ video_id: videoId, fetch_source: "manual", success: true });
     return { videoId, sentences, source: "manual", language: null };
   });
+
+const DemoInput = z.object({
+  videoId: z.string().min(1).max(50),
+  videoUrl: z.string().min(1).max(500),
+  language: z.string().min(1).max(20).nullable().optional(),
+  sentences: z
+    .array(
+      z.object({
+        id: z.union([z.string(), z.number()]),
+        startTime: z.number(),
+        endTime: z.number(),
+        text: z.string(),
+        translation: z.string().optional().nullable(),
+        meaning: z.string().optional().nullable(),
+        notes: z.string().optional().nullable(),
+      })
+    )
+    .min(1)
+    .max(5000),
+});
+
+export const saveDemoTranscript = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => DemoInput.parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const chunks: RawChunk[] = data.sentences.map((s) => ({
+      text: s.text,
+      offset: s.startTime,
+      duration: Math.max(0.5, s.endTime - s.startTime),
+    }));
+    const { error } = await supabaseAdmin
+      .from("youtube_transcript_cache" as any)
+      .upsert(
+        {
+          video_id: data.videoId,
+          video_url: data.videoUrl,
+          transcript_json: chunks,
+          language: data.language ?? null,
+          source: "manual",
+          updated_at: new Date().toISOString(),
+        } as any,
+        { onConflict: "video_id" }
+      );
+    if (error) throw new Error(error.message);
+    logEvent({ video_id: data.videoId, fetch_source: "manual", success: true });
+    return { ok: true, videoId: data.videoId, count: data.sentences.length };
+  });

@@ -5,9 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
   saveManualTranscript,
+  saveDemoTranscript,
   type TranscriptSentence,
   type TranscriptSource,
 } from "@/lib/transcript.functions";
+
 import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +34,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
   const saveManualTx = useServerFn(saveManualTranscript);
+  const saveDemoTx = useServerFn(saveDemoTranscript);
   const explainFx = useServerFn(explainSentence);
+
 
   const [url, setUrl] = useState("");
   const [targetLang, setTargetLang] = useState("English");
@@ -99,6 +103,15 @@ function Index() {
       });
     },
   });
+
+  const saveDemoMutation = useMutation({
+    mutationFn: async (vars: {
+      videoId: string;
+      videoUrl: string;
+      sentences: ReturnType<typeof toExportShape>;
+    }) => saveDemoTx({ data: vars }),
+  });
+
 
   const explainMutation = useMutation({
     mutationFn: async (s: TranscriptSentence) => {
@@ -423,10 +436,51 @@ function Index() {
             </div>
 
             <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-lg border border-border">
-              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                 <span>Transcript · {sentences.length} sentences</span>
-                {transcriptSource && <SourceBadge source={transcriptSource} />}
+                <div className="flex items-center gap-2">
+                  {transcriptSource && <SourceBadge source={transcriptSource} />}
+                </div>
               </div>
+              {videoId && sentences.length > 0 && (
+                <div className="flex flex-wrap gap-2 border-b border-border bg-amber-500/5 px-3 py-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => exportTranscriptJson(videoId, sentences)}
+                  >
+                    Export Transcript JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={saveDemoMutation.isPending}
+                    onClick={() =>
+                      saveDemoMutation.mutate({
+                        videoId,
+                        videoUrl: url,
+                        sentences: toExportShape(sentences),
+                      })
+                    }
+                  >
+                    {saveDemoMutation.isPending
+                      ? "Saving…"
+                      : saveDemoMutation.isSuccess
+                      ? "Saved ✓"
+                      : "Save as Demo Transcript"}
+                  </Button>
+                  {saveDemoMutation.isError && (
+                    <span className="text-[10px] text-destructive normal-case">
+                      {(saveDemoMutation.error as Error).message}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <ol ref={listRef} className="flex-1 overflow-y-auto">
                 {sentences.map((s) => {
                   const active = selected?.id === s.id;
@@ -667,4 +721,37 @@ function formatTime(sec: number) {
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+function toExportShape(sentences: TranscriptSentence[]) {
+  return sentences.map((s) => ({
+    id: String(s.id),
+    startTime: s.offset,
+    endTime: s.endTime,
+    text: s.text,
+    translation: "",
+    meaning: "",
+    notes: "",
+  }));
+}
+
+function exportTranscriptJson(videoId: string, sentences: TranscriptSentence[]) {
+  const payload = {
+    videoId,
+    exportedAt: new Date().toISOString(),
+    sentences: toExportShape(sentences),
+  };
+  // eslint-disable-next-line no-console
+  console.log("[transcript-export]", payload);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `transcript-${videoId}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
