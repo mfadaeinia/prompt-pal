@@ -39,6 +39,7 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      setUserProperties({ selected_language: targetLang });
       track("video_loaded", {
         video_url: url,
         video_id: res.videoId,
