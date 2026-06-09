@@ -31,11 +31,23 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     if (!videoId) throw new Error("Could not parse a YouTube video ID from that URL.");
 
     let raw;
-    try {
-      raw = await YoutubeTranscript.fetchTranscript(videoId);
-    } catch (e) {
+    let lastErr: unknown = null;
+    const langCandidates = ["en", "nl", "en-US", "en-GB", undefined];
+    for (const lang of langCandidates) {
+      try {
+        raw = await YoutubeTranscript.fetchTranscript(
+          videoId,
+          lang ? { lang } : undefined
+        );
+        if (raw && raw.length) break;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    if (!raw || !raw.length) {
+      const detail = lastErr instanceof Error ? `: ${lastErr.message}` : "";
       throw new Error(
-        "Couldn't fetch a transcript for this video. It may be unavailable or have captions disabled."
+        `Couldn't fetch a transcript for this video. It may be unavailable or have captions disabled${detail}`
       );
     }
 
