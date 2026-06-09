@@ -17,6 +17,39 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Repeat, Sparkles, X } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 
+function toExportShape(sentences: TranscriptSentence[]) {
+  return sentences.map((s) => ({
+    id: String(s.id),
+    startTime: s.offset,
+    endTime: s.endTime,
+    text: s.text,
+    translation: "",
+    meaning: "",
+    notes: "",
+  }));
+}
+
+function exportTranscriptJson(videoId: string, sentences: TranscriptSentence[]) {
+  const payload = {
+    videoId,
+    exportedAt: new Date().toISOString(),
+    sentences: toExportShape(sentences),
+  };
+  // eslint-disable-next-line no-console
+  console.log("[transcript-export]", payload);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `transcript-${videoId}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -721,37 +754,4 @@ function formatTime(sec: number) {
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;
-}
-
-function toExportShape(sentences: TranscriptSentence[]) {
-  return sentences.map((s) => ({
-    id: String(s.id),
-    startTime: s.offset,
-    endTime: s.endTime,
-    text: s.text,
-    translation: "",
-    meaning: "",
-    notes: "",
-  }));
-}
-
-function exportTranscriptJson(videoId: string, sentences: TranscriptSentence[]) {
-  const payload = {
-    videoId,
-    exportedAt: new Date().toISOString(),
-    sentences: toExportShape(sentences),
-  };
-  // eslint-disable-next-line no-console
-  console.log("[transcript-export]", payload);
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `transcript-${videoId}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
