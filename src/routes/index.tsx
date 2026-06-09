@@ -121,7 +121,7 @@ function Index() {
   const manualUntilRef = useRef(0);
 
   // Small tuning knob: negative = highlight lags playback, positive = leads.
-  const SYNC_OFFSET_SECONDS = -0.75;
+  const SYNC_OFFSET_SECONDS = 0;
 
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
