@@ -7,7 +7,7 @@ export function initAnalytics() {
   initialized = true;
   posthog.init("phc_uh2z54HTdTr2cqMitNeowZgbBrxBcXPyD6zfzVHTPksW", {
     api_host: "https://us.i.posthog.com",
-    defaults: "2025-05-24" as any,
+    defaults: "2026-05-30" as any,
     person_profiles: "identified_only",
     capture_pageview: false,
   });
