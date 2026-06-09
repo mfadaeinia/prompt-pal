@@ -387,8 +387,67 @@ function Index() {
             </aside>
           </div>
         )}
+
+        <EarlyAccessSection />
       </main>
     </div>
+  );
+}
+
+function EarlyAccessSection() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    track("waitlist_joined", { source: "early_access_section", email: email.trim() });
+    setSubmitted(true);
+  }
+
+  return (
+    <section className="mt-12 rounded-lg border border-border bg-card p-6 sm:p-8">
+      <div className="mx-auto max-w-xl text-center">
+        <h2 className="text-xl font-semibold tracking-tight">
+          Learn Dutch from Real YouTube Videos
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Click any subtitle sentence to instantly understand its meaning,
+          translation, and expressions in context.
+        </p>
+        <p className="mt-4 text-sm text-foreground">
+          I'm building Lingua to make language learning through real videos
+          faster and more enjoyable.
+        </p>
+        <p className="text-sm text-foreground">
+          Join the early access list and help shape the product.
+        </p>
+
+        {submitted ? (
+          <p className="mt-6 rounded-md bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+            Thanks! You're on the early access list. I'll let you know when new
+            features are available.
+          </p>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-start"
+          >
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              className="flex-1"
+            />
+            <Button type="submit" className="shrink-0">
+              Join Early Access
+            </Button>
+          </form>
+        )}
+      </div>
+    </section>
   );
 }
 
