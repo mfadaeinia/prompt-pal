@@ -120,22 +120,24 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
+  // Small tuning knob: negative = highlight lags playback, positive = leads.
+  const SYNC_OFFSET_SECONDS = -0.75;
+
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
     if (manualActiveId !== null && performance.now() < manualUntilRef.current) {
       return manualActiveId;
     }
-    // Binary search would be nicer; linear is fine for prototype sizes.
-    let found: TranscriptSentence | null = null;
+    const adjustedTime = currentTime + SYNC_OFFSET_SECONDS;
+    // Strict range match: only highlight a sentence once playback has actually
+    // reached its startTime, and stop highlighting at the next sentence's start.
     for (const s of sentences) {
-      if (currentTime >= s.offset && currentTime < s.endTime) {
-        found = s;
-        break;
+      if (adjustedTime >= s.offset && adjustedTime < s.endTime) {
+        return s.id;
       }
-      if (s.offset > currentTime) break;
-      found = s; // fallback: latest passed
+      if (s.offset > adjustedTime) break;
     }
-    return found?.id ?? null;
+    return null;
   }, [currentTime, sentences, manualActiveId]);
 
   // Auto-scroll active sentence into view, but pause while the user scrolls.
