@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
   saveManualTranscript,
-  saveDemoTranscript,
   type TranscriptSentence,
   type TranscriptSource,
 } from "@/lib/transcript.functions";
@@ -14,41 +13,13 @@ import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Repeat, Sparkles, X } from "lucide-react";
+import { Loader2, PlayCircle, Repeat, Sparkles, X } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 
-function toExportShape(sentences: TranscriptSentence[]) {
-  return sentences.map((s) => ({
-    id: String(s.id),
-    startTime: s.offset,
-    endTime: s.endTime,
-    text: s.text,
-    translation: "",
-    meaning: "",
-    notes: "",
-  }));
-}
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
+const DEMO_VIDEO_ID = "ucsSnoeTPMc";
+const DEMO_LANGUAGE = "English";
 
-function exportTranscriptJson(videoId: string, sentences: TranscriptSentence[]) {
-  const payload = {
-    videoId,
-    exportedAt: new Date().toISOString(),
-    sentences: toExportShape(sentences),
-  };
-  // eslint-disable-next-line no-console
-  console.log("[transcript-export]", payload);
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `transcript-${videoId}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,8 +38,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
   const saveManualTx = useServerFn(saveManualTranscript);
-  const saveDemoTx = useServerFn(saveDemoTranscript);
   const explainFx = useServerFn(explainSentence);
+
 
 
   const [url, setUrl] = useState("");
@@ -137,13 +108,7 @@ function Index() {
     },
   });
 
-  const saveDemoMutation = useMutation({
-    mutationFn: async (vars: {
-      videoId: string;
-      videoUrl: string;
-      sentences: ReturnType<typeof toExportShape>;
-    }) => saveDemoTx({ data: vars }),
-  });
+
 
 
   const explainMutation = useMutation({
