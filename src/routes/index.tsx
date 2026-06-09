@@ -360,7 +360,7 @@ function Index() {
             <div>
               <h1 className="text-sm font-semibold tracking-tight">Lingua</h1>
               <p className="text-xs text-muted-foreground">
-                Tap any sentence. Get the gist.
+                Understand native videos, one sentence at a time.
               </p>
             </div>
           </div>
