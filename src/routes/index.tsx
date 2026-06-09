@@ -107,6 +107,15 @@ function Index() {
               }
             }, 250);
           },
+          onStateChange: (e: any) => {
+            const p = playerRef.current;
+            const t = p?.getCurrentTime?.() ?? 0;
+            if (e.data === YT.PlayerState.PLAYING) {
+              track("video_played", { video_id: videoId, current_time: t });
+            } else if (e.data === YT.PlayerState.PAUSED) {
+              track("video_paused", { video_id: videoId, current_time: t });
+            }
+          },
         },
       });
     });
