@@ -557,6 +557,7 @@ function EarlyAccessSection() {
     e.preventDefault();
     if (!email.trim()) return;
     track("waitlist_joined", { source: "early_access_section" });
+    track("early_access_joined", { source: "early_access_section" });
     setSubmitted(true);
   }
 
@@ -680,16 +681,39 @@ function ManualTranscriptFallback({
 }
 
 
-function EmptyState() {
+function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean }) {
   return (
-    <div className="mt-10 rounded-lg border border-dashed border-border p-8 text-center">
-      <p className="text-sm text-muted-foreground">
-        Paste a YouTube URL to load the video and its transcript. Then click any
-        sentence to get a quick explanation.
+    <section className="mt-6 rounded-xl border border-border bg-gradient-to-b from-primary/5 to-card p-8 text-center sm:p-12">
+      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] uppercase tracking-wider text-primary">
+        Live demo
+      </span>
+      <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+        Learn Dutch from a real YouTube video
+      </h2>
+      <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
+        Click any sentence in the transcript to instantly see its meaning,
+        translation, and key expressions in context.
       </p>
-    </div>
+      <Button
+        size="lg"
+        className="mt-6"
+        onClick={onStart}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading demo…
+          </>
+        ) : (
+          <>
+            <PlayCircle className="mr-2 h-5 w-5" /> Try Dutch Demo
+          </>
+        )}
+      </Button>
+    </section>
   );
 }
+
 
 function ExplanationPanel({
   sentence,
