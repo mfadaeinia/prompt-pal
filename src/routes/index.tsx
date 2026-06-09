@@ -104,6 +104,15 @@ function Index() {
     },
   });
 
+  const saveDemoMutation = useMutation({
+    mutationFn: async (vars: {
+      videoId: string;
+      videoUrl: string;
+      sentences: ReturnType<typeof toExportShape>;
+    }) => saveDemoTx({ data: vars }),
+  });
+
+
   const explainMutation = useMutation({
     mutationFn: async (s: TranscriptSentence) => {
       const idx = sentences.findIndex((x) => x.id === s.id);
