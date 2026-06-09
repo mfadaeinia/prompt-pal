@@ -31,6 +31,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
+  const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
 
   const [url, setUrl] = useState("");
@@ -38,6 +39,8 @@ function Index() {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
+  const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
+  const [manualText, setManualText] = useState("");
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
@@ -45,11 +48,54 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      setTranscriptSource(res.source);
       setUserProperties({ selected_language: targetLang });
+      const evt =
+        res.source === "cache"
+          ? "transcript_loaded_from_cache"
+          : "transcript_loaded_from_youtube";
+      track(evt, {
+        video_url: url,
+        video_id: res.videoId,
+        selected_language: targetLang,
+      });
       track("video_loaded", {
         video_url: url,
         video_id: res.videoId,
         selected_language: targetLang,
+        source: res.source,
+      });
+    },
+    onError: (err: any) => {
+      track("transcript_fetch_failed", {
+        video_url: url,
+        error_type: err?.errorType ?? "unknown",
+        error_message: err?.message ?? String(err),
+      });
+    },
+  });
+
+  const manualMutation = useMutation({
+    mutationFn: async (vars: { url: string; text: string }) =>
+      saveManualTx({ data: vars }),
+    onSuccess: (res) => {
+      setVideoId(res.videoId);
+      setSentences(res.sentences);
+      setSelected(null);
+      setTranscriptSource("manual");
+      setManualText("");
+      loadMutation.reset();
+      setUserProperties({ selected_language: targetLang });
+      track("transcript_loaded_manually", {
+        video_url: url,
+        video_id: res.videoId,
+        sentences_count: res.sentences.length,
+      });
+      track("video_loaded", {
+        video_url: url,
+        video_id: res.videoId,
+        selected_language: targetLang,
+        source: "manual",
       });
     },
   });
