@@ -401,7 +401,7 @@ function EarlyAccessSection() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
-    track("waitlist_joined", { source: "early_access_section", email: email.trim() });
+    track("waitlist_joined", { source: "early_access_section" });
     setSubmitted(true);
   }
 
