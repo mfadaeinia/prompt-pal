@@ -7,7 +7,7 @@ import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Repeat, Sparkles, X } from "lucide-react";
-import { track } from "@/lib/analytics";
+import { track, setUserProperties } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,6 +39,7 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      setUserProperties({ selected_language: targetLang });
       track("video_loaded", {
         video_url: url,
         video_id: res.videoId,
@@ -105,6 +106,15 @@ function Index() {
                 setCurrentTime(p.getCurrentTime() || 0);
               }
             }, 250);
+          },
+          onStateChange: (e: any) => {
+            const p = playerRef.current;
+            const t = p?.getCurrentTime?.() ?? 0;
+            if (e.data === YT.PlayerState.PLAYING) {
+              track("video_played", { video_id: videoId, current_time: t });
+            } else if (e.data === YT.PlayerState.PAUSED) {
+              track("video_paused", { video_id: videoId, current_time: t });
+            }
           },
         },
       });

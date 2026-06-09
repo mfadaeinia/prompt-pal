@@ -10,6 +10,10 @@ export function initAnalytics() {
     defaults: "2026-05-30" as any,
     person_profiles: "identified_only",
     capture_pageview: false,
+    autocapture: false,
+    capture_pageleave: false,
+    rageclick: false,
+    disable_session_recording: true,
   });
 
   // Attribution from URL
@@ -24,6 +28,24 @@ export function initAnalytics() {
     if (Object.keys(attribution).length) {
       posthog.register(attribution);
     }
+  } catch {}
+
+  // first_visit_date — persist locally so it stays stable across sessions
+  try {
+    let firstVisit = localStorage.getItem("lingua_first_visit_date");
+    if (!firstVisit) {
+      firstVisit = new Date().toISOString();
+      localStorage.setItem("lingua_first_visit_date", firstVisit);
+    }
+    posthog.register({ first_visit_date: firstVisit });
+  } catch {}
+}
+
+export function setUserProperties(props: Record<string, any>) {
+  if (typeof window === "undefined") return;
+  try {
+    posthog.register(props);
+    posthog.setPersonProperties?.(props);
   } catch {}
 }
 
