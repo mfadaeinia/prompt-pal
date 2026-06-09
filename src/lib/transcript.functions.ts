@@ -19,8 +19,9 @@ function extractVideoId(url: string): string | null {
 export type TranscriptSentence = {
   id: number;
   text: string;
-  offset: number; // seconds
+  offset: number; // seconds (startTime)
   duration: number;
+  endTime: number; // seconds
 };
 
 export const fetchTranscript = createServerFn({ method: "POST" })
@@ -50,7 +51,6 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const sentenceRegex = /[^.!?\n]+[.!?]+|[^.!?\n]+$/g;
     const matches = decoded.match(sentenceRegex) ?? [decoded];
 
-    // Map each sentence back to an approximate offset by walking through raw chunks.
     let chunkIdx = 0;
     let consumed = 0;
     let id = 0;
@@ -59,8 +59,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       if (!s) continue;
       const offset = raw[Math.min(chunkIdx, raw.length - 1)]?.offset ?? 0;
       const duration = raw[Math.min(chunkIdx, raw.length - 1)]?.duration ?? 0;
-      sentences.push({ id: id++, text: s, offset: offset / 1000, duration: duration / 1000 });
-      // advance chunkIdx roughly proportional to characters consumed
+      sentences.push({
+        id: id++,
+        text: s,
+        offset: offset / 1000,
+        duration: duration / 1000,
+        endTime: 0, // filled below
+      });
       consumed += s.length + 1;
       while (
         chunkIdx < raw.length - 1 &&
@@ -69,6 +74,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       ) {
         chunkIdx++;
       }
+    }
+
+    // Fill endTime from next sentence's start; final = start + max(duration, 5).
+    for (let i = 0; i < sentences.length; i++) {
+      const cur = sentences[i];
+      const next = sentences[i + 1];
+      if (next) cur.endTime = next.offset;
+      else cur.endTime = cur.offset + Math.max(cur.duration, 5);
     }
 
     return { videoId, sentences };
