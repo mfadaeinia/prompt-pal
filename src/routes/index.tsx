@@ -6,7 +6,7 @@ import { fetchTranscript, type TranscriptSentence } from "@/lib/transcript.funct
 import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Loader2, Repeat, Sparkles, X } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
