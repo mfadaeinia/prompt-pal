@@ -303,6 +303,8 @@ function Index() {
     return () => window.clearTimeout(t);
   }, [videoId]);
 
+  const isDemo = videoId === DEMO_VIDEO_ID;
+
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
     explainMutation.reset();
@@ -316,6 +318,12 @@ function Index() {
       sentence_start_time: s.offset,
       video_id: videoId,
     });
+    if (isDemo) {
+      track("demo_sentence_clicked", {
+        sentence_index: idx,
+        video_id: videoId,
+      });
+    }
   }
 
   function replaySelected() {
@@ -328,8 +336,15 @@ function Index() {
         sentence_start_time: selected.offset,
         video_id: videoId,
       });
+      if (isDemo) {
+        track("demo_replay_clicked", {
+          sentence_index: idx,
+          video_id: videoId,
+        });
+      }
     }
   }
+
 
 
 
