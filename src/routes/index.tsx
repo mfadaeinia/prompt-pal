@@ -294,6 +294,7 @@ function Index() {
                   }
                   text={explainMutation.data?.explanation ?? null}
                   onClose={() => setSelected(null)}
+                  onReplay={replaySelected}
                 />
               )}
             </div>
