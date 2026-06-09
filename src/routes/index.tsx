@@ -39,6 +39,11 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      track("video_loaded", {
+        video_url: url,
+        video_id: res.videoId,
+        selected_language: targetLang,
+      });
     },
   });
 
