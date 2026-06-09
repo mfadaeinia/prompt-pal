@@ -518,6 +518,80 @@ function EarlyAccessSection() {
   );
 }
 
+function SourceBadge({ source }: { source: TranscriptSource }) {
+  const map: Record<TranscriptSource, { label: string; cls: string }> = {
+    cache: { label: "cached", cls: "bg-primary/10 text-primary" },
+    youtube: { label: "youtube", cls: "bg-accent text-accent-foreground" },
+    manual: { label: "manual", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
+  };
+  const m = map[source];
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium normal-case ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+}
+
+function ManualTranscriptFallback({
+  url,
+  errorMessage,
+  manualText,
+  setManualText,
+  onSubmit,
+  submitting,
+  submitError,
+}: {
+  url: string;
+  errorMessage: string;
+  manualText: string;
+  setManualText: (s: string) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  submitError: string | null;
+}) {
+  return (
+    <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+      <p className="text-sm text-destructive">{errorMessage}</p>
+      <div className="mt-3">
+        <label className="text-xs font-medium text-foreground">
+          Paste transcript manually
+        </label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          One line per sentence. Optionally prefix each line with a timestamp,
+          e.g. <code className="rounded bg-muted px-1">[0:15] Hallo, hoe gaat het?</code>
+        </p>
+        <Textarea
+          value={manualText}
+          onChange={(e) => setManualText(e.target.value)}
+          placeholder={"[0:00] First sentence.\n[0:04] Second sentence."}
+          rows={6}
+          className="mt-2 font-mono text-xs"
+        />
+        {submitError && (
+          <p className="mt-2 text-xs text-destructive">{submitError}</p>
+        )}
+        <div className="mt-2 flex justify-end">
+          <Button
+            type="button"
+            size="sm"
+            disabled={submitting || !url.trim() || !manualText.trim()}
+            onClick={onSubmit}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Loading
+              </>
+            ) : (
+              "Use this transcript"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function EmptyState() {
   return (
     <div className="mt-10 rounded-lg border border-dashed border-border p-8 text-center">
