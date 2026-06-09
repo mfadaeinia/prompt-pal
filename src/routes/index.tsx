@@ -427,10 +427,51 @@ function Index() {
             </div>
 
             <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-lg border border-border">
-              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+              <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                 <span>Transcript · {sentences.length} sentences</span>
-                {transcriptSource && <SourceBadge source={transcriptSource} />}
+                <div className="flex items-center gap-2">
+                  {transcriptSource && <SourceBadge source={transcriptSource} />}
+                </div>
               </div>
+              {videoId && sentences.length > 0 && (
+                <div className="flex flex-wrap gap-2 border-b border-border bg-amber-500/5 px-3 py-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => exportTranscriptJson(videoId, sentences)}
+                  >
+                    Export Transcript JSON
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={saveDemoMutation.isPending}
+                    onClick={() =>
+                      saveDemoMutation.mutate({
+                        videoId,
+                        videoUrl: url,
+                        sentences: toExportShape(sentences),
+                      })
+                    }
+                  >
+                    {saveDemoMutation.isPending
+                      ? "Saving…"
+                      : saveDemoMutation.isSuccess
+                      ? "Saved ✓"
+                      : "Save as Demo Transcript"}
+                  </Button>
+                  {saveDemoMutation.isError && (
+                    <span className="text-[10px] text-destructive normal-case">
+                      {(saveDemoMutation.error as Error).message}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <ol ref={listRef} className="flex-1 overflow-y-auto">
                 {sentences.map((s) => {
                   const active = selected?.id === s.id;
