@@ -690,39 +690,204 @@ function ManualTranscriptFallback({
 
 function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean }) {
   return (
-    <section className="mt-6 rounded-xl border border-border bg-gradient-to-b from-primary/5 to-card p-8 text-center sm:p-12">
-      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-        LIVE DEMO
-      </span>
-      <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
-        Learn Dutch from YouTube videos without constantly pausing.
-      </h2>
-      <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-        Click any subtitle sentence to instantly understand its meaning,
-        translation, and expressions in context.
-      </p>
-      <Button
-        size="lg"
-        className="mt-6"
-        onClick={onStart}
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading demo…
-          </>
-        ) : (
-          <>
-            <PlayCircle className="mr-2 h-5 w-5" /> Try the Dutch Demo
-          </>
-        )}
-      </Button>
-      <p className="mt-3 text-xs text-muted-foreground">
-        No signup required. Try it in under 30 seconds.
-      </p>
+    <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-28">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[480px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.15),transparent_70%)]"
+      />
+      <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
+            🇳🇱 Dutch Learning Beta
+          </span>
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
+            Understand real Dutch videos{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              instantly.
+            </span>
+          </h1>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Click any subtitle sentence while watching YouTube and get
+            translations, explanations, and expressions in context.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button
+              size="lg"
+              onClick={onStart}
+              disabled={loading}
+              className="h-12 gap-2 rounded-full px-6 text-sm font-medium shadow-lg shadow-primary/20"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading demo…
+                </>
+              ) : (
+                <>
+                  Try the Demo <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12 gap-2 rounded-full px-5 text-sm font-medium text-foreground hover:bg-accent"
+              onClick={onStart}
+            >
+              <Play className="h-4 w-4 fill-current" /> Watch 30-second walkthrough
+            </Button>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            No signup required · Try it in under 30 seconds
+          </p>
+        </div>
+
+        <ProductMockup />
+      </div>
     </section>
   );
 }
+
+function ProductMockup() {
+  const lines = [
+    { t: "0:04", text: "Hallo allemaal, welkom bij deze video.", active: false },
+    { t: "0:08", text: "Vandaag gaan we Nederlands leren met echte content.", active: true },
+    { t: "0:13", text: "Het is veel leuker dan een saai tekstboek.", active: false },
+    { t: "0:17", text: "Klik gewoon op een zin om de betekenis te zien.", active: false },
+  ];
+  return (
+    <div className="relative">
+      <div
+        aria-hidden
+        className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent blur-2xl"
+      />
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-primary/10">
+        <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+          <span className="ml-3 truncate text-[11px] text-muted-foreground">
+            lingua.app / dutch-demo
+          </span>
+        </div>
+        <div className="grid grid-cols-[1.4fr_1fr] gap-0">
+          <div className="space-y-3 border-r border-border p-4">
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gradient-to-br from-slate-900 to-slate-700">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                  <Play className="ml-0.5 h-6 w-6 fill-primary text-primary" />
+                </div>
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 rounded-md bg-black/60 px-3 py-1.5 text-center text-xs text-white backdrop-blur-sm">
+                Vandaag gaan we Nederlands leren…
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-background p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Translation
+              </p>
+              <p className="mt-1.5 text-sm font-medium text-foreground">
+                "Today we're going to learn Dutch with real content."
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                <span className="font-medium text-foreground">echte content</span>{" "}
+                — "real content"; common in informal speech to contrast with
+                textbook material.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <div className="border-b border-border bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Transcript
+            </div>
+            <div className="flex-1 divide-y divide-border">
+              {lines.map((l, i) => (
+                <div
+                  key={i}
+                  className={`flex gap-2 px-3 py-2.5 text-xs leading-relaxed ${
+                    l.active
+                      ? "border-l-2 border-primary bg-primary/10 font-medium text-foreground"
+                      : "border-l-2 border-transparent text-foreground/80"
+                  }`}
+                >
+                  <span className="tabular-nums text-[10px] text-muted-foreground">
+                    {l.t}
+                  </span>
+                  <span className="min-w-0">{l.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  const steps = [
+    { n: "01", icon: Tv, title: "Watch a real Dutch video", desc: "Pick any YouTube video in your target language." },
+    { n: "02", icon: MousePointerClick, title: "Click any subtitle sentence", desc: "Tap a line in the transcript while you watch." },
+    { n: "03", icon: Brain, title: "Understand instantly", desc: "Get meaning, translation, and expressions in context." },
+  ];
+  return (
+    <section id="how" className="border-t border-border py-20 sm:py-28">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          From "lost in audio" to "got it" in three clicks.
+        </h2>
+      </div>
+      <div className="mt-14 grid gap-5 md:grid-cols-3">
+        {steps.map((s) => (
+          <div
+            key={s.n}
+            className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md hover:-translate-y-0.5"
+          >
+            <div className="flex items-center justify-between">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <s.icon className="h-5 w-5" />
+              </span>
+              <span className="text-xs font-mono text-muted-foreground">{s.n}</span>
+            </div>
+            <h3 className="mt-5 text-base font-semibold tracking-tight">{s.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function WhySection() {
+  const cards = [
+    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples." },
+    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase." },
+    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak." },
+  ];
+  return (
+    <section id="why" className="border-t border-border py-20 sm:py-28">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Lingua</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          Built for learners who want to actually enjoy the language.
+        </h2>
+      </div>
+      <div className="mt-14 grid gap-5 md:grid-cols-3">
+        {cards.map((c) => (
+          <div
+            key={c.title}
+            className="rounded-2xl border border-border bg-gradient-to-b from-card to-muted/30 p-6 shadow-sm"
+          >
+            <div className="text-2xl">{c.emoji}</div>
+            <h3 className="mt-4 text-base font-semibold tracking-tight">{c.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 
 
 function ExplanationPanel({
