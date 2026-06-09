@@ -2,10 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchTranscript, type TranscriptSentence } from "@/lib/transcript.functions";
+import {
+  fetchTranscript,
+  saveManualTranscript,
+  type TranscriptSentence,
+  type TranscriptSource,
+} from "@/lib/transcript.functions";
 import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Repeat, Sparkles, X } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 
@@ -25,6 +31,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
+  const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
 
   const [url, setUrl] = useState("");
@@ -32,6 +39,8 @@ function Index() {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
+  const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
+  const [manualText, setManualText] = useState("");
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
@@ -39,11 +48,54 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      setTranscriptSource(res.source);
       setUserProperties({ selected_language: targetLang });
+      const evt =
+        res.source === "cache"
+          ? "transcript_loaded_from_cache"
+          : "transcript_loaded_from_youtube";
+      track(evt, {
+        video_url: url,
+        video_id: res.videoId,
+        selected_language: targetLang,
+      });
       track("video_loaded", {
         video_url: url,
         video_id: res.videoId,
         selected_language: targetLang,
+        source: res.source,
+      });
+    },
+    onError: (err: any) => {
+      track("transcript_fetch_failed", {
+        video_url: url,
+        error_type: err?.errorType ?? "unknown",
+        error_message: err?.message ?? String(err),
+      });
+    },
+  });
+
+  const manualMutation = useMutation({
+    mutationFn: async (vars: { url: string; text: string }) =>
+      saveManualTx({ data: vars }),
+    onSuccess: (res) => {
+      setVideoId(res.videoId);
+      setSentences(res.sentences);
+      setSelected(null);
+      setTranscriptSource("manual");
+      setManualText("");
+      loadMutation.reset();
+      setUserProperties({ selected_language: targetLang });
+      track("transcript_loaded_manually", {
+        video_url: url,
+        video_id: res.videoId,
+        sentences_count: res.sentences.length,
+      });
+      track("video_loaded", {
+        video_url: url,
+        video_id: res.videoId,
+        selected_language: targetLang,
+        source: "manual",
       });
     },
   });
@@ -315,12 +367,26 @@ function Index() {
           </Button>
         </form>
         {loadMutation.isError && (
-          <p className="mt-2 text-sm text-destructive">
-            {(loadMutation.error as Error).message}
-          </p>
+          <ManualTranscriptFallback
+            url={url}
+            errorMessage={(loadMutation.error as Error).message}
+            manualText={manualText}
+            setManualText={setManualText}
+            onSubmit={() => {
+              if (url.trim() && manualText.trim()) {
+                manualMutation.mutate({ url: url.trim(), text: manualText });
+              }
+            }}
+            submitting={manualMutation.isPending}
+            submitError={
+              manualMutation.isError
+                ? (manualMutation.error as Error).message
+                : null
+            }
+          />
         )}
 
-        {!videoId && !loadMutation.isPending && (
+        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
           <EmptyState />
         )}
 
@@ -357,8 +423,9 @@ function Index() {
             </div>
 
             <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-lg border border-border">
-              <div className="border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                Transcript · {sentences.length} sentences
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                <span>Transcript · {sentences.length} sentences</span>
+                {transcriptSource && <SourceBadge source={transcriptSource} />}
               </div>
               <ol ref={listRef} className="flex-1 overflow-y-auto">
                 {sentences.map((s) => {
@@ -450,6 +517,80 @@ function EarlyAccessSection() {
     </section>
   );
 }
+
+function SourceBadge({ source }: { source: TranscriptSource }) {
+  const map: Record<TranscriptSource, { label: string; cls: string }> = {
+    cache: { label: "cached", cls: "bg-primary/10 text-primary" },
+    youtube: { label: "youtube", cls: "bg-accent text-accent-foreground" },
+    manual: { label: "manual", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
+  };
+  const m = map[source];
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium normal-case ${m.cls}`}>
+      {m.label}
+    </span>
+  );
+}
+
+function ManualTranscriptFallback({
+  url,
+  errorMessage,
+  manualText,
+  setManualText,
+  onSubmit,
+  submitting,
+  submitError,
+}: {
+  url: string;
+  errorMessage: string;
+  manualText: string;
+  setManualText: (s: string) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  submitError: string | null;
+}) {
+  return (
+    <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+      <p className="text-sm text-destructive">{errorMessage}</p>
+      <div className="mt-3">
+        <label className="text-xs font-medium text-foreground">
+          Paste transcript manually
+        </label>
+        <p className="mt-1 text-xs text-muted-foreground">
+          One line per sentence. Optionally prefix each line with a timestamp,
+          e.g. <code className="rounded bg-muted px-1">[0:15] Hallo, hoe gaat het?</code>
+        </p>
+        <Textarea
+          value={manualText}
+          onChange={(e) => setManualText(e.target.value)}
+          placeholder={"[0:00] First sentence.\n[0:04] Second sentence."}
+          rows={6}
+          className="mt-2 font-mono text-xs"
+        />
+        {submitError && (
+          <p className="mt-2 text-xs text-destructive">{submitError}</p>
+        )}
+        <div className="mt-2 flex justify-end">
+          <Button
+            type="button"
+            size="sm"
+            disabled={submitting || !url.trim() || !manualText.trim()}
+            onClick={onSubmit}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Loading
+              </>
+            ) : (
+              "Use this transcript"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function EmptyState() {
   return (
