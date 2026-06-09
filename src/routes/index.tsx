@@ -74,12 +74,20 @@ function Index() {
         source: res.source,
       });
     },
-    onError: (err: any) => {
+    onError: (err: any, submittedUrl) => {
+      const isDemo = submittedUrl === DEMO_VIDEO_URL;
       track("transcript_fetch_failed", {
-        video_url: url,
+        video_url: submittedUrl,
         error_type: err?.errorType ?? "unknown",
         error_message: err?.message ?? String(err),
       });
+      if (!isDemo) {
+        track("custom_video_failed", {
+          video_url: submittedUrl,
+          error_type: err?.errorType ?? "unknown",
+        });
+      }
+
     },
   });
 
