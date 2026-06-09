@@ -569,43 +569,41 @@ function EarlyAccessSection() {
   }
 
   return (
-    <section className="mt-12 rounded-lg border border-border bg-card p-6 sm:p-8">
+    <section
+      id="early-access"
+      className="my-20 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-10 shadow-sm sm:p-14"
+    >
       <div className="mx-auto max-w-xl text-center">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Learn Dutch from Real YouTube Videos
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <Sparkles className="h-3 w-3" /> Early Access
+        </span>
+        <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+          Help shape Lingua.
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Click any subtitle sentence to instantly understand its meaning,
-          translation, and expressions in context.
-        </p>
-        <p className="mt-4 text-sm text-foreground">
-          I'm building Lingua to make language learning through real videos
-          faster and more enjoyable.
-        </p>
-        <p className="text-sm text-foreground">
-          Join the early access list and help shape the product.
+        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+          Join the early access list to get new languages, features, and
+          improvements before anyone else.
         </p>
 
         {submitted ? (
-          <p className="mt-6 rounded-md bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Thanks! You're on the early access list. I'll let you know when new
-            features are available.
+          <p className="mt-8 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+            Thanks! You're on the early access list.
           </p>
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-start"
+            className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row"
           >
             <Input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              className="flex-1"
+              placeholder="you@example.com"
+              className="h-11 flex-1 rounded-full bg-background px-5"
             />
-            <Button type="submit" className="shrink-0">
-              Join Early Access
+            <Button type="submit" className="h-11 shrink-0 rounded-full px-6 shadow-md shadow-primary/20">
+              Join waitlist
             </Button>
           </form>
         )}
@@ -613,6 +611,7 @@ function EarlyAccessSection() {
     </section>
   );
 }
+
 
 function SourceBadge({ source }: { source: TranscriptSource }) {
   const map: Record<TranscriptSource, { label: string; cls: string }> = {
