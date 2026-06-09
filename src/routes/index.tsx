@@ -34,7 +34,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
   const saveManualTx = useServerFn(saveManualTranscript);
+  const saveDemoTx = useServerFn(saveDemoTranscript);
   const explainFx = useServerFn(explainSentence);
+
 
   const [url, setUrl] = useState("");
   const [targetLang, setTargetLang] = useState("English");
