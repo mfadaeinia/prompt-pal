@@ -351,43 +351,50 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
               <Sparkles className="h-4 w-4" />
             </div>
-            <div>
-              <h1 className="text-sm font-semibold tracking-tight">Lingua</h1>
-              <p className="text-xs text-muted-foreground">
-                Understand native videos, one sentence at a time.
-              </p>
-            </div>
+            <span className="text-base font-semibold tracking-tight">Lingua</span>
           </div>
-          <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-            prototype
-          </span>
+          <div className="flex items-center gap-3">
+            <a href="#how" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</a>
+            <a href="#why" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</a>
+            <a
+              href="#early-access"
+              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+            >
+              Early access
+            </a>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-6">
         {!videoId && !loadMutation.isPending && !loadMutation.isError && (
-          <DemoHero
-            onStart={() => {
-              setUrl(DEMO_VIDEO_URL);
-              setTargetLang(DEMO_LANGUAGE);
-              track("demo_started", { video_id: DEMO_VIDEO_ID });
-              loadMutation.mutate(DEMO_VIDEO_URL);
-            }}
-            loading={loadMutation.isPending}
-          />
+          <>
+            <DemoHero
+              onStart={() => {
+                setUrl(DEMO_VIDEO_URL);
+                setTargetLang(DEMO_LANGUAGE);
+                track("demo_started", { video_id: DEMO_VIDEO_ID });
+                loadMutation.mutate(DEMO_VIDEO_URL);
+              }}
+              loading={loadMutation.isPending}
+            />
+            <HowItWorks />
+            <WhySection />
+          </>
         )}
 
         {loadMutation.isPending && !videoId && (
-          <div className="mt-10 flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-8 text-sm text-muted-foreground">
+          <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground shadow-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading transcript…
           </div>
         )}
+
 
         {loadMutation.isError && (
           <div className="mt-6 space-y-3">
