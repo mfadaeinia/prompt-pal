@@ -352,29 +352,41 @@ function ExplanationPanel({
   error,
   text,
   onClose,
+  onReplay,
 }: {
   sentence: TranscriptSentence;
   loading: boolean;
   error: string | null;
   text: string | null;
   onClose: () => void;
+  onReplay: () => void;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Sentence
           </p>
           <p className="mt-1 text-sm font-medium">{sentence.text}</p>
         </div>
-        <button
-          onClick={onClose}
-          className="rounded p-1 text-muted-foreground hover:bg-accent"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReplay}
+            className="h-7 gap-1 px-2 text-xs"
+          >
+            <Repeat className="h-3.5 w-3.5" /> Replay
+          </Button>
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-muted-foreground hover:bg-accent"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
       <div className="mt-3 border-t border-border pt-3">
         {loading && (
