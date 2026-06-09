@@ -39,9 +39,32 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       );
     }
 
-    // Group raw caption chunks into sentence-like units.
-    const joinedText = raw.map((r) => r.text.replace(/\s+/g, " ")).join(" ");
-    const decoded = joinedText
+    // Normalize each raw chunk's text and build a flat character timeline so
+    // we can interpolate a precise timestamp for any character position.
+    const chunks = raw.map((r) => ({
+      text: r.text.replace(/\s+/g, " ").trim(),
+      offset: r.offset / 1000, // seconds
+      duration: r.duration / 1000, // seconds
+    }));
+
+    // Build joined text + per-char timestamp lookup.
+    let joined = "";
+    const charTime: number[] = []; // charTime[i] = approx time (s) for char i
+    for (let i = 0; i < chunks.length; i++) {
+      const c = chunks[i];
+      if (i > 0) {
+        joined += " ";
+        charTime.push(chunks[i - 1].offset + chunks[i - 1].duration);
+      }
+      const len = c.text.length;
+      for (let j = 0; j < len; j++) {
+        // Linear interpolation across the chunk's duration.
+        charTime.push(c.offset + (len > 0 ? (j / len) * c.duration : 0));
+      }
+      joined += c.text;
+    }
+
+    const decoded = joined
       .replace(/&amp;#39;/g, "'")
       .replace(/&#39;/g, "'")
       .replace(/&quot;/g, '"')
@@ -49,40 +72,23 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     const sentences: TranscriptSentence[] = [];
     const sentenceRegex = /[^.!?\n]+[.!?]+|[^.!?\n]+$/g;
-    const matches = decoded.match(sentenceRegex) ?? [decoded];
 
-    let chunkIdx = 0;
-    let consumed = 0;
     let id = 0;
-    for (const sRaw of matches) {
-      const s = sRaw.trim();
-      if (!s) continue;
-      const offset = raw[Math.min(chunkIdx, raw.length - 1)]?.offset ?? 0;
-      const duration = raw[Math.min(chunkIdx, raw.length - 1)]?.duration ?? 0;
+    let match: RegExpExecArray | null;
+    while ((match = sentenceRegex.exec(decoded)) !== null) {
+      const text = match[0].trim();
+      if (!text) continue;
+      const startChar = match.index;
+      const startTime = charTime[Math.min(startChar, charTime.length - 1)] ?? 0;
       sentences.push({
         id: id++,
-        text: s,
-        offset: offset / 1000,
-        duration: duration / 1000,
+        text,
+        offset: startTime,
+        duration: 0,
         endTime: 0, // filled below
       });
-      consumed += s.length + 1;
-      while (
-        chunkIdx < raw.length - 1 &&
-        consumed >
-          raw.slice(0, chunkIdx + 1).reduce((acc, r) => acc + r.text.length + 1, 0)
-      ) {
-        chunkIdx++;
-      }
     }
 
-    // Fill endTime from next sentence's start; final = start + max(duration, 5).
-    for (let i = 0; i < sentences.length; i++) {
-      const cur = sentences[i];
-      const next = sentences[i + 1];
-      if (next) cur.endTime = next.offset;
-      else cur.endTime = cur.offset + Math.max(cur.duration, 5);
-    }
 
     return { videoId, sentences };
   });
