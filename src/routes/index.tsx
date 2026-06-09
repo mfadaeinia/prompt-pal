@@ -684,15 +684,15 @@ function ManualTranscriptFallback({
 function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean }) {
   return (
     <section className="mt-6 rounded-xl border border-border bg-gradient-to-b from-primary/5 to-card p-8 text-center sm:p-12">
-      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] uppercase tracking-wider text-primary">
-        Live demo
+      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+        LIVE DEMO
       </span>
       <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
-        Learn Dutch from a real YouTube video
+        Learn Dutch from YouTube videos without constantly pausing.
       </h2>
       <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-        Click any sentence in the transcript to instantly see its meaning,
-        translation, and key expressions in context.
+        Click any subtitle sentence to instantly understand its meaning,
+        translation, and expressions in context.
       </p>
       <Button
         size="lg"
@@ -706,10 +706,13 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
           </>
         ) : (
           <>
-            <PlayCircle className="mr-2 h-5 w-5" /> Try Dutch Demo
+            <PlayCircle className="mr-2 h-5 w-5" /> Try the Dutch Demo
           </>
         )}
       </Button>
+      <p className="mt-3 text-xs text-muted-foreground">
+        No signup required. Try it in under 30 seconds.
+      </p>
     </section>
   );
 }
