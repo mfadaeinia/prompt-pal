@@ -49,6 +49,36 @@ function Index() {
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [manualText, setManualText] = useState("");
+  const [view, setView] = useState<"landing" | "demo">("landing");
+
+  const startDemo = () => {
+    setUrl(DEMO_VIDEO_URL);
+    setTargetLang(DEMO_LANGUAGE);
+    setView("demo");
+    track("demo_started", { video_id: DEMO_VIDEO_ID });
+    if (videoId !== DEMO_VIDEO_ID) {
+      loadMutation.mutate(DEMO_VIDEO_URL);
+    }
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
+  const goHome = () => {
+    setView("landing");
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
+  const navTo = (hash: string) => {
+    const scroll = () => {
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    if (view === "demo") {
+      setView("landing");
+      setTimeout(scroll, 80);
+    } else {
+      scroll();
+    }
+  };
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
