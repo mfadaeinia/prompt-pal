@@ -382,51 +382,58 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <span className="text-base font-semibold tracking-tight">Lingua</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
+          <div className="flex items-center gap-2">
+            {view === "demo" && (
+              <button
+                onClick={goHome}
+                className="mr-1 inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              >
+                ← Back to Home
+              </button>
+            )}
+            <button
+              onClick={goHome}
+              className="flex items-center gap-2.5"
+              aria-label="Lingua home"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <span className="text-base font-semibold tracking-tight">Lingua</span>
+            </button>
           </div>
           <div className="flex items-center gap-3">
-            <a href="#how" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</a>
-            <a href="#why" className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</a>
-            <a
-              href="#early-access"
-              className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-            >
-              Early access
-            </a>
+            <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</button>
+            <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
+            {view === "landing" && (
+              <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
+                <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6">
-        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
+        {view === "landing" && (
           <>
-            <DemoHero
-              onStart={() => {
-                setUrl(DEMO_VIDEO_URL);
-                setTargetLang(DEMO_LANGUAGE);
-                track("demo_started", { video_id: DEMO_VIDEO_ID });
-                loadMutation.mutate(DEMO_VIDEO_URL);
-              }}
-              loading={loadMutation.isPending}
-            />
+            <DemoHero onStart={startDemo} loading={loadMutation.isPending} />
             <HowItWorks />
             <WhySection />
+            <EarlyAccessSection />
           </>
         )}
 
-        {loadMutation.isPending && !videoId && (
+        {view === "demo" && loadMutation.isPending && !videoId && (
           <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground shadow-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading transcript…
           </div>
         )}
 
 
-        {loadMutation.isError && (
+        {view === "demo" && loadMutation.isError && (
           <div className="mt-6 space-y-3">
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
               <p className="font-medium text-foreground">
@@ -440,10 +447,7 @@ function Index() {
                 className="mt-3"
                 onClick={() => {
                   loadMutation.reset();
-                  setUrl(DEMO_VIDEO_URL);
-                  setTargetLang(DEMO_LANGUAGE);
-                  track("demo_started", { video_id: DEMO_VIDEO_ID });
-                  loadMutation.mutate(DEMO_VIDEO_URL);
+                  startDemo();
                 }}
               >
                 <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
