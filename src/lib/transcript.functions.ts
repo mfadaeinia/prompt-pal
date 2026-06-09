@@ -89,6 +89,12 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       });
     }
 
+    // Fill endTime from next sentence's start; final gets a 5s tail.
+    for (let i = 0; i < sentences.length; i++) {
+      const cur = sentences[i];
+      const next = sentences[i + 1];
+      cur.endTime = next ? next.offset : cur.offset + 5;
+    }
 
     return { videoId, sentences };
   });
