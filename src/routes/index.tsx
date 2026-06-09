@@ -509,11 +509,11 @@ function Index() {
 
         <EarlyAccessSection />
 
-        <section className="mt-8 rounded-lg border border-dashed border-border bg-muted/20 p-4 sm:p-6">
+        <section className="mb-16 rounded-2xl border border-dashed border-border bg-muted/30 p-6 sm:p-8">
           <h3 className="text-sm font-semibold tracking-tight">
-            Experimental: try your own YouTube video
+            Experimental · try your own YouTube video
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Automatic transcript loading may not work for every video. If it
             fails, fall back to the Dutch demo.
           </p>
@@ -525,21 +525,21 @@ function Index() {
               track("custom_video_attempted", { video_url: u });
               loadMutation.mutate(u);
             }}
-            className="mt-3 flex flex-col gap-2 sm:flex-row"
+            className="mt-4 flex flex-col gap-2 sm:flex-row"
           >
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-              className="flex-1"
+              className="h-10 flex-1 rounded-full bg-background px-4"
             />
             <Input
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
               placeholder="Your language"
-              className="sm:w-44"
+              className="h-10 rounded-full bg-background px-4 sm:w-44"
             />
-            <Button type="submit" disabled={loadMutation.isPending || !url.trim()}>
+            <Button type="submit" disabled={loadMutation.isPending || !url.trim()} className="h-10 rounded-full px-5">
               {loadMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
@@ -552,9 +552,16 @@ function Index() {
         </section>
       </main>
 
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
+          <span>© {new Date().getFullYear()} Lingua — built for language learners.</span>
+          <span>Dutch Learning Beta</span>
+        </div>
+      </footer>
     </div>
   );
 }
+
 
 function EarlyAccessSection() {
   const [email, setEmail] = useState("");
