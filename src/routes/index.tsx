@@ -367,12 +367,26 @@ function Index() {
           </Button>
         </form>
         {loadMutation.isError && (
-          <p className="mt-2 text-sm text-destructive">
-            {(loadMutation.error as Error).message}
-          </p>
+          <ManualTranscriptFallback
+            url={url}
+            errorMessage={(loadMutation.error as Error).message}
+            manualText={manualText}
+            setManualText={setManualText}
+            onSubmit={() => {
+              if (url.trim() && manualText.trim()) {
+                manualMutation.mutate({ url: url.trim(), text: manualText });
+              }
+            }}
+            submitting={manualMutation.isPending}
+            submitError={
+              manualMutation.isError
+                ? (manualMutation.error as Error).message
+                : null
+            }
+          />
         )}
 
-        {!videoId && !loadMutation.isPending && (
+        {!videoId && !loadMutation.isPending && !loadMutation.isError && (
           <EmptyState />
         )}
 
