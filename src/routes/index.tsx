@@ -5,9 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
   saveManualTranscript,
+  saveDemoTranscript,
   type TranscriptSentence,
   type TranscriptSource,
 } from "@/lib/transcript.functions";
+
 import { explainSentence } from "@/lib/explain.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
