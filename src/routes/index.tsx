@@ -409,7 +409,7 @@ function Index() {
                   loadMutation.mutate(DEMO_VIDEO_URL);
                 }}
               >
-                <PlayCircle className="mr-2 h-4 w-4" /> Try Dutch Demo
+                <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
               </Button>
             </div>
             <ManualTranscriptFallback
