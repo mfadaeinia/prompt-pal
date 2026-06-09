@@ -201,16 +201,55 @@ function Index() {
     setCurrentTime(s.offset);
   }
 
+  const clickCountRef = useRef(0);
+  const replayCountRef = useRef(0);
+  const milestoneFiredRef = useRef(false);
+
+  useEffect(() => {
+    if (!videoId) return;
+    milestoneFiredRef.current = false;
+    clickCountRef.current = 0;
+    replayCountRef.current = 0;
+    const t = window.setTimeout(() => {
+      if (milestoneFiredRef.current) return;
+      milestoneFiredRef.current = true;
+      track("session_3_minutes", {
+        total_sentences_clicked: clickCountRef.current,
+        total_replays: replayCountRef.current,
+        video_id: videoId,
+      });
+    }, 3 * 60 * 1000);
+    return () => window.clearTimeout(t);
+  }, [videoId]);
+
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
     explainMutation.reset();
     explainMutation.mutate(s);
     seekAndPlay(s);
+    const idx = sentences.findIndex((x) => x.id === s.id);
+    clickCountRef.current += 1;
+    track("transcript_sentence_clicked", {
+      sentence_index: idx,
+      sentence_text: s.text,
+      sentence_start_time: s.offset,
+      video_id: videoId,
+    });
   }
 
   function replaySelected() {
-    if (selected) seekAndPlay(selected, true);
+    if (selected) {
+      seekAndPlay(selected, true);
+      const idx = sentences.findIndex((x) => x.id === selected.id);
+      replayCountRef.current += 1;
+      track("sentence_replayed", {
+        sentence_index: idx,
+        sentence_start_time: selected.offset,
+        video_id: videoId,
+      });
+    }
   }
+
 
 
 
