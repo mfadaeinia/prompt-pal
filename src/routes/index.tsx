@@ -182,6 +182,15 @@ function Index() {
     } catch {}
     // 60s feedback trigger
     window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
+    // Demo engagement milestones
+    window.setTimeout(
+      () => track("demo_completed_60_seconds", { video_id: DEMO_VIDEO_ID }),
+      60_000
+    );
+    window.setTimeout(
+      () => track("demo_completed_180_seconds", { video_id: DEMO_VIDEO_ID }),
+      180_000
+    );
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
