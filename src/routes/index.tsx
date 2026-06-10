@@ -1084,6 +1084,7 @@ function Index() {
           getContext={getFeedbackContext}
           onDismiss={() => {
             setShowFeedback(false);
+            feedbackSubmittedRef.current = true;
             try {
               localStorage.setItem("clario_feedback_given", "1");
             } catch {}
@@ -1091,6 +1092,23 @@ function Index() {
         />
       ) : (
         <FeedbackFab onClick={openFeedbackManually} />
+      )}
+      {devPanelEnabled && (
+        <DevAnalyticsPanel
+          getState={() => ({
+            sessionId: sessionIdRef.current,
+            videoId,
+            timeOnPageSeconds: Math.round(
+              ((typeof performance !== "undefined" ? performance.now() : 0) -
+                pageLoadTimeRef.current) /
+                1000
+            ),
+            transcriptClicks: clickCountRef.current,
+            demoStarted: demoStartTimeRef.current !== null,
+            feedbackSubmitted: feedbackSubmittedRef.current,
+            waitlistJoined: waitlistJoinedRef.current,
+          })}
+        />
       )}
     </div>
   );
