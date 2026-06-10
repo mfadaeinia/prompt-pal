@@ -474,22 +474,23 @@ function Index() {
         )}
 
         {view === "demo" && videoId && (
-          <div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-            <div className="space-y-3">
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
-                {embedSrc && (
-                  <iframe
-                    ref={iframeRef}
-                    src={embedSrc}
-                    title="YouTube video"
-                    className="h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                )}
-              </div>
+          <div className="mt-4 space-y-4">
+            <HowItWorksStrip />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <div className="space-y-4">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm">
+                  {embedSrc && (
+                    <iframe
+                      ref={iframeRef}
+                      src={embedSrc}
+                      title="YouTube video"
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
 
-              {selected && (
                 <ExplanationPanel
                   sentence={selected}
                   loading={explainMutation.isPending}
@@ -502,42 +503,44 @@ function Index() {
                   onClose={() => setSelected(null)}
                   onReplay={replaySelected}
                 />
-              )}
-            </div>
-
-            <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-lg border border-border">
-              <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                <span>Transcript · {sentences.length} sentences</span>
-                <div className="flex items-center gap-2">
-                  {transcriptSource && <SourceBadge source={transcriptSource} />}
-                </div>
               </div>
 
-              <ol ref={listRef} className="flex-1 overflow-y-auto">
-                {sentences.map((s) => {
-                  const active = selected?.id === s.id;
-                  const playing = playingId === s.id;
-                  return (
-                    <li key={s.id}>
-                      <button
-                        data-sid={s.id}
-                        onClick={() => jumpTo(s)}
-                        className={`block w-full border-l-2 border-b border-border/60 px-3 py-2 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                          playing
-                            ? "border-l-primary bg-primary/10 font-medium"
-                            : "border-l-transparent"
-                        } ${active ? "bg-accent" : ""}`}
-                      >
-                        <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                          {formatTime(s.offset)}
-                        </span>
-                        {s.text}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </aside>
+              <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                  <span>Transcript · {sentences.length} sentences</span>
+                  <div className="flex items-center gap-2">
+                    {transcriptSource && <SourceBadge source={transcriptSource} />}
+                  </div>
+                </div>
+
+                <ol ref={listRef} className="flex-1 overflow-y-auto">
+                  {sentences.map((s) => {
+                    const active = selected?.id === s.id;
+                    const playing = playingId === s.id;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          data-sid={s.id}
+                          onClick={() => jumpTo(s)}
+                          className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                            active
+                              ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                              : playing
+                              ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                              : "border-l-transparent text-foreground/85"
+                          }`}
+                        >
+                          <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                            {formatTime(s.offset)}
+                          </span>
+                          {s.text}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </aside>
+            </div>
           </div>
         )}
 
