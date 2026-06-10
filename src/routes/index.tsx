@@ -938,15 +938,40 @@ function Index() {
 
 
 function EarlyAccessSection() {
+  // Early Access signups are persisted in Supabase.
+  // To view: Supabase → Table Editor → early_access_signups
+  // Or SQL: SELECT * FROM early_access_signups ORDER BY created_at DESC;
+  const submit = useServerFn(submitEarlyAccess);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
-    track("waitlist_joined", { source: "early_access_section" });
-    track("early_access_joined", { source: "early_access_section" });
-    setSubmitted(true);
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await submit({
+        data: {
+          email: trimmed,
+          pageUrl: typeof window !== "undefined" ? window.location.href : null,
+          source: "early_access_section",
+          sessionId: null,
+          targetLanguage: null,
+          currentDutchLevel: null,
+        },
+      });
+      track("waitlist_joined", { source: "early_access_section" });
+      track("early_access_joined", { source: "early_access_section" });
+      setSubmitted(true);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -968,7 +993,7 @@ function EarlyAccessSection() {
 
         {submitted ? (
           <p className="mt-8 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Thanks! You're on the early access list.
+            You're on the early access list. Thank you!
           </p>
         ) : (
           <form
@@ -982,11 +1007,19 @@ function EarlyAccessSection() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="h-11 flex-1 rounded-full bg-background px-5"
+              disabled={submitting}
             />
-            <Button type="submit" className="h-11 shrink-0 rounded-full px-6 shadow-md shadow-primary/20">
-              Join waitlist
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="h-11 shrink-0 rounded-full px-6 shadow-md shadow-primary/20"
+            >
+              {submitting ? "Joining…" : "Join waitlist"}
             </Button>
           </form>
+        )}
+        {error && !submitted && (
+          <p className="mt-3 text-sm font-medium text-destructive">{error}</p>
         )}
       </div>
     </section>
