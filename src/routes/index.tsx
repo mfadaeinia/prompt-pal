@@ -52,6 +52,31 @@ function Index() {
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [manualText, setManualText] = useState("");
   const [view, setView] = useState<"landing" | "demo">("landing");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
+  const sessionIdRef = useRef<string>("");
+  if (!sessionIdRef.current && typeof crypto !== "undefined") {
+    sessionIdRef.current =
+      (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
+  }
+  const feedbackShownRef = useRef(false);
+  const demoStartTimeRef = useRef<number | null>(null);
+
+  function maybeTriggerFeedback(reason: string) {
+    if (feedbackShownRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        if (localStorage.getItem("clario_feedback_given") === "1") {
+          feedbackShownRef.current = true;
+          return;
+        }
+      } catch {}
+    }
+    feedbackShownRef.current = true;
+    setFeedbackTrigger(reason);
+    setShowFeedback(true);
+  }
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
