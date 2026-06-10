@@ -771,17 +771,9 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="h-12 gap-2 rounded-full px-5 text-sm font-medium text-foreground hover:bg-accent"
-              onClick={onStart}
-            >
-              <Play className="h-4 w-4 fill-current" /> Watch 30-second walkthrough
-            </Button>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            No signup required · Try it in under 30 seconds
+            No signup required.
           </p>
         </div>
 
