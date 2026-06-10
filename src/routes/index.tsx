@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
-import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
@@ -62,6 +62,25 @@ function Index() {
   }
   const feedbackShownRef = useRef(false);
   const demoStartTimeRef = useRef<number | null>(null);
+  const pageLoadTimeRef = useRef<number>(
+    typeof performance !== "undefined" ? performance.now() : 0
+  );
+
+  function getFeedbackContext() {
+    const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
+    const seconds = Math.max(
+      0,
+      Math.round(((typeof performance !== "undefined" ? performance.now() : 0) - start) / 1000)
+    );
+    return {
+      sessionId: sessionIdRef.current,
+      videoId,
+      totalSentenceClicks: clickCountRef.current,
+      timeOnPageSeconds: seconds,
+      demoStarted: demoStartTimeRef.current !== null,
+      pageUrl: typeof window !== "undefined" ? window.location.href : "",
+    };
+  }
 
   function maybeTriggerFeedback(reason: string) {
     if (feedbackShownRef.current) return;
@@ -76,7 +95,23 @@ function Index() {
     feedbackShownRef.current = true;
     setFeedbackTrigger(reason);
     setShowFeedback(true);
+    track("feedback_opened", { trigger_reason: reason, video_id: videoId });
   }
+
+  function openFeedbackManually() {
+    feedbackShownRef.current = true;
+    setFeedbackTrigger("manual");
+    setShowFeedback(true);
+    track("feedback_opened", { trigger_reason: "manual", video_id: videoId });
+  }
+
+  // 60s-on-page trigger (even before demo starts)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = window.setTimeout(() => maybeTriggerFeedback("60s_page"), 60_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
