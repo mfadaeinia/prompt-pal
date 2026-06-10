@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isTestUser, setTestUser } from "@/lib/analytics";
 
 // Developer-only analytics validation panel.
 // Visible when URL contains ?debug=1 OR localStorage["clario_debug"] === "1".
@@ -25,14 +26,37 @@ export function isDevPanelEnabled(): boolean {
   }
 }
 
+export function TestUserBadge() {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    setEnabled(isTestUser());
+    const onStorage = () => setEnabled(isTestUser());
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  if (!enabled) return null;
+  return (
+    <div className="fixed top-3 left-1/2 z-50 -translate-x-1/2 rounded-full border border-yellow-500/60 bg-yellow-500/15 px-3 py-1 text-xs font-medium text-yellow-700 shadow backdrop-blur dark:text-yellow-200">
+      🧪 Test User Mode
+    </div>
+  );
+}
+
 export function DevAnalyticsPanel({ getState }: { getState: () => DevPanelState }) {
   const [s, setS] = useState<DevPanelState>(() => getState());
   const [open, setOpen] = useState(true);
+  const [testMode, setTestMode] = useState<boolean>(() => isTestUser());
 
   useEffect(() => {
     const t = window.setInterval(() => setS(getState()), 1000);
     return () => window.clearInterval(t);
   }, [getState]);
+
+  function toggleTestUser() {
+    const next = !testMode;
+    setTestUser(next);
+    setTestMode(next);
+  }
 
   if (!open) {
     return (
@@ -60,6 +84,19 @@ export function DevAnalyticsPanel({ getState }: { getState: () => DevPanelState 
       <Row k="demo_started" v={s.demoStarted ? "✅" : "—"} />
       <Row k="feedback_submitted" v={s.feedbackSubmitted ? "✅" : "—"} />
       <Row k="waitlist_joined" v={s.waitlistJoined ? "✅" : "—"} />
+      <Row k="is_test_user" v={testMode ? "✅ true" : "false"} />
+
+      <button
+        onClick={toggleTestUser}
+        className={`mt-2 w-full rounded px-2 py-1.5 text-[11px] font-semibold transition ${
+          testMode
+            ? "bg-yellow-500 text-black hover:bg-yellow-400"
+            : "bg-white/10 text-white hover:bg-white/20"
+        }`}
+      >
+        {testMode ? "🧪 Test User: ON (click to disable)" : "Mark this browser as Test User"}
+      </button>
+
       <p className="mt-2 text-[10px] text-white/40">?debug=1 or localStorage clario_debug=1</p>
     </div>
   );
