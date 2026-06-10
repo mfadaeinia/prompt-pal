@@ -648,6 +648,23 @@ function Index() {
           <span>Dutch Learning Beta</span>
         </div>
       </footer>
+
+      {showOnboarding && view === "demo" && (
+        <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
+      )}
+      {showFeedback && (
+        <FeedbackWidget
+          videoId={videoId}
+          sessionId={sessionIdRef.current}
+          triggerReason={feedbackTrigger}
+          onDismiss={() => {
+            setShowFeedback(false);
+            try {
+              localStorage.setItem("clario_feedback_given", "1");
+            } catch {}
+          }}
+        />
+      )}
     </div>
   );
 }
