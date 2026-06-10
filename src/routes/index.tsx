@@ -19,6 +19,7 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
