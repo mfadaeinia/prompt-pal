@@ -24,11 +24,11 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lingua — understand native videos, one sentence at a time" },
+      { title: "Clario — Understand content in context" },
       {
         name: "description",
         content:
-          "Paste a YouTube link. Tap any sentence in the transcript to get a quick, plain explanation in your language.",
+          "Clario helps people understand content in context. Click any subtitle sentence and instantly see translations, meaning, and expression notes.",
       },
     ],
   }),
