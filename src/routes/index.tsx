@@ -426,14 +426,39 @@ function Index() {
     };
   }, [videoId]);
 
+  const [activeOutOfView, setActiveOutOfView] = useState(false);
   useEffect(() => {
-    if (!playingId || !listRef.current) return;
+    if (!playingId || !listRef.current) {
+      setActiveOutOfView(false);
+      return;
+    }
+    const container = listRef.current;
+    const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    if (!el) return;
+    // On mobile: NEVER auto-scroll. Just track whether the active sentence
+    // is visible so we can offer a manual "Jump to current" affordance.
+    if (isMobile) {
+      const cRect = container.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      const inView = eRect.bottom > cRect.top + 8 && eRect.top < cRect.bottom - 8;
+      setActiveOutOfView(!inView);
+      return;
+    }
+    // Desktop: keep the existing follow-the-playback behavior, but pause
+    // briefly after the user scrolls so we don't fight them.
     if (performance.now() < userScrollingUntilRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(
-      `[data-sid="${playingId}"]`
-    );
-    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [playingId]);
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [playingId, isMobile]);
+
+  function jumpToCurrentSentence() {
+    if (!playingId || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      setActiveOutOfView(false);
+      track("transcript_jump_to_current_clicked", { video_id: videoId });
+    }
+  }
 
   // Auto-sync explanation panel with the currently playing sentence.
   useEffect(() => {
