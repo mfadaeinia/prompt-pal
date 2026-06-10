@@ -51,6 +51,16 @@ export function setUserProperties(props: Record<string, any>) {
 
 export function track(event: string, props?: Record<string, any>) {
   if (typeof window === "undefined") return;
+  // Verification logging: enabled via ?debug=1 or localStorage clario_debug=1.
+  try {
+    const debug =
+      new URLSearchParams(window.location.search).get("debug") === "1" ||
+      localStorage.getItem("clario_debug") === "1";
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.info("[analytics]", event, props ?? {});
+    }
+  } catch {}
   posthog.capture(event, props);
 }
 
