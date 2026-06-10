@@ -395,17 +395,17 @@ function Index() {
             <button
               onClick={goHome}
               className="flex items-center gap-2.5"
-              aria-label="Lingua home"
+              aria-label="Clario home"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold tracking-tight">Lingua</span>
+              <span className="text-base font-semibold tracking-tight">Clario</span>
             </button>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
