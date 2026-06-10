@@ -24,11 +24,11 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lingua — understand native videos, one sentence at a time" },
+      { title: "Clario — Understand content in context" },
       {
         name: "description",
         content:
-          "Paste a YouTube link. Tap any sentence in the transcript to get a quick, plain explanation in your language.",
+          "Clario helps people understand content in context. Click any subtitle sentence and instantly see translations, meaning, and expression notes.",
       },
     ],
   }),
@@ -395,17 +395,17 @@ function Index() {
             <button
               onClick={goHome}
               className="flex items-center gap-2.5"
-              aria-label="Lingua home"
+              aria-label="Clario home"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold tracking-tight">Lingua</span>
+              <span className="text-base font-semibold tracking-tight">Clario</span>
             </button>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Lingua</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
@@ -474,22 +474,23 @@ function Index() {
         )}
 
         {view === "demo" && videoId && (
-          <div className="mt-2 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-            <div className="space-y-3">
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black">
-                {embedSrc && (
-                  <iframe
-                    ref={iframeRef}
-                    src={embedSrc}
-                    title="YouTube video"
-                    className="h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                )}
-              </div>
+          <div className="mt-4 space-y-4">
+            <HowItWorksStrip />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <div className="space-y-4">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm">
+                  {embedSrc && (
+                    <iframe
+                      ref={iframeRef}
+                      src={embedSrc}
+                      title="YouTube video"
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
 
-              {selected && (
                 <ExplanationPanel
                   sentence={selected}
                   loading={explainMutation.isPending}
@@ -502,42 +503,44 @@ function Index() {
                   onClose={() => setSelected(null)}
                   onReplay={replaySelected}
                 />
-              )}
-            </div>
-
-            <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-lg border border-border">
-              <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                <span>Transcript · {sentences.length} sentences</span>
-                <div className="flex items-center gap-2">
-                  {transcriptSource && <SourceBadge source={transcriptSource} />}
-                </div>
               </div>
 
-              <ol ref={listRef} className="flex-1 overflow-y-auto">
-                {sentences.map((s) => {
-                  const active = selected?.id === s.id;
-                  const playing = playingId === s.id;
-                  return (
-                    <li key={s.id}>
-                      <button
-                        data-sid={s.id}
-                        onClick={() => jumpTo(s)}
-                        className={`block w-full border-l-2 border-b border-border/60 px-3 py-2 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                          playing
-                            ? "border-l-primary bg-primary/10 font-medium"
-                            : "border-l-transparent"
-                        } ${active ? "bg-accent" : ""}`}
-                      >
-                        <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                          {formatTime(s.offset)}
-                        </span>
-                        {s.text}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </aside>
+              <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                  <span>Transcript · {sentences.length} sentences</span>
+                  <div className="flex items-center gap-2">
+                    {transcriptSource && <SourceBadge source={transcriptSource} />}
+                  </div>
+                </div>
+
+                <ol ref={listRef} className="flex-1 overflow-y-auto">
+                  {sentences.map((s) => {
+                    const active = selected?.id === s.id;
+                    const playing = playingId === s.id;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          data-sid={s.id}
+                          onClick={() => jumpTo(s)}
+                          className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                            active
+                              ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                              : playing
+                              ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                              : "border-l-transparent text-foreground/85"
+                          }`}
+                        >
+                          <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                            {formatTime(s.offset)}
+                          </span>
+                          {s.text}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </aside>
+            </div>
           </div>
         )}
 
@@ -589,7 +592,7 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Lingua — built for language learners.</span>
+          <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
           <span>Dutch Learning Beta</span>
         </div>
       </footer>
@@ -620,7 +623,7 @@ function EarlyAccessSection() {
           <Sparkles className="h-3 w-3" /> Early Access
         </span>
         <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Help shape Lingua.
+          Help shape Clario.
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
           Join the early access list to get new languages, features, and
@@ -768,17 +771,9 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="h-12 gap-2 rounded-full px-5 text-sm font-medium text-foreground hover:bg-accent"
-              onClick={onStart}
-            >
-              <Play className="h-4 w-4 fill-current" /> Watch 30-second walkthrough
-            </Button>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            No signup required · Try it in under 30 seconds
+            No signup required.
           </p>
         </div>
 
@@ -807,7 +802,7 @@ function ProductMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <span className="ml-3 truncate text-[11px] text-muted-foreground">
-            lingua.app / dutch-demo
+            clario.app / dutch-demo
           </span>
         </div>
         <div className="grid grid-cols-[1.4fr_1fr] gap-0">
@@ -908,7 +903,7 @@ function WhySection() {
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Lingua</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Clario</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
           Built for learners who want to actually enjoy the language.
         </h2>
@@ -931,6 +926,20 @@ function WhySection() {
 
 
 
+function parseExplanation(text: string | null) {
+  if (!text) return { translation: "", meaning: "", note: "" };
+  const get = (label: string) => {
+    const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
+    const m = text.match(re);
+    return m ? m[1].trim() : "";
+  };
+  return {
+    translation: get("Translation"),
+    meaning: get("Meaning"),
+    note: get("Note") || get("Notes") || get("Expression Notes"),
+  };
+}
+
 function ExplanationPanel({
   sentence,
   loading,
@@ -939,28 +948,49 @@ function ExplanationPanel({
   onClose,
   onReplay,
 }: {
-  sentence: TranscriptSentence;
+  sentence: TranscriptSentence | null;
   loading: boolean;
   error: string | null;
   text: string | null;
   onClose: () => void;
   onReplay: () => void;
 }) {
+  if (!sentence) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-border bg-card/60 p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <MousePointerClick className="h-6 w-6" />
+        </div>
+        <p className="mt-4 text-base font-medium text-foreground">
+          Click any transcript sentence
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          You'll instantly see its translation, meaning, and expression notes here.
+        </p>
+      </div>
+    );
+  }
+
+  const parsed = parseExplanation(text);
+  const showStructured = !loading && !error && (parsed.translation || parsed.meaning || parsed.note);
+
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Sentence
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Selected sentence
           </p>
-          <p className="mt-1 text-sm font-medium">{sentence.text}</p>
+          <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
+            {sentence.text}
+          </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-7 gap-1 px-2 text-xs"
+            className="h-8 gap-1 px-2 text-xs"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -973,19 +1003,79 @@ function ExplanationPanel({
           </button>
         </div>
       </div>
-      <div className="mt-3 border-t border-border pt-3">
+
+      <div className="mt-5 border-t border-border pt-5">
         {loading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
           </div>
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {text && (
+        {showStructured && (
+          <div className="space-y-5">
+            {parsed.translation && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Translation
+                </h4>
+                <p className="mt-1.5 text-base leading-relaxed text-foreground">
+                  {parsed.translation}
+                </p>
+              </div>
+            )}
+            {parsed.meaning && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Meaning
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {parsed.meaning}
+                </p>
+              </div>
+            )}
+            {parsed.note && parsed.note !== "—" && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Expression Notes
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {parsed.note}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        {!loading && !error && !showStructured && text && (
           <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
             {text}
           </pre>
         )}
       </div>
+    </div>
+  );
+}
+
+function HowItWorksStrip() {
+  const steps = [
+    { icon: Tv, label: "Watch" },
+    { icon: MousePointerClick, label: "Click a sentence" },
+    { icon: Brain, label: "Understand instantly" },
+  ];
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:gap-3 sm:text-sm">
+      {steps.map((s, i) => (
+        <span key={s.label} className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <s.icon className="h-3.5 w-3.5" />
+            </span>
+            {s.label}
+          </span>
+          {i < steps.length - 1 && (
+            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+        </span>
+      ))}
     </div>
   );
 }
