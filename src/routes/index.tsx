@@ -1106,7 +1106,7 @@ function Index() {
             transcriptClicks: clickCountRef.current,
             demoStarted: demoStartTimeRef.current !== null,
             feedbackSubmitted: feedbackSubmittedRef.current,
-            waitlistJoined: waitlistJoinedRef.current,
+            waitlistJoined: waitlistJoinedRef.current || (typeof window !== "undefined" && localStorage.getItem("clario_waitlist_joined") === "1"),
           })}
         />
       )}
