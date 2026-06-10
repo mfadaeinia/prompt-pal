@@ -1143,6 +1143,7 @@ function EarlyAccessSection() {
         },
       });
       track("waitlist_joined", { source: "early_access_section" });
+      try { localStorage.setItem("clario_waitlist_joined", "1"); } catch {}
       track("early_access_joined", { source: "early_access_section" });
       setSubmitted(true);
     } catch (err) {
