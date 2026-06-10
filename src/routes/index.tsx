@@ -1112,18 +1112,19 @@ function parseExplanation(text: string | null) {
   };
 }
 
+type ExplanationPanelEntry =
+  | { status: "loading" }
+  | { status: "ready"; translation: string; meaning: string; note: string }
+  | { status: "error"; error: string };
+
 function ExplanationPanel({
   sentence,
-  loading,
-  error,
-  text,
+  entry,
   onClose,
   onReplay,
 }: {
   sentence: TranscriptSentence | null;
-  loading: boolean;
-  error: string | null;
-  text: string | null;
+  entry: ExplanationPanelEntry | undefined;
   onClose: () => void;
   onReplay: () => void;
 }) {
@@ -1138,24 +1139,25 @@ function ExplanationPanel({
           <MousePointerClick className="h-7 w-7" />
         </div>
         <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-          👇 Click any transcript sentence to instantly understand it.
+          ▶︎ Press play — the explanation follows the video.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Translation, meaning, and expression notes will appear right here.
+          Or click any transcript sentence to jump to it. Translation, meaning, and expression notes appear right here.
         </p>
       </div>
     );
   }
 
-  const parsed = parseExplanation(text);
-  const showStructured = !loading && !error && (parsed.translation || parsed.meaning || parsed.note);
+  const ready = entry && entry.status === "ready" ? entry : null;
+  const isLoading = !entry || entry.status === "loading";
+  const error = entry && entry.status === "error" ? entry.error : null;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-            Selected sentence
+            Now playing
           </p>
           <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
             {sentence.text}
@@ -1181,55 +1183,74 @@ function ExplanationPanel({
       </div>
 
       <div className="mt-5 border-t border-border pt-5">
-        {loading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
-          </div>
-        )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {showStructured && (
+        {ready ? (
           <div className="space-y-5">
-            {parsed.translation && (
+            {ready.translation && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
                   Translation
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
-                  {parsed.translation}
+                  {ready.translation}
                 </p>
               </div>
             )}
-            {parsed.meaning && (
+            {ready.meaning && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
                   Meaning
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {parsed.meaning}
+                  {ready.meaning}
                 </p>
               </div>
             )}
-            {parsed.note && parsed.note !== "—" && (
+            {ready.note && ready.note !== "—" && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
                   Expression Notes
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {parsed.note}
+                  {ready.note}
                 </p>
               </div>
             )}
+            {!ready.translation && !ready.meaning && !ready.note && (
+              <FallbackHint />
+            )}
           </div>
-        )}
-        {!loading && !error && !showStructured && text && (
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
-            {text}
-          </pre>
+        ) : error ? (
+          <div className="space-y-3">
+            <p className="text-sm text-destructive">{error}</p>
+            <FallbackHint />
+          </div>
+        ) : (
+          // Graceful fallback while the explanation is preloading — no spinner blocking the UI.
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Preparing translation, meaning, and notes for this sentence…
+            </p>
+            {isLoading && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Loading
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>
   );
 }
+
+function FallbackHint() {
+  return (
+    <p className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      Explanation not available for this line — pause the video to read the
+      original sentence above, or click another line.
+    </p>
+  );
+}
+
 
 function HowItWorksStrip() {
   const steps = [
