@@ -11,6 +11,7 @@ import {
 
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
+import { recordVideoSession } from "@/lib/video-sessions.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -284,6 +285,82 @@ function Index() {
   useEffect(() => {
     setExplanationCache({});
     inFlightRef.current = new Set();
+  }, [videoId]);
+
+  // Track how long the user stays on a video session and persist to Supabase.
+  // We upsert keyed by (session_id, video_id) every 15s while the tab is
+  // visible, and flush a final "ended" record on hide/unload.
+  useEffect(() => {
+    if (!videoId) return;
+    const sessionId = sessionIdRef.current;
+    if (!sessionId) return;
+
+    const startedAt =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    let visibleSince = startedAt;
+    let accumulatedMs = 0;
+    let lastSent = -1;
+
+    const now = () =>
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+
+    const currentSeconds = () => {
+      const live = document.visibilityState === "visible" ? now() - visibleSince : 0;
+      return Math.max(0, Math.round((accumulatedMs + live) / 1000));
+    };
+
+    const flush = (ended: boolean) => {
+      const seconds = currentSeconds();
+      if (!ended && seconds === lastSent) return;
+      lastSent = seconds;
+      recordVideoSession({
+        data: {
+          sessionId,
+          videoId,
+          durationSeconds: seconds,
+          videoUrl: url || null,
+          targetLanguage: targetLang || null,
+          pageUrl: typeof window !== "undefined" ? window.location.href : null,
+          ended,
+        },
+      }).catch(() => {
+        // Best-effort engagement telemetry — never surface to user.
+      });
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        visibleSince = now();
+      } else {
+        accumulatedMs += now() - visibleSince;
+        flush(false);
+      }
+    };
+    const onPageHide = () => {
+      if (document.visibilityState === "visible") {
+        accumulatedMs += now() - visibleSince;
+        visibleSince = now();
+      }
+      flush(true);
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onPageHide);
+    const interval = window.setInterval(() => flush(false), 15_000);
+
+    // Initial write so the row exists right away.
+    flush(false);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onPageHide);
+      window.clearInterval(interval);
+      if (document.visibilityState === "visible") {
+        accumulatedMs += now() - visibleSince;
+      }
+      flush(true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
 
   // Preload all explanations for the loaded transcript (especially the demo)

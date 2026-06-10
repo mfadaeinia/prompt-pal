@@ -125,6 +125,51 @@ export type Database = {
         }
         Relationships: []
       }
+      video_sessions: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          ended: boolean
+          id: string
+          last_seen_at: string
+          page_url: string | null
+          session_id: string
+          started_at: string
+          target_language: string | null
+          updated_at: string
+          video_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number
+          ended?: boolean
+          id?: string
+          last_seen_at?: string
+          page_url?: string | null
+          session_id: string
+          started_at?: string
+          target_language?: string | null
+          updated_at?: string
+          video_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          ended?: boolean
+          id?: string
+          last_seen_at?: string
+          page_url?: string | null
+          session_id?: string
+          started_at?: string
+          target_language?: string | null
+          updated_at?: string
+          video_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       youtube_transcript_cache: {
         Row: {
           created_at: string
