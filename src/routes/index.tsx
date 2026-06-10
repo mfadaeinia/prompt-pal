@@ -1142,11 +1142,17 @@ function EarlyAccessSection() {
           currentDutchLevel: null,
         },
       });
-      track("waitlist_joined", { source: "early_access_section" });
+      const eventProps = { source: "early_access_section", email_provided: true };
+      // TEMP DEBUG: verify PostHog event firing for waitlist conversion
+      console.log("waitlist_joined", eventProps);
+      console.log("early_access_joined", eventProps);
+      track("waitlist_joined", eventProps);
+      track("early_access_joined", eventProps);
+      waitlistJoinedRef.current = true;
       try { localStorage.setItem("clario_waitlist_joined", "1"); } catch {}
-      track("early_access_joined", { source: "early_access_section" });
       setSubmitted(true);
     } catch (err) {
+      console.error("waitlist_submit_failed", err);
       setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
