@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
@@ -50,6 +52,31 @@ function Index() {
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [manualText, setManualText] = useState("");
   const [view, setView] = useState<"landing" | "demo">("landing");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
+  const sessionIdRef = useRef<string>("");
+  if (!sessionIdRef.current && typeof crypto !== "undefined") {
+    sessionIdRef.current =
+      (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
+  }
+  const feedbackShownRef = useRef(false);
+  const demoStartTimeRef = useRef<number | null>(null);
+
+  function maybeTriggerFeedback(reason: string) {
+    if (feedbackShownRef.current) return;
+    if (typeof window !== "undefined") {
+      try {
+        if (localStorage.getItem("clario_feedback_given") === "1") {
+          feedbackShownRef.current = true;
+          return;
+        }
+      } catch {}
+    }
+    feedbackShownRef.current = true;
+    setFeedbackTrigger(reason);
+    setShowFeedback(true);
+  }
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
@@ -59,8 +86,27 @@ function Index() {
     if (videoId !== DEMO_VIDEO_ID) {
       loadMutation.mutate(DEMO_VIDEO_URL);
     }
+    demoStartTimeRef.current = performance.now();
+    // First-time onboarding
+    try {
+      if (typeof window !== "undefined" && !localStorage.getItem("clario_onboarded")) {
+        setShowOnboarding(true);
+        track("onboarding_seen", { video_id: DEMO_VIDEO_ID });
+      }
+    } catch {}
+    // 60s feedback trigger
+    window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
+  const dismissOnboarding = (completed: boolean) => {
+    setShowOnboarding(false);
+    try {
+      localStorage.setItem("clario_onboarded", "1");
+    } catch {}
+    if (completed) track("onboarding_completed", { video_id: videoId });
+  };
+
 
   const goHome = () => {
     setView("landing");
@@ -354,6 +400,12 @@ function Index() {
         video_id: videoId,
       });
     }
+    // Dismiss onboarding on first interaction
+    if (showOnboarding) dismissOnboarding(true);
+    // 3-click feedback trigger
+    if (clickCountRef.current >= 3) {
+      maybeTriggerFeedback("3_clicks");
+    }
   }
 
   function replaySelected() {
@@ -596,6 +648,23 @@ function Index() {
           <span>Dutch Learning Beta</span>
         </div>
       </footer>
+
+      {showOnboarding && view === "demo" && (
+        <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
+      )}
+      {showFeedback && (
+        <FeedbackWidget
+          videoId={videoId}
+          sessionId={sessionIdRef.current}
+          triggerReason={feedbackTrigger}
+          onDismiss={() => {
+            setShowFeedback(false);
+            try {
+              localStorage.setItem("clario_feedback_given", "1");
+            } catch {}
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -957,15 +1026,19 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-border bg-card/60 p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <MousePointerClick className="h-6 w-6" />
+      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+        />
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+          <MousePointerClick className="h-7 w-7" />
         </div>
-        <p className="mt-4 text-base font-medium text-foreground">
-          Click any transcript sentence
+        <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
+          👈 Click any transcript sentence to instantly understand it.
         </p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          You'll instantly see its translation, meaning, and expression notes here.
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Translation, meaning, and expression notes will appear right here.
         </p>
       </div>
     );

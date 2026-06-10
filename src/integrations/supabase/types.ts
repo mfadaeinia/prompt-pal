@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      feedback_responses: {
+        Row: {
+          created_at: string
+          id: string
+          sentiment: string
+          session_id: string | null
+          trigger_reason: string | null
+          useful_text: string | null
+          video_id: string | null
+          would_use_again: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sentiment: string
+          session_id?: string | null
+          trigger_reason?: string | null
+          useful_text?: string | null
+          video_id?: string | null
+          would_use_again?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sentiment?: string
+          session_id?: string | null
+          trigger_reason?: string | null
+          useful_text?: string | null
+          video_id?: string | null
+          would_use_again?: string | null
+        }
+        Relationships: []
+      }
       youtube_transcript_cache: {
         Row: {
           created_at: string
