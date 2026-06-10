@@ -57,6 +57,8 @@ function Index() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
+  const isMobile = useIsMobile();
+  const [studyMode, setStudyMode] = useState(false);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
