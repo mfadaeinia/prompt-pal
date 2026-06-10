@@ -1026,15 +1026,19 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-border bg-card/60 p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <MousePointerClick className="h-6 w-6" />
+      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+        />
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+          <MousePointerClick className="h-7 w-7" />
         </div>
-        <p className="mt-4 text-base font-medium text-foreground">
-          Click any transcript sentence
+        <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
+          👈 Click any transcript sentence to instantly understand it.
         </p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          You'll instantly see its translation, meaning, and expression notes here.
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          Translation, meaning, and expression notes will appear right here.
         </p>
       </div>
     );
