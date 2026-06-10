@@ -592,7 +592,7 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Lingua — built for language learners.</span>
+          <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
           <span>Dutch Learning Beta</span>
         </div>
       </footer>
