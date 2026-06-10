@@ -11,6 +11,7 @@ import {
 
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
+import { recordVideoSession } from "@/lib/video-sessions.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
