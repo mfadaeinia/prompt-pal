@@ -731,52 +731,32 @@ function Index() {
                   )}
                 </div>
 
-                {/* Desktop Watch Mode teaser */}
-                {!isMobile && !studyMode && (
-                  <div className="animate-clario-pulse relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
-                    />
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-                      <BookOpen className="h-7 w-7" />
+                {/* Compact Learning Mode CTA (Watch Mode only, directly below video) */}
+                {!studyMode && (
+                  <div className="animate-clario-pulse flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-3 shadow-sm sm:p-4">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                      <BookOpen className="h-5 w-5" />
                     </div>
-                    <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-                      Want translations, explanations and clickable captions?
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      Learning Mode shows every sentence with instant meaning, translation, and expression notes.
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-tight text-foreground">
+                        Want to understand every sentence?
+                      </p>
+                      <p className="mt-0.5 text-xs leading-snug text-muted-foreground line-clamp-2">
+                        Open Learning Mode for translations, explanations and clickable transcript.
+                      </p>
+                    </div>
                     <Button
                       onClick={() => {
                         setStudyMode(true);
                         track("study_mode_opened", { video_id: videoId });
                       }}
-                      className="mt-5 h-11 rounded-full px-6 text-sm font-medium shadow-lg shadow-primary/20"
+                      size="sm"
+                      className="shrink-0 rounded-full px-3 text-xs font-semibold shadow-sm sm:px-4 sm:text-sm"
                     >
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Open Learning Mode
+                      <BookOpen className="mr-1 h-3.5 w-3.5 sm:mr-1.5 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Open Learning Mode</span>
+                      <span className="sm:hidden">Open</span>
                     </Button>
-                  </div>
-                )}
-
-                {/* Mobile in-flow mode indicator */}
-                {isMobile && !studyMode && (
-                  <div className="rounded-xl border border-border bg-card p-4 shadow-sm lg:hidden">
-                    <div className="flex items-start gap-3">
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                        <Tv className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">
-                          Watch Mode
-                        </p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                          Just press play and listen. Tap "Study This Video"
-                          below to explore every sentence.
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 )}
 
