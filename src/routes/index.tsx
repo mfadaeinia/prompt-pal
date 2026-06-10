@@ -926,6 +926,20 @@ function WhySection() {
 
 
 
+function parseExplanation(text: string | null) {
+  if (!text) return { translation: "", meaning: "", note: "" };
+  const get = (label: string) => {
+    const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
+    const m = text.match(re);
+    return m ? m[1].trim() : "";
+  };
+  return {
+    translation: get("Translation"),
+    meaning: get("Meaning"),
+    note: get("Note") || get("Notes") || get("Expression Notes"),
+  };
+}
+
 function ExplanationPanel({
   sentence,
   loading,
@@ -934,28 +948,49 @@ function ExplanationPanel({
   onClose,
   onReplay,
 }: {
-  sentence: TranscriptSentence;
+  sentence: TranscriptSentence | null;
   loading: boolean;
   error: string | null;
   text: string | null;
   onClose: () => void;
   onReplay: () => void;
 }) {
+  if (!sentence) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-border bg-card/60 p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <MousePointerClick className="h-6 w-6" />
+        </div>
+        <p className="mt-4 text-base font-medium text-foreground">
+          Click any transcript sentence
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          You'll instantly see its translation, meaning, and expression notes here.
+        </p>
+      </div>
+    );
+  }
+
+  const parsed = parseExplanation(text);
+  const showStructured = !loading && !error && (parsed.translation || parsed.meaning || parsed.note);
+
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Sentence
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Selected sentence
           </p>
-          <p className="mt-1 text-sm font-medium">{sentence.text}</p>
+          <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
+            {sentence.text}
+          </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-7 gap-1 px-2 text-xs"
+            className="h-8 gap-1 px-2 text-xs"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -968,19 +1003,79 @@ function ExplanationPanel({
           </button>
         </div>
       </div>
-      <div className="mt-3 border-t border-border pt-3">
+
+      <div className="mt-5 border-t border-border pt-5">
         {loading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Thinking…
           </div>
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {text && (
+        {showStructured && (
+          <div className="space-y-5">
+            {parsed.translation && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Translation
+                </h4>
+                <p className="mt-1.5 text-base leading-relaxed text-foreground">
+                  {parsed.translation}
+                </p>
+              </div>
+            )}
+            {parsed.meaning && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Meaning
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {parsed.meaning}
+                </p>
+              </div>
+            )}
+            {parsed.note && parsed.note !== "—" && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Expression Notes
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {parsed.note}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        {!loading && !error && !showStructured && text && (
           <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
             {text}
           </pre>
         )}
       </div>
+    </div>
+  );
+}
+
+function HowItWorksStrip() {
+  const steps = [
+    { icon: Tv, label: "Watch" },
+    { icon: MousePointerClick, label: "Click a sentence" },
+    { icon: Brain, label: "Understand instantly" },
+  ];
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:gap-3 sm:text-sm">
+      {steps.map((s, i) => (
+        <span key={s.label} className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <s.icon className="h-3.5 w-3.5" />
+            </span>
+            {s.label}
+          </span>
+          {i < steps.length - 1 && (
+            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+        </span>
+      ))}
     </div>
   );
 }
