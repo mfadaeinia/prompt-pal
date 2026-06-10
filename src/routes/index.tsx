@@ -911,7 +911,7 @@ function WhySection() {
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Lingua</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Clario</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
           Built for learners who want to actually enjoy the language.
         </h2>
