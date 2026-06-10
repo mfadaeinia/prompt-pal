@@ -78,17 +78,24 @@ export function FeedbackWidget({
           demoStarted: ctx.demoStarted,
         },
       });
-      track("feedback_submitted", {
-        sentiment,
-        would_use_again: again,
-        has_text: !!text.trim(),
-        has_email: !!email.trim(),
-        video_id: ctx.videoId,
-        total_sentence_clicks: ctx.totalSentenceClicks,
-        time_on_page_seconds: ctx.timeOnPageSeconds,
-        demo_started: ctx.demoStarted,
-      });
-    } catch {}
+    } catch (err) {
+      // TEMP DEBUG: log DB write failures so they don't silently swallow analytics
+      console.error("feedback_submit_db_failed", err);
+    }
+    const submittedPayload = {
+      sentiment,
+      would_use_again: again,
+      has_text: !!text.trim(),
+      has_email: !!email.trim(),
+      video_id: ctx.videoId,
+      total_sentence_clicks: ctx.totalSentenceClicks,
+      time_on_page_seconds: ctx.timeOnPageSeconds,
+      demo_started: ctx.demoStarted,
+      trigger_reason: triggerReason,
+    };
+    // TEMP DEBUG: verify PostHog event firing for feedback conversion
+    console.log("feedback_submitted", submittedPayload);
+    track("feedback_submitted", submittedPayload);
     setStep("done");
     setTimeout(onDismiss, 2200);
   }
