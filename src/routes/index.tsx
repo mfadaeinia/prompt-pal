@@ -662,9 +662,61 @@ function Index() {
         )}
 
         {view === "demo" && videoId && (
-          <div className="mt-4 space-y-4">
+          <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
             <HowItWorksStrip />
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+
+            {/* Desktop mode toggle */}
+            <div className="hidden items-center justify-center gap-2 lg:flex">
+              <div
+                className="inline-flex items-center rounded-full border border-border bg-card p-1 shadow-sm"
+                role="group"
+                aria-label="View mode"
+              >
+                <button
+                  onClick={() => {
+                    if (studyMode) {
+                      setStudyMode(false);
+                      setSelected(null);
+                      track("study_mode_closed", { video_id: videoId });
+                    }
+                  }}
+                  aria-pressed={!studyMode}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition ${
+                    !studyMode
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Tv className="h-4 w-4" />
+                  Watch Mode
+                </button>
+                <button
+                  onClick={() => {
+                    if (!studyMode) {
+                      setStudyMode(true);
+                      track("study_mode_opened", { video_id: videoId });
+                    }
+                  }}
+                  aria-pressed={studyMode}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition ${
+                    studyMode
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Learning Mode
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={`grid gap-6 ${
+                studyMode
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"
+                  : "grid-cols-1"
+              }`}
+            >
               <div className="space-y-4">
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
@@ -679,67 +731,75 @@ function Index() {
                   )}
                 </div>
 
-                {/* Mobile-only: Watch Mode default, with toggle to enter Study Mode */}
-                {isMobile && (
-                  <div className="lg:hidden">
-                    {!studyMode ? (
-                      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                            <BookOpen className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground">Watching only</p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                              Just press play and listen. Open Study Mode whenever you want sentence-by-sentence help.
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            setStudyMode(true);
-                            track("study_mode_opened", { video_id: videoId });
-                          }}
-                          className="mt-3 h-11 w-full rounded-full text-sm font-medium"
-                        >
-                          <BookOpen className="mr-2 h-4 w-4" /> Open Study Mode
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
-                        <span className="font-medium text-foreground">Study Mode</span>
-                        <button
-                          onClick={() => {
-                            setStudyMode(false);
-                            setSelected(null);
-                            track("study_mode_closed", { video_id: videoId });
-                          }}
-                          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                        >
-                          Hide transcript <ChevronDown className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
+                {/* Desktop Watch Mode teaser */}
+                {!isMobile && !studyMode && (
+                  <div className="animate-clario-pulse relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+                    />
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+                      <BookOpen className="h-7 w-7" />
+                    </div>
+                    <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
+                      Want translations, explanations and clickable captions?
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      Learning Mode shows every sentence with instant meaning, translation, and expression notes.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setStudyMode(true);
+                        track("study_mode_opened", { video_id: videoId });
+                      }}
+                      className="mt-5 h-11 rounded-full px-6 text-sm font-medium shadow-lg shadow-primary/20"
+                    >
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Open Learning Mode
+                    </Button>
                   </div>
                 )}
 
-                {(!isMobile || studyMode) && (
+                {/* Mobile in-flow mode indicator */}
+                {isMobile && !studyMode && (
+                  <div className="rounded-xl border border-border bg-card p-4 shadow-sm lg:hidden">
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                        <Tv className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          Watch Mode
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                          Just press play and listen. Tap "Study This Video"
+                          below to explore every sentence.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {studyMode && (
                   <ExplanationPanel
                     sentence={selected}
-                    entry={selected ? explanationCache[selected.id] : undefined}
+                    entry={
+                      selected ? explanationCache[selected.id] : undefined
+                    }
                     onClose={() => setSelected(null)}
                     onReplay={replaySelected}
                   />
                 )}
-
               </div>
 
-              {(!isMobile || studyMode) && (
+              {studyMode && (
                 <aside className="relative flex max-h-[60vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[70vh]">
                   <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                     <span>Transcript · {sentences.length} sentences</span>
                     <div className="flex items-center gap-2">
-                      {transcriptSource && <SourceBadge source={transcriptSource} />}
+                      {transcriptSource && (
+                        <SourceBadge source={transcriptSource} />
+                      )}
                     </div>
                   </div>
 
@@ -773,7 +833,7 @@ function Index() {
                   {isMobile && activeOutOfView && playingId !== null && (
                     <button
                       onClick={jumpToCurrentSentence}
-                      className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+                      className="absolute bottom-[72px] left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
                     >
                       <ArrowDownToLine className="h-3.5 w-3.5" />
                       Jump to current sentence
@@ -782,6 +842,42 @@ function Index() {
                 </aside>
               )}
             </div>
+
+            {/* Mobile persistent bottom bar */}
+            {isMobile && (
+              <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                {!studyMode ? (
+                  <div className="space-y-2">
+                    <p className="text-center text-[11px] text-muted-foreground">
+                      Want translations, explanations and clickable captions?
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setStudyMode(true);
+                        track("study_mode_opened", { video_id: videoId });
+                      }}
+                      className="h-12 w-full rounded-full text-sm font-semibold shadow-lg shadow-primary/20"
+                    >
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Study This Video
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStudyMode(false);
+                      setSelected(null);
+                      track("study_mode_closed", { video_id: videoId });
+                    }}
+                    className="h-11 w-full rounded-full text-sm font-medium"
+                  >
+                    <Tv className="mr-2 h-4 w-4" />
+                    Back to Watch Mode
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
