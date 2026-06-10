@@ -19,6 +19,7 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
@@ -71,10 +72,13 @@ function Index() {
       (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
   }
   const feedbackShownRef = useRef(false);
+  const feedbackSubmittedRef = useRef(false);
+  const waitlistJoinedRef = useRef(false);
   const demoStartTimeRef = useRef<number | null>(null);
   const pageLoadTimeRef = useRef<number>(
     typeof performance !== "undefined" ? performance.now() : 0
   );
+  const devPanelEnabled = isDevPanelEnabled();
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
@@ -123,6 +127,43 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Funnel: landing page viewed + session lifecycle logs.
+  // Session starts on mount, ends on pagehide / unmount. Inactive (hidden)
+  // tabs are NOT counted toward visible time — see flush() above.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sid = sessionIdRef.current;
+    const startedAt = Date.now();
+    track("landing_page_viewed", {
+      session_id: sid,
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
+    track("session_started", { session_id: sid, started_at: new Date(startedAt).toISOString() });
+    // eslint-disable-next-line no-console
+    console.info("[analytics] session_started", { session_id: sid });
+
+    const onHide = () => {
+      const seconds = Math.round(
+        ((typeof performance !== "undefined" ? performance.now() : 0) -
+          pageLoadTimeRef.current) /
+          1000
+      );
+      track("session_ended", {
+        session_id: sid,
+        duration_seconds: seconds,
+        feedback_submitted: feedbackSubmittedRef.current,
+        waitlist_joined: waitlistJoinedRef.current,
+        demo_started: demoStartTimeRef.current !== null,
+      });
+      // eslint-disable-next-line no-console
+      console.info("[analytics] session_ended", { session_id: sid, seconds });
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
     setTargetLang(DEMO_LANGUAGE);
@@ -141,6 +182,15 @@ function Index() {
     } catch {}
     // 60s feedback trigger
     window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
+    // Demo engagement milestones
+    window.setTimeout(
+      () => track("demo_completed_60_seconds", { video_id: DEMO_VIDEO_ID }),
+      60_000
+    );
+    window.setTimeout(
+      () => track("demo_completed_180_seconds", { video_id: DEMO_VIDEO_ID }),
+      180_000
+    );
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
@@ -543,14 +593,43 @@ function Index() {
   }
 
   // Auto-sync explanation panel with the currently playing sentence.
+  // Fires `transcript_sentence_auto_explained` when the panel switches
+  // sentence due to playback (not user click — those go via jumpTo).
+  const lastAutoExplainedRef = useRef<number | null>(null);
   useEffect(() => {
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
-    setSelected((prev) => (prev?.id === s.id ? prev : s));
+    setSelected((prev) => {
+      if (prev?.id === s.id) return prev;
+      // Only treat as auto when the manual-click pin has expired.
+      if (performance.now() >= manualUntilRef.current && lastAutoExplainedRef.current !== s.id) {
+        lastAutoExplainedRef.current = s.id;
+        track("transcript_sentence_auto_explained", {
+          sentence_index: sentences.findIndex((x) => x.id === s.id),
+          video_id: videoId,
+        });
+      }
+      return s;
+    });
     ensureExplanation(s, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingId, sentences]);
+
+  // Fire `explanation_viewed` once per sentence when its explanation finishes
+  // loading AND it is the currently selected sentence (i.e. actually visible).
+  const viewedExplanationRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (!selected) return;
+    const entry = explanationCache[selected.id];
+    if (entry?.status !== "ready") return;
+    if (viewedExplanationRef.current.has(selected.id)) return;
+    viewedExplanationRef.current.add(selected.id);
+    track("explanation_viewed", {
+      sentence_index: sentences.findIndex((x) => x.id === selected.id),
+      video_id: videoId,
+    });
+  }, [selected, explanationCache, sentences, videoId]);
 
 
   // Optional auto-pause for replay-until-end-of-sentence.
@@ -1005,6 +1084,7 @@ function Index() {
           getContext={getFeedbackContext}
           onDismiss={() => {
             setShowFeedback(false);
+            feedbackSubmittedRef.current = true;
             try {
               localStorage.setItem("clario_feedback_given", "1");
             } catch {}
@@ -1012,6 +1092,23 @@ function Index() {
         />
       ) : (
         <FeedbackFab onClick={openFeedbackManually} />
+      )}
+      {devPanelEnabled && (
+        <DevAnalyticsPanel
+          getState={() => ({
+            sessionId: sessionIdRef.current,
+            videoId,
+            timeOnPageSeconds: Math.round(
+              ((typeof performance !== "undefined" ? performance.now() : 0) -
+                pageLoadTimeRef.current) /
+                1000
+            ),
+            transcriptClicks: clickCountRef.current,
+            demoStarted: demoStartTimeRef.current !== null,
+            feedbackSubmitted: feedbackSubmittedRef.current,
+            waitlistJoined: waitlistJoinedRef.current || (typeof window !== "undefined" && localStorage.getItem("clario_waitlist_joined") === "1"),
+          })}
+        />
       )}
     </div>
   );
@@ -1046,6 +1143,7 @@ function EarlyAccessSection() {
         },
       });
       track("waitlist_joined", { source: "early_access_section" });
+      try { localStorage.setItem("clario_waitlist_joined", "1"); } catch {}
       track("early_access_joined", { source: "early_access_section" });
       setSubmitted(true);
     } catch (err) {
