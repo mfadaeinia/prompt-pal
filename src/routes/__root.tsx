@@ -89,6 +89,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Click any subtitle sentence in a real video and instantly see translations, meaning, and expressions in context." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/91373f16-7404-4f9b-857a-ee2de4903c31" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/91373f16-7404-4f9b-857a-ee2de4903c31" },
+      // Cache-busting: force browsers to always fetch fresh HTML so they never load a stale asset manifest
+      { httpEquiv: "Cache-Control", content: "no-cache, no-store, must-revalidate" },
+      { httpEquiv: "Pragma", content: "no-cache" },
+      { httpEquiv: "Expires", content: "0" },
     ],
     links: [
       {
