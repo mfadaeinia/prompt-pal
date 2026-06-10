@@ -108,7 +108,7 @@ export function FeedbackWidget({
           <MessageCircle className="h-3.5 w-3.5" />
         </span>
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          💬 Help improve Native Lens
+          💬 Help improve Clario
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export function FeedbackWidget({
       {step === "again" && (
         <>
           <p className="text-sm font-semibold text-foreground">
-            Would you use Native Lens again?
+            Would you use Clario again?
           </p>
           <div className="mt-3 flex flex-col gap-2">
             <Button
@@ -217,7 +217,7 @@ export function FeedbackWidget({
 
       {step === "done" && (
         <p className="text-sm font-medium text-foreground">
-          🙏 Thank you! Your feedback helps shape Native Lens.
+          🙏 Thank you! Your feedback helps shape Clario.
         </p>
       )}
     </div>
