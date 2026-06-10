@@ -127,6 +127,43 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Funnel: landing page viewed + session lifecycle logs.
+  // Session starts on mount, ends on pagehide / unmount. Inactive (hidden)
+  // tabs are NOT counted toward visible time — see flush() above.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sid = sessionIdRef.current;
+    const startedAt = Date.now();
+    track("landing_page_viewed", {
+      session_id: sid,
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
+    track("session_started", { session_id: sid, started_at: new Date(startedAt).toISOString() });
+    // eslint-disable-next-line no-console
+    console.info("[analytics] session_started", { session_id: sid });
+
+    const onHide = () => {
+      const seconds = Math.round(
+        ((typeof performance !== "undefined" ? performance.now() : 0) -
+          pageLoadTimeRef.current) /
+          1000
+      );
+      track("session_ended", {
+        session_id: sid,
+        duration_seconds: seconds,
+        feedback_submitted: feedbackSubmittedRef.current,
+        waitlist_joined: waitlistJoinedRef.current,
+        demo_started: demoStartTimeRef.current !== null,
+      });
+      // eslint-disable-next-line no-console
+      console.info("[analytics] session_ended", { session_id: sid, seconds });
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
     setTargetLang(DEMO_LANGUAGE);
