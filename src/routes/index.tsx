@@ -230,18 +230,79 @@ function Index() {
 
 
 
-  const explainMutation = useMutation({
-    mutationFn: async (s: TranscriptSentence) => {
-      const idx = sentences.findIndex((x) => x.id === s.id);
-      const ctx = sentences
-        .slice(Math.max(0, idx - 1), Math.min(sentences.length, idx + 2))
-        .map((x) => x.text)
-        .join(" ");
-      return explainFx({
-        data: { sentence: s.text, context: ctx, targetLanguage: targetLang },
+  // Explanation cache: sentenceId -> parsed explanation (or loading/error).
+  type ExplanationEntry =
+    | { status: "loading" }
+    | { status: "ready"; translation: string; meaning: string; note: string }
+    | { status: "error"; error: string };
+  const [explanationCache, setExplanationCache] = useState<
+    Record<number, ExplanationEntry>
+  >({});
+  const inFlightRef = useRef<Set<number>>(new Set());
+
+  function ensureExplanation(s: TranscriptSentence, sList = sentences) {
+    if (explanationCache[s.id] || inFlightRef.current.has(s.id)) return;
+    inFlightRef.current.add(s.id);
+    setExplanationCache((prev) => ({ ...prev, [s.id]: { status: "loading" } }));
+    const idx = sList.findIndex((x) => x.id === s.id);
+    const ctx = sList
+      .slice(Math.max(0, idx - 1), Math.min(sList.length, idx + 2))
+      .map((x) => x.text)
+      .join(" ");
+    explainFx({
+      data: { sentence: s.text, context: ctx, targetLanguage: targetLang },
+    })
+      .then((res) => {
+        const parsed = parseExplanation(res.explanation ?? null);
+        setExplanationCache((prev) => ({
+          ...prev,
+          [s.id]: {
+            status: "ready",
+            translation: parsed.translation,
+            meaning: parsed.meaning,
+            note: parsed.note,
+          },
+        }));
+      })
+      .catch((err: any) => {
+        setExplanationCache((prev) => ({
+          ...prev,
+          [s.id]: { status: "error", error: err?.message ?? "Failed to load" },
+        }));
+      })
+      .finally(() => {
+        inFlightRef.current.delete(s.id);
       });
-    },
-  });
+  }
+
+  // Reset explanation cache when transcript changes.
+  useEffect(() => {
+    setExplanationCache({});
+    inFlightRef.current = new Set();
+  }, [videoId]);
+
+  // Preload all explanations for the loaded transcript (especially the demo)
+  // so switching sentences during playback is instant. Concurrency-limited.
+  useEffect(() => {
+    if (!sentences.length) return;
+    let cancelled = false;
+    let cursor = 0;
+    const concurrency = 4;
+    const worker = async () => {
+      while (!cancelled && cursor < sentences.length) {
+        const s = sentences[cursor++];
+        ensureExplanation(s, sentences);
+        // Small gap to avoid hammering the gateway in one tick.
+        await new Promise((r) => setTimeout(r, 60));
+      }
+    };
+    for (let i = 0; i < concurrency; i++) void worker();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences]);
+
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<any>(null);
@@ -370,6 +431,17 @@ function Index() {
     if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [playingId]);
 
+  // Auto-sync explanation panel with the currently playing sentence.
+  useEffect(() => {
+    if (playingId == null) return;
+    const s = sentences.find((x) => x.id === playingId);
+    if (!s) return;
+    setSelected((prev) => (prev?.id === s.id ? prev : s));
+    ensureExplanation(s, sentences);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingId, sentences]);
+
+
   // Optional auto-pause for replay-until-end-of-sentence.
   const pauseAtRef = useRef<number | null>(null);
   useEffect(() => {
@@ -418,8 +490,7 @@ function Index() {
 
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
-    explainMutation.reset();
-    explainMutation.mutate(s);
+    ensureExplanation(s, sentences);
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
@@ -442,6 +513,7 @@ function Index() {
       maybeTriggerFeedback("3_clicks");
     }
   }
+
 
   function replaySelected() {
     if (selected) {
@@ -580,16 +652,11 @@ function Index() {
 
                 <ExplanationPanel
                   sentence={selected}
-                  loading={explainMutation.isPending}
-                  error={
-                    explainMutation.isError
-                      ? (explainMutation.error as Error).message
-                      : null
-                  }
-                  text={explainMutation.data?.explanation ?? null}
+                  entry={selected ? explanationCache[selected.id] : undefined}
                   onClose={() => setSelected(null)}
                   onReplay={replaySelected}
                 />
+
               </div>
 
               <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -975,7 +1042,7 @@ function HowItWorks() {
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          From "lost in audio" to "got it" in three clicks.
+          Click any sentence. Understand it instantly.
         </h2>
       </div>
       <div className="mt-14 grid gap-5 md:grid-cols-3">
