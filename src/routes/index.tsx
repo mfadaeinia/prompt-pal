@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
-import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
@@ -62,6 +62,25 @@ function Index() {
   }
   const feedbackShownRef = useRef(false);
   const demoStartTimeRef = useRef<number | null>(null);
+  const pageLoadTimeRef = useRef<number>(
+    typeof performance !== "undefined" ? performance.now() : 0
+  );
+
+  function getFeedbackContext() {
+    const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
+    const seconds = Math.max(
+      0,
+      Math.round(((typeof performance !== "undefined" ? performance.now() : 0) - start) / 1000)
+    );
+    return {
+      sessionId: sessionIdRef.current,
+      videoId,
+      totalSentenceClicks: clickCountRef.current,
+      timeOnPageSeconds: seconds,
+      demoStarted: demoStartTimeRef.current !== null,
+      pageUrl: typeof window !== "undefined" ? window.location.href : "",
+    };
+  }
 
   function maybeTriggerFeedback(reason: string) {
     if (feedbackShownRef.current) return;
@@ -76,7 +95,23 @@ function Index() {
     feedbackShownRef.current = true;
     setFeedbackTrigger(reason);
     setShowFeedback(true);
+    track("feedback_opened", { trigger_reason: reason, video_id: videoId });
   }
+
+  function openFeedbackManually() {
+    feedbackShownRef.current = true;
+    setFeedbackTrigger("manual");
+    setShowFeedback(true);
+    track("feedback_opened", { trigger_reason: "manual", video_id: videoId });
+  }
+
+  // 60s-on-page trigger (even before demo starts)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = window.setTimeout(() => maybeTriggerFeedback("60s_page"), 60_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
@@ -652,11 +687,10 @@ function Index() {
       {showOnboarding && view === "demo" && (
         <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
       )}
-      {showFeedback && (
+      {showFeedback ? (
         <FeedbackWidget
-          videoId={videoId}
-          sessionId={sessionIdRef.current}
           triggerReason={feedbackTrigger}
+          getContext={getFeedbackContext}
           onDismiss={() => {
             setShowFeedback(false);
             try {
@@ -664,6 +698,8 @@ function Index() {
             } catch {}
           }}
         />
+      ) : (
+        <FeedbackFab onClick={openFeedbackManually} />
       )}
     </div>
   );
@@ -1026,7 +1062,7 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-clario-pulse">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
@@ -1035,7 +1071,7 @@ function ExplanationPanel({
           <MousePointerClick className="h-7 w-7" />
         </div>
         <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-          👈 Click any transcript sentence to instantly understand it.
+          👇 Click any transcript sentence to instantly understand it.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Translation, meaning, and expression notes will appear right here.
