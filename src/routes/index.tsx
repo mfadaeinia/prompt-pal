@@ -593,14 +593,43 @@ function Index() {
   }
 
   // Auto-sync explanation panel with the currently playing sentence.
+  // Fires `transcript_sentence_auto_explained` when the panel switches
+  // sentence due to playback (not user click — those go via jumpTo).
+  const lastAutoExplainedRef = useRef<number | null>(null);
   useEffect(() => {
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
-    setSelected((prev) => (prev?.id === s.id ? prev : s));
+    setSelected((prev) => {
+      if (prev?.id === s.id) return prev;
+      // Only treat as auto when the manual-click pin has expired.
+      if (performance.now() >= manualUntilRef.current && lastAutoExplainedRef.current !== s.id) {
+        lastAutoExplainedRef.current = s.id;
+        track("transcript_sentence_auto_explained", {
+          sentence_index: sentences.findIndex((x) => x.id === s.id),
+          video_id: videoId,
+        });
+      }
+      return s;
+    });
     ensureExplanation(s, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingId, sentences]);
+
+  // Fire `explanation_viewed` once per sentence when its explanation finishes
+  // loading AND it is the currently selected sentence (i.e. actually visible).
+  const viewedExplanationRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (!selected) return;
+    const entry = explanationCache[selected.id];
+    if (entry?.status !== "ready") return;
+    if (viewedExplanationRef.current.has(selected.id)) return;
+    viewedExplanationRef.current.add(selected.id);
+    track("explanation_viewed", {
+      sentence_index: sentences.findIndex((x) => x.id === selected.id),
+      video_id: videoId,
+    });
+  }, [selected, explanationCache, sentences, videoId]);
 
 
   // Optional auto-pause for replay-until-end-of-sentence.
