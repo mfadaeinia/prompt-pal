@@ -17,6 +17,8 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
