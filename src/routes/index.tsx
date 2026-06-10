@@ -1062,7 +1062,7 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-clario-pulse">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
@@ -1071,7 +1071,7 @@ function ExplanationPanel({
           <MousePointerClick className="h-7 w-7" />
         </div>
         <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-          👈 Click any transcript sentence to instantly understand it.
+          👇 Click any transcript sentence to instantly understand it.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Translation, meaning, and expression notes will appear right here.
