@@ -400,6 +400,12 @@ function Index() {
         video_id: videoId,
       });
     }
+    // Dismiss onboarding on first interaction
+    if (showOnboarding) dismissOnboarding(true);
+    // 3-click feedback trigger
+    if (clickCountRef.current >= 3) {
+      maybeTriggerFeedback("3_clicks");
+    }
   }
 
   function replaySelected() {
