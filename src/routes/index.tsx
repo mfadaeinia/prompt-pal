@@ -72,10 +72,13 @@ function Index() {
       (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
   }
   const feedbackShownRef = useRef(false);
+  const feedbackSubmittedRef = useRef(false);
+  const waitlistJoinedRef = useRef(false);
   const demoStartTimeRef = useRef<number | null>(null);
   const pageLoadTimeRef = useRef<number>(
     typeof performance !== "undefined" ? performance.now() : 0
   );
+  const devPanelEnabled = isDevPanelEnabled();
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
