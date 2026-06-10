@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      early_access_signups: {
+        Row: {
+          created_at: string
+          current_dutch_level: string | null
+          email: string
+          id: string
+          page_url: string | null
+          session_id: string | null
+          source: string | null
+          target_language: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_dutch_level?: string | null
+          email: string
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          source?: string | null
+          target_language?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_dutch_level?: string | null
+          email?: string
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          source?: string | null
+          target_language?: string | null
+        }
+        Relationships: []
+      }
       feedback_responses: {
         Row: {
           created_at: string
