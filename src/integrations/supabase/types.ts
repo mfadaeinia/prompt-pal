@@ -47,6 +47,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feedback: {
+        Row: {
+          created_at: string
+          demo_started: boolean | null
+          email: string | null
+          feedback_text: string | null
+          feedback_type: string
+          id: string
+          page_url: string | null
+          session_id: string | null
+          time_on_page_seconds: number | null
+          total_sentence_clicks: number | null
+          trigger_reason: string | null
+          would_use_again: string | null
+        }
+        Insert: {
+          created_at?: string
+          demo_started?: boolean | null
+          email?: string | null
+          feedback_text?: string | null
+          feedback_type: string
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          time_on_page_seconds?: number | null
+          total_sentence_clicks?: number | null
+          trigger_reason?: string | null
+          would_use_again?: string | null
+        }
+        Update: {
+          created_at?: string
+          demo_started?: boolean | null
+          email?: string | null
+          feedback_text?: string | null
+          feedback_type?: string
+          id?: string
+          page_url?: string | null
+          session_id?: string | null
+          time_on_page_seconds?: number | null
+          total_sentence_clicks?: number | null
+          trigger_reason?: string | null
+          would_use_again?: string | null
+        }
+        Relationships: []
+      }
       youtube_transcript_cache: {
         Row: {
           created_at: string
