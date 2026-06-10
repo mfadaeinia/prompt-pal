@@ -40,15 +40,15 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         .order("created_at", { ascending: false }),
     ]);
 
-    const sessions = (vs.data ?? []) as Array<{ session_id: string; duration_seconds: number }>;
-    const feedback = (fb.data ?? []) as Array<{
+    const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
+    const feedback = ((fb.data ?? []) as unknown) as Array<{
       feedback_type: string;
       would_use_again: string | null;
       total_sentence_clicks: number | null;
       demo_started: boolean | null;
       session_id: string | null;
     }>;
-    const signups = (ea.data ?? []) as Array<{ email: string; created_at: string }>;
+    const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
 
     const durations = sessions.map((s) => s.duration_seconds ?? 0);
     const totalSessions = sessions.length;
