@@ -2,6 +2,38 @@ import posthog from "posthog-js";
 
 let initialized = false;
 
+const TEST_USER_KEY = "clario_is_test_user";
+
+export function isTestUser(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(TEST_USER_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setTestUser(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (enabled) localStorage.setItem(TEST_USER_KEY, "1");
+    else localStorage.removeItem(TEST_USER_KEY);
+  } catch {}
+  // Update PostHog person + super properties so future events carry the flag
+  try {
+    posthog.register({ is_test_user: enabled });
+    posthog.setPersonProperties?.({ is_test_user: enabled });
+    if (enabled) {
+      // Give the test browser a stable identifier so it's easy to filter out
+      const id = `test-user-${(typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
+      const existing = localStorage.getItem("clario_test_user_id");
+      const finalId = existing || id;
+      if (!existing) localStorage.setItem("clario_test_user_id", finalId);
+      posthog.identify(finalId, { is_test_user: true });
+    }
+  } catch {}
+}
+
 export function initAnalytics() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
@@ -15,6 +47,18 @@ export function initAnalytics() {
     rageclick: false,
     disable_session_recording: true,
   });
+
+  // Register is_test_user as a super property so it's attached to every event
+  const testFlag = isTestUser();
+  try {
+    posthog.register({ is_test_user: testFlag });
+    if (testFlag) {
+      const existing = localStorage.getItem("clario_test_user_id");
+      const finalId = existing || `test-user-${Date.now()}`;
+      if (!existing) localStorage.setItem("clario_test_user_id", finalId);
+      posthog.identify(finalId, { is_test_user: true });
+    }
+  } catch {}
 
   // Attribution from URL
   try {
@@ -51,17 +95,18 @@ export function setUserProperties(props: Record<string, any>) {
 
 export function track(event: string, props?: Record<string, any>) {
   if (typeof window === "undefined") return;
-  // Verification logging: enabled via ?debug=1 or localStorage clario_debug=1.
+  // Ensure is_test_user is always on the event payload (in addition to super property)
+  const enrichedProps = { ...(props ?? {}), is_test_user: isTestUser() };
   try {
     const debug =
       new URLSearchParams(window.location.search).get("debug") === "1" ||
       localStorage.getItem("clario_debug") === "1";
     if (debug) {
       // eslint-disable-next-line no-console
-      console.info("[analytics]", event, props ?? {});
+      console.info("[analytics]", event, enrichedProps);
     }
   } catch {}
-  posthog.capture(event, props);
+  posthog.capture(event, enrichedProps);
 }
 
 export { posthog };
