@@ -1148,7 +1148,7 @@ function EarlyAccessSection() {
       console.log("early_access_joined", eventProps);
       track("waitlist_joined", eventProps);
       track("early_access_joined", eventProps);
-      waitlistJoinedRef.current = true;
+      // parent component reads localStorage flag below for dev panel state
       try { localStorage.setItem("clario_waitlist_joined", "1"); } catch {}
       setSubmitted(true);
     } catch (err) {
