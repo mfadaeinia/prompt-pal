@@ -30,12 +30,16 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Native Lens — Understand content in context" },
+      { title: "Native Lens" },
       {
         name: "description",
         content:
-          "Native Lens helps people understand content in context. Click any subtitle sentence and instantly see translations, meaning, and expression notes.",
+          "Understand real Dutch videos instantly. Click any subtitle sentence to get translations, explanations, and expressions in context.",
       },
+      { property: "og:title", content: "Native Lens" },
+      { property: "og:description", content: "Understand real content instantly." },
+      { name: "twitter:title", content: "Native Lens" },
+      { name: "twitter:description", content: "Understand real content instantly." },
     ],
   }),
   component: Index,
