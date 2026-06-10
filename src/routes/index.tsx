@@ -30,15 +30,15 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Native Lens" },
+      { title: "Clario" },
       {
         name: "description",
         content:
           "Understand real Dutch videos instantly. Click any subtitle sentence to get translations, explanations, and expressions in context.",
       },
-      { property: "og:title", content: "Native Lens" },
+      { property: "og:title", content: "Clario" },
       { property: "og:description", content: "Understand real content instantly." },
-      { name: "twitter:title", content: "Native Lens" },
+      { name: "twitter:title", content: "Clario" },
       { name: "twitter:description", content: "Understand real content instantly." },
     ],
   }),
@@ -665,17 +665,17 @@ function Index() {
             <button
               onClick={goHome}
               className="flex items-center gap-2.5"
-              aria-label="Native Lens home"
+              aria-label="Clario home"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold tracking-tight">Native Lens</span>
+              <span className="text-base font-semibold tracking-tight">Clario</span>
             </button>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Native Lens</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
@@ -991,7 +991,7 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Native Lens — understand content in context.</span>
+          <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
           <span>Dutch Learning Beta</span>
         </div>
       </footer>
@@ -1065,7 +1065,7 @@ function EarlyAccessSection() {
           <Sparkles className="h-3 w-3" /> Early Access
         </span>
         <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Help shape Native Lens.
+          Help shape Clario.
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
           Join the early access list to get new languages, features, and
@@ -1353,7 +1353,7 @@ function WhySection() {
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Native Lens</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Clario</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
           Built for learners who want to actually enjoy the language.
         </h2>
