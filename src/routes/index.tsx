@@ -86,8 +86,27 @@ function Index() {
     if (videoId !== DEMO_VIDEO_ID) {
       loadMutation.mutate(DEMO_VIDEO_URL);
     }
+    demoStartTimeRef.current = performance.now();
+    // First-time onboarding
+    try {
+      if (typeof window !== "undefined" && !localStorage.getItem("clario_onboarded")) {
+        setShowOnboarding(true);
+        track("onboarding_seen", { video_id: DEMO_VIDEO_ID });
+      }
+    } catch {}
+    // 60s feedback trigger
+    window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
+  const dismissOnboarding = (completed: boolean) => {
+    setShowOnboarding(false);
+    try {
+      localStorage.setItem("clario_onboarded", "1");
+    } catch {}
+    if (completed) track("onboarding_completed", { video_id: videoId });
+  };
+
 
   const goHome = () => {
     setView("landing");
