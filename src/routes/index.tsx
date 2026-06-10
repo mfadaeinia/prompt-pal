@@ -17,6 +17,8 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
@@ -55,6 +57,8 @@ function Index() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
+  const isMobile = useIsMobile();
+  const [studyMode, setStudyMode] = useState(false);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
@@ -422,14 +426,39 @@ function Index() {
     };
   }, [videoId]);
 
+  const [activeOutOfView, setActiveOutOfView] = useState(false);
   useEffect(() => {
-    if (!playingId || !listRef.current) return;
+    if (!playingId || !listRef.current) {
+      setActiveOutOfView(false);
+      return;
+    }
+    const container = listRef.current;
+    const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    if (!el) return;
+    // On mobile: NEVER auto-scroll. Just track whether the active sentence
+    // is visible so we can offer a manual "Jump to current" affordance.
+    if (isMobile) {
+      const cRect = container.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      const inView = eRect.bottom > cRect.top + 8 && eRect.top < cRect.bottom - 8;
+      setActiveOutOfView(!inView);
+      return;
+    }
+    // Desktop: keep the existing follow-the-playback behavior, but pause
+    // briefly after the user scrolls so we don't fight them.
     if (performance.now() < userScrollingUntilRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(
-      `[data-sid="${playingId}"]`
-    );
-    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [playingId]);
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [playingId, isMobile]);
+
+  function jumpToCurrentSentence() {
+    if (!playingId || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      setActiveOutOfView(false);
+      track("transcript_jump_to_current_clicked", { video_id: videoId });
+    }
+  }
 
   // Auto-sync explanation panel with the currently playing sentence.
   useEffect(() => {
@@ -637,7 +666,7 @@ function Index() {
             <HowItWorksStrip />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <div className="space-y-4">
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -650,50 +679,108 @@ function Index() {
                   )}
                 </div>
 
-                <ExplanationPanel
-                  sentence={selected}
-                  entry={selected ? explanationCache[selected.id] : undefined}
-                  onClose={() => setSelected(null)}
-                  onReplay={replaySelected}
-                />
+                {/* Mobile-only: Watch Mode default, with toggle to enter Study Mode */}
+                {isMobile && (
+                  <div className="lg:hidden">
+                    {!studyMode ? (
+                      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <BookOpen className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground">Watching only</p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                              Just press play and listen. Open Study Mode whenever you want sentence-by-sentence help.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setStudyMode(true);
+                            track("study_mode_opened", { video_id: videoId });
+                          }}
+                          className="mt-3 h-11 w-full rounded-full text-sm font-medium"
+                        >
+                          <BookOpen className="mr-2 h-4 w-4" /> Open Study Mode
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
+                        <span className="font-medium text-foreground">Study Mode</span>
+                        <button
+                          onClick={() => {
+                            setStudyMode(false);
+                            setSelected(null);
+                            track("study_mode_closed", { video_id: videoId });
+                          }}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          Hide transcript <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(!isMobile || studyMode) && (
+                  <ExplanationPanel
+                    sentence={selected}
+                    entry={selected ? explanationCache[selected.id] : undefined}
+                    onClose={() => setSelected(null)}
+                    onReplay={replaySelected}
+                  />
+                )}
 
               </div>
 
-              <aside className="flex max-h-[70vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <span>Transcript · {sentences.length} sentences</span>
-                  <div className="flex items-center gap-2">
-                    {transcriptSource && <SourceBadge source={transcriptSource} />}
+              {(!isMobile || studyMode) && (
+                <aside className="relative flex max-h-[60vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[70vh]">
+                  <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <span>Transcript · {sentences.length} sentences</span>
+                    <div className="flex items-center gap-2">
+                      {transcriptSource && <SourceBadge source={transcriptSource} />}
+                    </div>
                   </div>
-                </div>
 
-                <ol ref={listRef} className="flex-1 overflow-y-auto">
-                  {sentences.map((s) => {
-                    const active = selected?.id === s.id;
-                    const playing = playingId === s.id;
-                    return (
-                      <li key={s.id}>
-                        <button
-                          data-sid={s.id}
-                          onClick={() => jumpTo(s)}
-                          className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                            active
-                              ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
-                              : playing
-                              ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                              : "border-l-transparent text-foreground/85"
-                          }`}
-                        >
-                          <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                            {formatTime(s.offset)}
-                          </span>
-                          {s.text}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </aside>
+                  <ol ref={listRef} className="flex-1 overflow-y-auto">
+                    {sentences.map((s) => {
+                      const active = selected?.id === s.id;
+                      const playing = playingId === s.id;
+                      return (
+                        <li key={s.id}>
+                          <button
+                            data-sid={s.id}
+                            onClick={() => jumpTo(s)}
+                            className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                              active
+                                ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                : playing
+                                ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                                : "border-l-transparent text-foreground/85"
+                            }`}
+                          >
+                            <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                              {formatTime(s.offset)}
+                            </span>
+                            {s.text}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+
+                  {isMobile && activeOutOfView && playingId !== null && (
+                    <button
+                      onClick={jumpToCurrentSentence}
+                      className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+                    >
+                      <ArrowDownToLine className="h-3.5 w-3.5" />
+                      Jump to current sentence
+                    </button>
+                  )}
+                </aside>
+              )}
             </div>
           </div>
         )}
