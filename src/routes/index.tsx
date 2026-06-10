@@ -687,11 +687,10 @@ function Index() {
       {showOnboarding && view === "demo" && (
         <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
       )}
-      {showFeedback && (
+      {showFeedback ? (
         <FeedbackWidget
-          videoId={videoId}
-          sessionId={sessionIdRef.current}
           triggerReason={feedbackTrigger}
+          getContext={getFeedbackContext}
           onDismiss={() => {
             setShowFeedback(false);
             try {
@@ -699,6 +698,8 @@ function Index() {
             } catch {}
           }}
         />
+      ) : (
+        <FeedbackFab onClick={openFeedbackManually} />
       )}
     </div>
   );
