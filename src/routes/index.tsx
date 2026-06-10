@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
