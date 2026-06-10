@@ -810,7 +810,7 @@ function ProductMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <span className="ml-3 truncate text-[11px] text-muted-foreground">
-            lingua.app / dutch-demo
+            clario.app / dutch-demo
           </span>
         </div>
         <div className="grid grid-cols-[1.4fr_1fr] gap-0">
