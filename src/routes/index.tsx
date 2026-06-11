@@ -223,34 +223,55 @@ function Index() {
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
-    onSuccess: (res) => {
+    onSuccess: (res, submittedUrl) => {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
       setUserProperties({ selected_language: targetLang });
+
+      // Cache hit/miss telemetry (per-source events are emitted below).
+      track(res.cacheHit ? "cache_hit" : "cache_miss", {
+        video_id: res.videoId,
+        source: res.source,
+      });
+
+      // Per-layer success event.
       const evt =
         res.source === "cache"
           ? "transcript_loaded_from_cache"
-          : "transcript_loaded_from_youtube";
+          : res.source === "youtube"
+          ? "transcript_loaded_from_youtube"
+          : res.source === "fallback"
+          ? "transcript_loaded_from_fallback_provider"
+          : "transcript_loaded_manually";
       track(evt, {
-        video_url: url,
+        video_url: submittedUrl,
         video_id: res.videoId,
         selected_language: targetLang,
       });
       track("video_loaded", {
-        video_url: url,
+        video_url: submittedUrl,
         video_id: res.videoId,
         selected_language: targetLang,
         source: res.source,
       });
+
+      // Custom-video funnel: anything that's not the bundled demo counts.
+      if (submittedUrl !== DEMO_VIDEO_URL) {
+        track("custom_video_loaded", {
+          video_url: submittedUrl,
+          video_id: res.videoId,
+          source: res.source,
+        });
+      }
     },
     onError: (err: any, submittedUrl) => {
       const isDemo = submittedUrl === DEMO_VIDEO_URL;
+      // Internal-only — never surfaced to the user.
       track("transcript_fetch_failed", {
         video_url: submittedUrl,
         error_type: err?.errorType ?? "unknown",
-        error_message: err?.message ?? String(err),
       });
       if (!isDemo) {
         track("custom_video_failed", {
@@ -258,7 +279,6 @@ function Index() {
           error_type: err?.errorType ?? "unknown",
         });
       }
-
     },
   });
 
