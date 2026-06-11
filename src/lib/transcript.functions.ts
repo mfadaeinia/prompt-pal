@@ -28,13 +28,14 @@ export type TranscriptSentence = {
   endTime: number; // seconds
 };
 
-export type TranscriptSource = "cache" | "youtube" | "manual";
+export type TranscriptSource = "cache" | "youtube" | "fallback" | "manual";
 
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
   source: TranscriptSource;
   language?: string | null;
+  cacheHit: boolean;
 };
 
 export type TranscriptErrorType =
@@ -64,25 +65,17 @@ function classifyError(err: unknown): TranscriptErrorType {
   return "unknown";
 }
 
-function friendlyMessage(type: TranscriptErrorType): string {
-  switch (type) {
-    case "rate_limited":
-      return "We could not retrieve subtitles automatically right now. This may happen because YouTube temporarily limits transcript requests. Try again later or paste a transcript manually.";
-    case "captions_disabled":
-      return "This video doesn't have subtitles available. Paste a transcript manually to continue.";
-    case "not_found":
-      return "No transcript was found for this video. Paste a transcript manually to continue.";
-    case "network":
-      return "Network problem while fetching the transcript. Try again, or paste a transcript manually.";
-    default:
-      return "Automatic subtitles could not be loaded. Paste a transcript manually to continue.";
-  }
-}
+// User-facing message is intentionally generic — no provider names, no
+// status codes, no "captions disabled" or "CAPTCHA" wording. The internal
+// `errorType` is for telemetry only.
+const FRIENDLY_TRANSCRIPT_ERROR =
+  "We couldn't automatically load subtitles for this video right now.";
 
 function logEvent(payload: {
   video_id: string | null;
   fetch_source: TranscriptSource | "none";
   success: boolean;
+  cache_hit?: boolean;
   error_type?: TranscriptErrorType | null;
   error_message?: string | null;
 }) {
@@ -148,7 +141,6 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
 }
 
 function parseTimestamp(s: string): number | null {
-  // Accept h:mm:ss, mm:ss, or seconds
   const m = s.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
   if (m) {
     const a = Number(m[1]);
@@ -167,7 +159,6 @@ function chunksFromManualText(text: string): RawChunk[] {
     .map((l) => l.trim())
     .filter(Boolean);
 
-  // Try to detect timestamped lines: `[0:15] text`, `0:15 text`, `00:00:15 text`
   const tsRegex = /^\[?(\d{1,2}:\d{1,2}(?::\d{1,2})?)\]?\s*[-–:]?\s*(.*)$/;
   const parsed: { t: number | null; text: string }[] = [];
   for (const line of lines) {
@@ -182,7 +173,6 @@ function chunksFromManualText(text: string): RawChunk[] {
 
   const hasTimes = parsed.some((p) => p.t !== null);
   if (hasTimes) {
-    // Fill missing timestamps by interpolation between known anchors
     const chunks: RawChunk[] = [];
     for (let i = 0; i < parsed.length; i++) {
       const cur = parsed[i];
@@ -200,7 +190,6 @@ function chunksFromManualText(text: string): RawChunk[] {
     return chunks;
   }
 
-  // No timestamps: distribute uniformly assuming ~3s per chunk
   const perChunk = 3;
   return parsed.map((p, i) => ({
     text: p.text,
@@ -228,7 +217,7 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   language: string | null;
-  source: "youtube" | "manual";
+  source: "youtube" | "manual" | "fallback";
 }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
@@ -247,6 +236,62 @@ async function writeCache(params: {
   if (error) console.warn("[transcript] cache write error", error.message);
 }
 
+// ---------------------------------------------------------------------------
+// Layer 3: Fallback transcript provider.
+// Default implementation targets Supadata (https://supadata.ai) since its
+// shape (`content: [{text, offset_ms, duration_ms}]`) matches our chunk
+// format and the GET endpoint is simple. Swap PROVIDER_URL / header name if
+// you point TRANSCRIBR_API_KEY at a different service.
+// ---------------------------------------------------------------------------
+async function fetchFromFallbackProvider(params: {
+  videoId: string;
+  videoUrl: string;
+}): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
+  const apiKey = process.env.TRANSCRIBR_API_KEY;
+  if (!apiKey) return null;
+
+  const PROVIDER_URL = "https://api.supadata.ai/v1/transcript";
+  const langCandidates = ["nl", "en", undefined];
+
+  for (const lang of langCandidates) {
+    try {
+      const qs = new URLSearchParams({
+        url: params.videoUrl,
+        mode: "auto",
+        ...(lang ? { lang } : {}),
+      });
+      const res = await fetch(`${PROVIDER_URL}?${qs.toString()}`, {
+        method: "GET",
+        headers: {
+          "x-api-key": apiKey,
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) {
+        // 404 = not_found, 429 = rate_limited, etc. Try next lang.
+        continue;
+      }
+      const json: any = await res.json();
+      const content: any[] = Array.isArray(json?.content) ? json.content : [];
+      if (!content.length) continue;
+      const chunks: RawChunk[] = content
+        .map((c) => ({
+          text: String(c.text ?? ""),
+          // Supadata returns ms; if a provider returns seconds, divide by 1.
+          offset: Number(c.offset ?? 0) / 1000,
+          duration: Number(c.duration ?? 0) / 1000,
+        }))
+        .filter((c) => c.text.length > 0);
+      if (!chunks.length) continue;
+      return { chunks, language: json?.lang ?? lang ?? null };
+    } catch (e) {
+      // Try next lang; final failure handled by caller.
+      continue;
+    }
+  }
+  return null;
+}
+
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
@@ -259,18 +304,37 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         error_type: "unknown",
         error_message: "invalid_url",
       });
-      throw new Error("Could not parse a YouTube video ID from that URL.");
+      throw new Error("This doesn't look like a YouTube link.");
     }
 
-    // 1. Cache lookup
+    // -------- Layer 1: Cache --------
     const cached = await readCache(videoId);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
-      logEvent({ video_id: videoId, fetch_source: "cache", success: true });
-      return { videoId, sentences, source: "cache", language: cached.language };
+      logEvent({
+        video_id: videoId,
+        fetch_source: "cache",
+        success: true,
+        cache_hit: true,
+      });
+      return {
+        videoId,
+        sentences,
+        source: "cache",
+        language: cached.language,
+        cacheHit: true,
+      };
     }
 
-    // 2. Fetch from YouTube
+    // Cache miss — try external providers.
+    logEvent({
+      video_id: videoId,
+      fetch_source: "cache",
+      success: false,
+      cache_hit: false,
+    });
+
+    // -------- Layer 2: YouTube captions --------
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
     let lastErr: unknown = null;
@@ -295,34 +359,77 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       }
     }
 
-    if (!raw || !raw.length) {
-      const errorType = classifyError(lastErr);
+    if (raw && raw.length) {
+      const sentences = buildSentencesFromChunks(raw);
+      await writeCache({
+        videoId,
+        videoUrl: data.url,
+        chunks: raw,
+        language: usedLang,
+        source: "youtube",
+      });
       logEvent({
         video_id: videoId,
         fetch_source: "youtube",
-        success: false,
-        error_type: errorType,
-        error_message: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
+        success: true,
+        cache_hit: false,
       });
-      const err = new Error(friendlyMessage(errorType)) as Error & {
-        errorType?: TranscriptErrorType;
-        videoId?: string;
+      return {
+        videoId,
+        sentences,
+        source: "youtube",
+        language: usedLang,
+        cacheHit: false,
       };
-      err.errorType = errorType;
-      err.videoId = videoId;
-      throw err;
     }
 
-    const sentences = buildSentencesFromChunks(raw);
-    await writeCache({
+    // -------- Layer 3: Fallback provider --------
+    const fb = await fetchFromFallbackProvider({
       videoId,
       videoUrl: data.url,
-      chunks: raw,
-      language: usedLang,
-      source: "youtube",
     });
-    logEvent({ video_id: videoId, fetch_source: "youtube", success: true });
-    return { videoId, sentences, source: "youtube", language: usedLang };
+    if (fb && fb.chunks.length) {
+      const sentences = buildSentencesFromChunks(fb.chunks);
+      await writeCache({
+        videoId,
+        videoUrl: data.url,
+        chunks: fb.chunks,
+        language: fb.language,
+        source: "fallback",
+      });
+      logEvent({
+        video_id: videoId,
+        fetch_source: "fallback",
+        success: true,
+        cache_hit: false,
+      });
+      return {
+        videoId,
+        sentences,
+        source: "fallback",
+        language: fb.language,
+        cacheHit: false,
+      };
+    }
+
+    // All layers failed — surface a single friendly message.
+    const errorType = classifyError(lastErr);
+    logEvent({
+      video_id: videoId,
+      fetch_source: "fallback",
+      success: false,
+      cache_hit: false,
+      error_type: errorType,
+      error_message:
+        lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
+    });
+    const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
+      errorType?: TranscriptErrorType;
+      videoId?: string;
+    };
+    err.errorType = errorType;
+    err.videoId = videoId;
+    throw err;
   });
 
 export const saveManualTranscript = createServerFn({ method: "POST" })
@@ -330,7 +437,7 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
     const videoId = extractVideoId(data.url);
     if (!videoId) {
-      throw new Error("Could not parse a YouTube video ID from that URL.");
+      throw new Error("This doesn't look like a YouTube link.");
     }
     const chunks = chunksFromManualText(data.text);
     if (!chunks.length) throw new Error("Transcript text is empty.");
@@ -343,7 +450,13 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
       source: "manual",
     });
     logEvent({ video_id: videoId, fetch_source: "manual", success: true });
-    return { videoId, sentences, source: "manual", language: null };
+    return {
+      videoId,
+      sentences,
+      source: "manual",
+      language: null,
+      cacheHit: false,
+    };
   });
 
 const DemoInput = z.object({

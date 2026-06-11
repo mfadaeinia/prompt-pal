@@ -134,6 +134,11 @@ function Index() {
     if (typeof window === "undefined") return;
     const sid = sessionIdRef.current;
     const startedAt = Date.now();
+    track("page_view", {
+      session_id: sid,
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
     track("landing_page_viewed", {
       session_id: sid,
       path: window.location.pathname,
@@ -223,34 +228,55 @@ function Index() {
 
   const loadMutation = useMutation({
     mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
-    onSuccess: (res) => {
+    onSuccess: (res, submittedUrl) => {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
       setUserProperties({ selected_language: targetLang });
+
+      // Cache hit/miss telemetry (per-source events are emitted below).
+      track(res.cacheHit ? "cache_hit" : "cache_miss", {
+        video_id: res.videoId,
+        source: res.source,
+      });
+
+      // Per-layer success event.
       const evt =
         res.source === "cache"
           ? "transcript_loaded_from_cache"
-          : "transcript_loaded_from_youtube";
+          : res.source === "youtube"
+          ? "transcript_loaded_from_youtube"
+          : res.source === "fallback"
+          ? "transcript_loaded_from_fallback_provider"
+          : "transcript_loaded_manually";
       track(evt, {
-        video_url: url,
+        video_url: submittedUrl,
         video_id: res.videoId,
         selected_language: targetLang,
       });
       track("video_loaded", {
-        video_url: url,
+        video_url: submittedUrl,
         video_id: res.videoId,
         selected_language: targetLang,
         source: res.source,
       });
+
+      // Custom-video funnel: anything that's not the bundled demo counts.
+      if (submittedUrl !== DEMO_VIDEO_URL) {
+        track("custom_video_loaded", {
+          video_url: submittedUrl,
+          video_id: res.videoId,
+          source: res.source,
+        });
+      }
     },
     onError: (err: any, submittedUrl) => {
       const isDemo = submittedUrl === DEMO_VIDEO_URL;
+      // Internal-only — never surfaced to the user.
       track("transcript_fetch_failed", {
         video_url: submittedUrl,
         error_type: err?.errorType ?? "unknown",
-        error_message: err?.message ?? String(err),
       });
       if (!isDemo) {
         track("custom_video_failed", {
@@ -258,7 +284,6 @@ function Index() {
           error_type: err?.errorType ?? "unknown",
         });
       }
-
     },
   });
 
@@ -769,6 +794,18 @@ function Index() {
         {view === "landing" && (
           <>
             <DemoHero onStart={startDemo} loading={loadMutation.isPending} />
+            <CustomVideoSection
+              url={url}
+              setUrl={setUrl}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              loading={loadMutation.isPending}
+              onSubmit={(u) => {
+                track("custom_video_attempted", { video_url: u });
+                setView("demo");
+                loadMutation.mutate(u);
+              }}
+            />
             <HowItWorks />
             <WhySection />
             <EarlyAccessSection />
@@ -784,27 +821,45 @@ function Index() {
 
         {view === "demo" && loadMutation.isError && (
           <div className="mt-6 space-y-3">
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-              <p className="font-medium text-foreground">
-                Automatic transcript loading is experimental and may fail.
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <p className="text-base font-semibold text-foreground">
+                We couldn't automatically load subtitles for this video right now.
               </p>
-              <p className="mt-1 text-muted-foreground">
-                Try the Dutch demo for the reliable experience.
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Try another video, the reliable Dutch demo, or paste a transcript
+                manually below.
               </p>
-              <Button
-                size="sm"
-                className="mt-3"
-                onClick={() => {
-                  loadMutation.reset();
-                  startDemo();
-                }}
-              >
-                <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
-              </Button>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    loadMutation.reset();
+                    setVideoId(null);
+                    setSentences([]);
+                    setView("landing");
+                    requestAnimationFrame(() =>
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    );
+                  }}
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  Try another video
+                </Button>
+                <Button
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    loadMutation.reset();
+                    startDemo();
+                  }}
+                >
+                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
+                </Button>
+              </div>
             </div>
             <ManualTranscriptFallback
               url={url}
-              errorMessage={(loadMutation.error as Error).message}
               manualText={manualText}
               setManualText={setManualText}
               onSubmit={() => {
@@ -815,7 +870,7 @@ function Index() {
               submitting={manualMutation.isPending}
               submitError={
                 manualMutation.isError
-                  ? (manualMutation.error as Error).message
+                  ? "We couldn't use that transcript. Please double-check the format and try again."
                   : null
               }
             />
@@ -1022,50 +1077,7 @@ function Index() {
           </div>
         )}
 
-        {view === "landing" && (
-          <section className="mb-16 rounded-2xl border border-dashed border-border bg-muted/30 p-6 sm:p-8">
-            <h3 className="text-sm font-semibold tracking-tight">
-              Experimental · try your own YouTube video
-            </h3>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Automatic transcript loading may not work for every video. If it
-              fails, fall back to the Dutch demo.
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const u = url.trim();
-                if (!u) return;
-                track("custom_video_attempted", { video_url: u });
-                setView("demo");
-                loadMutation.mutate(u);
-              }}
-              className="mt-4 flex flex-col gap-2 sm:flex-row"
-            >
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-                className="h-10 flex-1 rounded-full bg-background px-4"
-              />
-              <Input
-                value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                placeholder="Your language"
-                className="h-10 rounded-full bg-background px-4 sm:w-44"
-              />
-              <Button type="submit" disabled={loadMutation.isPending || !url.trim()} className="h-10 rounded-full px-5">
-                {loadMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
-                  </>
-                ) : (
-                  "Load video"
-                )}
-              </Button>
-            </form>
-          </section>
-        )}
+        {/* Custom-video section moved directly under DemoHero — see CustomVideoSection. */}
       </main>
 
       <footer className="border-t border-border">
@@ -1216,6 +1228,7 @@ function SourceBadge({ source }: { source: TranscriptSource }) {
   const map: Record<TranscriptSource, { label: string; cls: string }> = {
     cache: { label: "cached", cls: "bg-primary/10 text-primary" },
     youtube: { label: "youtube", cls: "bg-accent text-accent-foreground" },
+    fallback: { label: "fallback", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
     manual: { label: "manual", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
   };
   const m = map[source];
@@ -1228,7 +1241,6 @@ function SourceBadge({ source }: { source: TranscriptSource }) {
 
 function ManualTranscriptFallback({
   url,
-  errorMessage,
   manualText,
   setManualText,
   onSubmit,
@@ -1236,7 +1248,6 @@ function ManualTranscriptFallback({
   submitError,
 }: {
   url: string;
-  errorMessage: string;
   manualText: string;
   setManualText: (s: string) => void;
   onSubmit: () => void;
@@ -1244,8 +1255,10 @@ function ManualTranscriptFallback({
   submitError: string | null;
 }) {
   return (
-    <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-      <p className="text-sm text-destructive">{errorMessage}</p>
+    <div className="mt-3 rounded-lg border border-border bg-card p-4">
+      <p className="text-sm font-medium text-foreground">
+        Or paste a transcript manually
+      </p>
       <div className="mt-3">
         <label className="text-xs font-medium text-foreground">
           Paste transcript manually
@@ -1321,13 +1334,13 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Try the Demo <ArrowRight className="h-4 w-4" />
+                  Try the Dutch Demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            No signup required.
+          <p className="mt-3 text-sm text-muted-foreground">
+            See how Clario works in under 30 seconds. No signup required.
           </p>
         </div>
 
@@ -1656,6 +1669,73 @@ function HowItWorksStrip() {
         </span>
       ))}
     </div>
+  );
+}
+
+function CustomVideoSection({
+  url,
+  setUrl,
+  targetLang,
+  setTargetLang,
+  loading,
+  onSubmit,
+}: {
+  url: string;
+  setUrl: (v: string) => void;
+  targetLang: string;
+  setTargetLang: (v: string) => void;
+  loading: boolean;
+  onSubmit: (u: string) => void;
+}) {
+  return (
+    <section className="mt-2 mb-16 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          Try your own YouTube video
+        </h2>
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+          Beta
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Beta feature — works best on videos with captions.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const u = url.trim();
+          if (!u) return;
+          onSubmit(u);
+        }}
+        className="mt-5 flex flex-col gap-2 sm:flex-row"
+      >
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
+          className="h-11 flex-1 rounded-full bg-background px-5"
+        />
+        <Input
+          value={targetLang}
+          onChange={(e) => setTargetLang(e.target.value)}
+          placeholder="Your language"
+          className="h-11 rounded-full bg-background px-5 sm:w-44"
+        />
+        <Button
+          type="submit"
+          disabled={loading || !url.trim()}
+          className="h-11 rounded-full px-6"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+            </>
+          ) : (
+            "Load video"
+          )}
+        </Button>
+      </form>
+    </section>
   );
 }
 
