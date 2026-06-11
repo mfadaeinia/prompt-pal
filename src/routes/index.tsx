@@ -813,6 +813,8 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
+            <LanguageSupportSection />
+            <ValuePropositionSection />
             <HowItWorks />
             <WhySection />
             <EarlyAccessSection />
@@ -1470,9 +1472,9 @@ function HowItWorks() {
 
 function WhySection() {
   const cards = [
-    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples." },
-    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase." },
-    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak." },
+    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples. Use videos you actually enjoy." },
+    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase. Explanations appear as you watch." },
+    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak — idioms, slang, and grammar where they appear." },
   ];
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
