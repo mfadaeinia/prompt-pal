@@ -1059,50 +1059,7 @@ function Index() {
           </div>
         )}
 
-        {view === "landing" && (
-          <section className="mb-16 rounded-2xl border border-dashed border-border bg-muted/30 p-6 sm:p-8">
-            <h3 className="text-sm font-semibold tracking-tight">
-              Experimental · try your own YouTube video
-            </h3>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Automatic transcript loading may not work for every video. If it
-              fails, fall back to the Dutch demo.
-            </p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const u = url.trim();
-                if (!u) return;
-                track("custom_video_attempted", { video_url: u });
-                setView("demo");
-                loadMutation.mutate(u);
-              }}
-              className="mt-4 flex flex-col gap-2 sm:flex-row"
-            >
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-                className="h-10 flex-1 rounded-full bg-background px-4"
-              />
-              <Input
-                value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                placeholder="Your language"
-                className="h-10 rounded-full bg-background px-4 sm:w-44"
-              />
-              <Button type="submit" disabled={loadMutation.isPending || !url.trim()} className="h-10 rounded-full px-5">
-                {loadMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
-                  </>
-                ) : (
-                  "Load video"
-                )}
-              </Button>
-            </form>
-          </section>
-        )}
+        {/* Custom-video section moved directly under DemoHero — see CustomVideoSection. */}
       </main>
 
       <footer className="border-t border-border">
