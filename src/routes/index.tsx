@@ -212,8 +212,7 @@ function Index() {
         track("onboarding_seen", { video_id: DEMO_VIDEO_ID });
       }
     } catch {}
-    // 60s feedback trigger
-    window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
+    // Feedback trigger now fires after 3 explanations viewed (see effect above).
     // Demo engagement milestones
     window.setTimeout(
       () => track("demo_completed_60_seconds", { video_id: DEMO_VIDEO_ID }),
