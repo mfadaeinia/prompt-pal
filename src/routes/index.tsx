@@ -1821,3 +1821,232 @@ function formatTime(sec: number) {
   const r = s % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
+
+const HERO_LANGUAGES = [
+  "English","Dutch","Spanish","French","German","Italian","Portuguese",
+  "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
+  "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
+  "Vietnamese","Thai","Greek","Czech",
+];
+
+function PrimaryHero({
+  url, setUrl, targetLang, setTargetLang, loading, onSubmit, onStartDemo,
+}: {
+  url: string;
+  setUrl: (v: string) => void;
+  targetLang: string;
+  setTargetLang: (v: string) => void;
+  loading: boolean;
+  onSubmit: (u: string) => void;
+  onStartDemo: () => void;
+}) {
+  return (
+    <section className="relative pt-14 pb-16 sm:pt-20 sm:pb-20">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[520px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.18),transparent_70%)]"
+      />
+      <div className="mx-auto max-w-3xl text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
+          <Sparkles className="h-3 w-3 text-primary" /> Works with any YouTube video
+        </span>
+        <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
+          Understand any YouTube video{" "}
+          <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            instantly.
+          </span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          Paste a YouTube video and get sentence-by-sentence explanations,
+          translations, and expression notes while watching.
+        </p>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const u = url.trim();
+          if (!u) return;
+          onSubmit(u);
+        }}
+        className="mx-auto mt-10 max-w-3xl rounded-2xl border border-border bg-card p-5 shadow-lg shadow-primary/10 sm:p-6"
+      >
+        <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
+          <div className="space-y-1.5">
+            <label htmlFor="hero-url" className="text-xs font-medium text-foreground">
+              YouTube URL
+            </label>
+            <Input
+              id="hero-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="h-12 w-full rounded-xl bg-background px-4 text-base"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="hero-lang" className="text-xs font-medium text-foreground">
+              Explanation language
+            </label>
+            <Select value={targetLang} onValueChange={setTargetLang}>
+              <SelectTrigger id="hero-lang" className="h-12 w-full rounded-xl bg-background px-4">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {HERO_LANGUAGES.map((l) => (
+                  <SelectItem key={l} value={l}>{l}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Button
+          type="submit"
+          disabled={loading || !url.trim()}
+          size="lg"
+          className="mt-4 h-12 w-full gap-2 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
+        >
+          {loading ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…</>
+          ) : (
+            <><Sparkles className="h-4 w-4" /> Understand This Video</>
+          )}
+        </Button>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Works best with videos that contain subtitles.
+        </p>
+      </form>
+
+      <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-1 text-center">
+        <button
+          type="button"
+          onClick={onStartDemo}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline disabled:opacity-60"
+        >
+          <PlayCircle className="h-4 w-4" /> Try the Dutch Demo
+        </button>
+        <p className="text-xs text-muted-foreground">
+          Not sure where to start? See a working example.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function LoadingProgress() {
+  const steps = [
+    "Finding subtitles…",
+    "Preparing transcript…",
+    "Generating explanations…",
+    "Ready to watch.",
+  ];
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const timers = [
+      window.setTimeout(() => setActive(1), 1200),
+      window.setTimeout(() => setActive(2), 3000),
+      window.setTimeout(() => setActive(3), 6000),
+    ];
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, []);
+  const pct = Math.min(95, (active + 1) * 24);
+  return (
+    <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-border bg-card p-8 shadow-md">
+      <p className="text-center text-sm font-semibold uppercase tracking-wider text-primary">
+        Preparing your video
+      </p>
+      <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <ul className="mt-6 space-y-3">
+        {steps.map((s, i) => {
+          const done = i < active;
+          const current = i === active;
+          return (
+            <li key={s} className="flex items-center gap-3 text-sm">
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                  done
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : current
+                    ? "border-primary/60 bg-primary/10 text-primary"
+                    : "border-border bg-muted text-muted-foreground"
+                }`}
+              >
+                {done ? "✓" : current ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span
+                className={
+                  done
+                    ? "text-foreground"
+                    : current
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground"
+                }
+              >
+                {s}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ValueCards() {
+  const cards = [
+    { emoji: "🎬", title: "Watch real content", desc: "Any YouTube video, in your target language." },
+    { emoji: "💡", title: "Understand difficult sentences instantly", desc: "Translations and meaning appear as you watch." },
+    { emoji: "🧠", title: "Learn expressions in context", desc: "Idioms, slang, and grammar explained where they appear." },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {cards.map((c) => (
+        <div
+          key={c.title}
+          className="rounded-xl border border-border bg-card p-4 shadow-sm"
+        >
+          <div className="text-xl">{c.emoji}</div>
+          <p className="mt-2 text-sm font-semibold tracking-tight text-foreground">
+            {c.title}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {c.desc}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReadinessBadges({ videoId }: { videoId: string | null }) {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    setVisible(true);
+    const t = window.setTimeout(() => setVisible(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [videoId]);
+  if (!visible || !videoId) return null;
+  const items = ["Video ready", "Transcript loaded", "Explanations available"];
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 text-xs animate-fade-in">
+      {items.map((label) => (
+        <span
+          key={label}
+          className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-medium text-primary"
+        >
+          ✅ {label}
+        </span>
+      ))}
+    </div>
+  );
+}
