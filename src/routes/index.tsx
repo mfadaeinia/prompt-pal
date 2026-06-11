@@ -712,7 +712,6 @@ function Index() {
   const milestoneFiredRef = useRef(false);
   const uniqueClickedRef = useRef<Set<number>>(new Set());
   const explanationsOpenedRef = useRef(0);
-  const milestoneFiredRef = useRef(false);
 
   useEffect(() => {
     if (!videoId) return;
