@@ -800,8 +800,7 @@ function Index() {
       <main className="mx-auto max-w-6xl px-6">
         {view === "landing" && (
           <>
-            <DemoHero onStart={startDemo} loading={loadMutation.isPending} />
-            <CustomVideoSection
+            <PrimaryHero
               url={url}
               setUrl={setUrl}
               targetLang={targetLang}
@@ -812,6 +811,7 @@ function Index() {
                 setView("demo");
                 loadMutation.mutate(u);
               }}
+              onStartDemo={startDemo}
             />
             <HowItWorks />
             <WhySection />
@@ -820,9 +820,7 @@ function Index() {
         )}
 
         {view === "demo" && loadMutation.isPending && !videoId && (
-          <div className="mt-10 flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground shadow-sm">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading transcript…
-          </div>
+          <LoadingProgress />
         )}
 
 
