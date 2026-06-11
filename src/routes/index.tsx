@@ -38,16 +38,16 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Clario" },
+      { title: "Clario — Learn languages from YouTube" },
       {
         name: "description",
         content:
-          "Understand real Dutch videos instantly. Click any subtitle sentence to get translations, explanations, and expressions in context.",
+          "Turn any YouTube video into an interactive language lesson. Get sentence-by-sentence explanations, translations, and expression notes while you watch.",
       },
-      { property: "og:title", content: "Clario" },
-      { property: "og:description", content: "Understand real content instantly." },
-      { name: "twitter:title", content: "Clario" },
-      { name: "twitter:description", content: "Understand real content instantly." },
+      { property: "og:title", content: "Clario — Learn languages from YouTube" },
+      { property: "og:description", content: "Turn any YouTube video into an interactive language lesson." },
+      { name: "twitter:title", content: "Clario — Learn languages from YouTube" },
+      { name: "twitter:description", content: "Turn any YouTube video into an interactive language lesson." },
     ],
   }),
   component: Index,
@@ -834,7 +834,7 @@ function Index() {
                 Try another video, the reliable Dutch demo, or paste a transcript
                 manually below.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   onClick={() => {
@@ -859,7 +859,7 @@ function Index() {
                     startDemo();
                   }}
                 >
-                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
+                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Demo
                 </Button>
               </div>
             </div>
@@ -1090,7 +1090,7 @@ function Index() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
           <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
-          <span>Dutch Learning Beta</span>
+          <span>Language Learning Beta</span>
         </div>
       </footer>
 
@@ -1435,7 +1435,7 @@ function ProductMockup() {
 
 function HowItWorks() {
   const steps = [
-    { n: "01", icon: Tv, title: "Watch a real Dutch video", desc: "Pick any YouTube video in your target language." },
+    { n: "01", icon: Tv, title: "Paste any YouTube video", desc: "Use any video in your target language — Dutch, English, Spanish, and more." },
     { n: "02", icon: MousePointerClick, title: "Click any subtitle sentence", desc: "Tap a line in the transcript while you watch." },
     { n: "03", icon: Brain, title: "Understand instantly", desc: "Get meaning, translation, and expressions in context." },
   ];
