@@ -93,11 +93,26 @@ function Index() {
       0,
       Math.round(((typeof performance !== "undefined" ? performance.now() : 0) - start) / 1000)
     );
+    const watched = demoStartTimeRef.current
+      ? Math.max(
+          0,
+          Math.round(
+            ((typeof performance !== "undefined" ? performance.now() : 0) -
+              demoStartTimeRef.current) /
+              1000
+          )
+        )
+      : 0;
     return {
       sessionId: sessionIdRef.current,
       videoId,
       totalSentenceClicks: clickCountRef.current,
+      uniqueSegmentsClicked: uniqueClickedRef.current.size,
+      explanationsOpened: explanationsOpenedRef.current,
       timeOnPageSeconds: seconds,
+      secondsWatched: watched,
+      isOwnVideo: videoId !== null && videoId !== DEMO_VIDEO_ID,
+      targetLanguage: targetLang || null,
       demoStarted: demoStartTimeRef.current !== null,
       pageUrl: typeof window !== "undefined" ? window.location.href : "",
     };
@@ -111,12 +126,22 @@ function Index() {
           feedbackShownRef.current = true;
           return;
         }
+        const last = localStorage.getItem("clario_feedback_dismissed_at");
+        if (last && Date.now() - Number(last) < 14 * 24 * 60 * 60 * 1000) {
+          feedbackShownRef.current = true;
+          return;
+        }
       } catch {}
     }
     feedbackShownRef.current = true;
     setFeedbackTrigger(reason);
     setShowFeedback(true);
-    track("feedback_opened", { trigger_reason: reason, video_id: videoId });
+    track("feedback_opened", {
+      trigger_reason: reason,
+      video_id: videoId,
+      explanations_opened: explanationsOpenedRef.current,
+      is_own_video: videoId !== null && videoId !== DEMO_VIDEO_ID,
+    });
   }
 
   function openFeedbackManually() {
@@ -126,13 +151,8 @@ function Index() {
     track("feedback_opened", { trigger_reason: "manual", video_id: videoId });
   }
 
-  // 60s-on-page trigger (even before demo starts)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const t = window.setTimeout(() => maybeTriggerFeedback("60s_page"), 60_000);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Pre-engagement landing-page feedback prompt removed.
+  // Feedback is now triggered AFTER value (3+ explanations viewed).
 
   // Funnel: landing page viewed + session lifecycle logs.
   // Session starts on mount, ends on pagehide / unmount. Inactive (hidden)
@@ -192,8 +212,7 @@ function Index() {
         track("onboarding_seen", { video_id: DEMO_VIDEO_ID });
       }
     } catch {}
-    // 60s feedback trigger
-    window.setTimeout(() => maybeTriggerFeedback("60s"), 60_000);
+    // Feedback trigger now fires after 3 explanations viewed (see effect above).
     // Demo engagement milestones
     window.setTimeout(
       () => track("demo_completed_60_seconds", { video_id: DEMO_VIDEO_ID }),
@@ -657,10 +676,17 @@ function Index() {
     if (entry?.status !== "ready") return;
     if (viewedExplanationRef.current.has(selected.id)) return;
     viewedExplanationRef.current.add(selected.id);
+    explanationsOpenedRef.current += 1;
     track("explanation_viewed", {
       sentence_index: sentences.findIndex((x) => x.id === selected.id),
       video_id: videoId,
+      explanations_opened: explanationsOpenedRef.current,
     });
+    // Primary feedback trigger: after the 3rd explanation in this session.
+    // Slight delay so the user has time to actually read the explanation.
+    if (explanationsOpenedRef.current === 3) {
+      window.setTimeout(() => maybeTriggerFeedback("3_explanations"), 1200);
+    }
   }, [selected, explanationCache, sentences, videoId]);
 
 
@@ -690,6 +716,8 @@ function Index() {
   const clickCountRef = useRef(0);
   const replayCountRef = useRef(0);
   const milestoneFiredRef = useRef(false);
+  const uniqueClickedRef = useRef<Set<number>>(new Set());
+  const explanationsOpenedRef = useRef(0);
 
   useEffect(() => {
     if (!videoId) return;
@@ -716,6 +744,7 @@ function Index() {
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
+    uniqueClickedRef.current.add(idx);
     track("transcript_sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
@@ -730,10 +759,8 @@ function Index() {
     }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
-    // 3-click feedback trigger
-    if (clickCountRef.current >= 3) {
-      maybeTriggerFeedback("3_clicks");
-    }
+    // Feedback trigger is now bound to explanation_viewed (after value is delivered),
+    // not raw clicks. See effect above.
   }
 
 
@@ -1108,6 +1135,7 @@ function Index() {
             feedbackSubmittedRef.current = true;
             try {
               localStorage.setItem("clario_feedback_given", "1");
+              localStorage.setItem("clario_feedback_dismissed_at", String(Date.now()));
             } catch {}
           }}
         />
