@@ -1362,7 +1362,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
 function ProductMockup() {
   const lines = [
     { t: "0:04", text: "Hallo allemaal, welkom bij deze video.", active: false },
-    { t: "0:08", text: "Vandaag gaan we Nederlands leren met echte content.", active: true },
+    { t: "0:08", text: "Vandaag gaan we een nieuwe taal leren met echte content.", active: true },
     { t: "0:13", text: "Het is veel leuker dan een saai tekstboek.", active: false },
     { t: "0:17", text: "Klik gewoon op een zin om de betekenis te zien.", active: false },
   ];
@@ -1378,7 +1378,7 @@ function ProductMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <span className="ml-3 truncate text-[11px] text-muted-foreground">
-            clario.app / dutch-demo
+            clario.app / demo
           </span>
         </div>
         <div className="grid grid-cols-[1.4fr_1fr] gap-0">
@@ -1390,7 +1390,7 @@ function ProductMockup() {
                 </div>
               </div>
               <div className="absolute bottom-3 left-3 right-3 rounded-md bg-black/60 px-3 py-1.5 text-center text-xs text-white backdrop-blur-sm">
-                Vandaag gaan we Nederlands leren…
+                Vandaag gaan we een nieuwe taal leren…
               </div>
             </div>
             <div className="rounded-lg border border-border bg-background p-3">
@@ -1398,7 +1398,7 @@ function ProductMockup() {
                 Translation
               </p>
               <p className="mt-1.5 text-sm font-medium text-foreground">
-                "Today we're going to learn Dutch with real content."
+                "Today we're going to learn a new language with real content."
               </p>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground">echte content</span>{" "}
