@@ -93,11 +93,26 @@ function Index() {
       0,
       Math.round(((typeof performance !== "undefined" ? performance.now() : 0) - start) / 1000)
     );
+    const watched = demoStartTimeRef.current
+      ? Math.max(
+          0,
+          Math.round(
+            ((typeof performance !== "undefined" ? performance.now() : 0) -
+              demoStartTimeRef.current) /
+              1000
+          )
+        )
+      : 0;
     return {
       sessionId: sessionIdRef.current,
       videoId,
       totalSentenceClicks: clickCountRef.current,
+      uniqueSegmentsClicked: uniqueClickedRef.current.size,
+      explanationsOpened: explanationsOpenedRef.current,
       timeOnPageSeconds: seconds,
+      secondsWatched: watched,
+      isOwnVideo: videoId !== null && videoId !== DEMO_VIDEO_ID,
+      targetLanguage: targetLang || null,
       demoStarted: demoStartTimeRef.current !== null,
       pageUrl: typeof window !== "undefined" ? window.location.href : "",
     };
@@ -111,12 +126,22 @@ function Index() {
           feedbackShownRef.current = true;
           return;
         }
+        const last = localStorage.getItem("clario_feedback_dismissed_at");
+        if (last && Date.now() - Number(last) < 14 * 24 * 60 * 60 * 1000) {
+          feedbackShownRef.current = true;
+          return;
+        }
       } catch {}
     }
     feedbackShownRef.current = true;
     setFeedbackTrigger(reason);
     setShowFeedback(true);
-    track("feedback_opened", { trigger_reason: reason, video_id: videoId });
+    track("feedback_opened", {
+      trigger_reason: reason,
+      video_id: videoId,
+      explanations_opened: explanationsOpenedRef.current,
+      is_own_video: videoId !== null && videoId !== DEMO_VIDEO_ID,
+    });
   }
 
   function openFeedbackManually() {
@@ -126,13 +151,8 @@ function Index() {
     track("feedback_opened", { trigger_reason: "manual", video_id: videoId });
   }
 
-  // 60s-on-page trigger (even before demo starts)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const t = window.setTimeout(() => maybeTriggerFeedback("60s_page"), 60_000);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Pre-engagement landing-page feedback prompt removed.
+  // Feedback is now triggered AFTER value (3+ explanations viewed).
 
   // Funnel: landing page viewed + session lifecycle logs.
   // Session starts on mount, ends on pagehide / unmount. Inactive (hidden)
