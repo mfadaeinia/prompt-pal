@@ -78,6 +78,8 @@ export const submitFeedback = createServerFn({ method: "POST" })
         is_own_video: data.isOwnVideo ?? false,
         target_language: data.targetLanguage ?? null,
         seconds_watched: data.secondsWatched ?? 0,
+        ip_address: ip,
+        user_agent: userAgent,
       } as any);
     if (error) throw new Error(error.message);
     return { ok: true };
