@@ -821,27 +821,45 @@ function Index() {
 
         {view === "demo" && loadMutation.isError && (
           <div className="mt-6 space-y-3">
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-              <p className="font-medium text-foreground">
-                Automatic transcript loading is experimental and may fail.
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <p className="text-base font-semibold text-foreground">
+                We couldn't automatically load subtitles for this video right now.
               </p>
-              <p className="mt-1 text-muted-foreground">
-                Try the Dutch demo for the reliable experience.
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Try another video, the reliable Dutch demo, or paste a transcript
+                manually below.
               </p>
-              <Button
-                size="sm"
-                className="mt-3"
-                onClick={() => {
-                  loadMutation.reset();
-                  startDemo();
-                }}
-              >
-                <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
-              </Button>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    loadMutation.reset();
+                    setVideoId(null);
+                    setSentences([]);
+                    setView("landing");
+                    requestAnimationFrame(() =>
+                      window.scrollTo({ top: 0, behavior: "smooth" })
+                    );
+                  }}
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  Try another video
+                </Button>
+                <Button
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    loadMutation.reset();
+                    startDemo();
+                  }}
+                >
+                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
+                </Button>
+              </div>
             </div>
             <ManualTranscriptFallback
               url={url}
-              errorMessage={(loadMutation.error as Error).message}
               manualText={manualText}
               setManualText={setManualText}
               onSubmit={() => {
@@ -852,7 +870,7 @@ function Index() {
               submitting={manualMutation.isPending}
               submitError={
                 manualMutation.isError
-                  ? (manualMutation.error as Error).message
+                  ? "We couldn't use that transcript. Please double-check the format and try again."
                   : null
               }
             />
