@@ -1843,7 +1843,7 @@ function PrimaryHero({
   onStartDemo: () => void;
 }) {
   return (
-    <section className="relative pt-14 pb-16 sm:pt-20 sm:pb-20">
+    <section className="relative pt-14 pb-10 sm:pt-20 sm:pb-14">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[520px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.18),transparent_70%)]"
@@ -1853,14 +1853,13 @@ function PrimaryHero({
           <Sparkles className="h-3 w-3 text-primary" /> Works with any YouTube video
         </span>
         <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
-          Understand any YouTube video{" "}
+          Turn any YouTube video into an{" "}
           <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            instantly.
+            interactive language lesson.
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Paste a YouTube video and get sentence-by-sentence explanations,
-          translations, and expression notes while watching.
+          Learn Dutch, English, Spanish, French, German and more from content you already enjoy watching.
         </p>
       </div>
 
@@ -1882,7 +1881,7 @@ function PrimaryHero({
               id="hero-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="Paste any YouTube URL in your target language"
               className="h-12 w-full rounded-xl bg-background px-4 text-base"
             />
           </div>
@@ -1919,18 +1918,70 @@ function PrimaryHero({
         </p>
       </form>
 
-      <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-1 text-center">
+      <div className="mx-auto mt-5 flex max-w-3xl flex-col items-center gap-1 text-center">
         <button
           type="button"
           onClick={onStartDemo}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-60"
         >
-          <PlayCircle className="h-4 w-4" /> Try the Dutch Demo
+          <PlayCircle className="h-4 w-4" /> Not sure where to start? Try the Dutch Demo
         </button>
-        <p className="text-xs text-muted-foreground">
-          Not sure where to start? See a working example.
+      </div>
+    </section>
+  );
+}
+
+function LanguageSupportSection() {
+  const languages = ["Dutch", "English", "Spanish", "French", "German", "Italian", "Portuguese"];
+  return (
+    <section className="pb-6 sm:pb-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Supported languages:</span>
+          {languages.map((lang) => (
+            <span
+              key={lang}
+              className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-sm"
+            >
+              {lang}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          More languages can be added automatically when transcripts are available.
         </p>
+      </div>
+    </section>
+  );
+}
+
+function ValuePropositionSection() {
+  const items = [
+    { title: "Learn from content you actually enjoy", desc: "Use the videos you already watch — no artificial lessons." },
+    { title: "Follow transcripts while watching", desc: "Sentences highlight in sync with the video." },
+    { title: "Instantly translate unknown words", desc: "Click any sentence for a natural translation." },
+    { title: "Build vocabulary in context", desc: "Expressions and idioms explained where they appear." },
+    { title: "Practice with real native content", desc: "Understand how people actually speak." },
+  ];
+  return (
+    <section className="border-t border-border py-14 sm:py-20">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why it works</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          Learn a language without changing your habits.
+        </h2>
+      </div>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
+          >
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">{item.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
