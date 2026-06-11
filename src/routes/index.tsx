@@ -134,6 +134,11 @@ function Index() {
     if (typeof window === "undefined") return;
     const sid = sessionIdRef.current;
     const startedAt = Date.now();
+    track("page_view", {
+      session_id: sid,
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
     track("landing_page_viewed", {
       session_id: sid,
       path: window.location.pathname,
