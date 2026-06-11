@@ -15,6 +15,13 @@ import { recordVideoSession } from "@/lib/video-sessions.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
@@ -1687,6 +1694,33 @@ function CustomVideoSection({
   loading: boolean;
   onSubmit: (u: string) => void;
 }) {
+  const languages = [
+    "English",
+    "Dutch",
+    "Spanish",
+    "French",
+    "German",
+    "Italian",
+    "Portuguese",
+    "Japanese",
+    "Chinese",
+    "Korean",
+    "Russian",
+    "Arabic",
+    "Turkish",
+    "Polish",
+    "Swedish",
+    "Norwegian",
+    "Danish",
+    "Finnish",
+    "Hindi",
+    "Indonesian",
+    "Vietnamese",
+    "Thai",
+    "Greek",
+    "Czech",
+  ];
+
   return (
     <section className="mt-2 mb-16 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-center gap-2">
@@ -1698,8 +1732,9 @@ function CustomVideoSection({
         </span>
       </div>
       <p className="mt-1.5 text-sm text-muted-foreground">
-        Beta feature — works best on videos with captions.
+        Beta feature. Most videos with subtitles work automatically.
       </p>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -1707,31 +1742,72 @@ function CustomVideoSection({
           if (!u) return;
           onSubmit(u);
         }}
-        className="mt-5 flex flex-col gap-2 sm:flex-row"
+        className="mt-6 space-y-4"
       >
-        <Input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
-          className="h-11 flex-1 rounded-full bg-background px-5"
-        />
-        <Input
-          value={targetLang}
-          onChange={(e) => setTargetLang(e.target.value)}
-          placeholder="Your language"
-          className="h-11 rounded-full bg-background px-5 sm:w-44"
-        />
+        <div className="grid gap-4 sm:grid-cols-[1fr_220px]">
+          {/* YouTube URL */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="custom-video-url"
+              className="text-sm font-medium text-foreground"
+            >
+              YouTube URL
+            </label>
+            <Input
+              id="custom-video-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste URL"
+              className="h-11 w-full rounded-xl bg-background px-4"
+            />
+          </div>
+
+          {/* Explanation language */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="explanation-language"
+              className="text-sm font-medium text-foreground"
+            >
+              Translate explanations into
+            </label>
+            <Select
+              value={targetLang}
+              onValueChange={setTargetLang}
+            >
+              <SelectTrigger
+                id="explanation-language"
+                className="h-11 w-full rounded-xl bg-background px-4"
+              >
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang} value={lang}>
+                    {lang}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Choose the language used for explanations and translations.
+        </p>
+
         <Button
           type="submit"
           disabled={loading || !url.trim()}
-          className="h-11 rounded-full px-6"
+          className="h-11 gap-2 rounded-xl px-6 text-sm font-medium"
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+              <Loader2 className="h-4 w-4 animate-spin" /> Analyzing…
             </>
           ) : (
-            "Load video"
+            <>
+              <Sparkles className="h-4 w-4" /> Analyze Video
+            </>
           )}
         </Button>
       </form>
