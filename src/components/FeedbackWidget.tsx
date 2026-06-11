@@ -115,7 +115,7 @@ export function FeedbackWidget({
           <MessageCircle className="h-3.5 w-3.5" />
         </span>
         <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          💬 Help improve Clario
+          💬 Help improve NativeFlow
         </p>
       </div>
 
@@ -171,7 +171,7 @@ export function FeedbackWidget({
       {step === "again" && (
         <>
           <p className="text-sm font-semibold text-foreground">
-            Would you use Clario again?
+            Would you use NativeFlow again?
           </p>
           <div className="mt-3 flex flex-col gap-2">
             <Button
@@ -224,7 +224,7 @@ export function FeedbackWidget({
 
       {step === "done" && (
         <p className="text-sm font-medium text-foreground">
-          🙏 Thank you! Your feedback helps shape Clario.
+          🙏 Thank you! Your feedback helps shape NativeFlow.
         </p>
       )}
     </div>

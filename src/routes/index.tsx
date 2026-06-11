@@ -38,15 +38,15 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Clario — Learn languages from YouTube" },
+      { title: "NativeFlow — Learn languages from YouTube" },
       {
         name: "description",
         content:
           "Turn any YouTube video into an interactive language lesson. Get sentence-by-sentence explanations, translations, and expression notes while you watch.",
       },
-      { property: "og:title", content: "Clario — Learn languages from YouTube" },
+      { property: "og:title", content: "NativeFlow — Learn languages from YouTube" },
       { property: "og:description", content: "Turn any YouTube video into an interactive language lesson." },
-      { name: "twitter:title", content: "Clario — Learn languages from YouTube" },
+      { name: "twitter:title", content: "NativeFlow — Learn languages from YouTube" },
       { name: "twitter:description", content: "Turn any YouTube video into an interactive language lesson." },
     ],
   }),
@@ -776,17 +776,17 @@ function Index() {
             <button
               onClick={goHome}
               className="flex items-center gap-2.5"
-              aria-label="Clario home"
+              aria-label="NativeFlow home"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold tracking-tight">Clario</span>
+              <span className="text-base font-semibold tracking-tight">NativeFlow</span>
             </button>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
@@ -1091,7 +1091,7 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
+          <span>© {new Date().getFullYear()} NativeFlow — understand content in context.</span>
           <span>Language Learning Beta</span>
         </div>
       </footer>
@@ -1190,7 +1190,7 @@ function EarlyAccessSection() {
           <Sparkles className="h-3 w-3" /> Early Access
         </span>
         <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Help shape Clario.
+          Help shape NativeFlow.
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
           Join the early access list to get new languages, features, and
@@ -1349,7 +1349,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             </Button>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            See how Clario works in under 30 seconds. No signup required.
+            See how NativeFlow works in under 30 seconds. No signup required.
           </p>
         </div>
 
@@ -1378,7 +1378,7 @@ function ProductMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <span className="ml-3 truncate text-[11px] text-muted-foreground">
-            clario.app / demo
+            nativeflow.app / demo
           </span>
         </div>
         <div className="grid grid-cols-[1.4fr_1fr] gap-0">
@@ -1479,7 +1479,7 @@ function WhySection() {
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why Clario</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why NativeFlow</p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
           Built for learners who want to actually enjoy the language.
         </h2>
