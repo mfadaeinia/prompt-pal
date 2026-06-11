@@ -91,6 +91,7 @@ export type Database = {
           feedback_text: string | null
           feedback_type: string
           id: string
+          ip_address: string | null
           is_own_video: boolean | null
           page_url: string | null
           seconds_watched: number | null
@@ -100,6 +101,7 @@ export type Database = {
           total_sentence_clicks: number | null
           trigger_reason: string | null
           unique_segments_clicked: number | null
+          user_agent: string | null
           vs_current_workflow: string | null
           would_use_again: string | null
         }
@@ -113,6 +115,7 @@ export type Database = {
           feedback_text?: string | null
           feedback_type: string
           id?: string
+          ip_address?: string | null
           is_own_video?: boolean | null
           page_url?: string | null
           seconds_watched?: number | null
@@ -122,6 +125,7 @@ export type Database = {
           total_sentence_clicks?: number | null
           trigger_reason?: string | null
           unique_segments_clicked?: number | null
+          user_agent?: string | null
           vs_current_workflow?: string | null
           would_use_again?: string | null
         }
@@ -135,6 +139,7 @@ export type Database = {
           feedback_text?: string | null
           feedback_type?: string
           id?: string
+          ip_address?: string | null
           is_own_video?: boolean | null
           page_url?: string | null
           seconds_watched?: number | null
@@ -144,6 +149,7 @@ export type Database = {
           total_sentence_clicks?: number | null
           trigger_reason?: string | null
           unique_segments_clicked?: number | null
+          user_agent?: string | null
           vs_current_workflow?: string | null
           would_use_again?: string | null
         }
@@ -155,12 +161,14 @@ export type Database = {
           duration_seconds: number
           ended: boolean
           id: string
+          ip_address: string | null
           last_seen_at: string
           page_url: string | null
           session_id: string
           started_at: string
           target_language: string | null
           updated_at: string
+          user_agent: string | null
           video_id: string
           video_url: string | null
         }
@@ -169,12 +177,14 @@ export type Database = {
           duration_seconds?: number
           ended?: boolean
           id?: string
+          ip_address?: string | null
           last_seen_at?: string
           page_url?: string | null
           session_id: string
           started_at?: string
           target_language?: string | null
           updated_at?: string
+          user_agent?: string | null
           video_id: string
           video_url?: string | null
         }
@@ -183,12 +193,14 @@ export type Database = {
           duration_seconds?: number
           ended?: boolean
           id?: string
+          ip_address?: string | null
           last_seen_at?: string
           page_url?: string | null
           session_id?: string
           started_at?: string
           target_language?: string | null
           updated_at?: string
+          user_agent?: string | null
           video_id?: string
           video_url?: string | null
         }
