@@ -794,6 +794,18 @@ function Index() {
         {view === "landing" && (
           <>
             <DemoHero onStart={startDemo} loading={loadMutation.isPending} />
+            <CustomVideoSection
+              url={url}
+              setUrl={setUrl}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              loading={loadMutation.isPending}
+              onSubmit={(u) => {
+                track("custom_video_attempted", { video_url: u });
+                setView("demo");
+                loadMutation.mutate(u);
+              }}
+            />
             <HowItWorks />
             <WhySection />
             <EarlyAccessSection />
