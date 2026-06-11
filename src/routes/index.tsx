@@ -1347,13 +1347,13 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Try the Demo <ArrowRight className="h-4 w-4" />
+                  Try the Dutch Demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            No signup required.
+          <p className="mt-3 text-sm text-muted-foreground">
+            See how Clario works in under 30 seconds. No signup required.
           </p>
         </div>
 
