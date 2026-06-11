@@ -1241,7 +1241,6 @@ function SourceBadge({ source }: { source: TranscriptSource }) {
 
 function ManualTranscriptFallback({
   url,
-  errorMessage,
   manualText,
   setManualText,
   onSubmit,
@@ -1249,7 +1248,6 @@ function ManualTranscriptFallback({
   submitError,
 }: {
   url: string;
-  errorMessage: string;
   manualText: string;
   setManualText: (s: string) => void;
   onSubmit: () => void;
@@ -1257,8 +1255,10 @@ function ManualTranscriptFallback({
   submitError: string | null;
 }) {
   return (
-    <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-      <p className="text-sm text-destructive">{errorMessage}</p>
+    <div className="mt-3 rounded-lg border border-border bg-card p-4">
+      <p className="text-sm font-medium text-foreground">
+        Or paste a transcript manually
+      </p>
       <div className="mt-3">
         <label className="text-xs font-medium text-foreground">
           Paste transcript manually
