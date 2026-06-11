@@ -82,45 +82,69 @@ export type Database = {
       }
       user_feedback: {
         Row: {
+          comprehension_helpful: string | null
           created_at: string
           demo_started: boolean | null
           email: string | null
+          explanations_opened: number | null
+          failure_reason: string | null
           feedback_text: string | null
           feedback_type: string
           id: string
+          is_own_video: boolean | null
           page_url: string | null
+          seconds_watched: number | null
           session_id: string | null
+          target_language: string | null
           time_on_page_seconds: number | null
           total_sentence_clicks: number | null
           trigger_reason: string | null
+          unique_segments_clicked: number | null
+          vs_current_workflow: string | null
           would_use_again: string | null
         }
         Insert: {
+          comprehension_helpful?: string | null
           created_at?: string
           demo_started?: boolean | null
           email?: string | null
+          explanations_opened?: number | null
+          failure_reason?: string | null
           feedback_text?: string | null
           feedback_type: string
           id?: string
+          is_own_video?: boolean | null
           page_url?: string | null
+          seconds_watched?: number | null
           session_id?: string | null
+          target_language?: string | null
           time_on_page_seconds?: number | null
           total_sentence_clicks?: number | null
           trigger_reason?: string | null
+          unique_segments_clicked?: number | null
+          vs_current_workflow?: string | null
           would_use_again?: string | null
         }
         Update: {
+          comprehension_helpful?: string | null
           created_at?: string
           demo_started?: boolean | null
           email?: string | null
+          explanations_opened?: number | null
+          failure_reason?: string | null
           feedback_text?: string | null
           feedback_type?: string
           id?: string
+          is_own_video?: boolean | null
           page_url?: string | null
+          seconds_watched?: number | null
           session_id?: string | null
+          target_language?: string | null
           time_on_page_seconds?: number | null
           total_sentence_clicks?: number | null
           trigger_reason?: string | null
+          unique_segments_clicked?: number | null
+          vs_current_workflow?: string | null
           would_use_again?: string | null
         }
         Relationships: []
