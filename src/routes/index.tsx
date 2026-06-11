@@ -1135,6 +1135,7 @@ function Index() {
             feedbackSubmittedRef.current = true;
             try {
               localStorage.setItem("clario_feedback_given", "1");
+              localStorage.setItem("clario_feedback_dismissed_at", String(Date.now()));
             } catch {}
           }}
         />
