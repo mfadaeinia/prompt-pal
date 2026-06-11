@@ -885,6 +885,8 @@ function Index() {
         {view === "demo" && videoId && (
           <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
             <HowItWorksStrip />
+            <ValueCards />
+            {!isDemo && <ReadinessBadges videoId={videoId} />
 
             {/* Desktop mode toggle */}
             <div className="flex items-center justify-center gap-2">
