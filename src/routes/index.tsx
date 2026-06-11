@@ -38,16 +38,16 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Clario" },
+      { title: "Clario — Learn languages from YouTube" },
       {
         name: "description",
         content:
-          "Understand real Dutch videos instantly. Click any subtitle sentence to get translations, explanations, and expressions in context.",
+          "Turn any YouTube video into an interactive language lesson. Get sentence-by-sentence explanations, translations, and expression notes while you watch.",
       },
-      { property: "og:title", content: "Clario" },
-      { property: "og:description", content: "Understand real content instantly." },
-      { name: "twitter:title", content: "Clario" },
-      { name: "twitter:description", content: "Understand real content instantly." },
+      { property: "og:title", content: "Clario — Learn languages from YouTube" },
+      { property: "og:description", content: "Turn any YouTube video into an interactive language lesson." },
+      { name: "twitter:title", content: "Clario — Learn languages from YouTube" },
+      { name: "twitter:description", content: "Turn any YouTube video into an interactive language lesson." },
     ],
   }),
   component: Index,
@@ -813,6 +813,8 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
+            <LanguageSupportSection />
+            <ValuePropositionSection />
             <HowItWorks />
             <WhySection />
             <EarlyAccessSection />
@@ -831,10 +833,10 @@ function Index() {
                 We couldn't automatically load subtitles for this video right now.
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Try another video, the reliable Dutch demo, or paste a transcript
+                Try another video, the reliable demo, or paste a transcript
                 manually below.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   onClick={() => {
@@ -859,7 +861,7 @@ function Index() {
                     startDemo();
                   }}
                 >
-                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Dutch Demo
+                  <PlayCircle className="mr-2 h-4 w-4" /> Try the Demo
                 </Button>
               </div>
             </div>
@@ -1090,7 +1092,7 @@ function Index() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
           <span>© {new Date().getFullYear()} Clario — understand content in context.</span>
-          <span>Dutch Learning Beta</span>
+          <span>Language Learning Beta</span>
         </div>
       </footer>
 
@@ -1308,32 +1310,32 @@ function ManualTranscriptFallback({
 
 function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean }) {
   return (
-    <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-28">
+    <section className="relative pt-12 pb-14 sm:pt-16 sm:pb-18">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[480px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.15),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[380px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
       />
-      <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
-            🇳🇱 Dutch Learning Beta
+            🌍 Language Learning Beta
           </span>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
-            Understand real Dutch videos{" "}
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[3rem] lg:leading-[1.05]">
+            Understand real videos in any language{" "}
             <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               instantly.
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Click any subtitle sentence while watching YouTube and get
             translations, explanations, and expressions in context.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               size="lg"
               onClick={onStart}
               disabled={loading}
-              className="h-12 gap-2 rounded-full px-6 text-sm font-medium shadow-lg shadow-primary/20"
+              className="h-11 gap-2 rounded-full px-5 text-sm font-medium shadow-lg shadow-primary/20"
             >
               {loading ? (
                 <>
@@ -1341,7 +1343,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Try the Dutch Demo <ArrowRight className="h-4 w-4" />
+                  Try the Demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
@@ -1360,7 +1362,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
 function ProductMockup() {
   const lines = [
     { t: "0:04", text: "Hallo allemaal, welkom bij deze video.", active: false },
-    { t: "0:08", text: "Vandaag gaan we Nederlands leren met echte content.", active: true },
+    { t: "0:08", text: "Vandaag gaan we een nieuwe taal leren met echte content.", active: true },
     { t: "0:13", text: "Het is veel leuker dan een saai tekstboek.", active: false },
     { t: "0:17", text: "Klik gewoon op een zin om de betekenis te zien.", active: false },
   ];
@@ -1376,7 +1378,7 @@ function ProductMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
           <span className="ml-3 truncate text-[11px] text-muted-foreground">
-            clario.app / dutch-demo
+            clario.app / demo
           </span>
         </div>
         <div className="grid grid-cols-[1.4fr_1fr] gap-0">
@@ -1388,7 +1390,7 @@ function ProductMockup() {
                 </div>
               </div>
               <div className="absolute bottom-3 left-3 right-3 rounded-md bg-black/60 px-3 py-1.5 text-center text-xs text-white backdrop-blur-sm">
-                Vandaag gaan we Nederlands leren…
+                Vandaag gaan we een nieuwe taal leren…
               </div>
             </div>
             <div className="rounded-lg border border-border bg-background p-3">
@@ -1396,7 +1398,7 @@ function ProductMockup() {
                 Translation
               </p>
               <p className="mt-1.5 text-sm font-medium text-foreground">
-                "Today we're going to learn Dutch with real content."
+                "Today we're going to learn a new language with real content."
               </p>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                 <span className="font-medium text-foreground">echte content</span>{" "}
@@ -1435,7 +1437,7 @@ function ProductMockup() {
 
 function HowItWorks() {
   const steps = [
-    { n: "01", icon: Tv, title: "Watch a real Dutch video", desc: "Pick any YouTube video in your target language." },
+    { n: "01", icon: Tv, title: "Paste any YouTube video", desc: "Use any video in your target language — Dutch, English, Spanish, and more." },
     { n: "02", icon: MousePointerClick, title: "Click any subtitle sentence", desc: "Tap a line in the transcript while you watch." },
     { n: "03", icon: Brain, title: "Understand instantly", desc: "Get meaning, translation, and expressions in context." },
   ];
@@ -1470,9 +1472,9 @@ function HowItWorks() {
 
 function WhySection() {
   const cards = [
-    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples." },
-    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase." },
-    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak." },
+    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples. Use videos you actually enjoy." },
+    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase. Explanations appear as you watch." },
+    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak — idioms, slang, and grammar where they appear." },
   ];
   return (
     <section id="why" className="border-t border-border py-20 sm:py-28">
@@ -1841,7 +1843,7 @@ function PrimaryHero({
   onStartDemo: () => void;
 }) {
   return (
-    <section className="relative pt-14 pb-16 sm:pt-20 sm:pb-20">
+    <section className="relative pt-14 pb-10 sm:pt-20 sm:pb-14">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[520px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.18),transparent_70%)]"
@@ -1851,14 +1853,13 @@ function PrimaryHero({
           <Sparkles className="h-3 w-3 text-primary" /> Works with any YouTube video
         </span>
         <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
-          Understand any YouTube video{" "}
+          Turn any YouTube video into an{" "}
           <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            instantly.
+            interactive language lesson.
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Paste a YouTube video and get sentence-by-sentence explanations,
-          translations, and expression notes while watching.
+          Learn Dutch, English, Spanish, French, German and more from content you already enjoy watching.
         </p>
       </div>
 
@@ -1880,7 +1881,7 @@ function PrimaryHero({
               id="hero-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="Paste any YouTube URL in your target language"
               className="h-12 w-full rounded-xl bg-background px-4 text-base"
             />
           </div>
@@ -1917,18 +1918,70 @@ function PrimaryHero({
         </p>
       </form>
 
-      <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-1 text-center">
+      <div className="mx-auto mt-5 flex max-w-3xl flex-col items-center gap-1 text-center">
         <button
           type="button"
           onClick={onStartDemo}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-60"
         >
-          <PlayCircle className="h-4 w-4" /> Try the Dutch Demo
+          <PlayCircle className="h-4 w-4" /> Not sure where to start? Try the Dutch Demo
         </button>
-        <p className="text-xs text-muted-foreground">
-          Not sure where to start? See a working example.
+      </div>
+    </section>
+  );
+}
+
+function LanguageSupportSection() {
+  const languages = ["Dutch", "English", "Spanish", "French", "German", "Italian", "Portuguese"];
+  return (
+    <section className="pb-6 sm:pb-10">
+      <div className="mx-auto max-w-3xl">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Supported languages:</span>
+          {languages.map((lang) => (
+            <span
+              key={lang}
+              className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground shadow-sm"
+            >
+              {lang}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          More languages can be added automatically when transcripts are available.
         </p>
+      </div>
+    </section>
+  );
+}
+
+function ValuePropositionSection() {
+  const items = [
+    { title: "Learn from content you actually enjoy", desc: "Use the videos you already watch — no artificial lessons." },
+    { title: "Follow transcripts while watching", desc: "Sentences highlight in sync with the video." },
+    { title: "Instantly translate unknown words", desc: "Click any sentence for a natural translation." },
+    { title: "Build vocabulary in context", desc: "Expressions and idioms explained where they appear." },
+    { title: "Practice with real native content", desc: "Understand how people actually speak." },
+  ];
+  return (
+    <section className="border-t border-border py-14 sm:py-20">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why it works</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          Learn a language without changing your habits.
+        </h2>
+      </div>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
+          >
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">{item.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
