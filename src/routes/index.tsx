@@ -1672,6 +1672,73 @@ function HowItWorksStrip() {
   );
 }
 
+function CustomVideoSection({
+  url,
+  setUrl,
+  targetLang,
+  setTargetLang,
+  loading,
+  onSubmit,
+}: {
+  url: string;
+  setUrl: (v: string) => void;
+  targetLang: string;
+  setTargetLang: (v: string) => void;
+  loading: boolean;
+  onSubmit: (u: string) => void;
+}) {
+  return (
+    <section className="mt-2 mb-16 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          Try your own YouTube video
+        </h2>
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+          Beta
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Beta feature — works best on videos with captions.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const u = url.trim();
+          if (!u) return;
+          onSubmit(u);
+        }}
+        className="mt-5 flex flex-col gap-2 sm:flex-row"
+      >
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Paste a YouTube URL (e.g. https://youtu.be/...)"
+          className="h-11 flex-1 rounded-full bg-background px-5"
+        />
+        <Input
+          value={targetLang}
+          onChange={(e) => setTargetLang(e.target.value)}
+          placeholder="Your language"
+          className="h-11 rounded-full bg-background px-5 sm:w-44"
+        />
+        <Button
+          type="submit"
+          disabled={loading || !url.trim()}
+          className="h-11 rounded-full px-6"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading
+            </>
+          ) : (
+            "Load video"
+          )}
+        </Button>
+      </form>
+    </section>
+  );
+}
+
 function formatTime(sec: number) {
   const s = Math.max(0, Math.floor(sec));
   const m = Math.floor(s / 60);
