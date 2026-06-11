@@ -1216,6 +1216,7 @@ function SourceBadge({ source }: { source: TranscriptSource }) {
   const map: Record<TranscriptSource, { label: string; cls: string }> = {
     cache: { label: "cached", cls: "bg-primary/10 text-primary" },
     youtube: { label: "youtube", cls: "bg-accent text-accent-foreground" },
+    fallback: { label: "fallback", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
     manual: { label: "manual", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
   };
   const m = map[source];
