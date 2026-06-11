@@ -237,11 +237,12 @@ async function writeCache(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Layer 3: Fallback transcript provider.
-// Default implementation targets Supadata (https://supadata.ai) since its
-// shape (`content: [{text, offset_ms, duration_ms}]`) matches our chunk
-// format and the GET endpoint is simple. Swap PROVIDER_URL / header name if
-// you point TRANSCRIBR_API_KEY at a different service.
+// Layer 3: Fallback transcript provider — Transcribr.io
+// Docs: https://www.transcribr.io/youtube-transcript-api
+// POST https://www.transcribr.io/api/v1/transcript
+//   headers: X-API-Key: <TRANSCRIBR_API_KEY>
+//   body:    { video_id }
+//   resp:    { transcript: [{text, start, duration}], language, ... }
 // ---------------------------------------------------------------------------
 async function fetchFromFallbackProvider(params: {
   videoId: string;
@@ -250,46 +251,35 @@ async function fetchFromFallbackProvider(params: {
   const apiKey = process.env.TRANSCRIBR_API_KEY;
   if (!apiKey) return null;
 
-  const PROVIDER_URL = "https://api.supadata.ai/v1/transcript";
-  const langCandidates = ["nl", "en", undefined];
-
-  for (const lang of langCandidates) {
-    try {
-      const qs = new URLSearchParams({
-        url: params.videoUrl,
-        mode: "auto",
-        ...(lang ? { lang } : {}),
-      });
-      const res = await fetch(`${PROVIDER_URL}?${qs.toString()}`, {
-        method: "GET",
-        headers: {
-          "x-api-key": apiKey,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) {
-        // 404 = not_found, 429 = rate_limited, etc. Try next lang.
-        continue;
-      }
-      const json: any = await res.json();
-      const content: any[] = Array.isArray(json?.content) ? json.content : [];
-      if (!content.length) continue;
-      const chunks: RawChunk[] = content
-        .map((c) => ({
-          text: String(c.text ?? ""),
-          // Supadata returns ms; if a provider returns seconds, divide by 1.
-          offset: Number(c.offset ?? 0) / 1000,
-          duration: Number(c.duration ?? 0) / 1000,
-        }))
-        .filter((c) => c.text.length > 0);
-      if (!chunks.length) continue;
-      return { chunks, language: json?.lang ?? lang ?? null };
-    } catch (e) {
-      // Try next lang; final failure handled by caller.
-      continue;
-    }
+  try {
+    const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey,
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ video_id: params.videoId }),
+    });
+    if (!res.ok) return null;
+    const json: any = await res.json();
+    const transcript: any[] = Array.isArray(json?.transcript)
+      ? json.transcript
+      : [];
+    if (!transcript.length) return null;
+    const chunks: RawChunk[] = transcript
+      .map((c) => ({
+        text: String(c.text ?? ""),
+        // Transcribr returns seconds already.
+        offset: Number(c.start ?? 0),
+        duration: Number(c.duration ?? 0),
+      }))
+      .filter((c) => c.text.length > 0);
+    if (!chunks.length) return null;
+    return { chunks, language: json?.language ?? null };
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export const fetchTranscript = createServerFn({ method: "POST" })
