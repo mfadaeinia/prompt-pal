@@ -677,10 +677,17 @@ function Index() {
     if (entry?.status !== "ready") return;
     if (viewedExplanationRef.current.has(selected.id)) return;
     viewedExplanationRef.current.add(selected.id);
+    explanationsOpenedRef.current += 1;
     track("explanation_viewed", {
       sentence_index: sentences.findIndex((x) => x.id === selected.id),
       video_id: videoId,
+      explanations_opened: explanationsOpenedRef.current,
     });
+    // Primary feedback trigger: after the 3rd explanation in this session.
+    // Slight delay so the user has time to actually read the explanation.
+    if (explanationsOpenedRef.current === 3) {
+      window.setTimeout(() => maybeTriggerFeedback("3_explanations"), 1200);
+    }
   }, [selected, explanationCache, sentences, videoId]);
 
 
