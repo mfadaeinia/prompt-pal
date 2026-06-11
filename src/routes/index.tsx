@@ -833,7 +833,7 @@ function Index() {
                 We couldn't automatically load subtitles for this video right now.
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Try another video, the reliable Dutch demo, or paste a transcript
+                Try another video, the reliable demo, or paste a transcript
                 manually below.
               </p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -1310,32 +1310,32 @@ function ManualTranscriptFallback({
 
 function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean }) {
   return (
-    <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-28">
+    <section className="relative pt-12 pb-14 sm:pt-16 sm:pb-18">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[480px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.15),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[380px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
       />
-      <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
-            🇳🇱 Dutch Learning Beta
+            🌍 Language Learning Beta
           </span>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
-            Understand real Dutch videos{" "}
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[3rem] lg:leading-[1.05]">
+            Understand real videos in any language{" "}
             <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               instantly.
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Click any subtitle sentence while watching YouTube and get
             translations, explanations, and expressions in context.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               size="lg"
               onClick={onStart}
               disabled={loading}
-              className="h-12 gap-2 rounded-full px-6 text-sm font-medium shadow-lg shadow-primary/20"
+              className="h-11 gap-2 rounded-full px-5 text-sm font-medium shadow-lg shadow-primary/20"
             >
               {loading ? (
                 <>
@@ -1343,7 +1343,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Try the Dutch Demo <ArrowRight className="h-4 w-4" />
+                  Try the Demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
