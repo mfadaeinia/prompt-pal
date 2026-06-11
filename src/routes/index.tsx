@@ -745,6 +745,7 @@ function Index() {
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
+    uniqueClickedRef.current.add(idx);
     track("transcript_sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
@@ -759,10 +760,8 @@ function Index() {
     }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
-    // 3-click feedback trigger
-    if (clickCountRef.current >= 3) {
-      maybeTriggerFeedback("3_clicks");
-    }
+    // Feedback trigger is now bound to explanation_viewed (after value is delivered),
+    // not raw clicks. See effect above.
   }
 
 
