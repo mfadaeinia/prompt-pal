@@ -1,0 +1,2 @@
+ALTER TABLE public.video_sessions ADD COLUMN IF NOT EXISTS ip_address text, ADD COLUMN IF NOT EXISTS user_agent text;
+ALTER TABLE public.user_feedback ADD COLUMN IF NOT EXISTS ip_address text, ADD COLUMN IF NOT EXISTS user_agent text;

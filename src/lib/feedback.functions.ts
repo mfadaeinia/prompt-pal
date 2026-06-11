@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 const Input = z.object({
@@ -32,6 +33,18 @@ export const submitFeedback = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const email = data.email && data.email.length > 0 ? data.email : null;
+    const ip = (() => {
+      try {
+        const cf = getRequestHeader("cf-connecting-ip");
+        if (cf) return cf;
+        const xff = getRequestHeader("x-forwarded-for");
+        if (xff) return xff.split(",")[0]!.trim();
+        const real = getRequestHeader("x-real-ip");
+        if (real) return real;
+        return getRequestIP({ xForwardedFor: true }) ?? null;
+      } catch { return null; }
+    })();
+    const userAgent = (() => { try { return getRequestHeader("user-agent") ?? null; } catch { return null; } })();
 
     // Derive sentiment from comprehension answer for backwards compatibility.
     const derivedSentiment =
@@ -65,6 +78,8 @@ export const submitFeedback = createServerFn({ method: "POST" })
         is_own_video: data.isOwnVideo ?? false,
         target_language: data.targetLanguage ?? null,
         seconds_watched: data.secondsWatched ?? 0,
+        ip_address: ip,
+        user_agent: userAgent,
       } as any);
     if (error) throw new Error(error.message);
     return { ok: true };
