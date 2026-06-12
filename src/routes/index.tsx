@@ -1699,11 +1699,19 @@ function ExplanationPanel({
   entry,
   onClose,
   onReplay,
+  onSave,
+  isSaved,
+  justSaved,
+  saving,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
   onClose: () => void;
   onReplay: () => void;
+  onSave: () => void;
+  isSaved: boolean;
+  justSaved: boolean;
+  saving: boolean;
 }) {
   if (!sentence) {
     return (
@@ -1728,6 +1736,7 @@ function ExplanationPanel({
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
   const error = entry && entry.status === "error" ? entry.error : null;
+  const saveDisabled = saving || isSaved || !ready;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
@@ -1741,6 +1750,34 @@ function ExplanationPanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant={isSaved || justSaved ? "secondary" : "outline"}
+            size="sm"
+            onClick={onSave}
+            disabled={saveDisabled}
+            className="h-8 gap-1 px-2 text-xs"
+            title={
+              isSaved
+                ? "Already in My Expressions"
+                : ready
+                  ? "Save to My Expressions"
+                  : "Wait for explanation to load"
+            }
+          >
+            {justSaved ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : isSaved ? (
+              <>
+                <BookmarkCheck className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-3.5 w-3.5" /> Save
+              </>
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -1758,6 +1795,13 @@ function ExplanationPanel({
           </button>
         </div>
       </div>
+
+      {justSaved && (
+        <p className="mt-2 text-xs font-medium text-primary">
+          Saved to My Expressions ✓
+        </p>
+      )}
+
 
       <div className="mt-5 border-t border-border pt-5">
         {ready ? (
