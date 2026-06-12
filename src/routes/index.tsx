@@ -1337,6 +1337,13 @@ function Index() {
               )}
             </div>
 
+            {/* Supporting/marketing content lives BELOW the product. */}
+            <section className="space-y-4 pt-8">
+              <HowItWorksStrip />
+              <ValueCards />
+            </section>
+
+
             {/* Mobile persistent bottom bar */}
             {isMobile && (
               <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
