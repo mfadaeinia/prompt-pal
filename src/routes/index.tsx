@@ -1161,6 +1161,10 @@ function Index() {
                     }
                     onClose={() => setSelected(null)}
                     onReplay={replaySelected}
+                    onSave={() => handleSaveExpression(selected)}
+                    isSaved={isSentenceSaved(selected)}
+                    justSaved={!!selected && justSavedId === selected.id}
+                    saving={saveExpressionMutation.isPending}
                   />
                 )}
               </div>
