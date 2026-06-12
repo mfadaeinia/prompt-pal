@@ -118,6 +118,21 @@ function Index() {
     }
     return set;
   }, [savedQuery.data]);
+
+  // First-time onboarding tooltip for Saved items
+  useEffect(() => {
+    if (!browserId) return;
+    const seen = localStorage.getItem("nativeflow_saved_tooltip_seen");
+    if (!seen && savedQuery.data && (savedQuery.data.items ?? []).length > 0) {
+      setShowSavedTooltip(true);
+      const t = setTimeout(() => {
+        setShowSavedTooltip(false);
+        localStorage.setItem("nativeflow_saved_tooltip_seen", "1");
+      }, 6000);
+      return () => clearTimeout(t);
+    }
+  }, [browserId, savedQuery.data]);
+
   function isSentenceSaved(s: TranscriptSentence | null) {
     if (!s) return false;
     return savedSentenceKeys.has(`${videoId ?? ""}::${s.text.trim()}`);
