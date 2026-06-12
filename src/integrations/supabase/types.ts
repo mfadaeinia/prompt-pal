@@ -80,6 +80,51 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_expressions: {
+        Row: {
+          created_at: string
+          expression_notes: string | null
+          id: string
+          meaning: string | null
+          sentence_text: string
+          session_id: string
+          target_language: string | null
+          timestamp_seconds: number
+          translation: string | null
+          video_id: string | null
+          video_title: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          expression_notes?: string | null
+          id?: string
+          meaning?: string | null
+          sentence_text: string
+          session_id: string
+          target_language?: string | null
+          timestamp_seconds?: number
+          translation?: string | null
+          video_id?: string | null
+          video_title?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          expression_notes?: string | null
+          id?: string
+          meaning?: string | null
+          sentence_text?: string
+          session_id?: string
+          target_language?: string | null
+          timestamp_seconds?: number
+          translation?: string | null
+          video_id?: string | null
+          video_title?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       user_feedback: {
         Row: {
           comprehension_helpful: string | null
