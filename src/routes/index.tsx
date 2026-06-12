@@ -83,7 +83,7 @@ function Index() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
-  const [studyMode, setStudyMode] = useState(false);
+  const [studyMode, setStudyMode] = useState(true);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
