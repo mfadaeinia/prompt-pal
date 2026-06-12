@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
@@ -12,6 +12,11 @@ import {
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
 import { recordVideoSession } from "@/lib/video-sessions.functions";
+import {
+  saveExpression,
+  listSavedExpressions,
+} from "@/lib/saved-expressions.functions";
+import { getBrowserId } from "@/lib/browser-id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,13 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight } from "lucide-react";
+import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check } from "lucide-react";
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
@@ -57,12 +63,16 @@ function Index() {
   const fetchTx = useServerFn(fetchTranscript);
   const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
+  const saveExpressionFx = useServerFn(saveExpression);
+  const listSavedFx = useServerFn(listSavedExpressions);
+  const qc = useQueryClient();
 
 
 
   const [url, setUrl] = useState("");
   const [targetLang, setTargetLang] = useState("English");
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoTitle, setVideoTitle] = useState<string | null>(null);
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
@@ -73,6 +83,8 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(false);
+  const [browserId, setBrowserId] = useState("");
+  const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
@@ -86,6 +98,75 @@ function Index() {
     typeof performance !== "undefined" ? performance.now() : 0
   );
   const devPanelEnabled = isDevPanelEnabled();
+
+  useEffect(() => {
+    setBrowserId(getBrowserId());
+  }, []);
+
+  // List of saved expressions for this browser — used to mark sentences as already-saved.
+  const savedQuery = useQuery({
+    queryKey: ["saved-expressions", browserId],
+    queryFn: () => listSavedFx({ data: { sessionId: browserId } }),
+    enabled: !!browserId,
+  });
+  const savedSentenceKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of (savedQuery.data?.items ?? []) as any[]) {
+      set.add(`${it.video_id ?? ""}::${(it.sentence_text ?? "").trim()}`);
+    }
+    return set;
+  }, [savedQuery.data]);
+  function isSentenceSaved(s: TranscriptSentence | null) {
+    if (!s) return false;
+    return savedSentenceKeys.has(`${videoId ?? ""}::${s.text.trim()}`);
+  }
+
+  const saveExpressionMutation = useMutation({
+    mutationFn: (vars: {
+      sentence: TranscriptSentence;
+      translation: string | null;
+      meaning: string | null;
+      note: string | null;
+    }) =>
+      saveExpressionFx({
+        data: {
+          sessionId: browserId,
+          sentenceText: vars.sentence.text,
+          translation: vars.translation,
+          meaning: vars.meaning,
+          expressionNotes: vars.note,
+          videoTitle: videoTitle,
+          videoUrl: url || null,
+          videoId: videoId,
+          timestampSeconds: Math.max(0, Math.round(vars.sentence.offset)),
+          targetLanguage: targetLang || null,
+        },
+      }),
+    onSuccess: (_res, vars) => {
+      track("expression_saved", {
+        video_id: videoId,
+        sentence_index: sentences.findIndex((x) => x.id === vars.sentence.id),
+        timestamp_seconds: Math.round(vars.sentence.offset),
+        target_language: targetLang,
+      });
+      setJustSavedId(vars.sentence.id);
+      window.setTimeout(() => setJustSavedId(null), 1800);
+      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+    },
+  });
+
+  function handleSaveExpression(s: TranscriptSentence | null) {
+    if (!s || !browserId) return;
+    const entry = explanationCache[s.id];
+    const ready = entry && entry.status === "ready" ? entry : null;
+    saveExpressionMutation.mutate({
+      sentence: s,
+      translation: ready?.translation || null,
+      meaning: ready?.meaning || null,
+      note: ready?.note && ready.note !== "—" ? ready.note : null,
+    });
+  }
+
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
@@ -196,6 +277,45 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // "Watch again" deep-link handler: ?v=<youtube-url>&t=<seconds>&lang=<lang>
+  const deepLinkSeekRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("v");
+    if (!v) return;
+    const t = Number(params.get("t") || 0);
+    const lang = params.get("lang");
+    setUrl(v);
+    if (lang) setTargetLang(lang);
+    setView("demo");
+    setStudyMode(true);
+    deepLinkSeekRef.current = isFinite(t) ? t : null;
+    demoStartTimeRef.current = performance.now();
+    loadMutation.mutate(v);
+    // Clean the URL so refreshes don't re-seek.
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once the player is ready and sentences are loaded after a deep-link, seek.
+  useEffect(() => {
+    const t = deepLinkSeekRef.current;
+    if (t == null) return;
+    if (!sentences.length) return;
+    const tryer = window.setInterval(() => {
+      const p = playerRef.current;
+      if (p?.seekTo) {
+        p.seekTo(Math.max(0, t), true);
+        p.playVideo?.();
+        deepLinkSeekRef.current = null;
+        window.clearInterval(tryer);
+      }
+    }, 200);
+    return () => window.clearInterval(tryer);
+  }, [sentences]);
+
+
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
     setTargetLang(DEMO_LANGUAGE);
@@ -259,7 +379,20 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
+      setVideoTitle(null);
+      // Fetch human-readable video title via YouTube oEmbed (best-effort).
+      fetch(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(
+          `https://www.youtube.com/watch?v=${res.videoId}`
+        )}&format=json`
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j?.title) setVideoTitle(j.title as string);
+        })
+        .catch(() => {});
       setUserProperties({ selected_language: targetLang });
+
 
       // Cache hit/miss telemetry (per-source events are emitted below).
       track(res.cacheHit ? "cache_hit" : "cache_miss", {
@@ -815,6 +948,14 @@ function Index() {
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
             <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
+            <Link
+              to="/saved"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              onClick={() => track("my_expressions_opened", { from: view })}
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">My Expressions</span>
+            </Link>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
                 <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
@@ -1020,6 +1161,10 @@ function Index() {
                     }
                     onClose={() => setSelected(null)}
                     onReplay={replaySelected}
+                    onSave={() => handleSaveExpression(selected)}
+                    isSaved={isSentenceSaved(selected)}
+                    justSaved={!!selected && justSavedId === selected.id}
+                    saving={saveExpressionMutation.isPending}
                   />
                 )}
               </div>
@@ -1554,11 +1699,19 @@ function ExplanationPanel({
   entry,
   onClose,
   onReplay,
+  onSave,
+  isSaved,
+  justSaved,
+  saving,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
   onClose: () => void;
   onReplay: () => void;
+  onSave: () => void;
+  isSaved: boolean;
+  justSaved: boolean;
+  saving: boolean;
 }) {
   if (!sentence) {
     return (
@@ -1583,6 +1736,7 @@ function ExplanationPanel({
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
   const error = entry && entry.status === "error" ? entry.error : null;
+  const saveDisabled = saving || isSaved || !ready;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
@@ -1596,6 +1750,34 @@ function ExplanationPanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant={isSaved || justSaved ? "secondary" : "outline"}
+            size="sm"
+            onClick={onSave}
+            disabled={saveDisabled}
+            className="h-8 gap-1 px-2 text-xs"
+            title={
+              isSaved
+                ? "Already in My Expressions"
+                : ready
+                  ? "Save to My Expressions"
+                  : "Wait for explanation to load"
+            }
+          >
+            {justSaved ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : isSaved ? (
+              <>
+                <BookmarkCheck className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-3.5 w-3.5" /> Save
+              </>
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -1613,6 +1795,13 @@ function ExplanationPanel({
           </button>
         </div>
       </div>
+
+      {justSaved && (
+        <p className="mt-2 text-xs font-medium text-primary">
+          Saved to My Expressions ✓
+        </p>
+      )}
+
 
       <div className="mt-5 border-t border-border pt-5">
         {ready ? (
