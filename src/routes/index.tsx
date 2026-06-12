@@ -1222,10 +1222,11 @@ function Index() {
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
                   : "grid-cols-1"
               }`}
             >
+
               <div className="space-y-4">
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
