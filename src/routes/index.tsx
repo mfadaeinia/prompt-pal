@@ -340,7 +340,20 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
+      setVideoTitle(null);
+      // Fetch human-readable video title via YouTube oEmbed (best-effort).
+      fetch(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(
+          `https://www.youtube.com/watch?v=${res.videoId}`
+        )}&format=json`
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j?.title) setVideoTitle(j.title as string);
+        })
+        .catch(() => {});
       setUserProperties({ selected_language: targetLang });
+
 
       // Cache hit/miss telemetry (per-source events are emitted below).
       track(res.cacheHit ? "cache_hit" : "cache_miss", {
