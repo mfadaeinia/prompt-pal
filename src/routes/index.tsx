@@ -1404,6 +1404,39 @@ function Index() {
           })}
         />
       )}
+      {selectionPopover && (
+        <div
+          style={{
+            position: "fixed",
+            top: Math.max(8, selectionPopover.y - 44),
+            left: selectionPopover.x,
+            transform: "translateX(-50%)",
+            zIndex: 60,
+          }}
+          // Don't let mousedown collapse the selection before click fires.
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button
+            onClick={saveSelectedExpression}
+            disabled={selSaving}
+            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-lg ring-1 ring-black/10 hover:opacity-90 disabled:opacity-60"
+          >
+            {selJustSaved ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : selSaving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-3.5 w-3.5" /> Save expression
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
