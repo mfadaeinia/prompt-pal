@@ -83,7 +83,7 @@ function SavedPage() {
     if (item.video_url) params.set("v", item.video_url);
     if (item.target_language) params.set("lang", item.target_language);
     if (item.timestamp_seconds) params.set("t", String(item.timestamp_seconds));
-    navigate({ to: "/", search: () => Object.fromEntries(params) as any });
+    window.location.assign(`/?${params.toString()}`);
   }
 
   return (
