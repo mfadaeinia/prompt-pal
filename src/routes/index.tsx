@@ -167,6 +167,103 @@ function Index() {
     });
   }
 
+  // ── Selection-based "Save expression" floating menu ──────────────────────
+  // When the user highlights text inside the transcript, show a contextual
+  // action to save just the selected text (not the whole sentence).
+  const [selectionPopover, setSelectionPopover] = useState<{
+    text: string;
+    sentence: TranscriptSentence;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selSaving, setSelSaving] = useState(false);
+  const [selJustSaved, setSelJustSaved] = useState(false);
+
+  useEffect(() => {
+    if (!studyMode) {
+      setSelectionPopover(null);
+      return;
+    }
+    const handler = () => {
+      const sel = typeof window !== "undefined" ? window.getSelection() : null;
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+        setSelectionPopover(null);
+        return;
+      }
+      const container = listRef.current;
+      if (!container) return;
+      const node = sel.focusNode ?? sel.anchorNode;
+      if (!node || !container.contains(node)) {
+        setSelectionPopover(null);
+        return;
+      }
+      const text = sel.toString().trim();
+      if (!text || text.length > 500) {
+        setSelectionPopover(null);
+        return;
+      }
+      let el: HTMLElement | null =
+        node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
+      while (el && !el.dataset?.sid && el !== container) el = el.parentElement;
+      const sid = el?.dataset?.sid ? Number(el.dataset.sid) : null;
+      if (sid == null) {
+        setSelectionPopover(null);
+        return;
+      }
+      const sentence = sentences.find((s) => s.id === sid);
+      if (!sentence) {
+        setSelectionPopover(null);
+        return;
+      }
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      setSelectionPopover({
+        text,
+        sentence,
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      });
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [studyMode, sentences]);
+
+  async function saveSelectedExpression() {
+    if (!selectionPopover || !browserId) return;
+    const { text, sentence } = selectionPopover;
+    setSelSaving(true);
+    try {
+      await saveExpressionFx({
+        data: {
+          sessionId: browserId,
+          sentenceText: text,
+          translation: null,
+          meaning: null,
+          expressionNotes: `Selected from: "${sentence.text}"`,
+          videoTitle: videoTitle,
+          videoUrl: url || null,
+          videoId: videoId,
+          timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+          targetLanguage: targetLang || null,
+        },
+      });
+      track("expression_saved", {
+        video_id: videoId,
+        source: "text_selection",
+        timestamp_seconds: Math.round(sentence.offset),
+        selected_length: text.length,
+      });
+      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+      setSelJustSaved(true);
+      window.setTimeout(() => setSelJustSaved(false), 1400);
+      window.setTimeout(() => setSelectionPopover(null), 600);
+      window.getSelection()?.removeAllRanges();
+    } catch {
+      // best-effort
+    } finally {
+      setSelSaving(false);
+    }
+  }
+
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
@@ -286,10 +383,13 @@ function Index() {
     if (!v) return;
     const t = Number(params.get("t") || 0);
     const lang = params.get("lang");
+    const mode = params.get("mode");
     setUrl(v);
     if (lang) setTargetLang(lang);
     setView("demo");
-    setStudyMode(true);
+    // Restore Learning Mode (transcript + explanations) for deep-links from
+    // My Expressions so the original lesson context is fully reopened.
+    if (mode !== "watch") setStudyMode(true);
     deepLinkSeekRef.current = isFinite(t) ? t : null;
     demoStartTimeRef.current = performance.now();
     loadMutation.mutate(v);
@@ -1303,6 +1403,39 @@ function Index() {
             waitlistJoined: waitlistJoinedRef.current || (typeof window !== "undefined" && localStorage.getItem("clario_waitlist_joined") === "1"),
           })}
         />
+      )}
+      {selectionPopover && (
+        <div
+          style={{
+            position: "fixed",
+            top: Math.max(8, selectionPopover.y - 44),
+            left: selectionPopover.x,
+            transform: "translateX(-50%)",
+            zIndex: 60,
+          }}
+          // Don't let mousedown collapse the selection before click fires.
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button
+            onClick={saveSelectedExpression}
+            disabled={selSaving}
+            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold text-background shadow-lg ring-1 ring-black/10 hover:opacity-90 disabled:opacity-60"
+          >
+            {selJustSaved ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : selSaving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-3.5 w-3.5" /> Save expression
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );

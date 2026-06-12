@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark } from "lucide-react";
+import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Repeat, Film } from "lucide-react";
 import {
   listSavedExpressions,
   deleteSavedExpression,
@@ -83,7 +83,24 @@ function SavedPage() {
     if (item.video_url) params.set("v", item.video_url);
     if (item.target_language) params.set("lang", item.target_language);
     if (item.timestamp_seconds) params.set("t", String(item.timestamp_seconds));
+    // Force Learning Mode + transcript view on arrival.
+    params.set("mode", "learn");
     window.location.assign(`/?${params.toString()}`);
+  }
+
+  function replay(item: any) {
+    track("saved_expression_replayed", {
+      expression_id: item.id,
+      video_id: item.video_id,
+      timestamp_seconds: item.timestamp_seconds,
+    });
+    const t = Math.max(0, Math.floor(item.timestamp_seconds ?? 0));
+    const url = item.video_id
+      ? `https://youtu.be/${item.video_id}?t=${t}`
+      : item.video_url
+        ? `${item.video_url}${item.video_url.includes("?") ? "&" : "?"}t=${t}`
+        : null;
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -127,55 +144,76 @@ function SavedPage() {
                 key={item.id}
                 className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm ring-1 ring-primary/5"
               >
-                <p className="text-base font-semibold leading-snug text-foreground">
+                {/* Expression */}
+                <p className="text-lg font-semibold leading-snug text-foreground">
                   {item.sentence_text}
                 </p>
+
                 {item.translation && (
-                  <p className="mt-2 text-sm text-foreground/90">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                      Translation
-                    </span>
-                    <br />
+                  <p className="mt-2 text-sm text-foreground/85">
                     {item.translation}
                   </p>
                 )}
-                {item.meaning && (
-                  <p className="mt-2 text-sm text-foreground/80">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                      Meaning
-                    </span>
-                    <br />
-                    {item.meaning}
-                  </p>
-                )}
-                {item.expression_notes && item.expression_notes !== "—" && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground/70">Notes:</span>{" "}
-                    {item.expression_notes}
-                  </p>
-                )}
 
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-                  {item.video_title && (
-                    <span className="truncate font-medium text-foreground/70">
-                      {item.video_title}
+                {/* Source block — always visible directly below the expression */}
+                <div className="mt-3 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Source
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-foreground/90">
+                    <Film className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="truncate">
+                      {item.video_title ?? "Untitled video"}
                     </span>
-                  )}
-                  <span>·</span>
-                  <span>{fmtTime(item.timestamp_seconds ?? 0)}</span>
-                  <span>·</span>
-                  <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Saved at {fmtTime(item.timestamp_seconds ?? 0)}
+                    {item.created_at && (
+                      <> · {new Date(item.created_at).toLocaleDateString()}</>
+                    )}
+                  </p>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => watchAgain(item)}
-                    disabled={!item.video_url}
-                    className="gap-1.5"
-                  >
-                    <Play className="h-3.5 w-3.5" /> Watch again
-                  </Button>
+                {(item.meaning || (item.expression_notes && item.expression_notes !== "—")) && (
+                  <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    {item.meaning && (
+                      <p className="text-xs text-foreground/80">
+                        <span className="font-semibold text-foreground/70">Meaning:</span>{" "}
+                        {item.meaning}
+                      </p>
+                    )}
+                    {item.expression_notes && item.expression_notes !== "—" && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground/70">Notes:</span>{" "}
+                        {item.expression_notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => replay(item)}
+                      disabled={!item.video_id && !item.video_url}
+                      className="gap-1.5"
+                      title="Replay on YouTube at this moment"
+                    >
+                      <Repeat className="h-3.5 w-3.5" /> Replay
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => watchAgain(item)}
+                      disabled={!item.video_url && !item.video_id}
+                      className="gap-1.5"
+                      title="Open the lesson with transcript at this moment"
+                    >
+                      <Play className="h-3.5 w-3.5" /> Watch again
+                    </Button>
+                  </div>
                   <button
                     onClick={() => removeMutation.mutate(item.id)}
                     className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
@@ -205,7 +243,7 @@ function EmptyState({ hasAny }: { hasAny: boolean }) {
       <p className="mt-1 text-sm text-muted-foreground">
         {hasAny
           ? "Try a different search term."
-          : "Tap ★ Save on any explanation while learning to bookmark it here."}
+          : "Highlight any text in a transcript, or tap ★ Save on an explanation to bookmark it here."}
       </p>
       {!hasAny && (
         <Link
