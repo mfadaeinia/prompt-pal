@@ -286,10 +286,13 @@ function Index() {
     if (!v) return;
     const t = Number(params.get("t") || 0);
     const lang = params.get("lang");
+    const mode = params.get("mode");
     setUrl(v);
     if (lang) setTargetLang(lang);
     setView("demo");
-    setStudyMode(true);
+    // Restore Learning Mode (transcript + explanations) for deep-links from
+    // My Expressions so the original lesson context is fully reopened.
+    if (mode !== "watch") setStudyMode(true);
     deepLinkSeekRef.current = isFinite(t) ? t : null;
     demoStartTimeRef.current = performance.now();
     loadMutation.mutate(v);
