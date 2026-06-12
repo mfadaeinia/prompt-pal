@@ -33,7 +33,6 @@ function fmtTime(s: number) {
 }
 
 function SavedPage() {
-  const navigate = useNavigate();
   const listFn = useServerFn(listSavedExpressions);
   const deleteFn = useServerFn(deleteSavedExpression);
   const qc = useQueryClient();
