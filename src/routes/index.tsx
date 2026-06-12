@@ -83,7 +83,7 @@ function Index() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
-  const [studyMode, setStudyMode] = useState(false);
+  const [studyMode, setStudyMode] = useState(true);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
@@ -1189,62 +1189,44 @@ function Index() {
 
         {view === "demo" && videoId && (
           <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
-            <HowItWorksStrip />
-            <ValueCards />
             {!isDemo && <ReadinessBadges videoId={videoId} />}
 
-            {/* Desktop mode toggle */}
-            <div className="flex items-center justify-center gap-2">
-              <div
-                className="inline-flex items-center rounded-full border border-border bg-card p-1 shadow-sm"
-                role="group"
-                aria-label="View mode"
+
+            {/* Subtle secondary mode toggle — Learning Mode is the default. */}
+            <div className="flex items-center justify-end">
+              <button
+                onClick={() => {
+                  const next = !studyMode;
+                  setStudyMode(next);
+                  if (!next) setSelected(null);
+                  track(next ? "study_mode_opened" : "study_mode_closed", { video_id: videoId });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                aria-pressed={!studyMode}
               >
-                <button
-                  onClick={() => {
-                    if (studyMode) {
-                      setStudyMode(false);
-                      setSelected(null);
-                      track("study_mode_closed", { video_id: videoId });
-                    }
-                  }}
-                  aria-pressed={!studyMode}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition ${
-                    !studyMode
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tv className="h-4 w-4" />
-                  Watch Mode
-                </button>
-                <button
-                  onClick={() => {
-                    if (!studyMode) {
-                      setStudyMode(true);
-                      track("study_mode_opened", { video_id: videoId });
-                    }
-                  }}
-                  aria-pressed={studyMode}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium transition ${
-                    studyMode
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Learning Mode
-                </button>
-              </div>
+                {studyMode ? (
+                  <>
+                    <Tv className="h-3.5 w-3.5" />
+                    Just watch
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Back to Learning Mode
+                  </>
+                )}
+              </button>
             </div>
+
 
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
                   : "grid-cols-1"
               }`}
             >
+
               <div className="space-y-4">
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
@@ -1354,6 +1336,13 @@ function Index() {
                 </aside>
               )}
             </div>
+
+            {/* Supporting/marketing content lives BELOW the product. */}
+            <section className="space-y-4 pt-8">
+              <HowItWorksStrip />
+              <ValueCards />
+            </section>
+
 
             {/* Mobile persistent bottom bar */}
             {isMobile && (
