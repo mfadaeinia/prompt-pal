@@ -63,12 +63,16 @@ function Index() {
   const fetchTx = useServerFn(fetchTranscript);
   const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
+  const saveExpressionFx = useServerFn(saveExpression);
+  const listSavedFx = useServerFn(listSavedExpressions);
+  const qc = useQueryClient();
 
 
 
   const [url, setUrl] = useState("");
   const [targetLang, setTargetLang] = useState("English");
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoTitle, setVideoTitle] = useState<string | null>(null);
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
@@ -79,6 +83,8 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(false);
+  const [browserId, setBrowserId] = useState("");
+  const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
@@ -92,6 +98,75 @@ function Index() {
     typeof performance !== "undefined" ? performance.now() : 0
   );
   const devPanelEnabled = isDevPanelEnabled();
+
+  useEffect(() => {
+    setBrowserId(getBrowserId());
+  }, []);
+
+  // List of saved expressions for this browser — used to mark sentences as already-saved.
+  const savedQuery = useQuery({
+    queryKey: ["saved-expressions", browserId],
+    queryFn: () => listSavedFx({ data: { sessionId: browserId } }),
+    enabled: !!browserId,
+  });
+  const savedSentenceKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of (savedQuery.data?.items ?? []) as any[]) {
+      set.add(`${it.video_id ?? ""}::${(it.sentence_text ?? "").trim()}`);
+    }
+    return set;
+  }, [savedQuery.data]);
+  function isSentenceSaved(s: TranscriptSentence | null) {
+    if (!s) return false;
+    return savedSentenceKeys.has(`${videoId ?? ""}::${s.text.trim()}`);
+  }
+
+  const saveExpressionMutation = useMutation({
+    mutationFn: (vars: {
+      sentence: TranscriptSentence;
+      translation: string | null;
+      meaning: string | null;
+      note: string | null;
+    }) =>
+      saveExpressionFx({
+        data: {
+          sessionId: browserId,
+          sentenceText: vars.sentence.text,
+          translation: vars.translation,
+          meaning: vars.meaning,
+          expressionNotes: vars.note,
+          videoTitle: videoTitle,
+          videoUrl: url || null,
+          videoId: videoId,
+          timestampSeconds: Math.max(0, Math.round(vars.sentence.offset)),
+          targetLanguage: targetLang || null,
+        },
+      }),
+    onSuccess: (_res, vars) => {
+      track("expression_saved", {
+        video_id: videoId,
+        sentence_index: sentences.findIndex((x) => x.id === vars.sentence.id),
+        timestamp_seconds: Math.round(vars.sentence.offset),
+        target_language: targetLang,
+      });
+      setJustSavedId(vars.sentence.id);
+      window.setTimeout(() => setJustSavedId(null), 1800);
+      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+    },
+  });
+
+  function handleSaveExpression(s: TranscriptSentence | null) {
+    if (!s || !browserId) return;
+    const entry = explanationCache[s.id];
+    const ready = entry && entry.status === "ready" ? entry : null;
+    saveExpressionMutation.mutate({
+      sentence: s,
+      translation: ready?.translation || null,
+      meaning: ready?.meaning || null,
+      note: ready?.note && ready.note !== "—" ? ready.note : null,
+    });
+  }
+
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
