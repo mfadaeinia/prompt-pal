@@ -277,6 +277,45 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // "Watch again" deep-link handler: ?v=<youtube-url>&t=<seconds>&lang=<lang>
+  const deepLinkSeekRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get("v");
+    if (!v) return;
+    const t = Number(params.get("t") || 0);
+    const lang = params.get("lang");
+    setUrl(v);
+    if (lang) setTargetLang(lang);
+    setView("demo");
+    setStudyMode(true);
+    deepLinkSeekRef.current = isFinite(t) ? t : null;
+    demoStartTimeRef.current = performance.now();
+    loadMutation.mutate(v);
+    // Clean the URL so refreshes don't re-seek.
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once the player is ready and sentences are loaded after a deep-link, seek.
+  useEffect(() => {
+    const t = deepLinkSeekRef.current;
+    if (t == null) return;
+    if (!sentences.length) return;
+    const tryer = window.setInterval(() => {
+      const p = playerRef.current;
+      if (p?.seekTo) {
+        p.seekTo(Math.max(0, t), true);
+        p.playVideo?.();
+        deepLinkSeekRef.current = null;
+        window.clearInterval(tryer);
+      }
+    }, 200);
+    return () => window.clearInterval(tryer);
+  }, [sentences]);
+
+
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
     setTargetLang(DEMO_LANGUAGE);
