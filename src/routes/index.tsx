@@ -948,6 +948,14 @@ function Index() {
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
             <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
+            <Link
+              to="/saved"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+              onClick={() => track("my_expressions_opened", { from: view })}
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">My Expressions</span>
+            </Link>
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
                 <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
