@@ -167,6 +167,103 @@ function Index() {
     });
   }
 
+  // ── Selection-based "Save expression" floating menu ──────────────────────
+  // When the user highlights text inside the transcript, show a contextual
+  // action to save just the selected text (not the whole sentence).
+  const [selectionPopover, setSelectionPopover] = useState<{
+    text: string;
+    sentence: TranscriptSentence;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selSaving, setSelSaving] = useState(false);
+  const [selJustSaved, setSelJustSaved] = useState(false);
+
+  useEffect(() => {
+    if (!studyMode) {
+      setSelectionPopover(null);
+      return;
+    }
+    const handler = () => {
+      const sel = typeof window !== "undefined" ? window.getSelection() : null;
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+        setSelectionPopover(null);
+        return;
+      }
+      const container = listRef.current;
+      if (!container) return;
+      const node = sel.focusNode ?? sel.anchorNode;
+      if (!node || !container.contains(node)) {
+        setSelectionPopover(null);
+        return;
+      }
+      const text = sel.toString().trim();
+      if (!text || text.length > 500) {
+        setSelectionPopover(null);
+        return;
+      }
+      let el: HTMLElement | null =
+        node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
+      while (el && !el.dataset?.sid && el !== container) el = el.parentElement;
+      const sid = el?.dataset?.sid ? Number(el.dataset.sid) : null;
+      if (sid == null) {
+        setSelectionPopover(null);
+        return;
+      }
+      const sentence = sentences.find((s) => s.id === sid);
+      if (!sentence) {
+        setSelectionPopover(null);
+        return;
+      }
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      setSelectionPopover({
+        text,
+        sentence,
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      });
+    };
+    document.addEventListener("selectionchange", handler);
+    return () => document.removeEventListener("selectionchange", handler);
+  }, [studyMode, sentences]);
+
+  async function saveSelectedExpression() {
+    if (!selectionPopover || !browserId) return;
+    const { text, sentence } = selectionPopover;
+    setSelSaving(true);
+    try {
+      await saveExpressionFx({
+        data: {
+          sessionId: browserId,
+          sentenceText: text,
+          translation: null,
+          meaning: null,
+          expressionNotes: `Selected from: "${sentence.text}"`,
+          videoTitle: videoTitle,
+          videoUrl: url || null,
+          videoId: videoId,
+          timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+          targetLanguage: targetLang || null,
+        },
+      });
+      track("expression_saved", {
+        video_id: videoId,
+        source: "text_selection",
+        timestamp_seconds: Math.round(sentence.offset),
+        selected_length: text.length,
+      });
+      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+      setSelJustSaved(true);
+      window.setTimeout(() => setSelJustSaved(false), 1400);
+      window.setTimeout(() => setSelectionPopover(null), 600);
+      window.getSelection()?.removeAllRanges();
+    } catch {
+      // best-effort
+    } finally {
+      setSelSaving(false);
+    }
+  }
+
 
   function getFeedbackContext() {
     const start = demoStartTimeRef.current ?? pageLoadTimeRef.current;
