@@ -650,6 +650,15 @@ function Index() {
     })
       .then((res) => {
         const parsed = parseExplanation(res.explanation ?? null);
+        const dbg = (res as any).debug;
+        if (dbg) {
+          console.log("[explain-debug][client] AI debug", dbg);
+          setLastAiDebug({
+            bytes: dbg.payloadBytes,
+            sentenceLength: dbg.sentenceLength,
+            truncated: !!dbg.truncated,
+          });
+        }
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: {
