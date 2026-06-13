@@ -524,7 +524,17 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
+      setTranscriptQuality(res.quality);
+      setLimitedMode(res.quality.quality === "low");
+      setQualityBannerDismissed(false);
       setVideoTitle(null);
+      track("transcript_quality_detected", {
+        video_id: res.videoId,
+        quality: res.quality.quality,
+        reasons: res.quality.reasons.join(","),
+        sentence_count: res.quality.metrics.sentenceCount,
+        avg_words_per_sentence: res.quality.metrics.avgWordsPerSentence,
+      });
       // Fetch human-readable video title via YouTube oEmbed (best-effort).
       fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(
