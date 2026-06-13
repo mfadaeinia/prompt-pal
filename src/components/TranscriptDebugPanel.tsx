@@ -37,7 +37,10 @@ export function TranscriptDebugPanel(props: Props) {
     const fullText = props.sentences.map((s) => s.text).join(" ");
     const chars = fullText.length;
     const words = fullText.trim() ? fullText.trim().split(/\s+/).length : 0;
-    return { chars, words };
+    const sentenceCount = props.sentences.length;
+    const first500 = fullText.slice(0, 500);
+    const last500 = fullText.slice(-500);
+    return { chars, words, sentenceCount, first500, last500, fullText };
   }, [props.sentences]);
 
   const first10 = props.sentences.slice(0, 10);
