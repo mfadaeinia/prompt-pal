@@ -1337,6 +1337,7 @@ function Index() {
                     isSaved={isSentenceSaved(selected)}
                     justSaved={!!selected && justSavedId === selected.id}
                     saving={saveExpressionMutation.isPending}
+                    limitedMode={limitedMode}
                   />
                 )}
               </div>
