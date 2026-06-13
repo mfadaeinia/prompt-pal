@@ -1168,9 +1168,45 @@ function Index() {
           </>
         )}
 
+        {view === "demo" && (
+          <TranscriptDebugPanel
+            status={
+              loadMutation.isPending
+                ? "loading"
+                : loadMutation.isError
+                ? "error"
+                : sentences.length > 0
+                ? "success"
+                : "idle"
+            }
+            url={url}
+            videoId={videoId}
+            videoTitle={videoTitle}
+            source={transcriptSource}
+            sentences={sentences}
+            errorMessage={
+              loadMutation.isError
+                ? (loadMutation.error as any)?.providerMessage ||
+                  (loadMutation.error as any)?.message ||
+                  "Unknown error"
+                : null
+            }
+            errorType={
+              loadMutation.isError
+                ? (loadMutation.error as any)?.errorType ?? "unknown"
+                : null
+            }
+            lastAiPayloadBytes={lastAiDebug?.bytes ?? null}
+            lastAiSentenceLength={lastAiDebug?.sentenceLength ?? null}
+            lastAiTruncated={lastAiDebug?.truncated ?? null}
+          />
+        )}
+
         {view === "demo" && loadMutation.isPending && !videoId && (
           <LoadingProgress />
         )}
+
+
 
 
         {view === "demo" && loadMutation.isError && (
