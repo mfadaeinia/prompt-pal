@@ -479,9 +479,12 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
       errorType?: TranscriptErrorType;
       videoId?: string;
+      providerMessage?: string;
     };
     err.errorType = errorType;
     err.videoId = videoId;
+    err.providerMessage =
+      lastErr instanceof Error ? lastErr.message : String(lastErr ?? "");
     throw err;
   });
 
