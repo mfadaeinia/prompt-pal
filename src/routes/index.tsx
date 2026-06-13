@@ -577,6 +577,12 @@ function Index() {
       }
     },
     onError: (err: any, submittedUrl) => {
+      console.error("[transcript-debug][client] fetch failed", {
+        url: submittedUrl,
+        errorType: err?.errorType,
+        providerMessage: err?.providerMessage,
+        message: err?.message,
+      });
       const isDemo = submittedUrl === DEMO_VIDEO_URL;
       // Internal-only — never surfaced to the user.
       track("transcript_fetch_failed", {
