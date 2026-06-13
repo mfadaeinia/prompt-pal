@@ -1216,6 +1216,7 @@ function Index() {
             lastAiPayloadBytes={lastAiDebug?.bytes ?? null}
             lastAiSentenceLength={lastAiDebug?.sentenceLength ?? null}
             lastAiTruncated={lastAiDebug?.truncated ?? null}
+            lastAiInspector={lastAiInspector}
           />
         )}
 
