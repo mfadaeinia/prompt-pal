@@ -1107,7 +1107,7 @@ function Index() {
                 aria-label="Saved learning items"
               >
                 <Bookmark className="h-3.5 w-3.5" />
-                <span>Saved</span>
+                <span>My Library</span>
                 {savedQuery.data && (savedQuery.data.items ?? []).length > 0 && (
                   <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
                     {(savedQuery.data.items ?? []).length > 99 ? "99+" : (savedQuery.data.items ?? []).length}
