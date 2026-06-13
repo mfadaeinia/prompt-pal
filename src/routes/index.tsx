@@ -1343,9 +1343,52 @@ function Index() {
 
               {studyMode && (
                 <aside className="relative flex max-h-[60vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[70vh]">
+                  {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
+                    <TranscriptQualityBanner
+                      quality={transcriptQuality}
+                      onContinue={() => {
+                        setLimitedMode(transcriptQuality.quality === "low");
+                        setQualityBannerDismissed(true);
+                        track("transcript_quality_continue", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                      }}
+                      onTryAnother={() => {
+                        track("transcript_quality_try_another", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                        setSentences([]);
+                        setVideoId(null);
+                        setTranscriptQuality(null);
+                        setSelected(null);
+                        if (typeof window !== "undefined") {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }
+                      }}
+                      onReprocess={() => {
+                        if (!url) return;
+                        track("transcript_quality_reprocess", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                        loadMutation.mutate(url);
+                      }}
+                      reprocessing={loadMutation.isPending}
+                    />
+                  )}
                   <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    <span>Transcript · {sentences.length} sentences</span>
+                    <span>
+                      Transcript · {sentences.length}{" "}
+                      {limitedMode ? "phrases" : "sentences"}
+                    </span>
                     <div className="flex items-center gap-2">
+                      {limitedMode && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                          Limited Mode
+                        </span>
+                      )}
                       {transcriptSource && (
                         <SourceBadge source={transcriptSource} />
                       )}
