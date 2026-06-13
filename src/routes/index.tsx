@@ -93,6 +93,9 @@ function Index() {
     sentenceLength: number;
     truncated: boolean;
   } | null>(null);
+  const [lastAiInspector, setLastAiInspector] = useState<
+    import("@/components/TranscriptDebugPanel").AiInspectorDebug | null
+  >(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
