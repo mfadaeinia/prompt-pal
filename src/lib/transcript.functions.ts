@@ -644,6 +644,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "youtube",
         language: usedLang,
         cacheHit: false,
+        quality: assessQuality(raw, sentences),
       };
     }
 
