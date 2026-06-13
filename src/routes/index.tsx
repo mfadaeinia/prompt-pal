@@ -615,6 +615,9 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource("manual");
+      setTranscriptQuality(res.quality);
+      setLimitedMode(res.quality.quality === "low");
+      setQualityBannerDismissed(false);
       setManualText("");
       loadMutation.reset();
       setUserProperties({ selected_language: targetLang });
