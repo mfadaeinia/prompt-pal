@@ -2008,6 +2008,7 @@ function ExplanationPanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {!limitedMode && (
           <Button
             variant={isSaved || justSaved ? "secondary" : "outline"}
             size="sm"
@@ -2036,6 +2037,7 @@ function ExplanationPanel({
               </>
             )}
           </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
