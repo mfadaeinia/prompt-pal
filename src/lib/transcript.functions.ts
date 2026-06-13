@@ -285,7 +285,9 @@ async function fetchFromFallbackProvider(params: {
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
+    console.log("[transcript-debug] URL received:", data.url);
     const videoId = extractVideoId(data.url);
+    console.log("[transcript-debug] extracted videoId:", videoId);
     if (!videoId) {
       logEvent({
         video_id: null,
