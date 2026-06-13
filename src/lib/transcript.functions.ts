@@ -569,6 +569,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "cache",
         language: cached.language,
         cacheHit: true,
+        quality: assessQuality(cached.transcript_json, sentences),
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
