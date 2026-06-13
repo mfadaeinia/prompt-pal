@@ -40,7 +40,27 @@ export function TranscriptDebugPanel(props: Props) {
     const sentenceCount = props.sentences.length;
     const first500 = fullText.slice(0, 500);
     const last500 = fullText.slice(-500);
-    return { chars, words, sentenceCount, first500, last500, fullText };
+    const segWords = props.sentences.map((s) =>
+      s.text.trim() ? s.text.trim().split(/\s+/).length : 0
+    );
+    const avgWordsPerSegment = segWords.length
+      ? words / segWords.length
+      : 0;
+    const longestSegment = segWords.reduce((m, n) => Math.max(m, n), 0);
+    const shortestSegment = segWords.length
+      ? segWords.reduce((m, n) => Math.min(m, n), Infinity)
+      : 0;
+    return {
+      chars,
+      words,
+      sentenceCount,
+      first500,
+      last500,
+      fullText,
+      avgWordsPerSegment,
+      longestSegment,
+      shortestSegment: shortestSegment === Infinity ? 0 : shortestSegment,
+    };
   }, [props.sentences]);
 
   const first10 = props.sentences.slice(0, 10);
