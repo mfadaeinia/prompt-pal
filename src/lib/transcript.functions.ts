@@ -686,6 +686,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "fallback",
         language: fb.language,
         cacheHit: false,
+        quality: assessQuality(fb.chunks, sentences),
       };
     }
 
