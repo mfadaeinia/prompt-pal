@@ -743,6 +743,7 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
       source: "manual",
       language: null,
       cacheHit: false,
+      quality: assessQuality(chunks, sentences),
     };
   });
 
