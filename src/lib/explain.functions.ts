@@ -30,62 +30,13 @@ Do not lecture. Be assistive, not teaching.`;
       data.context ? `\n\nSurrounding context (for reference only): ${data.context}` : ""
     }`;
 
-    const payloadBytes = system.length + prompt.length;
-    const promptFirst500 = prompt.slice(0, 500);
-    const promptLast500 = prompt.slice(-500);
-    const chunkSizes = [prompt.length]; // one chunk: sentence + small context window
-    const deliveryMode: "single_sentence" | "single_sentence_with_context" =
-      data.context && data.context.length > 0
-        ? "single_sentence_with_context"
-        : "single_sentence";
-
-    console.log("[explain-debug] AI INPUT INSPECTOR", {
-      delivery_mode: deliveryMode,
-      sentence_length: data.sentence.length,
-      sentence_word_count: data.sentence.trim().split(/\s+/).filter(Boolean).length,
-      context_length: data.context?.length ?? 0,
-      context_word_count: data.context
-        ? data.context.trim().split(/\s+/).filter(Boolean).length
-        : 0,
-      prompt_length: prompt.length,
-      system_length: system.length,
-      payload_bytes_estimate: payloadBytes,
-      chunking_applied: false,
-      chunks_sent: chunkSizes.length,
-      chunk_sizes: chunkSizes,
-      prompt_first_500: promptFirst500,
-      prompt_last_500: promptLast500,
-      truncated: false,
-      target_language: data.targetLanguage,
-      model: "google/gemini-3-flash-preview",
-    });
-
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
       system,
       prompt,
     });
 
-    console.log("[explain-debug] AI response", {
-      response_length: text.length,
-      preview: text.slice(0, 120),
-    });
-
     return {
       explanation: text.trim(),
-      debug: {
-        sentenceLength: data.sentence.length,
-        contextLength: data.context?.length ?? 0,
-        promptLength: prompt.length,
-        systemLength: system.length,
-        payloadBytes,
-        chunkingApplied: false,
-        chunksSent: chunkSizes.length,
-        chunkSizes,
-        promptFirst500,
-        promptLast500,
-        deliveryMode,
-        truncated: false,
-      },
     };
   });
