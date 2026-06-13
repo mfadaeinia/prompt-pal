@@ -7,6 +7,7 @@ import {
   saveManualTranscript,
   type TranscriptSentence,
   type TranscriptSource,
+  type TranscriptQualityReport,
 } from "@/lib/transcript.functions";
 
 import { explainSentence } from "@/lib/explain.functions";
@@ -78,6 +79,9 @@ function Index() {
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
+  const [transcriptQuality, setTranscriptQuality] = useState<TranscriptQualityReport | null>(null);
+  const [limitedMode, setLimitedMode] = useState(false);
+  const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
   const [view, setView] = useState<"landing" | "demo">("landing");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -520,7 +524,17 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
+      setTranscriptQuality(res.quality);
+      setLimitedMode(res.quality.quality === "low");
+      setQualityBannerDismissed(false);
       setVideoTitle(null);
+      track("transcript_quality_detected", {
+        video_id: res.videoId,
+        quality: res.quality.quality,
+        reasons: res.quality.reasons.join(","),
+        sentence_count: res.quality.metrics.sentenceCount,
+        avg_words_per_sentence: res.quality.metrics.avgWordsPerSentence,
+      });
       // Fetch human-readable video title via YouTube oEmbed (best-effort).
       fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(
@@ -601,6 +615,9 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource("manual");
+      setTranscriptQuality(res.quality);
+      setLimitedMode(res.quality.quality === "low");
+      setQualityBannerDismissed(false);
       setManualText("");
       loadMutation.reset();
       setUserProperties({ selected_language: targetLang });
@@ -1020,7 +1037,7 @@ function Index() {
 
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
-    ensureExplanation(s, sentences);
+    if (!limitedMode) ensureExplanation(s, sentences);
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
@@ -1320,15 +1337,59 @@ function Index() {
                     isSaved={isSentenceSaved(selected)}
                     justSaved={!!selected && justSavedId === selected.id}
                     saving={saveExpressionMutation.isPending}
+                    limitedMode={limitedMode}
                   />
                 )}
               </div>
 
               {studyMode && (
                 <aside className="relative flex max-h-[60vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[70vh]">
+                  {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
+                    <TranscriptQualityBanner
+                      quality={transcriptQuality}
+                      onContinue={() => {
+                        setLimitedMode(transcriptQuality.quality === "low");
+                        setQualityBannerDismissed(true);
+                        track("transcript_quality_continue", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                      }}
+                      onTryAnother={() => {
+                        track("transcript_quality_try_another", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                        setSentences([]);
+                        setVideoId(null);
+                        setTranscriptQuality(null);
+                        setSelected(null);
+                        if (typeof window !== "undefined") {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }
+                      }}
+                      onReprocess={() => {
+                        if (!url) return;
+                        track("transcript_quality_reprocess", {
+                          video_id: videoId,
+                          quality: transcriptQuality.quality,
+                        });
+                        loadMutation.mutate(url);
+                      }}
+                      reprocessing={loadMutation.isPending}
+                    />
+                  )}
                   <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    <span>Transcript · {sentences.length} sentences</span>
+                    <span>
+                      Transcript · {sentences.length}{" "}
+                      {limitedMode ? "phrases" : "sentences"}
+                    </span>
                     <div className="flex items-center gap-2">
+                      {limitedMode && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                          Limited Mode
+                        </span>
+                      )}
                       {transcriptSource && (
                         <SourceBadge source={transcriptSource} />
                       )}
@@ -1898,6 +1959,7 @@ function ExplanationPanel({
   isSaved,
   justSaved,
   saving,
+  limitedMode = false,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -1907,6 +1969,7 @@ function ExplanationPanel({
   isSaved: boolean;
   justSaved: boolean;
   saving: boolean;
+  limitedMode?: boolean;
 }) {
   if (!sentence) {
     return (
@@ -1945,6 +2008,7 @@ function ExplanationPanel({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {!limitedMode && (
           <Button
             variant={isSaved || justSaved ? "secondary" : "outline"}
             size="sm"
@@ -1973,6 +2037,7 @@ function ExplanationPanel({
               </>
             )}
           </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -1999,7 +2064,11 @@ function ExplanationPanel({
 
 
       <div className="mt-5 border-t border-border pt-5">
-        {ready ? (
+        {limitedMode ? (
+          <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            Per-phrase translation and saving are disabled in Limited Mode because this transcript lacks sentence structure. You can still watch, replay, and explore the transcript freely.
+          </div>
+        ) : ready ? (
           <div className="space-y-5">
             {ready.translation && (
               <div>
@@ -2512,6 +2581,88 @@ function ReadinessBadges({ videoId }: { videoId: string | null }) {
           ✅ {label}
         </span>
       ))}
+    </div>
+  );
+}
+
+function TranscriptQualityBanner({
+  quality,
+  onContinue,
+  onTryAnother,
+  onReprocess,
+  reprocessing,
+}: {
+  quality: TranscriptQualityReport;
+  onContinue: () => void;
+  onTryAnother: () => void;
+  onReprocess: () => void;
+  reprocessing: boolean;
+}) {
+  const isLow = quality.quality === "low";
+  const tone = isLow
+    ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+    : "border-amber-200 bg-amber-50/70 text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-100";
+
+  return (
+    <div className={`border-b px-3 py-3 ${tone}`}>
+      {isLow ? (
+        <>
+          <p className="text-sm font-semibold leading-snug">
+            Limited transcript quality detected
+          </p>
+          <p className="mt-1 text-xs leading-relaxed opacity-90">
+            This video&rsquo;s captions don&rsquo;t contain proper sentence
+            structure, so we couldn&rsquo;t fully convert it into learning-ready
+            sentences. You can still watch and explore the transcript.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              onClick={onContinue}
+              className="h-8 rounded-full bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              Continue anyway (Limited Mode)
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onTryAnother}
+              className="h-8 rounded-full border-amber-400/60 px-3 text-xs"
+            >
+              Try another video
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onReprocess}
+              disabled={reprocessing}
+              className="h-8 rounded-full px-3 text-xs"
+            >
+              {reprocessing ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Reprocessing
+                </>
+              ) : (
+                "Reprocess transcript"
+              )}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs leading-relaxed">
+            This transcript has limited structure. Some sentences may be
+            imperfect.
+          </p>
+          <button
+            onClick={onContinue}
+            className="shrink-0 rounded p-1 text-amber-900/70 hover:bg-amber-100 dark:text-amber-100/70 dark:hover:bg-amber-500/10"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
