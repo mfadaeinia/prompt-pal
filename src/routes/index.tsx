@@ -1219,6 +1219,11 @@ function Index() {
                 Try another video, the reliable demo, or paste a transcript
                 manually below.
               </p>
+              {/* DEBUG: surface raw provider error */}
+              <div className="mt-3 rounded border border-red-500/40 bg-red-50 p-2 font-mono text-xs text-red-800 dark:bg-red-950/40 dark:text-red-200">
+                <div><b>Debug — provider error type:</b> {(loadMutation.error as any)?.errorType ?? "unknown"}</div>
+                <div className="break-words"><b>Provider message:</b> {(loadMutation.error as any)?.providerMessage || (loadMutation.error as any)?.message || "—"}</div>
+              </div>
           <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   size="sm"
