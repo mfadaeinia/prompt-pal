@@ -1,6 +1,21 @@
 import { useMemo, useState } from "react";
 import type { TranscriptSentence, TranscriptSource } from "@/lib/transcript.functions";
 
+export type AiInspectorDebug = {
+  bytes: number;
+  sentenceLength: number;
+  contextLength: number;
+  promptLength: number;
+  systemLength: number;
+  chunkingApplied: boolean;
+  chunksSent: number;
+  chunkSizes: number[];
+  promptFirst500: string;
+  promptLast500: string;
+  deliveryMode: string;
+  truncated: boolean;
+};
+
 type Props = {
   status: "idle" | "loading" | "success" | "error";
   url: string;
@@ -13,6 +28,7 @@ type Props = {
   lastAiPayloadBytes: number | null;
   lastAiSentenceLength: number | null;
   lastAiTruncated: boolean | null;
+  lastAiInspector: AiInspectorDebug | null;
 };
 
 export function TranscriptDebugPanel(props: Props) {
