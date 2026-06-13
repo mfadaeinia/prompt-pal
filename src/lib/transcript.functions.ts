@@ -316,6 +316,58 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
   return final;
 }
 
+function assessQuality(
+  rawChunks: RawChunk[],
+  sentences: TranscriptSentence[]
+): TranscriptQualityReport {
+  const sentenceCount = sentences.length;
+  const wordCounts = sentences.map((s) => wordCount(s.text));
+  const totalWords = wordCounts.reduce((n, w) => n + w, 0);
+  const avgWordsPerSentence =
+    sentenceCount > 0 ? totalWords / sentenceCount : 0;
+
+  const shortFragments = rawChunks.filter(
+    (c) => (c.text ?? "").trim().length < 8
+  ).length;
+  const shortFragmentRatio =
+    rawChunks.length > 0 ? shortFragments / rawChunks.length : 0;
+
+  const rawText = rawChunks.map((c) => c.text).join(" ");
+  const hasPunctuationInRaw = /[.!?]/.test(rawText);
+
+  const reasons: string[] = [];
+  let quality: TranscriptQuality = "high";
+
+  // LOW signals
+  if (sentenceCount < 3) reasons.push("fewer_than_3_sentences");
+  if (sentenceCount > 0 && avgWordsPerSentence < 6)
+    reasons.push("avg_sentence_too_short");
+  if (shortFragmentRatio > 0.7) reasons.push("mostly_short_fragments");
+  if (!hasPunctuationInRaw) reasons.push("no_punctuation_in_raw");
+
+  if (reasons.length >= 2 || sentenceCount < 3 || !hasPunctuationInRaw) {
+    quality = "low";
+  } else if (
+    avgWordsPerSentence > 35 ||
+    avgWordsPerSentence < 8 ||
+    shortFragmentRatio > 0.4
+  ) {
+    quality = "medium";
+    if (avgWordsPerSentence > 35) reasons.push("very_long_avg_sentence");
+  }
+
+  return {
+    quality,
+    reasons,
+    metrics: {
+      sentenceCount,
+      avgWordsPerSentence: Number(avgWordsPerSentence.toFixed(1)),
+      shortFragmentRatio: Number(shortFragmentRatio.toFixed(2)),
+      hasPunctuationInRaw,
+    },
+  };
+}
+
 function parseTimestamp(s: string): number | null {
   const m = s.trim().match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
   if (m) {
