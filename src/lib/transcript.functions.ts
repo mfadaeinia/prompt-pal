@@ -249,7 +249,10 @@ async function fetchFromFallbackProvider(params: {
   videoUrl: string;
 }): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
   const apiKey = process.env.TRANSCRIBR_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[transcript-debug] TRANSCRIBR_API_KEY missing — skipping fallback");
+    return null;
+  }
 
   try {
     const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
@@ -261,11 +264,24 @@ async function fetchFromFallbackProvider(params: {
       },
       body: JSON.stringify({ video_id: params.videoId }),
     });
-    if (!res.ok) return null;
+    console.log("[transcript-debug] Transcribr HTTP", {
+      status: res.status,
+      ok: res.ok,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
+      return null;
+    }
     const json: any = await res.json();
     const transcript: any[] = Array.isArray(json?.transcript)
       ? json.transcript
       : [];
+    console.log("[transcript-debug] Transcribr response", {
+      transcript_items: transcript.length,
+      language: json?.language ?? null,
+      top_level_keys: json && typeof json === "object" ? Object.keys(json) : [],
+    });
     if (!transcript.length) return null;
     const chunks: RawChunk[] = transcript
       .map((c) => ({
@@ -277,15 +293,19 @@ async function fetchFromFallbackProvider(params: {
       .filter((c) => c.text.length > 0);
     if (!chunks.length) return null;
     return { chunks, language: json?.language ?? null };
-  } catch {
+  } catch (e) {
+    console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
     return null;
   }
 }
 
+
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
+    console.log("[transcript-debug] URL received:", data.url);
     const videoId = extractVideoId(data.url);
+    console.log("[transcript-debug] extracted videoId:", videoId);
     if (!videoId) {
       logEvent({
         video_id: null,
@@ -301,6 +321,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const cached = await readCache(videoId);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] cache HIT", {
+        videoId,
+        raw_chunks: cached.transcript_json.length,
+        sentences: sentences.length,
+        total_chars: chars,
+        language: cached.language,
+      });
       logEvent({
         video_id: videoId,
         fetch_source: "cache",
@@ -315,6 +343,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         cacheHit: true,
       };
     }
+    console.log("[transcript-debug] cache MISS for", videoId);
 
     // Cache miss — try external providers.
     logEvent({
@@ -335,6 +364,10 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           videoId,
           lang ? { lang } : undefined
         );
+        console.log("[transcript-debug] youtube-transcript attempt", {
+          lang: lang ?? "default",
+          chunks: r?.length ?? 0,
+        });
         if (r && r.length) {
           raw = r.map((x) => ({
             text: x.text,
@@ -346,11 +379,23 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         }
       } catch (e) {
         lastErr = e;
+        console.warn("[transcript-debug] youtube-transcript error", {
+          lang: lang ?? "default",
+          message: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
     if (raw && raw.length) {
       const sentences = buildSentencesFromChunks(raw);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] youtube SUCCESS", {
+        videoId,
+        raw_chunks: raw.length,
+        sentences: sentences.length,
+        total_chars: chars,
+        language: usedLang,
+      });
       await writeCache({
         videoId,
         videoUrl: data.url,
@@ -374,12 +419,24 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     // -------- Layer 3: Fallback provider --------
+    console.log("[transcript-debug] trying fallback provider (Transcribr)");
     const fb = await fetchFromFallbackProvider({
       videoId,
       videoUrl: data.url,
     });
+    console.log("[transcript-debug] fallback result", {
+      chunks: fb?.chunks.length ?? 0,
+      language: fb?.language ?? null,
+    });
     if (fb && fb.chunks.length) {
       const sentences = buildSentencesFromChunks(fb.chunks);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] fallback SUCCESS", {
+        videoId,
+        raw_chunks: fb.chunks.length,
+        sentences: sentences.length,
+        total_chars: chars,
+      });
       await writeCache({
         videoId,
         videoUrl: data.url,
@@ -402,8 +459,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       };
     }
 
+
     // All layers failed — surface a single friendly message.
     const errorType = classifyError(lastErr);
+    console.error("[transcript-debug] ALL LAYERS FAILED", {
+      videoId,
+      errorType,
+      lastErrorMessage: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
+    });
     logEvent({
       video_id: videoId,
       fetch_source: "fallback",
@@ -416,9 +479,12 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
       errorType?: TranscriptErrorType;
       videoId?: string;
+      providerMessage?: string;
     };
     err.errorType = errorType;
     err.videoId = videoId;
+    err.providerMessage =
+      lastErr instanceof Error ? lastErr.message : String(lastErr ?? "");
     throw err;
   });
 

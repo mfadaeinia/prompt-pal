@@ -30,11 +30,36 @@ Do not lecture. Be assistive, not teaching.`;
       data.context ? `\n\nSurrounding context (for reference only): ${data.context}` : ""
     }`;
 
+    const payloadBytes =
+      (system.length + prompt.length) * 1; // rough byte estimate (ASCII-ish)
+    console.log("[explain-debug] AI payload", {
+      sentence_length: data.sentence.length,
+      context_length: data.context?.length ?? 0,
+      prompt_length: prompt.length,
+      system_length: system.length,
+      payload_bytes_estimate: payloadBytes,
+      truncated: false,
+      target_language: data.targetLanguage,
+      model: "google/gemini-3-flash-preview",
+    });
+
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
       system,
       prompt,
     });
 
-    return { explanation: text.trim() };
+    console.log("[explain-debug] AI response", {
+      response_length: text.length,
+      preview: text.slice(0, 120),
+    });
+
+    return {
+      explanation: text.trim(),
+      debug: {
+        sentenceLength: data.sentence.length,
+        payloadBytes,
+        truncated: false,
+      },
+    };
   });

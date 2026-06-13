@@ -33,6 +33,7 @@ import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
+import { TranscriptDebugPanel } from "@/components/TranscriptDebugPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
@@ -87,6 +88,11 @@ function Index() {
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
+  const [lastAiDebug, setLastAiDebug] = useState<{
+    bytes: number;
+    sentenceLength: number;
+    truncated: boolean;
+  } | null>(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
@@ -490,7 +496,30 @@ function Index() {
   };
 
   const loadMutation = useMutation({
-    mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
+    mutationFn: async (u: string) => {
+      console.log("[transcript-debug][client] submitting URL:", u);
+      const res = await fetchTx({ data: { url: u } });
+      const fullText = res.sentences.map((s) => s.text).join(" ");
+      console.log("[transcript-debug][client] received transcript", {
+        videoId: res.videoId,
+        source: res.source,
+        segments: res.sentences.length,
+        total_chars: fullText.length,
+        total_words: fullText.trim() ? fullText.trim().split(/\s+/).length : 0,
+        cacheHit: res.cacheHit,
+        language: res.language,
+        first_segment: res.sentences[0]?.text?.slice(0, 100) ?? null,
+        last_segment: res.sentences.at(-1)?.text?.slice(0, 100) ?? null,
+      });
+      if (res.sentences.length <= 2) {
+        console.warn(
+          "[transcript-debug][client] ⚠️ ONLY",
+          res.sentences.length,
+          "SEGMENTS — likely the bug you're chasing"
+        );
+      }
+      return res;
+    },
     onSuccess: (res, submittedUrl) => {
       setVideoId(res.videoId);
       setSentences(res.sentences);
@@ -548,6 +577,12 @@ function Index() {
       }
     },
     onError: (err: any, submittedUrl) => {
+      console.error("[transcript-debug][client] fetch failed", {
+        url: submittedUrl,
+        errorType: err?.errorType,
+        providerMessage: err?.providerMessage,
+        message: err?.message,
+      });
       const isDemo = submittedUrl === DEMO_VIDEO_URL;
       // Internal-only — never surfaced to the user.
       track("transcript_fetch_failed", {
@@ -615,6 +650,15 @@ function Index() {
     })
       .then((res) => {
         const parsed = parseExplanation(res.explanation ?? null);
+        const dbg = (res as any).debug;
+        if (dbg) {
+          console.log("[explain-debug][client] AI debug", dbg);
+          setLastAiDebug({
+            bytes: dbg.payloadBytes,
+            sentenceLength: dbg.sentenceLength,
+            truncated: !!dbg.truncated,
+          });
+        }
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: {
@@ -1124,9 +1168,45 @@ function Index() {
           </>
         )}
 
+        {view === "demo" && (
+          <TranscriptDebugPanel
+            status={
+              loadMutation.isPending
+                ? "loading"
+                : loadMutation.isError
+                ? "error"
+                : sentences.length > 0
+                ? "success"
+                : "idle"
+            }
+            url={url}
+            videoId={videoId}
+            videoTitle={videoTitle}
+            source={transcriptSource}
+            sentences={sentences}
+            errorMessage={
+              loadMutation.isError
+                ? (loadMutation.error as any)?.providerMessage ||
+                  (loadMutation.error as any)?.message ||
+                  "Unknown error"
+                : null
+            }
+            errorType={
+              loadMutation.isError
+                ? (loadMutation.error as any)?.errorType ?? "unknown"
+                : null
+            }
+            lastAiPayloadBytes={lastAiDebug?.bytes ?? null}
+            lastAiSentenceLength={lastAiDebug?.sentenceLength ?? null}
+            lastAiTruncated={lastAiDebug?.truncated ?? null}
+          />
+        )}
+
         {view === "demo" && loadMutation.isPending && !videoId && (
           <LoadingProgress />
         )}
+
+
 
 
         {view === "demo" && loadMutation.isError && (
@@ -1139,6 +1219,11 @@ function Index() {
                 Try another video, the reliable demo, or paste a transcript
                 manually below.
               </p>
+              {/* DEBUG: surface raw provider error */}
+              <div className="mt-3 rounded border border-red-500/40 bg-red-50 p-2 font-mono text-xs text-red-800 dark:bg-red-950/40 dark:text-red-200">
+                <div><b>Debug — provider error type:</b> {(loadMutation.error as any)?.errorType ?? "unknown"}</div>
+                <div className="break-words"><b>Provider message:</b> {(loadMutation.error as any)?.providerMessage || (loadMutation.error as any)?.message || "—"}</div>
+              </div>
           <div className="mt-4 flex flex-wrap gap-2">
                 <Button
                   size="sm"
