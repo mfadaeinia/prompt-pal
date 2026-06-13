@@ -91,6 +91,107 @@ export function TranscriptDebugPanel(props: Props) {
             }
           />
 
+          <div className="rounded border-2 border-fuchsia-500/50 bg-fuchsia-50 p-2 dark:bg-fuchsia-950/40">
+            <div className="mb-1 font-bold text-fuchsia-700 dark:text-fuchsia-300">
+              🔍 AI Input Inspector (per call)
+            </div>
+            {props.lastAiInspector ? (
+              <div className="space-y-1">
+                <Row
+                  k="What AI receives"
+                  v={
+                    props.lastAiInspector.deliveryMode === "single_sentence"
+                      ? "single sentence only"
+                      : props.lastAiInspector.deliveryMode ===
+                          "single_sentence_with_context"
+                        ? "single sentence + 3-sentence context window"
+                        : props.lastAiInspector.deliveryMode
+                  }
+                />
+                <Row k="Receives full transcript?" v="❌ No" />
+                <Row
+                  k="Chunking applied"
+                  v={props.lastAiInspector.chunkingApplied ? "Yes" : "No"}
+                />
+                <Row
+                  k="Chunks sent to AI"
+                  v={String(props.lastAiInspector.chunksSent)}
+                />
+                <Row
+                  k="Chunk sizes (chars)"
+                  v={props.lastAiInspector.chunkSizes.join(", ")}
+                />
+                <Row
+                  k="Prompt payload length"
+                  v={`${props.lastAiInspector.promptLength} chars`}
+                />
+                <Row
+                  k="System prompt length"
+                  v={`${props.lastAiInspector.systemLength} chars`}
+                />
+                <Row
+                  k="Total payload bytes"
+                  v={`${props.lastAiInspector.bytes} B`}
+                />
+                <Row
+                  k="Sentence length sent"
+                  v={`${props.lastAiInspector.sentenceLength} chars`}
+                />
+                <Row
+                  k="Context length sent"
+                  v={`${props.lastAiInspector.contextLength} chars`}
+                />
+                <Row
+                  k="Truncated"
+                  v={props.lastAiInspector.truncated ? "⚠️ Yes" : "No"}
+                />
+                <details className="mt-1">
+                  <summary className="cursor-pointer font-semibold">
+                    Prompt first 500 chars
+                  </summary>
+                  <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-black/5 p-1 dark:bg-white/5">
+                    {props.lastAiInspector.promptFirst500 || "—"}
+                  </pre>
+                </details>
+                <details>
+                  <summary className="cursor-pointer font-semibold">
+                    Prompt last 500 chars
+                  </summary>
+                  <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-black/5 p-1 dark:bg-white/5">
+                    {props.lastAiInspector.promptLast500 || "—"}
+                  </pre>
+                </details>
+              </div>
+            ) : (
+              <div className="italic opacity-70">
+                No AI call yet — click a sentence to populate.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded border border-yellow-500/40 p-2">
+            <div className="mb-1 font-semibold">📜 Full transcript stats</div>
+            <Row k="Sentence count" v={String(stats.sentenceCount)} />
+            <Row k="Character count" v={String(stats.chars)} />
+            <Row k="Word count" v={String(stats.words)} />
+            <details>
+              <summary className="cursor-pointer font-semibold">
+                Transcript first 500 chars
+              </summary>
+              <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-black/5 p-1 dark:bg-white/5">
+                {stats.first500 || "—"}
+              </pre>
+            </details>
+            <details>
+              <summary className="cursor-pointer font-semibold">
+                Transcript last 500 chars
+              </summary>
+              <pre className="mt-1 whitespace-pre-wrap break-words rounded bg-black/5 p-1 dark:bg-white/5">
+                {stats.last500 || "—"}
+              </pre>
+            </details>
+          </div>
+
           {props.errorMessage && (
             <div className="rounded border border-red-500/50 bg-red-100 p-2 text-red-900 dark:bg-red-950/40 dark:text-red-200">
               <div className="font-bold">Provider error</div>
