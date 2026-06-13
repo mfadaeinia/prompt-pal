@@ -88,6 +88,11 @@ function Index() {
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
+  const [lastAiDebug, setLastAiDebug] = useState<{
+    bytes: number;
+    sentenceLength: number;
+    truncated: boolean;
+  } | null>(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
