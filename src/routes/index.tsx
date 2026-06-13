@@ -2122,8 +2122,6 @@ function ExplanationPanel({
             )}
           </div>
         )}
-        </>
-        )}
       </div>
     </div>
   );
