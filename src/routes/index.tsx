@@ -7,6 +7,7 @@ import {
   saveManualTranscript,
   type TranscriptSentence,
   type TranscriptSource,
+  type TranscriptQualityReport,
 } from "@/lib/transcript.functions";
 
 import { explainSentence } from "@/lib/explain.functions";
