@@ -84,13 +84,25 @@ function logEvent(payload: {
   } catch {}
 }
 
-function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
-  const cleaned = chunks.map((r) => ({
-    text: r.text.replace(/\s+/g, " ").trim(),
-    offset: r.offset,
-    duration: r.duration,
-  }));
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;#39;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&");
+}
 
+function wordCount(s: string): number {
+  const t = s.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).length;
+}
+
+// Segment via punctuation. May return a few huge segments when the provider
+// returns unpunctuated text — caller decides whether to fall back.
+function segmentByPunctuation(
+  cleaned: RawChunk[]
+): TranscriptSentence[] {
   let joined = "";
   const charTime: number[] = [];
   for (let i = 0; i < cleaned.length; i++) {
@@ -106,15 +118,9 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     joined += c.text;
   }
 
-  const decoded = joined
-    .replace(/&amp;#39;/g, "'")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, "&");
-
-  const sentences: TranscriptSentence[] = [];
+  const decoded = decodeEntities(joined);
+  const out: TranscriptSentence[] = [];
   const sentenceRegex = /[^.!?\n]+[.!?]+|[^.!?\n]+$/g;
-
   let id = 0;
   let match: RegExpExecArray | null;
   while ((match = sentenceRegex.exec(decoded)) !== null) {
@@ -122,22 +128,178 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     if (!text) continue;
     const startChar = match.index;
     const startTime = charTime[Math.min(startChar, charTime.length - 1)] ?? 0;
-    sentences.push({
-      id: id++,
-      text,
-      offset: startTime,
-      duration: 0,
-      endTime: 0,
-    });
+    out.push({ id: id++, text, offset: startTime, duration: 0, endTime: 0 });
   }
-
-  for (let i = 0; i < sentences.length; i++) {
-    const cur = sentences[i];
-    const next = sentences[i + 1];
+  for (let i = 0; i < out.length; i++) {
+    const cur = out[i];
+    const next = out[i + 1];
     cur.endTime = next ? next.offset : cur.offset + 5;
   }
+  return out;
+}
 
-  return sentences;
+// Fallback segmentation: walk raw chunks and emit a segment when we hit a
+// target word count, a large timing gap between chunks, or punctuation.
+// Aims for ~10–25 words per segment while preserving timestamps.
+function segmentByChunksAndTiming(
+  cleaned: RawChunk[],
+  opts: { target?: number; max?: number; gapSeconds?: number } = {}
+): TranscriptSentence[] {
+  const target = opts.target ?? 15;
+  const max = opts.max ?? 25;
+  const gapSeconds = opts.gapSeconds ?? 1.2;
+
+  const out: TranscriptSentence[] = [];
+  let id = 0;
+  let buf: string[] = [];
+  let bufWords = 0;
+  let bufStart = 0;
+  let bufEnd = 0;
+  let bufOpen = false;
+
+  const flush = () => {
+    if (!buf.length) return;
+    const text = decodeEntities(buf.join(" ").replace(/\s+/g, " ").trim());
+    if (!text) {
+      buf = [];
+      bufWords = 0;
+      bufOpen = false;
+      return;
+    }
+    out.push({
+      id: id++,
+      text,
+      offset: bufStart,
+      duration: Math.max(0, bufEnd - bufStart),
+      endTime: bufEnd,
+    });
+    buf = [];
+    bufWords = 0;
+    bufOpen = false;
+  };
+
+  for (let i = 0; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    const prev = i > 0 ? cleaned[i - 1] : null;
+    const prevEnd = prev ? prev.offset + prev.duration : c.offset;
+    const gap = prev ? c.offset - prevEnd : 0;
+
+    // Break on a large timing gap before adding this chunk.
+    if (bufOpen && gap >= gapSeconds && bufWords >= Math.min(6, target)) {
+      flush();
+    }
+
+    if (!bufOpen) {
+      bufStart = c.offset;
+      bufOpen = true;
+    }
+    buf.push(c.text);
+    bufWords += wordCount(c.text);
+    bufEnd = c.offset + c.duration;
+
+    const endsWithPunct = /[.!?]\s*$/.test(c.text.trim());
+
+    if (bufWords >= max || (endsWithPunct && bufWords >= target)) {
+      flush();
+    } else if (bufWords >= target) {
+      // Look ahead — if next chunk starts mid-thought, still flush at target.
+      flush();
+    }
+  }
+  flush();
+
+  // Final endTime fix-up so consecutive segments meet.
+  for (let i = 0; i < out.length - 1; i++) {
+    if (out[i].endTime <= out[i].offset) {
+      out[i].endTime = out[i + 1].offset;
+    }
+  }
+  return out;
+}
+
+function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
+  const cleaned = chunks
+    .map((r) => ({
+      text: r.text.replace(/\s+/g, " ").trim(),
+      offset: r.offset,
+      duration: r.duration,
+    }))
+    .filter((c) => c.text.length > 0);
+
+  if (!cleaned.length) return [];
+
+  const totalWords = cleaned.reduce((n, c) => n + wordCount(c.text), 0);
+  const punctSegments = segmentByPunctuation(cleaned);
+  const avgWords =
+    punctSegments.length > 0 ? totalWords / punctSegments.length : Infinity;
+  const longest = punctSegments.reduce(
+    (m, s) => Math.max(m, wordCount(s.text)),
+    0
+  );
+
+  // Heuristic: punctuation is "sparse" if avg segment is huge OR any single
+  // segment is huge OR we ended up with <1 segment per 40 words.
+  const sparse =
+    avgWords > 30 ||
+    longest > 60 ||
+    punctSegments.length < Math.max(2, Math.floor(totalWords / 40));
+
+  let final: TranscriptSentence[];
+  let strategy: "punctuation" | "timing+chunks" | "hybrid";
+
+  if (!sparse) {
+    final = punctSegments;
+    strategy = "punctuation";
+  } else if (punctSegments.length <= 3) {
+    // Almost no punctuation — segment purely from raw chunks + timing.
+    final = segmentByChunksAndTiming(cleaned);
+    strategy = "timing+chunks";
+  } else {
+    // Mixed: split any oversize punctuation segment further.
+    final = [];
+    let id = 0;
+    for (const seg of punctSegments) {
+      if (wordCount(seg.text) <= 25) {
+        final.push({ ...seg, id: id++ });
+        continue;
+      }
+      // Find chunks overlapping this segment's time range and re-segment them.
+      const segEnd = seg.endTime || seg.offset + 5;
+      const subChunks = cleaned.filter(
+        (c) => c.offset + c.duration >= seg.offset && c.offset <= segEnd
+      );
+      const subSegs = subChunks.length
+        ? segmentByChunksAndTiming(subChunks)
+        : [seg];
+      for (const s of subSegs) final.push({ ...s, id: id++ });
+    }
+    strategy = "hybrid";
+  }
+
+  const segWordCounts = final.map((s) => wordCount(s.text));
+  const segMax = segWordCounts.reduce((m, n) => Math.max(m, n), 0);
+  const segMin = segWordCounts.length
+    ? segWordCounts.reduce((m, n) => Math.min(m, n), Infinity)
+    : 0;
+  const segAvg = segWordCounts.length
+    ? totalWords / segWordCounts.length
+    : 0;
+
+  console.log("[transcript-debug] segmentation", {
+    strategy,
+    raw_chunks: cleaned.length,
+    total_words: totalWords,
+    punctuation_segments: punctSegments.length,
+    punctuation_avg_words: Number(avgWords.toFixed(1)),
+    punctuation_longest_words: longest,
+    sparse,
+    final_segments: final.length,
+    avg_words_per_segment: Number(segAvg.toFixed(1)),
+    longest_segment_words: segMax,
+    shortest_segment_words: segMin === Infinity ? 0 : segMin,
+  });
+
+  return final;
 }
 
 function parseTimestamp(s: string): number | null {
