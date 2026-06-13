@@ -249,7 +249,10 @@ async function fetchFromFallbackProvider(params: {
   videoUrl: string;
 }): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
   const apiKey = process.env.TRANSCRIBR_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[transcript-debug] TRANSCRIBR_API_KEY missing — skipping fallback");
+    return null;
+  }
 
   try {
     const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
@@ -261,11 +264,24 @@ async function fetchFromFallbackProvider(params: {
       },
       body: JSON.stringify({ video_id: params.videoId }),
     });
-    if (!res.ok) return null;
+    console.log("[transcript-debug] Transcribr HTTP", {
+      status: res.status,
+      ok: res.ok,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
+      return null;
+    }
     const json: any = await res.json();
     const transcript: any[] = Array.isArray(json?.transcript)
       ? json.transcript
       : [];
+    console.log("[transcript-debug] Transcribr response", {
+      transcript_items: transcript.length,
+      language: json?.language ?? null,
+      top_level_keys: json && typeof json === "object" ? Object.keys(json) : [],
+    });
     if (!transcript.length) return null;
     const chunks: RawChunk[] = transcript
       .map((c) => ({
@@ -277,10 +293,12 @@ async function fetchFromFallbackProvider(params: {
       .filter((c) => c.text.length > 0);
     if (!chunks.length) return null;
     return { chunks, language: json?.language ?? null };
-  } catch {
+  } catch (e) {
+    console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
     return null;
   }
 }
+
 
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
