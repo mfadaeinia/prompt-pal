@@ -1959,6 +1959,7 @@ function ExplanationPanel({
   isSaved,
   justSaved,
   saving,
+  limitedMode = false,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -1968,6 +1969,7 @@ function ExplanationPanel({
   isSaved: boolean;
   justSaved: boolean;
   saving: boolean;
+  limitedMode?: boolean;
 }) {
   if (!sentence) {
     return (
