@@ -2584,3 +2584,85 @@ function ReadinessBadges({ videoId }: { videoId: string | null }) {
     </div>
   );
 }
+
+function TranscriptQualityBanner({
+  quality,
+  onContinue,
+  onTryAnother,
+  onReprocess,
+  reprocessing,
+}: {
+  quality: TranscriptQualityReport;
+  onContinue: () => void;
+  onTryAnother: () => void;
+  onReprocess: () => void;
+  reprocessing: boolean;
+}) {
+  const isLow = quality.quality === "low";
+  const tone = isLow
+    ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+    : "border-amber-200 bg-amber-50/70 text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-100";
+
+  return (
+    <div className={`border-b px-3 py-3 ${tone}`}>
+      {isLow ? (
+        <>
+          <p className="text-sm font-semibold leading-snug">
+            Limited transcript quality detected
+          </p>
+          <p className="mt-1 text-xs leading-relaxed opacity-90">
+            This video&rsquo;s captions don&rsquo;t contain proper sentence
+            structure, so we couldn&rsquo;t fully convert it into learning-ready
+            sentences. You can still watch and explore the transcript.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              onClick={onContinue}
+              className="h-8 rounded-full bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              Continue anyway (Limited Mode)
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onTryAnother}
+              className="h-8 rounded-full border-amber-400/60 px-3 text-xs"
+            >
+              Try another video
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onReprocess}
+              disabled={reprocessing}
+              className="h-8 rounded-full px-3 text-xs"
+            >
+              {reprocessing ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Reprocessing
+                </>
+              ) : (
+                "Reprocess transcript"
+              )}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs leading-relaxed">
+            This transcript has limited structure. Some sentences may be
+            imperfect.
+          </p>
+          <button
+            onClick={onContinue}
+            className="shrink-0 rounded p-1 text-amber-900/70 hover:bg-amber-100 dark:text-amber-100/70 dark:hover:bg-amber-500/10"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
