@@ -303,6 +303,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const cached = await readCache(videoId);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] cache HIT", {
+        videoId,
+        raw_chunks: cached.transcript_json.length,
+        sentences: sentences.length,
+        total_chars: chars,
+        language: cached.language,
+      });
       logEvent({
         video_id: videoId,
         fetch_source: "cache",
@@ -317,6 +325,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         cacheHit: true,
       };
     }
+    console.log("[transcript-debug] cache MISS for", videoId);
 
     // Cache miss — try external providers.
     logEvent({
@@ -337,6 +346,10 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           videoId,
           lang ? { lang } : undefined
         );
+        console.log("[transcript-debug] youtube-transcript attempt", {
+          lang: lang ?? "default",
+          chunks: r?.length ?? 0,
+        });
         if (r && r.length) {
           raw = r.map((x) => ({
             text: x.text,
@@ -348,11 +361,23 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         }
       } catch (e) {
         lastErr = e;
+        console.warn("[transcript-debug] youtube-transcript error", {
+          lang: lang ?? "default",
+          message: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
     if (raw && raw.length) {
       const sentences = buildSentencesFromChunks(raw);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] youtube SUCCESS", {
+        videoId,
+        raw_chunks: raw.length,
+        sentences: sentences.length,
+        total_chars: chars,
+        language: usedLang,
+      });
       await writeCache({
         videoId,
         videoUrl: data.url,
@@ -376,12 +401,24 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     // -------- Layer 3: Fallback provider --------
+    console.log("[transcript-debug] trying fallback provider (Transcribr)");
     const fb = await fetchFromFallbackProvider({
       videoId,
       videoUrl: data.url,
     });
+    console.log("[transcript-debug] fallback result", {
+      chunks: fb?.chunks.length ?? 0,
+      language: fb?.language ?? null,
+    });
     if (fb && fb.chunks.length) {
       const sentences = buildSentencesFromChunks(fb.chunks);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] fallback SUCCESS", {
+        videoId,
+        raw_chunks: fb.chunks.length,
+        sentences: sentences.length,
+        total_chars: chars,
+      });
       await writeCache({
         videoId,
         videoUrl: data.url,
@@ -403,6 +440,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         cacheHit: false,
       };
     }
+
 
     // All layers failed — surface a single friendly message.
     const errorType = classifyError(lastErr);
