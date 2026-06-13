@@ -30,12 +30,26 @@ export type TranscriptSentence = {
 
 export type TranscriptSource = "cache" | "youtube" | "fallback" | "manual";
 
+export type TranscriptQuality = "high" | "medium" | "low";
+
+export type TranscriptQualityReport = {
+  quality: TranscriptQuality;
+  reasons: string[];
+  metrics: {
+    sentenceCount: number;
+    avgWordsPerSentence: number;
+    shortFragmentRatio: number;
+    hasPunctuationInRaw: boolean;
+  };
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
   source: TranscriptSource;
   language?: string | null;
   cacheHit: boolean;
+  quality: TranscriptQualityReport;
 };
 
 export type TranscriptErrorType =
