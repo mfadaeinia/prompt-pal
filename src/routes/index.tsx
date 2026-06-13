@@ -496,7 +496,30 @@ function Index() {
   };
 
   const loadMutation = useMutation({
-    mutationFn: async (u: string) => fetchTx({ data: { url: u } }),
+    mutationFn: async (u: string) => {
+      console.log("[transcript-debug][client] submitting URL:", u);
+      const res = await fetchTx({ data: { url: u } });
+      const fullText = res.sentences.map((s) => s.text).join(" ");
+      console.log("[transcript-debug][client] received transcript", {
+        videoId: res.videoId,
+        source: res.source,
+        segments: res.sentences.length,
+        total_chars: fullText.length,
+        total_words: fullText.trim() ? fullText.trim().split(/\s+/).length : 0,
+        cacheHit: res.cacheHit,
+        language: res.language,
+        first_segment: res.sentences[0]?.text?.slice(0, 100) ?? null,
+        last_segment: res.sentences.at(-1)?.text?.slice(0, 100) ?? null,
+      });
+      if (res.sentences.length <= 2) {
+        console.warn(
+          "[transcript-debug][client] ⚠️ ONLY",
+          res.sentences.length,
+          "SEGMENTS — likely the bug you're chasing"
+        );
+      }
+      return res;
+    },
     onSuccess: (res, submittedUrl) => {
       setVideoId(res.videoId);
       setSentences(res.sentences);
