@@ -33,7 +33,7 @@ import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
-import { TranscriptDebugPanel } from "@/components/TranscriptDebugPanel";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
 
@@ -88,14 +88,6 @@ function Index() {
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
-  const [lastAiDebug, setLastAiDebug] = useState<{
-    bytes: number;
-    sentenceLength: number;
-    truncated: boolean;
-  } | null>(null);
-  const [lastAiInspector, setLastAiInspector] = useState<
-    import("@/components/TranscriptDebugPanel").AiInspectorDebug | null
-  >(null);
   const sessionIdRef = useRef<string>("");
   if (!sessionIdRef.current && typeof crypto !== "undefined") {
     sessionIdRef.current =
@@ -653,29 +645,6 @@ function Index() {
     })
       .then((res) => {
         const parsed = parseExplanation(res.explanation ?? null);
-        const dbg = (res as any).debug;
-        if (dbg) {
-          console.log("[explain-debug][client] AI Input Inspector", dbg);
-          setLastAiDebug({
-            bytes: dbg.payloadBytes,
-            sentenceLength: dbg.sentenceLength,
-            truncated: !!dbg.truncated,
-          });
-          setLastAiInspector({
-            bytes: dbg.payloadBytes,
-            sentenceLength: dbg.sentenceLength,
-            contextLength: dbg.contextLength ?? 0,
-            promptLength: dbg.promptLength ?? 0,
-            systemLength: dbg.systemLength ?? 0,
-            chunkingApplied: !!dbg.chunkingApplied,
-            chunksSent: dbg.chunksSent ?? 1,
-            chunkSizes: dbg.chunkSizes ?? [],
-            promptFirst500: dbg.promptFirst500 ?? "",
-            promptLast500: dbg.promptLast500 ?? "",
-            deliveryMode: dbg.deliveryMode ?? "single_sentence",
-            truncated: !!dbg.truncated,
-          });
-        }
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: {
@@ -1185,40 +1154,6 @@ function Index() {
           </>
         )}
 
-        {view === "demo" && (
-          <TranscriptDebugPanel
-            status={
-              loadMutation.isPending
-                ? "loading"
-                : loadMutation.isError
-                ? "error"
-                : sentences.length > 0
-                ? "success"
-                : "idle"
-            }
-            url={url}
-            videoId={videoId}
-            videoTitle={videoTitle}
-            source={transcriptSource}
-            sentences={sentences}
-            errorMessage={
-              loadMutation.isError
-                ? (loadMutation.error as any)?.providerMessage ||
-                  (loadMutation.error as any)?.message ||
-                  "Unknown error"
-                : null
-            }
-            errorType={
-              loadMutation.isError
-                ? (loadMutation.error as any)?.errorType ?? "unknown"
-                : null
-            }
-            lastAiPayloadBytes={lastAiDebug?.bytes ?? null}
-            lastAiSentenceLength={lastAiDebug?.sentenceLength ?? null}
-            lastAiTruncated={lastAiDebug?.truncated ?? null}
-            lastAiInspector={lastAiInspector}
-          />
-        )}
 
         {view === "demo" && loadMutation.isPending && !videoId && (
           <LoadingProgress />
