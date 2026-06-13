@@ -1037,7 +1037,7 @@ function Index() {
 
   function jumpTo(s: TranscriptSentence) {
     setSelected(s);
-    ensureExplanation(s, sentences);
+    if (!limitedMode) ensureExplanation(s, sentences);
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
