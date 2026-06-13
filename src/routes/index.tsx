@@ -655,10 +655,24 @@ function Index() {
         const parsed = parseExplanation(res.explanation ?? null);
         const dbg = (res as any).debug;
         if (dbg) {
-          console.log("[explain-debug][client] AI debug", dbg);
+          console.log("[explain-debug][client] AI Input Inspector", dbg);
           setLastAiDebug({
             bytes: dbg.payloadBytes,
             sentenceLength: dbg.sentenceLength,
+            truncated: !!dbg.truncated,
+          });
+          setLastAiInspector({
+            bytes: dbg.payloadBytes,
+            sentenceLength: dbg.sentenceLength,
+            contextLength: dbg.contextLength ?? 0,
+            promptLength: dbg.promptLength ?? 0,
+            systemLength: dbg.systemLength ?? 0,
+            chunkingApplied: !!dbg.chunkingApplied,
+            chunksSent: dbg.chunksSent ?? 1,
+            chunkSizes: dbg.chunkSizes ?? [],
+            promptFirst500: dbg.promptFirst500 ?? "",
+            promptLast500: dbg.promptLast500 ?? "",
+            deliveryMode: dbg.deliveryMode ?? "single_sentence",
             truncated: !!dbg.truncated,
           });
         }
