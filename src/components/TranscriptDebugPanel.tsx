@@ -194,6 +194,15 @@ export function TranscriptDebugPanel(props: Props) {
             <Row k="Sentence count" v={String(stats.sentenceCount)} />
             <Row k="Character count" v={String(stats.chars)} />
             <Row k="Word count" v={String(stats.words)} />
+            <Row
+              k="Avg words / segment"
+              v={stats.avgWordsPerSegment.toFixed(1)}
+            />
+            <Row k="Longest segment (words)" v={String(stats.longestSegment)} />
+            <Row
+              k="Shortest segment (words)"
+              v={String(stats.shortestSegment)}
+            />
             <details>
               <summary className="cursor-pointer font-semibold">
                 Transcript first 500 chars
