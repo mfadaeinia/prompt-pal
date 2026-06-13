@@ -462,6 +462,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     // All layers failed — surface a single friendly message.
     const errorType = classifyError(lastErr);
+    console.error("[transcript-debug] ALL LAYERS FAILED", {
+      videoId,
+      errorType,
+      lastErrorMessage: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
+    });
     logEvent({
       video_id: videoId,
       fetch_source: "fallback",
