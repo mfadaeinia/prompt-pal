@@ -2712,36 +2712,6 @@ function LanguageSupportSection() {
   );
 }
 
-function ValuePropositionSection() {
-  const items = [
-    { title: "Learn from content you actually enjoy", desc: "Use the videos you already watch — no artificial lessons." },
-    { title: "Follow transcripts while watching", desc: "Sentences highlight in sync with the video." },
-    { title: "Instantly translate unknown words", desc: "Click any sentence for a natural translation." },
-    { title: "Build vocabulary in context", desc: "Expressions and idioms explained where they appear." },
-    { title: "Practice with real native content", desc: "Understand how people actually speak." },
-  ];
-  return (
-    <section className="border-t border-border py-14 sm:py-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why it works</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Learn a language without changing your habits.
-        </h2>
-      </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
-          >
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">{item.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function LoadingProgress() {
   const steps = [
