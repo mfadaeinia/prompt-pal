@@ -1817,7 +1817,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             </Button>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            See how NativeFlow works in under 30 seconds. No signup required.
+            See how Clario works in under 30 seconds. Try it instantly — no account needed.
           </p>
         </div>
 
