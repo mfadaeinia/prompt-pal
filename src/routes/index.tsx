@@ -2057,23 +2057,23 @@ function ExplanationPanel({
               className="h-8 gap-1 px-2 text-xs"
               title={
                 isSaved
-                  ? "Already in My Expressions"
+                  ? "Already in My Library"
                   : ready
-                    ? "Save to My Expressions"
+                    ? "Save to My Library"
                     : "Wait for explanation to load"
               }
             >
               {justSaved ? (
                 <>
-                  <Check className="h-3.5 w-3.5" /> Saved
+                  <Check className="h-3.5 w-3.5" /> Saved to Library
                 </>
               ) : isSaved ? (
                 <>
-                  <BookmarkCheck className="h-3.5 w-3.5" /> Saved
+                  <BookmarkCheck className="h-3.5 w-3.5" /> In Library
                 </>
               ) : (
                 <>
-                  <Bookmark className="h-3.5 w-3.5" /> Save
+                  <Bookmark className="h-3.5 w-3.5" /> Save to My Library
                 </>
               )}
             </Button>
