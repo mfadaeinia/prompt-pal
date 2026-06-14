@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Repeat, Film } from "lucide-react";
+import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film } from "lucide-react";
 import {
   listSavedExpressions,
   deleteSavedExpression,
@@ -88,20 +88,6 @@ function SavedPage() {
     window.location.assign(`/?${params.toString()}`);
   }
 
-  function replay(item: any) {
-    track("saved_expression_replayed", {
-      expression_id: item.id,
-      video_id: item.video_id,
-      timestamp_seconds: item.timestamp_seconds,
-    });
-    const t = Math.max(0, Math.floor(item.timestamp_seconds ?? 0));
-    const url = item.video_id
-      ? `https://youtu.be/${item.video_id}?t=${t}`
-      : item.video_url
-        ? `${item.video_url}${item.video_url.includes("?") ? "&" : "?"}t=${t}`
-        : null;
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -194,16 +180,6 @@ function SavedPage() {
                 {/* Actions */}
                 <div className="mt-4 flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => replay(item)}
-                      disabled={!item.video_id && !item.video_url}
-                      className="gap-1.5"
-                      title="Replay on YouTube at this moment"
-                    >
-                      <Repeat className="h-3.5 w-3.5" /> Replay
-                    </Button>
                     <Button
                       size="sm"
                       onClick={() => watchAgain(item)}
