@@ -2077,7 +2077,7 @@ function ExplanationPanel({
       <div className="mt-5 border-t border-border pt-5">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            Per-phrase translation and saving are disabled in Limited Mode because this transcript lacks sentence structure. You can still watch, replay, and explore the transcript freely.
+            Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
           <div className="space-y-5">
