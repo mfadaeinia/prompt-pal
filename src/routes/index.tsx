@@ -1237,24 +1237,19 @@ function Index() {
 
 
         {view === "demo" && loadMutation.isError && (
-          <div className="mt-6 space-y-3">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <p className="text-base font-semibold text-foreground">
-                We couldn't automatically load subtitles for this video right now.
+          <div className="mt-6 space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm text-center">
+              <p className="text-lg font-semibold text-foreground">
+                We couldn't load subtitles for this video.
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Try another video, the reliable demo, or paste a transcript
-                manually below.
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-md mx-auto">
+                Some videos don't provide subtitles in a format that NativeFlow can use.
               </p>
-              {/* DEBUG: surface raw provider error */}
-              <div className="mt-3 rounded border border-red-500/40 bg-red-50 p-2 font-mono text-xs text-red-800 dark:bg-red-950/40 dark:text-red-200">
-                <div><b>Debug — provider error type:</b> {(loadMutation.error as any)?.errorType ?? "unknown"}</div>
-                <div className="break-words"><b>Provider message:</b> {(loadMutation.error as any)?.providerMessage || (loadMutation.error as any)?.message || "—"}</div>
-              </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Button
                   size="sm"
                   onClick={() => {
+                    track("try_another_video_clicked", { video_url: url });
                     loadMutation.reset();
                     setVideoId(null);
                     setSentences([]);
@@ -1266,12 +1261,13 @@ function Index() {
                   variant="outline"
                   className="rounded-full"
                 >
-                  Try another video
+                  Try Another Video
                 </Button>
                 <Button
                   size="sm"
                   className="rounded-full"
                   onClick={() => {
+                    track("try_demo_clicked_after_failure", { video_url: url });
                     loadMutation.reset();
                     startDemo();
                   }}
@@ -1279,23 +1275,36 @@ function Index() {
                   <PlayCircle className="mr-2 h-4 w-4" /> Try the Demo
                 </Button>
               </div>
+              <div className="mt-5">
+                <button
+                  onClick={() => {
+                    track("manual_transcript_opened", { video_url: url });
+                    setShowManualTranscript(true);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                >
+                  Need advanced options? Paste transcript manually
+                </button>
+              </div>
             </div>
-            <ManualTranscriptFallback
-              url={url}
-              manualText={manualText}
-              setManualText={setManualText}
-              onSubmit={() => {
-                if (url.trim() && manualText.trim()) {
-                  manualMutation.mutate({ url: url.trim(), text: manualText });
+            {showManualTranscript && (
+              <ManualTranscriptFallback
+                url={url}
+                manualText={manualText}
+                setManualText={setManualText}
+                onSubmit={() => {
+                  if (url.trim() && manualText.trim()) {
+                    manualMutation.mutate({ url: url.trim(), text: manualText });
+                  }
+                }}
+                submitting={manualMutation.isPending}
+                submitError={
+                  manualMutation.isError
+                    ? "We couldn't use that transcript. Please double-check the format and try again."
+                    : null
                 }
-              }}
-              submitting={manualMutation.isPending}
-              submitError={
-                manualMutation.isError
-                  ? "We couldn't use that transcript. Please double-check the format and try again."
-                  : null
-              }
-            />
+              />
+            )}
           </div>
         )}
 
