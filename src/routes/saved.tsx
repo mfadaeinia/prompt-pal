@@ -7,6 +7,7 @@ import {
   listSavedExpressions,
   deleteSavedExpression,
 } from "@/lib/saved-expressions.functions";
+import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
 import { track } from "@/lib/analytics";
 import { Input } from "@/components/ui/input";
