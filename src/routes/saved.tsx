@@ -88,20 +88,6 @@ function SavedPage() {
     window.location.assign(`/?${params.toString()}`);
   }
 
-  function replay(item: any) {
-    track("saved_expression_replayed", {
-      expression_id: item.id,
-      video_id: item.video_id,
-      timestamp_seconds: item.timestamp_seconds,
-    });
-    const t = Math.max(0, Math.floor(item.timestamp_seconds ?? 0));
-    const url = item.video_id
-      ? `https://youtu.be/${item.video_id}?t=${t}`
-      : item.video_url
-        ? `${item.video_url}${item.video_url.includes("?") ? "&" : "?"}t=${t}`
-        : null;
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  }
 
   return (
     <div className="min-h-screen bg-background">
