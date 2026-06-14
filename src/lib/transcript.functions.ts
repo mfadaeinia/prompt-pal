@@ -464,6 +464,40 @@ async function writeCache(params: {
   if (error) console.warn("[transcript] cache write error", error.message);
 }
 
+async function recordTranscriptReport(params: {
+  videoId: string;
+  videoUrl: string;
+  source: TranscriptSource;
+  language: string | null;
+  quality: TranscriptQualityReport;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = params.quality.quality;
+    const full = q === "high";
+    const limited = q === "low";
+    const explanations = q !== "low";
+    const { error } = await supabaseAdmin
+      .from("video_transcript_reports" as any)
+      .insert({
+        video_id: params.videoId,
+        video_url: params.videoUrl,
+        transcript_source: params.source,
+        language: params.language,
+        sentence_count: params.quality.metrics.sentenceCount,
+        avg_sentence_length: params.quality.metrics.avgWordsPerSentence,
+        quality_score: q,
+        quality_reasons: params.quality.reasons,
+        full_learning_enabled: full,
+        limited_mode_enabled: limited,
+        explanation_generation_enabled: explanations,
+      } as any);
+    if (error) console.warn("[transcript] report write error", error.message);
+  } catch (e) {
+    console.warn("[transcript] report write threw", e instanceof Error ? e.message : String(e));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Layer 3: Fallback transcript provider — Transcribr.io
 // Docs: https://www.transcribr.io/youtube-transcript-api
