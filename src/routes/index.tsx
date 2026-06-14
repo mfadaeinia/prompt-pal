@@ -2099,13 +2099,13 @@ function ExplanationPanel({
       </div>
 
       {justSaved && (
-        <p className="mt-2 text-xs font-medium text-primary">
+        <p className="mt-2 px-6 text-xs font-medium text-primary">
           Saved to My Expressions ✓
         </p>
       )}
 
 
-      <div className="mt-5 border-t border-border pt-5">
+      <div className="mt-5 border-t border-border px-6 pb-6 pt-5">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
