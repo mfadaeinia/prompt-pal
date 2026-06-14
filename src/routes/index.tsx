@@ -1321,30 +1321,55 @@ function Index() {
             {!isDemo && <ReadinessBadges videoId={videoId} />}
 
 
-            {/* Subtle secondary mode toggle — Learning Mode is the default. */}
-            <div className="flex items-center justify-end">
-              <button
-                onClick={() => {
-                  const next = !studyMode;
-                  setStudyMode(next);
-                  if (!next) setSelected(null);
-                  track(next ? "study_mode_opened" : "study_mode_closed", { video_id: videoId });
-                }}
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
-                aria-pressed={!studyMode}
+            {/* Prominent Watch / Learning mode toggle, near the video. */}
+            <div className="flex items-center justify-between gap-3">
+              <div
+                role="tablist"
+                aria-label="Viewing mode"
+                className="inline-flex items-center rounded-full border border-border bg-muted/50 p-1 shadow-sm"
               >
-                {studyMode ? (
-                  <>
-                    <Tv className="h-3.5 w-3.5" />
-                    Just watch
-                  </>
-                ) : (
-                  <>
-                    <BookOpen className="h-3.5 w-3.5" />
-                    Back to Learning Mode
-                  </>
-                )}
-              </button>
+                <button
+                  role="tab"
+                  aria-selected={!studyMode}
+                  onClick={() => {
+                    if (!studyMode) return;
+                    setStudyMode(false);
+                    setSelected(null);
+                    track("study_mode_closed", { video_id: videoId });
+                    track("watch_mode_opened", { video_id: videoId });
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                    !studyMode
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Tv className="h-4 w-4" />
+                  Watch Mode
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={studyMode}
+                  onClick={() => {
+                    if (studyMode) return;
+                    setStudyMode(true);
+                    track("study_mode_opened", { video_id: videoId });
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                    studyMode
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Learning Mode
+                </button>
+              </div>
+              <p className="hidden text-xs text-muted-foreground sm:block">
+                {studyMode
+                  ? "Translations & explanations on"
+                  : "Pure viewing — transcript stays available"}
+              </p>
             </div>
 
 
@@ -1370,38 +1395,8 @@ function Index() {
                   )}
                 </div>
 
-                {/* Compact Learning Mode CTA (Watch Mode only, directly below video) */}
-                {!studyMode && (
-                  <div className="animate-nativeflow-pulse flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-3 shadow-sm sm:p-4">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                      <BookOpen className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight text-foreground">
-                        Want to understand every sentence?
-                      </p>
-                      <p className="mt-0.5 text-xs leading-snug text-muted-foreground line-clamp-2">
-                        Open Learning Mode for translations, explanations and clickable transcript.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => {
-                        setStudyMode(true);
-                        track("study_mode_opened", { video_id: videoId });
-                      }}
-                      size="sm"
-                      className="shrink-0 rounded-full px-3 text-xs font-semibold shadow-sm sm:px-4 sm:text-sm"
-                    >
-                      <BookOpen className="mr-1 h-3.5 w-3.5 sm:mr-1.5 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">Open Learning Mode</span>
-                      <span className="sm:hidden">Open</span>
-                    </Button>
-                  </div>
-                )}
-
-                {/* Transcript — sits directly under the video, mirroring the landing-page preview */}
-                {studyMode && (
-                  <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[55vh]">
+                {/* Transcript — visible in both modes; passive in Watch Mode. */}
+                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[55vh]">
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
@@ -1469,7 +1464,7 @@ function Index() {
 
                     <ol ref={listRef} className="flex-1 overflow-y-auto">
                       {sentences.map((s) => {
-                        const active = selected?.id === s.id;
+                        const active = studyMode && selected?.id === s.id;
                         const playing = playingId === s.id;
                         return (
                           <li key={s.id}>
@@ -1494,17 +1489,16 @@ function Index() {
                       })}
                     </ol>
 
-                    {isMobile && activeOutOfView && playingId !== null && (
+                    {activeOutOfView && playingId !== null && (
                       <button
                         onClick={jumpToCurrentSentence}
-                        className="absolute bottom-[72px] left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+                        className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
                       >
                         <ArrowDownToLine className="h-3.5 w-3.5" />
                         Jump to current sentence
                       </button>
                     )}
                   </aside>
-                )}
               </div>
 
               {/* Explanation panel — right column on desktop, stacks below transcript on mobile */}
