@@ -1188,6 +1188,7 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
+            <SubtitlesVsClarioSection />
             <LanguageSupportSection />
             <ValuePropositionSection />
             <HowItWorks />
