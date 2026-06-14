@@ -2035,73 +2035,77 @@ function ExplanationPanel({
   const saveDisabled = saving || isSaved || !ready;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-md ring-1 ring-primary/5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-            Now playing
-          </p>
-          <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
-            {sentence.text}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {!limitedMode && (
-          <Button
-            variant={isSaved || justSaved ? "secondary" : "outline"}
-            size="sm"
-            onClick={onSave}
-            disabled={saveDisabled}
-            className="h-8 gap-1 px-2 text-xs"
-            title={
-              isSaved
-                ? "Already in My Expressions"
-                : ready
-                  ? "Save to My Expressions"
-                  : "Wait for explanation to load"
-            }
-          >
-            {justSaved ? (
-              <>
-                <Check className="h-3.5 w-3.5" /> Saved
-              </>
-            ) : isSaved ? (
-              <>
-                <BookmarkCheck className="h-3.5 w-3.5" /> Saved
-              </>
-            ) : (
-              <>
-                <Bookmark className="h-3.5 w-3.5" /> Save
-              </>
+    <div className="rounded-2xl border border-border bg-card shadow-md ring-1 ring-primary/5">
+      <div className="px-6 pt-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+              Now playing
+            </p>
+            <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
+              {sentence.text}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {!limitedMode && (
+            <Button
+              variant={isSaved || justSaved ? "secondary" : "outline"}
+              size="sm"
+              onClick={onSave}
+              disabled={saveDisabled}
+              className="h-8 gap-1 px-2 text-xs"
+              title={
+                isSaved
+                  ? "Already in My Expressions"
+                  : ready
+                    ? "Save to My Expressions"
+                    : "Wait for explanation to load"
+              }
+            >
+              {justSaved ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Saved
+                </>
+              ) : isSaved ? (
+                <>
+                  <BookmarkCheck className="h-3.5 w-3.5" /> Saved
+                </>
+              ) : (
+                <>
+                  <Bookmark className="h-3.5 w-3.5" /> Save
+                </>
+              )}
+            </Button>
             )}
-          </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onReplay}
-            className="h-8 gap-1 px-2 text-xs"
-          >
-            <Repeat className="h-3.5 w-3.5" /> Replay
-          </Button>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-muted-foreground hover:bg-accent"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReplay}
+              className="h-8 gap-1 px-2 text-xs"
+            >
+              <Repeat className="h-3.5 w-3.5" /> Replay
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 px-2 text-xs"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {justSaved && (
-        <p className="mt-2 text-xs font-medium text-primary">
+        <p className="mt-2 px-6 text-xs font-medium text-primary">
           Saved to My Expressions ✓
         </p>
       )}
 
 
-      <div className="mt-5 border-t border-border pt-5">
+      <div className="mt-5 border-t border-border px-6 pb-6 pt-5">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
