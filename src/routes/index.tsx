@@ -440,6 +440,20 @@ function Index() {
     return () => window.clearInterval(tryer);
   }, [sentences]);
 
+  // Track when the limited-mode quality banner is shown.
+  useEffect(() => {
+    if (
+      transcriptQuality &&
+      transcriptQuality.quality === "low" &&
+      !qualityBannerDismissed
+    ) {
+      track("limited_mode_shown", {
+        video_id: videoId,
+        reasons: transcriptQuality.reasons,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcriptQuality?.quality, qualityBannerDismissed]);
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
@@ -1361,12 +1375,24 @@ function Index() {
                       onContinue={() => {
                         setLimitedMode(transcriptQuality.quality === "low");
                         setQualityBannerDismissed(true);
+                        if (transcriptQuality.quality === "low") {
+                          track("limited_mode_accepted", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                        }
                         track("transcript_quality_continue", {
                           video_id: videoId,
                           quality: transcriptQuality.quality,
                         });
                       }}
                       onTryAnother={() => {
+                        if (transcriptQuality.quality === "low") {
+                          track("limited_mode_abandoned", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                        }
                         track("transcript_quality_try_another", {
                           video_id: videoId,
                           quality: transcriptQuality.quality,
@@ -1379,6 +1405,7 @@ function Index() {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }
                       }}
+                      onTryDemo={startDemo}
                       onReprocess={() => {
                         if (!url) return;
                         track("transcript_quality_reprocess", {
@@ -1398,7 +1425,7 @@ function Index() {
                     <div className="flex items-center gap-2">
                       {limitedMode && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                          Limited Mode
+                          Basic Transcript Mode
                         </span>
                       )}
                       {transcriptSource && (
@@ -2077,7 +2104,7 @@ function ExplanationPanel({
       <div className="mt-5 border-t border-border pt-5">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            Per-phrase translation and saving are disabled in Limited Mode because this transcript lacks sentence structure. You can still watch, replay, and explore the transcript freely.
+            Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
           <div className="space-y-5">
@@ -2600,12 +2627,14 @@ function TranscriptQualityBanner({
   quality,
   onContinue,
   onTryAnother,
+  onTryDemo,
   onReprocess,
   reprocessing,
 }: {
   quality: TranscriptQualityReport;
   onContinue: () => void;
   onTryAnother: () => void;
+  onTryDemo?: () => void;
   onReprocess: () => void;
   reprocessing: boolean;
 }) {
@@ -2619,12 +2648,10 @@ function TranscriptQualityBanner({
       {isLow ? (
         <>
           <p className="text-sm font-semibold leading-snug">
-            Limited transcript quality detected
+            We found subtitles, but they are not detailed enough for full learning mode.
           </p>
           <p className="mt-1 text-xs leading-relaxed opacity-90">
-            This video&rsquo;s captions don&rsquo;t contain proper sentence
-            structure, so we couldn&rsquo;t fully convert it into learning-ready
-            sentences. You can still watch and explore the transcript.
+            You can still watch the video, follow the transcript, replay sections, and explore the content. For sentence-by-sentence explanations, try a video with clearer subtitles.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
@@ -2632,7 +2659,7 @@ function TranscriptQualityBanner({
               onClick={onContinue}
               className="h-8 rounded-full bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
             >
-              Continue anyway (Limited Mode)
+              Continue with Transcript Mode
             </Button>
             <Button
               size="sm"
@@ -2642,21 +2669,16 @@ function TranscriptQualityBanner({
             >
               Try another video
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onReprocess}
-              disabled={reprocessing}
-              className="h-8 rounded-full px-3 text-xs"
-            >
-              {reprocessing ? (
-                <>
-                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Reprocessing
-                </>
-              ) : (
-                "Reprocess transcript"
-              )}
-            </Button>
+            {onTryDemo && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onTryDemo}
+                className="h-8 rounded-full px-3 text-xs"
+              >
+                Try the Dutch Demo
+              </Button>
+            )}
           </div>
         </>
       ) : (
