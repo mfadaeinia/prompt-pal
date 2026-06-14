@@ -972,28 +972,45 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (!el) return;
-    const cRect = container.getBoundingClientRect();
-    const eRect = el.getBoundingClientRect();
-    // "Out of view" = not visible inside the transcript area at all.
-    const fullyVisible =
-      eRect.top >= cRect.top - 4 && eRect.bottom <= cRect.bottom + 4;
+
+    // Use offset math so we ONLY move the transcript container — never the
+    // window, never the video, never the explanation panel.
+    const cHeight = container.clientHeight;
+    const eTop = el.offsetTop;
+    const eHeight = el.offsetHeight;
+    const scrollTop = container.scrollTop;
+    const visibleTop = eTop - scrollTop;
+    const visibleBottom = visibleTop + eHeight;
+    const fullyVisible = visibleTop >= 0 && visibleBottom <= cHeight;
     setActiveOutOfView(!fullyVisible);
 
-    // Never fight a user who is actively scrolling.
+    // Transcript Mode: user owns the scroll. Never auto-scroll.
+    if (!focusMode) return;
+    // Never fight a user who is actively scrolling the transcript.
     if (performance.now() < userScrollingUntilRef.current) return;
-    // Only auto-scroll when the active sentence has actually left the
-    // visible area. Use `nearest` so the page barely moves — just enough
-    // to bring the sentence back into view, never recentering it.
-    if (!fullyVisible) {
-      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
-  }, [playingId]);
+
+    // Teleprompter target: keep the active sentence ~28% from the top of
+    // the transcript viewport. Only scroll when it drifts meaningfully
+    // out of that band so we don't jitter on every sentence.
+    const targetVisibleTop = cHeight * 0.28;
+    const drift = visibleTop - targetVisibleTop;
+    const band = cHeight * 0.18; // dead-zone around the target
+    if (Math.abs(drift) < band && fullyVisible) return;
+
+    const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
+    container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
+  }, [playingId, focusMode]);
 
   function jumpToCurrentSentence() {
     if (!playingId || !listRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    const container = listRef.current;
+    const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      const targetVisibleTop = container.clientHeight * 0.28;
+      container.scrollTo({
+        top: Math.max(0, el.offsetTop - targetVisibleTop),
+        behavior: "smooth",
+      });
       setActiveOutOfView(false);
       // Resume auto-tracking immediately.
       userScrollingUntilRef.current = 0;
