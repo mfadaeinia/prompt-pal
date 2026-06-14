@@ -54,6 +54,7 @@ function extractVideoId(item: any): string | null {
 function SavedPage() {
   const listFn = useServerFn(listSavedExpressions);
   const deleteFn = useServerFn(deleteSavedExpression);
+  const logEventFn = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
   const [browserId, setBrowserId] = useState("");
   const [query, setQuery] = useState("");
@@ -62,6 +63,17 @@ function SavedPage() {
   useEffect(() => {
     setBrowserId(getBrowserId());
   }, []);
+
+  // Track library_opened once per mount (after browserId is known)
+  const openedRef = useRef(false);
+  useEffect(() => {
+    if (!browserId || openedRef.current) return;
+    openedRef.current = true;
+    track("library_opened", { session_id: browserId });
+    void logEventFn({ data: { eventName: "library_opened", sessionId: browserId } }).catch(
+      () => {},
+    );
+  }, [browserId, logEventFn]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["saved-expressions", browserId],
