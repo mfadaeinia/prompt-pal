@@ -1384,11 +1384,24 @@ function Index() {
                   Learning Mode
                 </button>
               </div>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                {studyMode
-                  ? "Translations & explanations on"
-                  : "Pure viewing — transcript stays available"}
-              </p>
+              <label
+                className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
+                title="Focus Mode keeps the active sentence in view automatically. Transcript Mode lets you scroll freely."
+              >
+                <input
+                  type="checkbox"
+                  checked={focusMode}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setFocusMode(next);
+                    track(next ? "focus_mode_enabled" : "focus_mode_disabled", {
+                      video_id: videoId,
+                    });
+                  }}
+                  className="h-3.5 w-3.5 cursor-pointer accent-primary"
+                />
+                Focus Mode
+              </label>
             </div>
 
 
