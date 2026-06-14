@@ -1094,46 +1094,49 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-2">
             {view === "demo" && (
               <button
                 onClick={goHome}
-                className="mr-1 inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
+                aria-label="Back to home"
               >
-                ← Back to Home
+                <span aria-hidden>←</span>
+                <span className="hidden sm:inline">Back to Home</span>
               </button>
             )}
             <button
               onClick={goHome}
-              className="flex items-center gap-2.5"
+              className="flex min-w-0 items-center gap-2.5"
               aria-label="NativeFlow home"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
                 <Sparkles className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold tracking-tight">NativeFlow</span>
+              <span className="truncate text-base font-semibold tracking-tight">NativeFlow</span>
             </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
             <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             <div className="relative">
               <Link
                 to="/saved"
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                className="relative inline-flex items-center gap-1.5 rounded-full border border-border bg-card p-2 text-xs font-medium text-foreground hover:bg-accent sm:px-3 sm:py-1.5"
                 onClick={() => {
                   track("my_expressions_opened", { from: view });
                   setShowSavedTooltip(false);
                   localStorage.setItem("nativeflow_saved_tooltip_seen", "1");
                 }}
-                aria-label="Saved learning items"
+                aria-label="My Library"
+                title="My Library"
               >
-                <Bookmark className="h-3.5 w-3.5" />
-                <span>My Library</span>
+                <Bookmark className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden sm:inline">My Library</span>
                 {savedQuery.data && (savedQuery.data.items ?? []).length > 0 && (
-                  <span className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-background sm:static sm:ring-0">
                     {(savedQuery.data.items ?? []).length > 99 ? "99+" : (savedQuery.data.items ?? []).length}
                   </span>
                 )}
@@ -1146,13 +1149,14 @@ function Index() {
               )}
             </div>
             {view === "landing" && (
-              <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-4 text-xs">
+              <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-3 text-xs sm:px-4">
                 <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
               </Button>
             )}
           </div>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-6xl px-6">
         {view === "landing" && (
