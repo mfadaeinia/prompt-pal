@@ -1593,7 +1593,7 @@ function Index() {
               </>
             ) : (
               <>
-                <Bookmark className="h-3.5 w-3.5" /> Save expression
+                <Bookmark className="h-3.5 w-3.5" /> Save to My Library
               </>
             )}
           </button>
