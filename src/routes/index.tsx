@@ -2476,7 +2476,7 @@ function HeroWithPreview({
           {/* Micro-trust signals */}
           <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-primary" /> No signup required
+              <Check className="h-3.5 w-3.5 text-primary" /> Try Clario instantly — no account needed to explore videos and explanations
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-primary" /> Works with most videos that have subtitles
