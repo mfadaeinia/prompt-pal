@@ -17,6 +17,7 @@ import {
   saveExpression,
   listSavedExpressions,
 } from "@/lib/saved-expressions.functions";
+import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
