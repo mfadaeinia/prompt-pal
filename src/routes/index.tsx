@@ -1150,8 +1150,7 @@ function Index() {
             </button>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <button onClick={() => navTo("how")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">How it works</button>
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             <div className="relative">
               <Link
@@ -1206,11 +1205,9 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
-            <SubtitlesVsClarioSection />
+            <CompactHowItWorks />
+            <BeforeAfterSection />
             <LanguageSupportSection />
-            <ValuePropositionSection />
-            <HowItWorks />
-            <WhySection />
             <EarlyAccessSection />
           </>
         )}
@@ -1676,11 +1673,10 @@ function EarlyAccessSection() {
           <Sparkles className="h-3 w-3" /> Early Access
         </span>
         <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Help shape NativeFlow.
+          Stay updated.
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Join the early access list to get new languages, features, and
-          improvements before anyone else.
+          Get updates about new languages, improvements, and learning features.
         </p>
 
         {submitted ? (
@@ -1921,65 +1917,27 @@ function ProductMockup() {
   );
 }
 
-function HowItWorks() {
+function CompactHowItWorks() {
   const steps = [
-    { n: "01", icon: Tv, title: "Paste any YouTube video", desc: "Use any video in your target language — Dutch, English, Spanish, and more." },
-    { n: "02", icon: MousePointerClick, title: "Click any subtitle sentence", desc: "Tap a line in the transcript while you watch." },
-    { n: "03", icon: Brain, title: "Understand instantly", desc: "Get meaning, translation, and expressions in context." },
+    { icon: Tv, label: "Paste a YouTube video" },
+    { icon: MousePointerClick, label: "Click a sentence" },
+    { icon: Brain, label: "Understand instantly" },
   ];
   return (
-    <section id="how" className="border-t border-border py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Click any sentence. Understand it instantly.
-        </h2>
-      </div>
-      <div className="mt-14 grid gap-5 md:grid-cols-3">
-        {steps.map((s) => (
-          <div
-            key={s.n}
-            className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md hover:-translate-y-0.5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <s.icon className="h-5 w-5" />
+    <section className="py-6 sm:py-8">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-full border border-border bg-card/70 px-4 py-2.5 text-xs font-medium text-foreground shadow-sm sm:text-sm">
+        {steps.map((s, i) => (
+          <span key={s.label} className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <s.icon className="h-3.5 w-3.5" />
               </span>
-              <span className="text-xs font-mono text-muted-foreground">{s.n}</span>
-            </div>
-            <h3 className="mt-5 text-base font-semibold tracking-tight">{s.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WhySection() {
-  const cards = [
-    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples. Use videos you actually enjoy." },
-    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase. Explanations appear as you watch." },
-    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak — idioms, slang, and grammar where they appear." },
-  ];
-  return (
-    <section id="why" className="border-t border-border py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why NativeFlow</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Built for learners who want to actually enjoy the language.
-        </h2>
-      </div>
-      <div className="mt-14 grid gap-5 md:grid-cols-3">
-        {cards.map((c) => (
-          <div
-            key={c.title}
-            className="rounded-2xl border border-border bg-gradient-to-b from-card to-muted/30 p-6 shadow-sm"
-          >
-            <div className="text-2xl">{c.emoji}</div>
-            <h3 className="mt-4 text-base font-semibold tracking-tight">{c.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
-          </div>
+              {s.label}
+            </span>
+            {i < steps.length - 1 && (
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </span>
         ))}
       </div>
     </section>
@@ -2677,40 +2635,51 @@ function ProductPreview() {
   );
 }
 
-function SubtitlesVsClarioSection() {
+function BeforeAfterSection() {
+  const before = [
+    { icon: "⏸", label: "Pause video" },
+    { icon: "📸", label: "Screenshot subtitles" },
+    { icon: "🌐", label: "Open Google Translate" },
+    { icon: "🤖", label: "Paste into ChatGPT" },
+    { icon: "🔍", label: "Search expressions" },
+  ];
+  const after = [
+    { icon: "▶", label: "Watch" },
+    { icon: "👆", label: "Click sentence" },
+    { icon: "💡", label: "Understand instantly" },
+    { icon: "📚", label: "Save useful expressions" },
+  ];
   return (
-    <section className="pb-8 sm:pb-12">
+    <section id="why" className="py-12 sm:py-16">
       <div className="mx-auto max-w-4xl">
-        <p className="text-center text-xs font-semibold uppercase tracking-wider text-primary">
-          Why Clario
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Subtitles tell you <span className="text-muted-foreground">what was said.</span>
-          <br className="hidden sm:block" />
-          Clario explains <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">what it means.</span>
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          Why learners use Clario
         </h2>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              YouTube subtitles
+              Before Clario
             </p>
-            <ul className="mt-3 space-y-2 text-sm text-foreground">
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> Shows transcript</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No translation in context</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No meaning or nuance</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No expression help</li>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              {before.map((s) => (
+                <li key={s.label} className="flex items-start gap-2">
+                  <span className="w-5 shrink-0 text-base leading-5">{s.icon}</span>
+                  <span>{s.label}</span>
+                </li>
+              ))}
             </ul>
           </div>
           <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Clario
+              After Clario
             </p>
             <ul className="mt-3 space-y-2 text-sm text-foreground">
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Shows transcript</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains the meaning</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains idioms & expressions</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Replay difficult sentences in one tap</li>
+              {after.map((s) => (
+                <li key={s.label} className="flex items-start gap-2">
+                  <span className="w-5 shrink-0 text-base leading-5">{s.icon}</span>
+                  <span>{s.label}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -2743,36 +2712,6 @@ function LanguageSupportSection() {
   );
 }
 
-function ValuePropositionSection() {
-  const items = [
-    { title: "Learn from content you actually enjoy", desc: "Use the videos you already watch — no artificial lessons." },
-    { title: "Follow transcripts while watching", desc: "Sentences highlight in sync with the video." },
-    { title: "Instantly translate unknown words", desc: "Click any sentence for a natural translation." },
-    { title: "Build vocabulary in context", desc: "Expressions and idioms explained where they appear." },
-    { title: "Practice with real native content", desc: "Understand how people actually speak." },
-  ];
-  return (
-    <section className="border-t border-border py-14 sm:py-20">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why it works</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Learn a language without changing your habits.
-        </h2>
-      </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
-          >
-            <h3 className="text-sm font-semibold tracking-tight text-foreground">{item.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function LoadingProgress() {
   const steps = [
