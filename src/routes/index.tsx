@@ -1343,12 +1343,12 @@ function Index() {
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
 
-              <div className="space-y-4">
+              <div className="space-y-4 min-w-0">
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
@@ -1391,7 +1391,117 @@ function Index() {
                   </div>
                 )}
 
+                {/* Transcript — sits directly under the video, mirroring the landing-page preview */}
                 {studyMode && (
+                  <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[55vh]">
+                    {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
+                      <TranscriptQualityBanner
+                        quality={transcriptQuality}
+                        onContinue={() => {
+                          setLimitedMode(transcriptQuality.quality === "low");
+                          setQualityBannerDismissed(true);
+                          if (transcriptQuality.quality === "low") {
+                            track("limited_mode_accepted", {
+                              video_id: videoId,
+                              quality: transcriptQuality.quality,
+                            });
+                          }
+                          track("transcript_quality_continue", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                        }}
+                        onTryAnother={() => {
+                          if (transcriptQuality.quality === "low") {
+                            track("limited_mode_abandoned", {
+                              video_id: videoId,
+                              quality: transcriptQuality.quality,
+                            });
+                          }
+                          track("transcript_quality_try_another", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                          setSentences([]);
+                          setVideoId(null);
+                          setTranscriptQuality(null);
+                          setSelected(null);
+                          if (typeof window !== "undefined") {
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }
+                        }}
+                        onTryDemo={startDemo}
+                        onReprocess={() => {
+                          if (!url) return;
+                          track("transcript_quality_reprocess", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                          loadMutation.mutate(url);
+                        }}
+                        reprocessing={loadMutation.isPending}
+                      />
+                    )}
+                    <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                      <span>
+                        Transcript · {sentences.length}{" "}
+                        {limitedMode ? "phrases" : "sentences"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {limitedMode && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                            Basic Transcript Mode
+                          </span>
+                        )}
+                        {transcriptSource && (
+                          <SourceBadge source={transcriptSource} />
+                        )}
+                      </div>
+                    </div>
+
+                    <ol ref={listRef} className="flex-1 overflow-y-auto">
+                      {sentences.map((s) => {
+                        const active = selected?.id === s.id;
+                        const playing = playingId === s.id;
+                        return (
+                          <li key={s.id}>
+                            <button
+                              data-sid={s.id}
+                              onClick={() => jumpTo(s)}
+                              className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                                active
+                                  ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                  : playing
+                                  ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                                  : "border-l-transparent text-foreground/85"
+                              }`}
+                            >
+                              <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                                {formatTime(s.offset)}
+                              </span>
+                              {s.text}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ol>
+
+                    {isMobile && activeOutOfView && playingId !== null && (
+                      <button
+                        onClick={jumpToCurrentSentence}
+                        className="absolute bottom-[72px] left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+                      >
+                        <ArrowDownToLine className="h-3.5 w-3.5" />
+                        Jump to current sentence
+                      </button>
+                    )}
+                  </aside>
+                )}
+              </div>
+
+              {/* Explanation panel — right column on desktop, stacks below transcript on mobile */}
+              {studyMode && (
+                <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
@@ -1405,113 +1515,7 @@ function Index() {
                     saving={saveExpressionMutation.isPending}
                     limitedMode={limitedMode}
                   />
-                )}
-              </div>
-
-              {studyMode && (
-                <aside className="relative flex max-h-[60vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[70vh]">
-                  {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
-                    <TranscriptQualityBanner
-                      quality={transcriptQuality}
-                      onContinue={() => {
-                        setLimitedMode(transcriptQuality.quality === "low");
-                        setQualityBannerDismissed(true);
-                        if (transcriptQuality.quality === "low") {
-                          track("limited_mode_accepted", {
-                            video_id: videoId,
-                            quality: transcriptQuality.quality,
-                          });
-                        }
-                        track("transcript_quality_continue", {
-                          video_id: videoId,
-                          quality: transcriptQuality.quality,
-                        });
-                      }}
-                      onTryAnother={() => {
-                        if (transcriptQuality.quality === "low") {
-                          track("limited_mode_abandoned", {
-                            video_id: videoId,
-                            quality: transcriptQuality.quality,
-                          });
-                        }
-                        track("transcript_quality_try_another", {
-                          video_id: videoId,
-                          quality: transcriptQuality.quality,
-                        });
-                        setSentences([]);
-                        setVideoId(null);
-                        setTranscriptQuality(null);
-                        setSelected(null);
-                        if (typeof window !== "undefined") {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }
-                      }}
-                      onTryDemo={startDemo}
-                      onReprocess={() => {
-                        if (!url) return;
-                        track("transcript_quality_reprocess", {
-                          video_id: videoId,
-                          quality: transcriptQuality.quality,
-                        });
-                        loadMutation.mutate(url);
-                      }}
-                      reprocessing={loadMutation.isPending}
-                    />
-                  )}
-                  <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    <span>
-                      Transcript · {sentences.length}{" "}
-                      {limitedMode ? "phrases" : "sentences"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {limitedMode && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                          Basic Transcript Mode
-                        </span>
-                      )}
-                      {transcriptSource && (
-                        <SourceBadge source={transcriptSource} />
-                      )}
-                    </div>
-                  </div>
-
-                  <ol ref={listRef} className="flex-1 overflow-y-auto">
-                    {sentences.map((s) => {
-                      const active = selected?.id === s.id;
-                      const playing = playingId === s.id;
-                      return (
-                        <li key={s.id}>
-                          <button
-                            data-sid={s.id}
-                            onClick={() => jumpTo(s)}
-                            className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                              active
-                                ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
-                                : playing
-                                ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                                : "border-l-transparent text-foreground/85"
-                            }`}
-                          >
-                            <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                              {formatTime(s.offset)}
-                            </span>
-                            {s.text}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ol>
-
-                  {isMobile && activeOutOfView && playingId !== null && (
-                    <button
-                      onClick={jumpToCurrentSentence}
-                      className="absolute bottom-[72px] left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
-                    >
-                      <ArrowDownToLine className="h-3.5 w-3.5" />
-                      Jump to current sentence
-                    </button>
-                  )}
-                </aside>
+                </div>
               )}
             </div>
 
