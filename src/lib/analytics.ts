@@ -2,7 +2,7 @@ import posthog from "posthog-js";
 
 let initialized = false;
 
-const TEST_USER_KEY = "clario_is_test_user";
+const TEST_USER_KEY = "nativeflow_is_test_user";
 
 export function isTestUser(): boolean {
   if (typeof window === "undefined") return false;
@@ -26,9 +26,9 @@ export function setTestUser(enabled: boolean) {
     if (enabled) {
       // Give the test browser a stable identifier so it's easy to filter out
       const id = `test-user-${(typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-      const existing = localStorage.getItem("clario_test_user_id");
+      const existing = localStorage.getItem("nativeflow_test_user_id");
       const finalId = existing || id;
-      if (!existing) localStorage.setItem("clario_test_user_id", finalId);
+      if (!existing) localStorage.setItem("nativeflow_test_user_id", finalId);
       posthog.identify(finalId, { is_test_user: true });
     }
   } catch {}
@@ -53,9 +53,9 @@ export function initAnalytics() {
   try {
     posthog.register({ is_test_user: testFlag });
     if (testFlag) {
-      const existing = localStorage.getItem("clario_test_user_id");
+      const existing = localStorage.getItem("nativeflow_test_user_id");
       const finalId = existing || `test-user-${Date.now()}`;
-      if (!existing) localStorage.setItem("clario_test_user_id", finalId);
+      if (!existing) localStorage.setItem("nativeflow_test_user_id", finalId);
       posthog.identify(finalId, { is_test_user: true });
     }
   } catch {}
@@ -100,7 +100,7 @@ export function track(event: string, props?: Record<string, any>) {
   try {
     const debug =
       new URLSearchParams(window.location.search).get("debug") === "1" ||
-      localStorage.getItem("clario_debug") === "1";
+      localStorage.getItem("nativeflow_debug") === "1";
     if (debug) {
       // eslint-disable-next-line no-console
       console.info("[analytics]", event, enrichedProps);

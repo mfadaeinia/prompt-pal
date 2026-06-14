@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { isTestUser, setTestUser } from "@/lib/analytics";
 
 // Developer-only analytics validation panel.
-// Visible when URL contains ?debug=1 OR localStorage["clario_debug"] === "1".
+// Visible when URL contains ?debug=1 OR localStorage["nativeflow_debug"] === "1".
 // Used to verify analytics correctness during testing — NOT shown to real users.
 
 export type DevPanelState = {
@@ -20,7 +20,7 @@ export function isDevPanelEnabled(): boolean {
   try {
     const params = new URLSearchParams(window.location.search);
     if (params.get("debug") === "1") return true;
-    return localStorage.getItem("clario_debug") === "1";
+    return localStorage.getItem("nativeflow_debug") === "1";
   } catch {
     return false;
   }
@@ -97,7 +97,7 @@ export function DevAnalyticsPanel({ getState }: { getState: () => DevPanelState 
         {testMode ? "🧪 Test User: ON (click to disable)" : "Mark this browser as Test User"}
       </button>
 
-      <p className="mt-2 text-[10px] text-white/40">?debug=1 or localStorage clario_debug=1</p>
+      <p className="mt-2 text-[10px] text-white/40">?debug=1 or localStorage nativeflow_debug=1</p>
     </div>
   );
 }
