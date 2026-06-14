@@ -1096,8 +1096,10 @@ function Index() {
   const isDemo = videoId === DEMO_VIDEO_ID;
 
   function jumpTo(s: TranscriptSentence) {
-    setSelected(s);
-    if (!limitedMode) ensureExplanation(s, sentences);
+    if (studyMode) {
+      setSelected(s);
+      if (!limitedMode) ensureExplanation(s, sentences);
+    }
     seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
@@ -1107,6 +1109,7 @@ function Index() {
       sentence_text: s.text,
       sentence_start_time: s.offset,
       video_id: videoId,
+      mode: studyMode ? "learning" : "watch",
     });
     if (isDemo) {
       track("demo_sentence_clicked", {
