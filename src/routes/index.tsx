@@ -1361,12 +1361,24 @@ function Index() {
                       onContinue={() => {
                         setLimitedMode(transcriptQuality.quality === "low");
                         setQualityBannerDismissed(true);
+                        if (transcriptQuality.quality === "low") {
+                          track("limited_mode_accepted", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                        }
                         track("transcript_quality_continue", {
                           video_id: videoId,
                           quality: transcriptQuality.quality,
                         });
                       }}
                       onTryAnother={() => {
+                        if (transcriptQuality.quality === "low") {
+                          track("limited_mode_abandoned", {
+                            video_id: videoId,
+                            quality: transcriptQuality.quality,
+                          });
+                        }
                         track("transcript_quality_try_another", {
                           video_id: videoId,
                           quality: transcriptQuality.quality,
@@ -1379,6 +1391,7 @@ function Index() {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }
                       }}
+                      onTryDemo={startDemo}
                       onReprocess={() => {
                         if (!url) return;
                         track("transcript_quality_reprocess", {
