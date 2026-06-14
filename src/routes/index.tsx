@@ -69,6 +69,7 @@ function Index() {
   const explainFx = useServerFn(explainSentence);
   const saveExpressionFx = useServerFn(saveExpression);
   const listSavedFx = useServerFn(listSavedExpressions);
+  const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
 
 
