@@ -2635,7 +2635,58 @@ function ProductPreview() {
   );
 }
 
-function SubtitlesVsClarioSection() {
+function BeforeAfterSection() {
+  const before = [
+    { icon: "⏸", label: "Pause video" },
+    { icon: "📸", label: "Screenshot subtitles" },
+    { icon: "🌐", label: "Open Google Translate" },
+    { icon: "🤖", label: "Paste into ChatGPT" },
+    { icon: "🔍", label: "Search expressions" },
+  ];
+  const after = [
+    { icon: "▶", label: "Watch" },
+    { icon: "👆", label: "Click sentence" },
+    { icon: "💡", label: "Understand instantly" },
+    { icon: "📚", label: "Save useful expressions" },
+  ];
+  return (
+    <section id="why" className="py-12 sm:py-16">
+      <div className="mx-auto max-w-4xl">
+        <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          Why learners use Clario
+        </h2>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card/60 p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Before Clario
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              {before.map((s) => (
+                <li key={s.label} className="flex items-start gap-2">
+                  <span className="w-5 shrink-0 text-base leading-5">{s.icon}</span>
+                  <span>{s.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              After Clario
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-foreground">
+              {after.map((s) => (
+                <li key={s.label} className="flex items-start gap-2">
+                  <span className="w-5 shrink-0 text-base leading-5">{s.icon}</span>
+                  <span>{s.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
   return (
     <section className="pb-8 sm:pb-12">
       <div className="mx-auto max-w-4xl">
