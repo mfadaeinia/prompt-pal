@@ -1917,65 +1917,27 @@ function ProductMockup() {
   );
 }
 
-function HowItWorks() {
+function CompactHowItWorks() {
   const steps = [
-    { n: "01", icon: Tv, title: "Paste any YouTube video", desc: "Use any video in your target language — Dutch, English, Spanish, and more." },
-    { n: "02", icon: MousePointerClick, title: "Click any subtitle sentence", desc: "Tap a line in the transcript while you watch." },
-    { n: "03", icon: Brain, title: "Understand instantly", desc: "Get meaning, translation, and expressions in context." },
+    { icon: Tv, label: "Paste a YouTube video" },
+    { icon: MousePointerClick, label: "Click a sentence" },
+    { icon: Brain, label: "Understand instantly" },
   ];
   return (
-    <section id="how" className="border-t border-border py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">How it works</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Click any sentence. Understand it instantly.
-        </h2>
-      </div>
-      <div className="mt-14 grid gap-5 md:grid-cols-3">
-        {steps.map((s) => (
-          <div
-            key={s.n}
-            className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md hover:-translate-y-0.5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <s.icon className="h-5 w-5" />
+    <section className="py-6 sm:py-8">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-full border border-border bg-card/70 px-4 py-2.5 text-xs font-medium text-foreground shadow-sm sm:text-sm">
+        {steps.map((s, i) => (
+          <span key={s.label} className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <s.icon className="h-3.5 w-3.5" />
               </span>
-              <span className="text-xs font-mono text-muted-foreground">{s.n}</span>
-            </div>
-            <h3 className="mt-5 text-base font-semibold tracking-tight">{s.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function WhySection() {
-  const cards = [
-    { emoji: "📺", icon: Tv, title: "Learn from real content", desc: "Stop relying only on textbook examples. Use videos you actually enjoy." },
-    { emoji: "⚡", icon: Zap, title: "Instant understanding", desc: "No more pausing to search every phrase. Explanations appear as you watch." },
-    { emoji: "🧠", icon: Brain, title: "Learn in context", desc: "Understand how natives actually speak — idioms, slang, and grammar where they appear." },
-  ];
-  return (
-    <section id="why" className="border-t border-border py-20 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Why NativeFlow</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Built for learners who want to actually enjoy the language.
-        </h2>
-      </div>
-      <div className="mt-14 grid gap-5 md:grid-cols-3">
-        {cards.map((c) => (
-          <div
-            key={c.title}
-            className="rounded-2xl border border-border bg-gradient-to-b from-card to-muted/30 p-6 shadow-sm"
-          >
-            <div className="text-2xl">{c.emoji}</div>
-            <h3 className="mt-4 text-base font-semibold tracking-tight">{c.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
-          </div>
+              {s.label}
+            </span>
+            {i < steps.length - 1 && (
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </span>
         ))}
       </div>
     </section>
