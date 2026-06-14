@@ -1206,11 +1206,9 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
-            <SubtitlesVsClarioSection />
+            <CompactHowItWorks />
+            <BeforeAfterSection />
             <LanguageSupportSection />
-            <ValuePropositionSection />
-            <HowItWorks />
-            <WhySection />
             <EarlyAccessSection />
           </>
         )}
