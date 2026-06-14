@@ -1398,7 +1398,7 @@ function Index() {
                     <div className="flex items-center gap-2">
                       {limitedMode && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                          Limited Mode
+                          Basic Transcript Mode
                         </span>
                       )}
                       {transcriptSource && (
