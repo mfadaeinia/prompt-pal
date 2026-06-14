@@ -94,6 +94,8 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(true);
+  // Focus Mode: transcript auto-follows. Transcript Mode: user controls scrolling.
+  const [focusMode, setFocusMode] = useState(true);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
@@ -970,28 +972,45 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (!el) return;
-    const cRect = container.getBoundingClientRect();
-    const eRect = el.getBoundingClientRect();
-    // "Out of view" = not visible inside the transcript area at all.
-    const fullyVisible =
-      eRect.top >= cRect.top - 4 && eRect.bottom <= cRect.bottom + 4;
+
+    // Use offset math so we ONLY move the transcript container — never the
+    // window, never the video, never the explanation panel.
+    const cHeight = container.clientHeight;
+    const eTop = el.offsetTop;
+    const eHeight = el.offsetHeight;
+    const scrollTop = container.scrollTop;
+    const visibleTop = eTop - scrollTop;
+    const visibleBottom = visibleTop + eHeight;
+    const fullyVisible = visibleTop >= 0 && visibleBottom <= cHeight;
     setActiveOutOfView(!fullyVisible);
 
-    // Never fight a user who is actively scrolling.
+    // Transcript Mode: user owns the scroll. Never auto-scroll.
+    if (!focusMode) return;
+    // Never fight a user who is actively scrolling the transcript.
     if (performance.now() < userScrollingUntilRef.current) return;
-    // Only auto-scroll when the active sentence has actually left the
-    // visible area. Use `nearest` so the page barely moves — just enough
-    // to bring the sentence back into view, never recentering it.
-    if (!fullyVisible) {
-      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
-  }, [playingId]);
+
+    // Teleprompter target: keep the active sentence ~28% from the top of
+    // the transcript viewport. Only scroll when it drifts meaningfully
+    // out of that band so we don't jitter on every sentence.
+    const targetVisibleTop = cHeight * 0.28;
+    const drift = visibleTop - targetVisibleTop;
+    const band = cHeight * 0.18; // dead-zone around the target
+    if (Math.abs(drift) < band && fullyVisible) return;
+
+    const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
+    container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
+  }, [playingId, focusMode]);
 
   function jumpToCurrentSentence() {
     if (!playingId || !listRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+    const container = listRef.current;
+    const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      const targetVisibleTop = container.clientHeight * 0.28;
+      container.scrollTo({
+        top: Math.max(0, el.offsetTop - targetVisibleTop),
+        behavior: "smooth",
+      });
       setActiveOutOfView(false);
       // Resume auto-tracking immediately.
       userScrollingUntilRef.current = 0;
@@ -1365,11 +1384,24 @@ function Index() {
                   Learning Mode
                 </button>
               </div>
-              <p className="hidden text-xs text-muted-foreground sm:block">
-                {studyMode
-                  ? "Translations & explanations on"
-                  : "Pure viewing — transcript stays available"}
-              </p>
+              <label
+                className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
+                title="Focus Mode keeps the active sentence in view automatically. Transcript Mode lets you scroll freely."
+              >
+                <input
+                  type="checkbox"
+                  checked={focusMode}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setFocusMode(next);
+                    track(next ? "focus_mode_enabled" : "focus_mode_disabled", {
+                      video_id: videoId,
+                    });
+                  }}
+                  className="h-3.5 w-3.5 cursor-pointer accent-primary"
+                />
+                Focus Mode
+              </label>
             </div>
 
 
