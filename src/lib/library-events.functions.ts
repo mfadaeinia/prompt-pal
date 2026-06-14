@@ -58,8 +58,8 @@ export const getLibraryMetrics = createServerFn({ method: "GET" }).handler(
         .limit(20),
     ]);
 
-    const saveRows = (saves.data ?? []) as Array<{ session_id: string }>;
-    const evRows = (events.data ?? []) as Array<{ event_name: string }>;
+    const saveRows = ((saves.data ?? []) as unknown) as Array<{ session_id: string }>;
+    const evRows = ((events.data ?? []) as unknown) as Array<{ event_name: string }>;
 
     const totalSaves = saveRows.length;
     const uniqueSavers = new Set(saveRows.map((r) => r.session_id).filter(Boolean)).size;
