@@ -343,11 +343,11 @@ function Index() {
     if (feedbackShownRef.current) return;
     if (typeof window !== "undefined") {
       try {
-        if (localStorage.getItem("clario_feedback_given") === "1") {
+        if (localStorage.getItem("nativeflow_feedback_given") === "1") {
           feedbackShownRef.current = true;
           return;
         }
-        const last = localStorage.getItem("clario_feedback_dismissed_at");
+        const last = localStorage.getItem("nativeflow_feedback_dismissed_at");
         if (last && Date.now() - Number(last) < 14 * 24 * 60 * 60 * 1000) {
           feedbackShownRef.current = true;
           return;
@@ -484,7 +484,7 @@ function Index() {
     demoStartTimeRef.current = performance.now();
     // First-time onboarding
     try {
-      if (typeof window !== "undefined" && !localStorage.getItem("clario_onboarded")) {
+      if (typeof window !== "undefined" && !localStorage.getItem("nativeflow_onboarded")) {
         setShowOnboarding(true);
         track("onboarding_seen", { video_id: DEMO_VIDEO_ID });
       }
@@ -505,7 +505,7 @@ function Index() {
   const dismissOnboarding = (completed: boolean) => {
     setShowOnboarding(false);
     try {
-      localStorage.setItem("clario_onboarded", "1");
+      localStorage.setItem("nativeflow_onboarded", "1");
     } catch {}
     if (completed) track("onboarding_completed", { video_id: videoId });
   };
@@ -1150,7 +1150,7 @@ function Index() {
             </button>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why Clario</button>
+            <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
             <button onClick={() => navTo("early-access")} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline">Early access</button>
             <div className="relative">
               <Link
@@ -1339,7 +1339,7 @@ function Index() {
 
                 {/* Compact Learning Mode CTA (Watch Mode only, directly below video) */}
                 {!studyMode && (
-                  <div className="animate-clario-pulse flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-3 shadow-sm sm:p-4">
+                  <div className="animate-nativeflow-pulse flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-3 shadow-sm sm:p-4">
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                       <BookOpen className="h-5 w-5" />
                     </div>
@@ -1556,8 +1556,8 @@ function Index() {
             setShowFeedback(false);
             feedbackSubmittedRef.current = true;
             try {
-              localStorage.setItem("clario_feedback_given", "1");
-              localStorage.setItem("clario_feedback_dismissed_at", String(Date.now()));
+              localStorage.setItem("nativeflow_feedback_given", "1");
+              localStorage.setItem("nativeflow_feedback_dismissed_at", String(Date.now()));
             } catch {}
           }}
         />
@@ -1577,7 +1577,7 @@ function Index() {
             transcriptClicks: clickCountRef.current,
             demoStarted: demoStartTimeRef.current !== null,
             feedbackSubmitted: feedbackSubmittedRef.current,
-            waitlistJoined: waitlistJoinedRef.current || (typeof window !== "undefined" && localStorage.getItem("clario_waitlist_joined") === "1"),
+            waitlistJoined: waitlistJoinedRef.current || (typeof window !== "undefined" && localStorage.getItem("nativeflow_waitlist_joined") === "1"),
           })}
         />
       )}
@@ -1653,7 +1653,7 @@ function EarlyAccessSection() {
       track("waitlist_joined", eventProps);
       track("early_access_joined", eventProps);
       // parent component reads localStorage flag below for dev panel state
-      try { localStorage.setItem("clario_waitlist_joined", "1"); } catch {}
+      try { localStorage.setItem("nativeflow_waitlist_joined", "1"); } catch {}
       setSubmitted(true);
     } catch (err) {
       console.error("waitlist_submit_failed", err);
@@ -1831,7 +1831,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             </Button>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            See how Clario works in under 30 seconds. Try it instantly — no account needed.
+            See how NativeFlow works in under 30 seconds. Try it instantly — no account needed.
           </p>
         </div>
 
@@ -1988,7 +1988,7 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-clario-pulse">
+      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-nativeflow-pulse">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
@@ -2452,7 +2452,7 @@ function HeroWithPreview({
           {/* Micro-trust signals */}
           <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-primary" /> Try Clario instantly — no account needed to explore videos and explanations
+              <Check className="h-3.5 w-3.5 text-primary" /> Try NativeFlow instantly — no account needed to explore videos and explanations
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-primary" /> Works with most videos that have subtitles
@@ -2653,12 +2653,12 @@ function BeforeAfterSection() {
     <section id="why" className="py-12 sm:py-16">
       <div className="mx-auto max-w-4xl">
         <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Why learners use Clario
+          Why learners use NativeFlow
         </h2>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Before Clario
+              Before NativeFlow
             </p>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {before.map((s) => (
@@ -2671,7 +2671,7 @@ function BeforeAfterSection() {
           </div>
           <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              After Clario
+              After NativeFlow
             </p>
             <ul className="mt-3 space-y-2 text-sm text-foreground">
               {after.map((s) => (
