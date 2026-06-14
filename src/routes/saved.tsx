@@ -182,16 +182,6 @@ function SavedPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
-                      onClick={() => replay(item)}
-                      disabled={!item.video_id && !item.video_url}
-                      className="gap-1.5"
-                      title="Replay on YouTube at this moment"
-                    >
-                      <Repeat className="h-3.5 w-3.5" /> Replay
-                    </Button>
-                    <Button
-                      size="sm"
                       onClick={() => watchAgain(item)}
                       disabled={!item.video_url && !item.video_id}
                       className="gap-1.5"
