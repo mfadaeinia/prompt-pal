@@ -970,20 +970,22 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (!el) return;
-    // On mobile: NEVER auto-scroll. Just track whether the active sentence
-    // is visible so we can offer a manual "Jump to current" affordance.
-    if (isMobile) {
-      const cRect = container.getBoundingClientRect();
-      const eRect = el.getBoundingClientRect();
-      const inView = eRect.bottom > cRect.top + 8 && eRect.top < cRect.bottom - 8;
-      setActiveOutOfView(!inView);
-      return;
-    }
-    // Desktop: keep the existing follow-the-playback behavior, but pause
-    // briefly after the user scrolls so we don't fight them.
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    // "Out of view" = not visible inside the transcript area at all.
+    const fullyVisible =
+      eRect.top >= cRect.top - 4 && eRect.bottom <= cRect.bottom + 4;
+    setActiveOutOfView(!fullyVisible);
+
+    // Never fight a user who is actively scrolling.
     if (performance.now() < userScrollingUntilRef.current) return;
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [playingId, isMobile]);
+    // Only auto-scroll when the active sentence has actually left the
+    // visible area. Use `nearest` so the page barely moves — just enough
+    // to bring the sentence back into view, never recentering it.
+    if (!fullyVisible) {
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [playingId]);
 
   function jumpToCurrentSentence() {
     if (!playingId || !listRef.current) return;
@@ -991,6 +993,8 @@ function Index() {
     if (el) {
       el.scrollIntoView({ block: "center", behavior: "smooth" });
       setActiveOutOfView(false);
+      // Resume auto-tracking immediately.
+      userScrollingUntilRef.current = 0;
       track("transcript_jump_to_current_clicked", { video_id: videoId });
     }
   }
