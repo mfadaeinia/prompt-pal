@@ -80,6 +80,36 @@ export type Database = {
         }
         Relationships: []
       }
+      library_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          expression_id: string | null
+          id: string
+          metadata: Json | null
+          session_id: string | null
+          video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          expression_id?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          expression_id?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          video_id?: string | null
+        }
+        Relationships: []
+      }
       saved_expressions: {
         Row: {
           created_at: string
