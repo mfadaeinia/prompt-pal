@@ -832,7 +832,8 @@ function Index() {
               if (p && typeof p.getCurrentTime === "function") {
                 setCurrentTime(p.getCurrentTime() || 0);
               }
-            }, 250);
+            }, 80);
+
           },
           onStateChange: (e: any) => {
             const p = playerRef.current;
@@ -864,7 +865,10 @@ function Index() {
   const manualUntilRef = useRef(0);
 
   // Small tuning knob: negative = highlight lags playback, positive = leads.
-  const SYNC_OFFSET_SECONDS = 0;
+  // Compensate for YT API getCurrentTime latency + polling interval so the
+  // highlight tracks the audio the user actually hears.
+  const SYNC_OFFSET_SECONDS = 0.2;
+
 
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
