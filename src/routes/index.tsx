@@ -2600,12 +2600,14 @@ function TranscriptQualityBanner({
   quality,
   onContinue,
   onTryAnother,
+  onTryDemo,
   onReprocess,
   reprocessing,
 }: {
   quality: TranscriptQualityReport;
   onContinue: () => void;
   onTryAnother: () => void;
+  onTryDemo?: () => void;
   onReprocess: () => void;
   reprocessing: boolean;
 }) {
@@ -2619,12 +2621,10 @@ function TranscriptQualityBanner({
       {isLow ? (
         <>
           <p className="text-sm font-semibold leading-snug">
-            Limited transcript quality detected
+            We found subtitles, but they are not detailed enough for full learning mode.
           </p>
           <p className="mt-1 text-xs leading-relaxed opacity-90">
-            This video&rsquo;s captions don&rsquo;t contain proper sentence
-            structure, so we couldn&rsquo;t fully convert it into learning-ready
-            sentences. You can still watch and explore the transcript.
+            You can still watch the video, follow the transcript, replay sections, and explore the content. For sentence-by-sentence explanations, try a video with clearer subtitles.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
@@ -2632,7 +2632,7 @@ function TranscriptQualityBanner({
               onClick={onContinue}
               className="h-8 rounded-full bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
             >
-              Continue anyway (Limited Mode)
+              Continue with Transcript Mode
             </Button>
             <Button
               size="sm"
@@ -2642,21 +2642,16 @@ function TranscriptQualityBanner({
             >
               Try another video
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onReprocess}
-              disabled={reprocessing}
-              className="h-8 rounded-full px-3 text-xs"
-            >
-              {reprocessing ? (
-                <>
-                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Reprocessing
-                </>
-              ) : (
-                "Reprocess transcript"
-              )}
-            </Button>
+            {onTryDemo && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onTryDemo}
+                className="h-8 rounded-full px-3 text-xs"
+              >
+                Try the Dutch Demo
+              </Button>
+            )}
           </div>
         </>
       ) : (
