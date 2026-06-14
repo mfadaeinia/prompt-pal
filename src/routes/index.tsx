@@ -1188,6 +1188,7 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
+            <SubtitlesVsClarioSection />
             <LanguageSupportSection />
             <ValuePropositionSection />
             <HowItWorks />
@@ -2504,82 +2505,199 @@ function HeroWithPreview({
   );
 }
 
+type PreviewMoment = {
+  t: string;
+  sentence: string;
+  translation: string;
+  meaning: string;
+  note: string;
+};
+
+const PREVIEW_MOMENTS: PreviewMoment[] = [
+  {
+    t: "0:17",
+    sentence: "Rij eens door, man.",
+    translation: "Come on, keep driving.",
+    meaning: "Used when someone is moving too slowly and you want them to hurry up.",
+    note: "Not literal — 'eens' here softens the command, like a casual nudge.",
+  },
+  {
+    t: "0:42",
+    sentence: "Dat slaat nergens op.",
+    translation: "That makes no sense at all.",
+    meaning: "A common reaction when something feels illogical or absurd.",
+    note: "'Slaat nergens op' is everyday spoken Dutch — you'll hear it constantly.",
+  },
+  {
+    t: "1:08",
+    sentence: "Ik heb er geen zin in.",
+    translation: "I don't feel like it.",
+    meaning: "Expresses lack of motivation or interest in doing something.",
+    note: "'Zin hebben in' = to feel like (doing) — a core Dutch expression.",
+  },
+];
+
+const PREVIEW_LINES = [
+  { t: "0:14", text: "Wacht even, ik moet nog parkeren." },
+  { t: "0:17", text: "Rij eens door, man." },
+  { t: "0:25", text: "Kom op, we hebben haast." },
+  { t: "0:42", text: "Dat slaat nergens op." },
+  { t: "1:08", text: "Ik heb er geen zin in." },
+];
+
 function ProductPreview() {
-  const lines = [
-    { t: "0:14", text: "Wacht even, ik moet nog parkeren.", active: false },
-    { t: "0:17", text: "Rij eens door man.", active: true },
-    { t: "0:20", text: "Nee sorry, het lukt niet.", active: false },
-    { t: "0:25", text: "Kom op, we hebben haast.", active: false },
-  ];
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setIdx((i) => (i + 1) % PREVIEW_MOMENTS.length), 3800);
+    return () => clearInterval(id);
+  }, []);
+  const moment = PREVIEW_MOMENTS[idx];
+
   return (
     <div className="rounded-2xl border border-border bg-card/80 p-3 shadow-xl shadow-primary/10 backdrop-blur sm:p-4">
-      <div className="mb-2 flex items-center justify-between px-2 pt-1">
+      <div className="mb-2 flex items-center justify-between px-1 pt-1">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-          <Sparkles className="h-3 w-3" /> Live example
+          <Tv className="h-3 w-3" /> Live example
         </span>
         <span className="text-[11px] text-muted-foreground">Dutch → English</span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
-        {/* Transcript column */}
-        <ol className="space-y-1.5 rounded-xl border border-border bg-background/60 p-2">
-          {lines.map((l) => (
-            <li
-              key={l.t}
-              className={
-                l.active
-                  ? "rounded-lg border border-primary/40 bg-primary/10 p-2"
-                  : "rounded-lg p-2"
-              }
-            >
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-mono text-muted-foreground shrink-0">{l.t}</span>
-                <span
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        {/* Video thumbnail mockup */}
+        <div className="flex flex-col gap-2">
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-gradient-to-br from-[#1f2937] via-[#312e81] to-[#7c3aed] shadow-md">
+            {/* Faux scene */}
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.18),transparent_55%),radial-gradient(circle_at_75%_70%,rgba(236,72,153,0.25),transparent_60%)]"
+            />
+            {/* Play button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg ring-1 ring-black/10">
+                <Play className="h-5 w-5 translate-x-[1px] text-black" fill="currentColor" />
+              </div>
+            </div>
+            {/* YouTube-style badge */}
+            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> YouTube
+            </span>
+            {/* Duration */}
+            <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-mono text-white">
+              12:34
+            </span>
+            {/* Subtitle overlay — animates */}
+            <div className="absolute inset-x-2 bottom-7 flex justify-center">
+              <span
+                key={moment.t}
+                className="inline-block max-w-full animate-fade-in rounded bg-black/75 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white shadow"
+              >
+                {moment.sentence}
+              </span>
+            </div>
+          </div>
+          {/* Transcript strip */}
+          <ol className="space-y-1 rounded-xl border border-border bg-background/60 p-2">
+            {PREVIEW_LINES.map((l) => {
+              const active = l.t === moment.t;
+              return (
+                <li
+                  key={l.t}
                   className={
-                    l.active
-                      ? "text-xs font-medium text-foreground"
-                      : "text-xs text-muted-foreground"
+                    "flex items-baseline gap-2 rounded-md px-1.5 py-1 transition-colors " +
+                    (active ? "bg-primary/10 ring-1 ring-primary/30" : "")
                   }
                 >
-                  {l.active && <span className="mr-1">👉</span>}
-                  {l.text}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ol>
+                  <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{l.t}</span>
+                  <span
+                    className={
+                      "truncate text-[11px] " +
+                      (active ? "font-medium text-foreground" : "text-muted-foreground")
+                    }
+                  >
+                    {l.text}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
 
-        {/* Explanation card */}
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        {/* Explanation card — animates */}
+        <div
+          key={moment.t + "-card"}
+          className="animate-fade-in rounded-xl border border-border bg-card shadow-sm"
+        >
           <div className="border-b border-border px-4 pt-3 pb-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Now explaining
+              Now explaining · {moment.t}
             </p>
             <p className="mt-0.5 text-base font-medium leading-snug text-foreground">
-              "Rij eens door man."
+              "{moment.sentence}"
             </p>
           </div>
           <div className="space-y-2.5 px-4 py-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Translation</p>
-              <p className="mt-0.5 text-sm text-foreground">Come on, keep driving.</p>
+              <p className="mt-0.5 text-sm text-foreground">{moment.translation}</p>
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Meaning</p>
-              <p className="mt-0.5 text-sm text-foreground">A common Dutch expression used when someone is moving too slowly.</p>
+              <p className="mt-0.5 text-sm text-foreground">{moment.meaning}</p>
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Expression note</p>
-              <p className="mt-0.5 text-sm text-foreground">Not a literal translation. Used to encourage someone to keep moving.</p>
+              <p className="mt-0.5 text-sm text-foreground">{moment.note}</p>
             </div>
           </div>
         </div>
       </div>
 
       <p className="mt-3 px-2 pb-1 text-center text-[11px] text-muted-foreground">
-        Transcript → click sentence → understand instantly
+        Learn from real YouTube videos you already enjoy.
       </p>
     </div>
+  );
+}
+
+function SubtitlesVsClarioSection() {
+  return (
+    <section className="pb-8 sm:pb-12">
+      <div className="mx-auto max-w-4xl">
+        <p className="text-center text-xs font-semibold uppercase tracking-wider text-primary">
+          Why Clario
+        </p>
+        <h2 className="mt-2 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          Subtitles tell you <span className="text-muted-foreground">what was said.</span>
+          <br className="hidden sm:block" />
+          Clario explains <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">what it means.</span>
+        </h2>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card/60 p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              YouTube subtitles
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-foreground">
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> Shows transcript</li>
+              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No translation in context</li>
+              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No meaning or nuance</li>
+              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No expression help</li>
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              Clario
+            </p>
+            <ul className="mt-3 space-y-2 text-sm text-foreground">
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Shows transcript</li>
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains the meaning</li>
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains idioms & expressions</li>
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Replay difficult sentences in one tap</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
