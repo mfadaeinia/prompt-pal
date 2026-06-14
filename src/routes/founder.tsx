@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
+import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
@@ -14,9 +15,15 @@ export const Route = createFileRoute("/founder")({
 
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
+  const libFetcher = useServerFn(getLibraryMetrics);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["founder-metrics"],
     queryFn: () => fetcher(),
+    refetchInterval: 30_000,
+  });
+  const libQ = useQuery({
+    queryKey: ["library-metrics"],
+    queryFn: () => libFetcher(),
     refetchInterval: 30_000,
   });
 
@@ -31,18 +38,34 @@ function FounderPage() {
             </p>
           </div>
           <button
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch();
+              libQ.refetch();
+            }}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
           >
-            {isFetching ? "Refreshing…" : "Refresh"}
+            {isFetching || libQ.isFetching ? "Refreshing…" : "Refresh"}
           </button>
         </header>
 
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
         {data && <Dashboard m={data} />}
+        {libQ.data && <LibrarySection m={libQ.data} />}
       </div>
     </div>
+  );
+}
+
+function LibrarySection({ m }: { m: LibraryMetrics }) {
+  return (
+    <Section title="My Library">
+      <Stat label="Users who saved" value={m.uniqueSavers} hint="unique browser sessions" />
+      <Stat label="Saved expressions" value={m.totalSaves} />
+      <Stat label="Library opens" value={m.libraryOpens} />
+      <Stat label="Watch-again clicks" value={m.watchAgainClicks} />
+      <Stat label="Saved-item revisits" value={m.savedItemRevisits} />
+    </Section>
   );
 }
 
