@@ -3,6 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
+import {
+  getTranscriptQualityMetrics,
+  type TranscriptQualityMetrics,
+} from "@/lib/transcript-reports.functions";
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
@@ -16,6 +20,7 @@ export const Route = createFileRoute("/founder")({
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
+  const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["founder-metrics"],
     queryFn: () => fetcher(),
@@ -24,6 +29,11 @@ function FounderPage() {
   const libQ = useQuery({
     queryKey: ["library-metrics"],
     queryFn: () => libFetcher(),
+    refetchInterval: 30_000,
+  });
+  const txQ = useQuery({
+    queryKey: ["transcript-quality-metrics"],
+    queryFn: () => txFetcher(),
     refetchInterval: 30_000,
   });
 
@@ -41,10 +51,11 @@ function FounderPage() {
             onClick={() => {
               refetch();
               libQ.refetch();
+              txQ.refetch();
             }}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
           >
-            {isFetching || libQ.isFetching ? "Refreshing…" : "Refresh"}
+            {isFetching || libQ.isFetching || txQ.isFetching ? "Refreshing…" : "Refresh"}
           </button>
         </header>
 
@@ -52,6 +63,7 @@ function FounderPage() {
         {error && <p className="text-red-600">{(error as Error).message}</p>}
         {data && <Dashboard m={data} />}
         {libQ.data && <LibrarySection m={libQ.data} />}
+        {txQ.data && <TranscriptQualitySection m={txQ.data} />}
       </div>
     </div>
   );
@@ -67,6 +79,97 @@ function LibrarySection({ m }: { m: LibraryMetrics }) {
       <Stat label="Saved-item revisits" value={m.savedItemRevisits} />
     </Section>
   );
+}
+
+function TranscriptQualitySection({ m }: { m: TranscriptQualityMetrics }) {
+  return (
+    <div className="space-y-4">
+      <Section title="Transcript Quality">
+        <Stat label="Total videos processed" value={m.totalVideos} />
+        <Stat label="Full learning mode" value={`${m.fullLearningPct}%`} hint="quality = high" />
+        <Stat label="Limited mode" value={`${m.limitedModePct}%`} hint="quality = low" />
+        <Stat label="Medium quality" value={`${m.mediumPct}%`} />
+        <Stat label="Explanations enabled" value={`${m.explanationEnabledPct}%`} />
+      </Section>
+      <Section title="Transcript Source Mix">
+        <Stat label="Cache" value={`${m.sourceBreakdown.cachePct}%`} />
+        <Stat label="YouTube captions" value={`${m.sourceBreakdown.youtubePct}%`} />
+        <Stat label="Fallback provider" value={`${m.sourceBreakdown.fallbackPct}%`} />
+        <Stat label="Manual" value={`${m.sourceBreakdown.manualPct}%`} />
+        <Stat label="Avg sentences / video" value={m.avgSentenceCount} />
+        <Stat label="Avg words / sentence" value={m.avgSentenceLength} />
+      </Section>
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Recent videos
+        </h2>
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full text-xs">
+            <thead className="bg-slate-50 text-left text-slate-500">
+              <tr>
+                <th className="px-2 py-2">When</th>
+                <th className="px-2 py-2">Video</th>
+                <th className="px-2 py-2">Source</th>
+                <th className="px-2 py-2">Quality</th>
+                <th className="px-2 py-2">Sentences</th>
+                <th className="px-2 py-2">Avg len</th>
+                <th className="px-2 py-2">Full</th>
+                <th className="px-2 py-2">Limited</th>
+                <th className="px-2 py-2">Expl.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {m.recent.map((r) => (
+                <tr key={r.id} className="border-t border-slate-100">
+                  <td className="px-2 py-1 text-slate-500">
+                    {new Date(r.created_at).toLocaleString()}
+                  </td>
+                  <td className="px-2 py-1 font-mono">
+                    {r.video_url ? (
+                      <a
+                        href={r.video_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {r.video_title ?? r.video_id}
+                      </a>
+                    ) : (
+                      r.video_title ?? r.video_id
+                    )}
+                  </td>
+                  <td className="px-2 py-1">{r.transcript_source}</td>
+                  <td className={"px-2 py-1 font-medium " + qualityColor(r.quality_score)}>
+                    {r.quality_score}
+                  </td>
+                  <td className="px-2 py-1">{r.sentence_count}</td>
+                  <td className="px-2 py-1">{Number(r.avg_sentence_length).toFixed(1)}</td>
+                  <td className="px-2 py-1">{r.full_learning_enabled ? "✓" : "—"}</td>
+                  <td className="px-2 py-1">{r.limited_mode_enabled ? "✓" : "—"}</td>
+                  <td className="px-2 py-1">
+                    {r.explanation_generation_enabled ? "✓" : "—"}
+                  </td>
+                </tr>
+              ))}
+              {m.recent.length === 0 && (
+                <tr>
+                  <td className="px-2 py-3 text-slate-400" colSpan={9}>
+                    No processed videos yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function qualityColor(q: string) {
+  if (q === "high") return "text-green-600";
+  if (q === "medium") return "text-amber-600";
+  return "text-red-600";
 }
 
 function Dashboard({ m }: { m: FounderMetrics }) {

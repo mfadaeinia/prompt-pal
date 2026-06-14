@@ -281,6 +281,57 @@ export type Database = {
         }
         Relationships: []
       }
+      video_transcript_reports: {
+        Row: {
+          avg_sentence_length: number
+          created_at: string
+          explanation_generation_enabled: boolean
+          full_learning_enabled: boolean
+          id: string
+          language: string | null
+          limited_mode_enabled: boolean
+          quality_reasons: string[]
+          quality_score: string
+          sentence_count: number
+          transcript_source: string
+          video_id: string
+          video_title: string | null
+          video_url: string | null
+        }
+        Insert: {
+          avg_sentence_length?: number
+          created_at?: string
+          explanation_generation_enabled?: boolean
+          full_learning_enabled?: boolean
+          id?: string
+          language?: string | null
+          limited_mode_enabled?: boolean
+          quality_reasons?: string[]
+          quality_score: string
+          sentence_count?: number
+          transcript_source: string
+          video_id: string
+          video_title?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          avg_sentence_length?: number
+          created_at?: string
+          explanation_generation_enabled?: boolean
+          full_learning_enabled?: boolean
+          id?: string
+          language?: string | null
+          limited_mode_enabled?: boolean
+          quality_reasons?: string[]
+          quality_score?: string
+          sentence_count?: number
+          transcript_source?: string
+          video_id?: string
+          video_title?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       youtube_transcript_cache: {
         Row: {
           created_at: string

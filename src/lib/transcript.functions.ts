@@ -464,6 +464,40 @@ async function writeCache(params: {
   if (error) console.warn("[transcript] cache write error", error.message);
 }
 
+async function recordTranscriptReport(params: {
+  videoId: string;
+  videoUrl: string;
+  source: TranscriptSource;
+  language: string | null;
+  quality: TranscriptQualityReport;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = params.quality.quality;
+    const full = q === "high";
+    const limited = q === "low";
+    const explanations = q !== "low";
+    const { error } = await supabaseAdmin
+      .from("video_transcript_reports" as any)
+      .insert({
+        video_id: params.videoId,
+        video_url: params.videoUrl,
+        transcript_source: params.source,
+        language: params.language,
+        sentence_count: params.quality.metrics.sentenceCount,
+        avg_sentence_length: params.quality.metrics.avgWordsPerSentence,
+        quality_score: q,
+        quality_reasons: params.quality.reasons,
+        full_learning_enabled: full,
+        limited_mode_enabled: limited,
+        explanation_generation_enabled: explanations,
+      } as any);
+    if (error) console.warn("[transcript] report write error", error.message);
+  } catch (e) {
+    console.warn("[transcript] report write threw", e instanceof Error ? e.message : String(e));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Layer 3: Fallback transcript provider — Transcribr.io
 // Docs: https://www.transcribr.io/youtube-transcript-api
@@ -563,13 +597,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: true,
       });
+      const quality = assessQuality(cached.transcript_json, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "cache",
+        language: cached.language,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "cache",
         language: cached.language,
         cacheHit: true,
-        quality: assessQuality(cached.transcript_json, sentences),
+        quality,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
@@ -638,13 +680,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: false,
       });
+      const quality = assessQuality(raw, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "youtube",
+        language: usedLang,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "youtube",
         language: usedLang,
         cacheHit: false,
-        quality: assessQuality(raw, sentences),
+        quality,
       };
     }
 
@@ -680,13 +730,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: false,
       });
+      const quality = assessQuality(fb.chunks, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "fallback",
+        language: fb.language,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "fallback",
         language: fb.language,
         cacheHit: false,
-        quality: assessQuality(fb.chunks, sentences),
+        quality,
       };
     }
 
@@ -737,13 +795,21 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
       source: "manual",
     });
     logEvent({ video_id: videoId, fetch_source: "manual", success: true });
+    const quality = assessQuality(chunks, sentences);
+    await recordTranscriptReport({
+      videoId,
+      videoUrl: data.url,
+      source: "manual",
+      language: null,
+      quality,
+    });
     return {
       videoId,
       sentences,
       source: "manual",
       language: null,
       cacheHit: false,
-      quality: assessQuality(chunks, sentences),
+      quality,
     };
   });
 
