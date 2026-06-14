@@ -1673,11 +1673,10 @@ function EarlyAccessSection() {
           <Sparkles className="h-3 w-3" /> Early Access
         </span>
         <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Help shape NativeFlow.
+          Stay updated.
         </h2>
         <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Join the early access list to get new languages, features, and
-          improvements before anyone else.
+          Get updates about new languages, improvements, and learning features.
         </p>
 
         {submitted ? (
