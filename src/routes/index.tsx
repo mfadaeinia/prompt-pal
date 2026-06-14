@@ -671,6 +671,21 @@ function Index() {
     },
   });
 
+  // Track when transcript failure screen is shown.
+  const failureTrackedRef = useRef(false);
+  useEffect(() => {
+    if (loadMutation.isError && !failureTrackedRef.current) {
+      failureTrackedRef.current = true;
+      track("transcript_failure_screen_shown", {
+        video_url: url,
+        error_type: (loadMutation.error as any)?.errorType ?? "unknown",
+      });
+    }
+    if (!loadMutation.isError) {
+      failureTrackedRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadMutation.isError]);
 
 
 
