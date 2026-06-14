@@ -30,13 +30,40 @@ Do not lecture. Be assistive, not teaching.`;
       data.context ? `\n\nSurrounding context (for reference only): ${data.context}` : ""
     }`;
 
-    const { text } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
-      system,
-      prompt,
-    });
+    try {
+      const { text } = await generateText({
+        model: gateway("google/gemini-3-flash-preview"),
+        system,
+        prompt,
+      });
+      return { explanation: text.trim() };
+    } catch (error: unknown) {
+      const status =
+        (error as { statusCode?: number; status?: number })?.statusCode ??
+        (error as { status?: number })?.status;
+      const message = error instanceof Error ? error.message : String(error);
+      const isRateLimit = status === 429 || /too many requests|rate limit/i.test(message);
+      const isCredits = status === 402 || /payment required|credit/i.test(message);
+      console.error("[explain] generation failed", { status, message });
 
-    return {
-      explanation: text.trim(),
-    };
+      if (isRateLimit) {
+        return {
+          explanation:
+            "Meaning: We're getting a lot of requests right now — please try again in a moment.\nTranslation: —\nNote: —",
+          error: "rate_limited" as const,
+        };
+      }
+      if (isCredits) {
+        return {
+          explanation:
+            "Meaning: AI usage limit reached for now.\nTranslation: —\nNote: —",
+          error: "credits_exhausted" as const,
+        };
+      }
+      return {
+        explanation:
+          "Meaning: Couldn't load an explanation for this sentence. Try another one.\nTranslation: —\nNote: —",
+        error: "unavailable" as const,
+      };
+    }
   });
