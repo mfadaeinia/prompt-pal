@@ -2687,46 +2687,6 @@ function BeforeAfterSection() {
     </section>
   );
 }
-  return (
-    <section className="pb-8 sm:pb-12">
-      <div className="mx-auto max-w-4xl">
-        <p className="text-center text-xs font-semibold uppercase tracking-wider text-primary">
-          Why Clario
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Subtitles tell you <span className="text-muted-foreground">what was said.</span>
-          <br className="hidden sm:block" />
-          Clario explains <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">what it means.</span>
-        </h2>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card/60 p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              YouTube subtitles
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-foreground">
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> Shows transcript</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No translation in context</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No meaning or nuance</li>
-              <li className="flex items-start gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0" /> No expression help</li>
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Clario
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-foreground">
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Shows transcript</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains the meaning</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Explains idioms & expressions</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Replay difficult sentences in one tap</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function LanguageSupportSection() {
   const languages = ["Dutch", "English", "Spanish", "French", "German", "Italian", "Portuguese"];
