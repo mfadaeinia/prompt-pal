@@ -795,13 +795,21 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
       source: "manual",
     });
     logEvent({ video_id: videoId, fetch_source: "manual", success: true });
+    const quality = assessQuality(chunks, sentences);
+    await recordTranscriptReport({
+      videoId,
+      videoUrl: data.url,
+      source: "manual",
+      language: null,
+      quality,
+    });
     return {
       videoId,
       sentences,
       source: "manual",
       language: null,
       cacheHit: false,
-      quality: assessQuality(chunks, sentences),
+      quality,
     };
   });
 
