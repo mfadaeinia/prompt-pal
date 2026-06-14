@@ -1004,6 +1004,7 @@ function Index() {
   // sentence due to playback (not user click — those go via jumpTo).
   const lastAutoExplainedRef = useRef<number | null>(null);
   useEffect(() => {
+    if (!studyMode) return;
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
@@ -1021,7 +1022,7 @@ function Index() {
     });
     ensureExplanation(s, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playingId, sentences]);
+  }, [playingId, sentences, studyMode]);
 
   // Fire `explanation_viewed` once per sentence when its explanation finishes
   // loading AND it is the currently selected sentence (i.e. actually visible).
