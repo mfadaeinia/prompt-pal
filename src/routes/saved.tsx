@@ -104,11 +104,39 @@ function SavedPage() {
 
   function watchAgain(item: any) {
     const vid = extractVideoId(item);
+    track("watch_again_clicked", {
+      expression_id: item.id,
+      video_id: vid,
+      timestamp_seconds: item.timestamp_seconds,
+    });
+    track("saved_item_revisited", {
+      expression_id: item.id,
+      video_id: vid,
+    });
+    // keep legacy event for any dashboards already filtering by it
     track("library_watch_again_clicked", {
       expression_id: item.id,
       video_id: vid,
       timestamp_seconds: item.timestamp_seconds,
     });
+    if (browserId) {
+      void logEventFn({
+        data: {
+          eventName: "watch_again_clicked",
+          sessionId: browserId,
+          videoId: vid,
+          expressionId: item.id,
+        },
+      }).catch(() => {});
+      void logEventFn({
+        data: {
+          eventName: "saved_item_revisited",
+          sessionId: browserId,
+          videoId: vid,
+          expressionId: item.id,
+        },
+      }).catch(() => {});
+    }
     if (!vid) return;
     setActiveId(item.id);
   }
