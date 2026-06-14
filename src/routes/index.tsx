@@ -832,7 +832,8 @@ function Index() {
               if (p && typeof p.getCurrentTime === "function") {
                 setCurrentTime(p.getCurrentTime() || 0);
               }
-            }, 250);
+            }, 80);
+
           },
           onStateChange: (e: any) => {
             const p = playerRef.current;
