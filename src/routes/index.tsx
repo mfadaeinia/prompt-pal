@@ -440,6 +440,20 @@ function Index() {
     return () => window.clearInterval(tryer);
   }, [sentences]);
 
+  // Track when the limited-mode quality banner is shown.
+  useEffect(() => {
+    if (
+      transcriptQuality &&
+      transcriptQuality.quality === "low" &&
+      !qualityBannerDismissed
+    ) {
+      track("limited_mode_shown", {
+        video_id: videoId,
+        reasons: transcriptQuality.reasons,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcriptQuality?.quality, qualityBannerDismissed]);
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
