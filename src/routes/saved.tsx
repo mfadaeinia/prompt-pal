@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Repeat, Film } from "lucide-react";
+import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film } from "lucide-react";
 import {
   listSavedExpressions,
   deleteSavedExpression,
