@@ -94,6 +94,8 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(true);
+  // Focus Mode: transcript auto-follows. Transcript Mode: user controls scrolling.
+  const [focusMode, setFocusMode] = useState(true);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
