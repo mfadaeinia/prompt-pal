@@ -1771,11 +1771,8 @@ function ManualTranscriptFallback({
   submitError: string | null;
 }) {
   return (
-    <div className="mt-3 rounded-lg border border-border bg-card p-4">
-      <p className="text-sm font-medium text-foreground">
-        Or paste a transcript manually
-      </p>
-      <div className="mt-3">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div>
         <label className="text-xs font-medium text-foreground">
           Paste transcript manually
         </label>
