@@ -287,6 +287,14 @@ function Index() {
         timestamp_seconds: Math.round(sentence.offset),
         selected_length: text.length,
       });
+      void logLibraryEventFx({
+        data: {
+          eventName: "expression_saved",
+          sessionId: browserId,
+          videoId: videoId ?? null,
+          metadata: { source: "text_selection", selected_length: text.length },
+        },
+      }).catch(() => {});
       qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
       setSelJustSaved(true);
       window.setTimeout(() => setSelJustSaved(false), 1400);
