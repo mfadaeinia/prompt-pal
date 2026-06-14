@@ -83,7 +83,10 @@ function Index() {
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
-  const [view, setView] = useState<"landing" | "demo">("landing");
+  const [view, setView] = useState<"landing" | "demo">(() => {
+    if (typeof window === "undefined") return "landing";
+    return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
+  });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
