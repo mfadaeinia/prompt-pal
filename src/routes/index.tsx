@@ -1593,7 +1593,7 @@ function Index() {
               </>
             ) : (
               <>
-                <Bookmark className="h-3.5 w-3.5" /> Save expression
+                <Bookmark className="h-3.5 w-3.5" /> Save to My Library
               </>
             )}
           </button>
@@ -1817,7 +1817,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             </Button>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            See how NativeFlow works in under 30 seconds. No signup required.
+            See how Clario works in under 30 seconds. Try it instantly — no account needed.
           </p>
         </div>
 
@@ -2057,23 +2057,23 @@ function ExplanationPanel({
               className="h-8 gap-1 px-2 text-xs"
               title={
                 isSaved
-                  ? "Already in My Expressions"
+                  ? "Already in My Library"
                   : ready
-                    ? "Save to My Expressions"
+                    ? "Save to My Library"
                     : "Wait for explanation to load"
               }
             >
               {justSaved ? (
                 <>
-                  <Check className="h-3.5 w-3.5" /> Saved
+                  <Check className="h-3.5 w-3.5" /> Saved to Library
                 </>
               ) : isSaved ? (
                 <>
-                  <BookmarkCheck className="h-3.5 w-3.5" /> Saved
+                  <BookmarkCheck className="h-3.5 w-3.5" /> In Library
                 </>
               ) : (
                 <>
-                  <Bookmark className="h-3.5 w-3.5" /> Save
+                  <Bookmark className="h-3.5 w-3.5" /> Save to My Library
                 </>
               )}
             </Button>
@@ -2476,7 +2476,7 @@ function HeroWithPreview({
           {/* Micro-trust signals */}
           <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-primary" /> No signup required
+              <Check className="h-3.5 w-3.5 text-primary" /> Try Clario instantly — no account needed to explore videos and explanations
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5 text-primary" /> Works with most videos that have subtitles
