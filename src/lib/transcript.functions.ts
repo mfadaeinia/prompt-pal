@@ -597,13 +597,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: true,
       });
+      const quality = assessQuality(cached.transcript_json, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "cache",
+        language: cached.language,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "cache",
         language: cached.language,
         cacheHit: true,
-        quality: assessQuality(cached.transcript_json, sentences),
+        quality,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
@@ -672,13 +680,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: false,
       });
+      const quality = assessQuality(raw, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "youtube",
+        language: usedLang,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "youtube",
         language: usedLang,
         cacheHit: false,
-        quality: assessQuality(raw, sentences),
+        quality,
       };
     }
 
@@ -714,13 +730,21 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         success: true,
         cache_hit: false,
       });
+      const quality = assessQuality(fb.chunks, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "fallback",
+        language: fb.language,
+        quality,
+      });
       return {
         videoId,
         sentences,
         source: "fallback",
         language: fb.language,
         cacheHit: false,
-        quality: assessQuality(fb.chunks, sentences),
+        quality,
       };
     }
 
