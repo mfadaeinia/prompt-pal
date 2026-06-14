@@ -2366,150 +2366,220 @@ function PrimaryHero({
   onStartDemo: () => void;
 }) {
   return (
-    <section className="relative pt-8 pb-8 sm:pt-12 sm:pb-10">
+    <HeroWithPreview
+      url={url}
+      setUrl={setUrl}
+      targetLang={targetLang}
+      setTargetLang={setTargetLang}
+      loading={loading}
+      onSubmit={onSubmit}
+      onStartDemo={onStartDemo}
+    />
+  );
+}
+
+function HeroWithPreview({
+  url, setUrl, targetLang, setTargetLang, loading, onSubmit, onStartDemo,
+}: {
+  url: string;
+  setUrl: (v: string) => void;
+  targetLang: string;
+  setTargetLang: (v: string) => void;
+  loading: boolean;
+  onSubmit: (u: string) => void;
+  onStartDemo: () => void;
+}) {
+  useEffect(() => {
+    track("landing_preview_seen", {});
+  }, []);
+
+  return (
+    <section className="relative pt-6 pb-8 sm:pt-10 sm:pb-12">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[520px] max-w-5xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.18),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 -top-20 -z-10 mx-auto h-[560px] max-w-6xl bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.18),transparent_70%)]"
       />
-      <div className="mx-auto max-w-3xl text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
-          <Sparkles className="h-3 w-3 text-primary" /> Works best with videos that contain subtitles
-        </span>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
-          Click any sentence.{" "}
-          <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Understand it instantly.
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12">
+        {/* LEFT — copy + form */}
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
+            <Sparkles className="h-3 w-3 text-primary" /> Works best with videos that contain subtitles
           </span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Never leave the video to figure out what was just said. Get translation, meaning and expression notes in one tap.
-        </p>
-      </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const u = url.trim();
-          if (!u) return;
-          onSubmit(u);
-        }}
-        className="mx-auto mt-6 max-w-3xl rounded-2xl border border-border bg-card p-5 shadow-lg shadow-primary/10 sm:p-6"
-      >
-        <div className="grid gap-3 sm:grid-cols-[1fr_220px]">
-          <div className="space-y-1.5">
-            <label htmlFor="hero-url" className="text-xs font-medium text-foreground">
-              YouTube URL
-            </label>
-            <Input
-              id="hero-url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste any YouTube URL in your target language"
-              className="h-12 w-full rounded-xl bg-background px-4 text-base"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="hero-lang" className="text-xs font-medium text-foreground">
-              Explanation language
-            </label>
-            <Select value={targetLang} onValueChange={setTargetLang}>
-              <SelectTrigger id="hero-lang" className="h-12 w-full rounded-xl bg-background px-4">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                {HERO_LANGUAGES.map((l) => (
-                  <SelectItem key={l} value={l}>{l}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button
-          type="submit"
-          disabled={loading || !url.trim()}
-          size="lg"
-          className="mt-4 h-12 w-full gap-2 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
-        >
-          {loading ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…</>
-          ) : (
-            <><Sparkles className="h-4 w-4" /> Understand This Video</>
-          )}
-        </Button>
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Paste a YouTube link and see sentence-by-sentence explanations in seconds.
-        </p>
-        <p className="mt-1 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80">
-          No signup required
-        </p>
-      </form>
-
-      <div className="mx-auto mt-4 flex max-w-3xl flex-col items-center gap-1 text-center">
-        <button
-          type="button"
-          onClick={onStartDemo}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-60"
-        >
-          <PlayCircle className="h-4 w-4" /> Not sure where to start? Try the Dutch Demo
-        </button>
-      </div>
-
-      {/* Example output card — shows what Clario produces before asking for input */}
-      <div className="mx-auto mt-8 max-w-3xl">
-        <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Here's what you'll see for each sentence
-        </p>
-        <div className="rounded-2xl border border-border bg-card shadow-sm">
-          <div className="flex items-center justify-between border-b border-border px-6 pt-5 pb-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-              <Sparkles className="h-3 w-3" /> Example explanation
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.05]">
+            Click any sentence.{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Understand it instantly.
             </span>
-            <span className="text-[11px] text-muted-foreground">Dutch → English</span>
-          </div>
-          <div className="px-6 pt-4">
-            <p className="text-lg font-medium leading-snug text-foreground">
+          </h1>
+          <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Never leave the video to figure out what was just said. Get translation, meaning and expression notes in one tap.
+          </p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const u = url.trim();
+              if (!u) return;
+              track("landing_cta_clicked", { has_url: true });
+              onSubmit(u);
+            }}
+            className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-lg shadow-primary/10 sm:p-5"
+          >
+            <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+              <div className="space-y-1.5 min-w-0">
+                <label htmlFor="hero-url" className="text-xs font-medium text-foreground">
+                  YouTube URL
+                </label>
+                <Input
+                  id="hero-url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste any YouTube URL"
+                  className="h-12 w-full rounded-xl bg-background px-4 text-base"
+                />
+              </div>
+              <div className="space-y-1.5 min-w-0">
+                <label htmlFor="hero-lang" className="text-xs font-medium text-foreground">
+                  Explanation language
+                </label>
+                <Select value={targetLang} onValueChange={setTargetLang}>
+                  <SelectTrigger id="hero-lang" className="h-12 w-full rounded-xl bg-background px-4">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HERO_LANGUAGES.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button
+              type="submit"
+              disabled={loading || !url.trim()}
+              size="lg"
+              className="mt-3 h-12 w-full gap-2 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
+            >
+              {loading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…</>
+              ) : (
+                <><Sparkles className="h-4 w-4" /> Understand This Video</>
+              )}
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Paste a YouTube link and see sentence-by-sentence explanations in seconds.
+            </p>
+          </form>
+
+          {/* Micro-trust signals */}
+          <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-primary" /> No signup required
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-primary" /> Works with most videos that have subtitles
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-primary" /> Try your own YouTube video
+            </li>
+          </ul>
+
+          <button
+            type="button"
+            onClick={onStartDemo}
+            disabled={loading}
+            className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-60"
+          >
+            <PlayCircle className="h-4 w-4" /> Not sure where to start? Try the Dutch Demo
+          </button>
+        </div>
+
+        {/* RIGHT — product preview */}
+        <div className="min-w-0">
+          <ProductPreview />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductPreview() {
+  const lines = [
+    { t: "0:14", text: "Wacht even, ik moet nog parkeren.", active: false },
+    { t: "0:17", text: "Rij eens door man.", active: true },
+    { t: "0:20", text: "Nee sorry, het lukt niet.", active: false },
+    { t: "0:25", text: "Kom op, we hebben haast.", active: false },
+  ];
+  return (
+    <div className="rounded-2xl border border-border bg-card/80 p-3 shadow-xl shadow-primary/10 backdrop-blur sm:p-4">
+      <div className="mb-2 flex items-center justify-between px-2 pt-1">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+          <Sparkles className="h-3 w-3" /> Live example
+        </span>
+        <span className="text-[11px] text-muted-foreground">Dutch → English</span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-[180px_minmax(0,1fr)]">
+        {/* Transcript column */}
+        <ol className="space-y-1.5 rounded-xl border border-border bg-background/60 p-2">
+          {lines.map((l) => (
+            <li
+              key={l.t}
+              className={
+                l.active
+                  ? "rounded-lg border border-primary/40 bg-primary/10 p-2"
+                  : "rounded-lg p-2"
+              }
+            >
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] font-mono text-muted-foreground shrink-0">{l.t}</span>
+                <span
+                  className={
+                    l.active
+                      ? "text-xs font-medium text-foreground"
+                      : "text-xs text-muted-foreground"
+                  }
+                >
+                  {l.active && <span className="mr-1">👉</span>}
+                  {l.text}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        {/* Explanation card */}
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-4 pt-3 pb-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Now explaining
+            </p>
+            <p className="mt-0.5 text-base font-medium leading-snug text-foreground">
               "Rij eens door man."
             </p>
           </div>
-          <div className="space-y-3 px-6 pt-4 pb-6">
+          <div className="space-y-2.5 px-4 py-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Translation</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Translation</p>
               <p className="mt-0.5 text-sm text-foreground">Come on, keep driving.</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Meaning</p>
-              <p className="mt-0.5 text-sm text-foreground">A common expression used when someone is moving too slowly.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Meaning</p>
+              <p className="mt-0.5 text-sm text-foreground">A common Dutch expression used when someone is moving too slowly.</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Expression note</p>
-              <p className="mt-0.5 text-sm text-foreground">Not a literal translation. Used to urge someone to keep moving.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Expression note</p>
+              <p className="mt-0.5 text-sm text-foreground">Not a literal translation. Used to encourage someone to keep moving.</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* What you get */}
-      <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-border bg-card/60 p-5">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          What Clario does
-        </p>
-        <ul className="mt-3 grid gap-2 text-sm text-foreground sm:grid-cols-2">
-          {[
-            "Translation",
-            "Meaning in context",
-            "Expression explanations",
-            "Replay difficult sentences",
-            "Learn from real videos",
-          ].map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
+      <p className="mt-3 px-2 pb-1 text-center text-[11px] text-muted-foreground">
+        Transcript → click sentence → understand instantly
+      </p>
+    </div>
   );
 }
 
