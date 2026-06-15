@@ -180,7 +180,7 @@ export const getLatestBenchmark = createServerFn({ method: "GET" }).handler(
       results = (r.data ?? []) as unknown as BenchmarkResultRow[];
     }
 
-    const videos = (videosRes.data ?? []) as Array<{
+    const videos = ((videosRes.data ?? []) as unknown) as Array<{
       category: string;
       active: boolean;
     }>;
