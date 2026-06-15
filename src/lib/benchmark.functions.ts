@@ -409,6 +409,10 @@ export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
 
     const pct = (n: number) => Number(((n / total) * 100).toFixed(2));
     const status = data.status ?? "completed";
+    const { error: upErr } = await supabaseAdmin
+      .from("benchmark_runs" as any)
+      .update({
+        status,
         finished_at: new Date().toISOString(),
         transcript_success_count: transcriptOk,
         sentence_success_count: sentenceOk,
