@@ -4,25 +4,42 @@ import { z } from "zod";
 // ---------------- Types ----------------
 
 export type FailureCode =
-  | "T01" // No transcript found
-  | "T02" // Transcript empty
+  // Video / source-asset failures
+  | "V01" // Video URL inaccessible (404, private, removed)
+  | "V02" // Download / probe timeout
+  | "V03" // Empty video file / zero-byte response
+  | "V04" // Unsupported format / non-video URL
+  // Transcript failures (after successful URL access)
+  | "T01" // No transcript after successful processing
+  | "T02" // Empty transcript
   | "T03" // Transcript too short
-  | "S01" // Too few sentences generated
+  // Sentence-builder failures
+  | "S01" // Too few sentences
   | "S02" // Giant merged sentence (>100 words in any one)
-  | "S03" // Missing sentence boundaries (avg too high w/ very few sentences)
+  | "S03" // Missing sentence boundaries
+  // Translation
   | "L01" // Translation failed
-  | "U01"; // UI / processing failure
+  // Catch-all
+  | "P01"; // Pipeline exception
 
 export const FAILURE_LABELS: Record<FailureCode, string> = {
-  T01: "T01 — No transcript found",
-  T02: "T02 — Transcript empty",
+  V01: "V01 — Video URL inaccessible",
+  V02: "V02 — Download / probe timeout",
+  V03: "V03 — Empty video file",
+  V04: "V04 — Unsupported format",
+  T01: "T01 — No transcript after processing",
+  T02: "T02 — Empty transcript",
   T03: "T03 — Transcript too short",
   S01: "S01 — Too few sentences",
   S02: "S02 — Giant merged sentence",
   S03: "S03 — Missing sentence boundaries",
   L01: "L01 — Translation failed",
-  U01: "U01 — Processing failure",
+  P01: "P01 — Pipeline exception",
 };
+
+export const ALL_FAILURE_CODES: FailureCode[] = [
+  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "S01", "S02", "S03", "L01", "P01",
+];
 
 export type BenchmarkMode = "quick" | "full";
 
@@ -57,6 +74,8 @@ export type BenchmarkRunRow = {
   finished_at: string | null;
 };
 
+export type PipelineLogEntry = { step: string; ok: boolean; detail?: string; ms?: number };
+
 export type BenchmarkResultRow = {
   id: string;
   run_id: string;
@@ -75,6 +94,20 @@ export type BenchmarkResultRow = {
   failure_code: FailureCode | null;
   processing_time_ms: number;
   error_message: string | null;
+  // Pipeline trace
+  video_url_status: string | null;
+  http_status_code: number | null;
+  download_status: string | null;
+  download_size_mb: number | null;
+  cache_hit: boolean;
+  transcript_generated: boolean;
+  transcript_length_chars: number;
+  translation_generated: boolean;
+  pipeline_logs: PipelineLogEntry[] | null;
+  // joined
+  video_url?: string;
+  video_id_ext?: string;
+  video_title?: string | null;
 };
 
 // ---------------- Deterministic quality classification ----------------
@@ -139,6 +172,25 @@ export const listBenchmarkVideos = createServerFn({ method: "GET" }).handler(
   },
 );
 
+export type DatasetHealth = {
+  total: number;
+  accessible: number;
+  broken: number;
+  expired: number;
+  missing: number;
+  cacheAvailable: number;
+  checkedAt: string | null;
+  perVideo: Array<{
+    id: string;
+    video_id: string;
+    youtube_url: string;
+    title: string | null;
+    status: "ok" | "404" | "expired" | "access_denied" | "timeout" | "unknown";
+    httpCode: number | null;
+    cached: boolean;
+  }>;
+};
+
 export type LatestBenchmark = {
   run: BenchmarkRunRow | null;
   results: BenchmarkResultRow[];
@@ -174,10 +226,15 @@ export const getLatestBenchmark = createServerFn({ method: "GET" }).handler(
     if (run) {
       const r = await supabaseAdmin
         .from("benchmark_video_results" as any)
-        .select("*")
+        .select("*, benchmark_videos(youtube_url, video_id, title)")
         .eq("run_id", run.id);
       if (r.error) throw new Error(r.error.message);
-      results = (r.data ?? []) as unknown as BenchmarkResultRow[];
+      results = ((r.data ?? []) as any[]).map((row) => ({
+        ...row,
+        video_url: row.benchmark_videos?.youtube_url ?? null,
+        video_id_ext: row.benchmark_videos?.video_id ?? null,
+        video_title: row.benchmark_videos?.title ?? null,
+      })) as BenchmarkResultRow[];
     }
 
     const videos = ((videosRes.data ?? []) as unknown) as Array<{
@@ -202,6 +259,93 @@ export const getLatestBenchmark = createServerFn({ method: "GET" }).handler(
         inactive: videos.filter((v) => !v.active).length,
         byCategory,
       },
+    };
+  },
+);
+
+// ---------------- Dataset Health probe ----------------
+
+/** Probe a YouTube URL via the public oembed endpoint. Cheap and CORS-friendly.
+ *  - 200 → accessible
+ *  - 401 → private / access denied
+ *  - 404 → not found / removed (treated as broken/expired)
+ *  - other → unknown
+ */
+async function probeYoutubeUrl(
+  url: string,
+): Promise<{ status: DatasetHealth["perVideo"][number]["status"]; httpCode: number | null }> {
+  const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(endpoint, { method: "GET", signal: ctrl.signal });
+    clearTimeout(timer);
+    if (r.status === 200) return { status: "ok", httpCode: 200 };
+    if (r.status === 401 || r.status === 403) return { status: "access_denied", httpCode: r.status };
+    if (r.status === 404) return { status: "404", httpCode: 404 };
+    return { status: "unknown", httpCode: r.status };
+  } catch (e) {
+    const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
+    if (msg.includes("abort") || msg.includes("timeout")) return { status: "timeout", httpCode: null };
+    return { status: "unknown", httpCode: null };
+  }
+}
+
+export const getDatasetHealth = createServerFn({ method: "GET" }).handler(
+  async (): Promise<DatasetHealth> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("id, youtube_url, video_id, title, active")
+      .eq("active", true);
+    if (error) throw new Error(error.message);
+    const list = ((data ?? []) as any[]) as Array<{
+      id: string; youtube_url: string; video_id: string; title: string | null;
+    }>;
+
+    // Cache availability lookup
+    const { data: cacheRows } = await supabaseAdmin
+      .from("youtube_transcript_cache" as any)
+      .select("video_id");
+    const cached = new Set<string>(((cacheRows ?? []) as any[]).map((r) => r.video_id));
+
+    // Probe with limited concurrency
+    const CONCURRENCY = 8;
+    const perVideo: DatasetHealth["perVideo"] = [];
+    let i = 0;
+    async function worker() {
+      while (i < list.length) {
+        const idx = i++;
+        const v = list[idx];
+        const probe = await probeYoutubeUrl(v.youtube_url);
+        perVideo[idx] = {
+          id: v.id,
+          video_id: v.video_id,
+          youtube_url: v.youtube_url,
+          title: v.title,
+          status: probe.status,
+          httpCode: probe.httpCode,
+          cached: cached.has(v.video_id),
+        };
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, () => worker()));
+
+    const accessible = perVideo.filter((p) => p.status === "ok").length;
+    const broken = perVideo.filter((p) => p.status === "404" || p.status === "access_denied").length;
+    const expired = perVideo.filter((p) => p.status === "404").length;
+    const missing = perVideo.filter((p) => p.status === "timeout" || p.status === "unknown").length;
+    const cacheAvailable = perVideo.filter((p) => p.cached).length;
+
+    return {
+      total: list.length,
+      accessible,
+      broken,
+      expired,
+      missing,
+      cacheAvailable,
+      checkedAt: new Date().toISOString(),
+      perVideo,
     };
   },
 );
@@ -268,70 +412,153 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
 
     const { data: vRow, error: vErr } = await supabaseAdmin
       .from("benchmark_videos" as any)
-      .select("id, youtube_url, category")
+      .select("id, youtube_url, video_id, category")
       .eq("id", data.videoId)
       .single();
     if (vErr) throw new Error(vErr.message);
-    const v = vRow as unknown as { id: string; youtube_url: string; category: string };
+    const v = vRow as unknown as { id: string; youtube_url: string; video_id: string; category: string };
 
     const t0 = Date.now();
+    const logs: PipelineLogEntry[] = [];
+    const log = (e: PipelineLogEntry) => logs.push(e);
+
     let transcript_found = false;
     let transcript_source: string | null = null;
     let transcript_word_count = 0;
+    let transcript_length_chars = 0;
     let sentence_count = 0;
     let avg_sentence_length = 0;
     let longest_sentence_words = 0;
     let coverage_percent = 0;
     let translation_success = false;
+    let translation_generated = false;
     let failure_code: FailureCode | null = null;
     let error_message: string | null = null;
 
+    // Pipeline trace fields
+    let video_url_status: string = "unknown";
+    let http_status_code: number | null = null;
+    let download_status: string = "skipped";
+    let download_size_mb: number | null = null;
+    let cache_hit = false;
+    let transcript_generated = false;
+
+    // STEP 1 — probe URL accessibility
     try {
-      const tr = await fetchTranscript({ data: { url: v.youtube_url } });
-      transcript_found = true;
-      transcript_source = tr.source;
-      const sentences = tr.sentences ?? [];
-      sentence_count = sentences.length;
-
-      const wordsPerSentence = sentences.map((s) => wc(s.text));
-      const totalSentenceWords = wordsPerSentence.reduce((a, b) => a + b, 0);
-      longest_sentence_words = wordsPerSentence.reduce((m, n) => Math.max(m, n), 0);
-      avg_sentence_length = sentence_count
-        ? Number((totalSentenceWords / sentence_count).toFixed(2))
-        : 0;
-      transcript_word_count = totalSentenceWords;
-      coverage_percent = totalSentenceWords > 0 ? 100 : 0;
-
-      if (transcript_word_count === 0) failure_code = "T02";
-      else if (transcript_word_count < 50) failure_code = "T03";
-      else if (sentence_count < 5) failure_code = "S01";
-      else if (longest_sentence_words > 100) failure_code = "S02";
-      else if (avg_sentence_length > 50 && sentence_count < 10) failure_code = "S03";
-
-      const sentenceBuiltOk = !failure_code && sentence_count >= 5;
-
-      if (sentenceBuiltOk) {
-        const sample = sentences.find((s) => wc(s.text) >= 4) ?? sentences[0];
-        try {
-          const ex = await explainSentence({
-            data: { sentence: sample.text.slice(0, 800), targetLanguage: "English" },
-          });
-          const err = (ex as { error?: string }).error;
-          translation_success = !err && (ex.explanation?.length ?? 0) > 10;
-          if (!translation_success && !failure_code) failure_code = "L01";
-        } catch (e) {
-          translation_success = false;
-          if (!failure_code) failure_code = "L01";
-          error_message = e instanceof Error ? e.message : String(e);
-        }
+      const tProbe = Date.now();
+      const probe = await probeYoutubeUrl(v.youtube_url);
+      http_status_code = probe.httpCode;
+      if (probe.status === "ok") {
+        video_url_status = "OK";
+        log({ step: "url_probe", ok: true, detail: `HTTP 200`, ms: Date.now() - tProbe });
+      } else if (probe.status === "404") {
+        video_url_status = "404";
+        failure_code = "V01";
+        error_message = "Video URL returned 404";
+        log({ step: "url_probe", ok: false, detail: `HTTP 404 — removed or invalid`, ms: Date.now() - tProbe });
+      } else if (probe.status === "access_denied") {
+        video_url_status = "Access Denied";
+        failure_code = "V01";
+        error_message = "Video is private or restricted";
+        log({ step: "url_probe", ok: false, detail: `HTTP ${probe.httpCode} — access denied`, ms: Date.now() - tProbe });
+      } else if (probe.status === "timeout") {
+        video_url_status = "Timeout";
+        failure_code = "V02";
+        error_message = "URL probe timed out";
+        log({ step: "url_probe", ok: false, detail: `timeout after 6s`, ms: Date.now() - tProbe });
+      } else {
+        video_url_status = "Unknown";
+        log({ step: "url_probe", ok: false, detail: `HTTP ${probe.httpCode ?? "?"}`, ms: Date.now() - tProbe });
       }
     } catch (e) {
+      video_url_status = "Error";
+      failure_code = "P01";
       error_message = e instanceof Error ? e.message : String(e);
-      const msg = (error_message ?? "").toLowerCase();
-      if (msg.includes("subtitles") || msg.includes("no transcript") || msg.includes("not find")) {
-        failure_code = "T01";
-      } else if (!failure_code) {
-        failure_code = "U01";
+      log({ step: "url_probe", ok: false, detail: error_message });
+    }
+
+    // STEP 2 — check cache
+    try {
+      const { data: cached } = await supabaseAdmin
+        .from("youtube_transcript_cache" as any)
+        .select("video_id")
+        .eq("video_id", v.video_id)
+        .maybeSingle();
+      cache_hit = Boolean(cached);
+      log({ step: "cache_check", ok: true, detail: cache_hit ? "hit" : "miss" });
+    } catch {
+      log({ step: "cache_check", ok: false, detail: "lookup failed" });
+    }
+
+    // STEP 3 — fetch transcript (only if URL probe didn't already disqualify)
+    if (!failure_code) {
+      try {
+        const tFetch = Date.now();
+        const tr = await fetchTranscript({ data: { url: v.youtube_url } });
+        log({ step: "transcript_fetch", ok: true, detail: `source=${tr.source}`, ms: Date.now() - tFetch });
+
+        transcript_found = true;
+        transcript_generated = true;
+        transcript_source = tr.source;
+        download_status = tr.source === "cache" ? "cache" : "Success";
+        const sentences = tr.sentences ?? [];
+        sentence_count = sentences.length;
+
+        const wordsPerSentence = sentences.map((s) => wc(s.text));
+        const totalSentenceWords = wordsPerSentence.reduce((a, b) => a + b, 0);
+        longest_sentence_words = wordsPerSentence.reduce((m, n) => Math.max(m, n), 0);
+        avg_sentence_length = sentence_count
+          ? Number((totalSentenceWords / sentence_count).toFixed(2))
+          : 0;
+        transcript_word_count = totalSentenceWords;
+        transcript_length_chars = sentences.reduce((n, s) => n + (s.text?.length ?? 0), 0);
+        download_size_mb = Number((transcript_length_chars / (1024 * 1024)).toFixed(4));
+        coverage_percent = totalSentenceWords > 0 ? 100 : 0;
+
+        if (transcript_word_count === 0) failure_code = "T02";
+        else if (transcript_word_count < 50) failure_code = "T03";
+        else if (sentence_count < 5) failure_code = "S01";
+        else if (longest_sentence_words > 100) failure_code = "S02";
+        else if (avg_sentence_length > 50 && sentence_count < 10) failure_code = "S03";
+
+        const sentenceBuiltOk = !failure_code && sentence_count >= 5;
+        log({ step: "sentence_build", ok: sentenceBuiltOk, detail: `count=${sentence_count} avgLen=${avg_sentence_length}` });
+
+        // STEP 4 — translation
+        if (sentenceBuiltOk) {
+          const sample = sentences.find((s) => wc(s.text) >= 4) ?? sentences[0];
+          try {
+            const tTr = Date.now();
+            const ex = await explainSentence({
+              data: { sentence: sample.text.slice(0, 800), targetLanguage: "English" },
+            });
+            const err = (ex as { error?: string }).error;
+            translation_success = !err && (ex.explanation?.length ?? 0) > 10;
+            translation_generated = translation_success;
+            if (!translation_success && !failure_code) failure_code = "L01";
+            log({ step: "translation", ok: translation_success, detail: err ?? `len=${ex.explanation?.length ?? 0}`, ms: Date.now() - tTr });
+          } catch (e) {
+            translation_success = false;
+            if (!failure_code) failure_code = "L01";
+            const m = e instanceof Error ? e.message : String(e);
+            error_message = error_message ?? m;
+            log({ step: "translation", ok: false, detail: m });
+          }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        error_message = msg;
+        const low = msg.toLowerCase();
+        // URL probe said OK but transcript can't be retrieved → granular T01
+        if (low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
+          failure_code = "T01";
+        } else if (low.includes("timeout") || low.includes("network")) {
+          failure_code = "V02";
+        } else {
+          failure_code = "P01";
+        }
+        download_status = "Failed";
+        log({ step: "transcript_fetch", ok: false, detail: msg });
       }
     }
 
@@ -363,6 +590,15 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         failure_code,
         processing_time_ms,
         error_message,
+        video_url_status,
+        http_status_code,
+        download_status,
+        download_size_mb,
+        cache_hit,
+        transcript_generated,
+        transcript_length_chars,
+        translation_generated,
+        pipeline_logs: logs as any,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
@@ -428,4 +664,3 @@ export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
-

@@ -84,62 +84,89 @@ export type Database = {
         Row: {
           avg_sentence_length: number
           benchmark_video_id: string
+          cache_hit: boolean | null
           category: string
           coverage_percent: number
           created_at: string
+          download_size_mb: number | null
+          download_status: string | null
           error_message: string | null
           failure_code: string | null
+          http_status_code: number | null
           id: string
           longest_sentence_words: number
+          pipeline_logs: Json | null
           processing_time_ms: number
           quality_rating: string
           quality_reason: string | null
           run_id: string
           sentence_count: number
           transcript_found: boolean
+          transcript_generated: boolean | null
+          transcript_length_chars: number | null
           transcript_source: string | null
           transcript_word_count: number
+          translation_generated: boolean | null
           translation_success: boolean
+          video_url_status: string | null
         }
         Insert: {
           avg_sentence_length?: number
           benchmark_video_id: string
+          cache_hit?: boolean | null
           category: string
           coverage_percent?: number
           created_at?: string
+          download_size_mb?: number | null
+          download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          http_status_code?: number | null
           id?: string
           longest_sentence_words?: number
+          pipeline_logs?: Json | null
           processing_time_ms?: number
           quality_rating?: string
           quality_reason?: string | null
           run_id: string
           sentence_count?: number
           transcript_found?: boolean
+          transcript_generated?: boolean | null
+          transcript_length_chars?: number | null
           transcript_source?: string | null
           transcript_word_count?: number
+          translation_generated?: boolean | null
           translation_success?: boolean
+          video_url_status?: string | null
         }
         Update: {
           avg_sentence_length?: number
           benchmark_video_id?: string
+          cache_hit?: boolean | null
           category?: string
           coverage_percent?: number
           created_at?: string
+          download_size_mb?: number | null
+          download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          http_status_code?: number | null
           id?: string
           longest_sentence_words?: number
+          pipeline_logs?: Json | null
           processing_time_ms?: number
           quality_rating?: string
           quality_reason?: string | null
           run_id?: string
           sentence_count?: number
           transcript_found?: boolean
+          transcript_generated?: boolean | null
+          transcript_length_chars?: number | null
           transcript_source?: string | null
           transcript_word_count?: number
+          translation_generated?: boolean | null
           translation_success?: boolean
+          video_url_status?: string | null
         }
         Relationships: [
           {
