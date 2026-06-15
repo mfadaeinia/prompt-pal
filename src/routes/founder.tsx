@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
 import {
@@ -8,15 +9,85 @@ import {
   type TranscriptQualityMetrics,
 } from "@/lib/transcript-reports.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
+import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
-  component: FounderPage,
+  ssr: false,
+  component: FounderGate,
   errorComponent: ({ error }) => (
     <div className="p-6 text-red-600">Error: {error.message}</div>
   ),
   notFoundComponent: () => <div className="p-6">Not found.</div>,
 });
+
+const AUTH_KEY = "founder-auth-v1";
+
+function FounderGate() {
+  const [authed, setAuthed] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const verify = useServerFn(verifyFounderPassword);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(AUTH_KEY) === "1") {
+      setAuthed(true);
+    }
+    setChecked(true);
+  }, []);
+
+  if (!checked) return null;
+  if (authed) return <FounderPage />;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          setError(null);
+          try {
+            const res = await verify({ data: { password } });
+            if (res.ok) {
+              sessionStorage.setItem(AUTH_KEY, "1");
+              setAuthed(true);
+            } else {
+              setError("Incorrect password");
+            }
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Error");
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">Founder access</h1>
+          <p className="text-sm text-slate-500">Enter the founder password to continue.</p>
+        </div>
+        <input
+          type="password"
+          autoFocus
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting || password.length === 0}
+          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {submitting ? "Checking…" : "Unlock"}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
