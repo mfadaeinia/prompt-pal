@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getLatestBenchmark,
-  runBenchmark,
+  startBenchmarkRun,
+  processBenchmarkVideo,
+  finalizeBenchmarkRun,
   FAILURE_LABELS,
   type FailureCode,
   type LatestBenchmark,
@@ -21,9 +23,13 @@ const TARGETS = {
 
 export function BenchmarkSection() {
   const fetcher = useServerFn(getLatestBenchmark);
-  const runner = useServerFn(runBenchmark);
+  const starter = useServerFn(startBenchmarkRun);
+  const processOne = useServerFn(processBenchmarkVideo);
+  const finalize = useServerFn(finalizeBenchmarkRun);
   const qc = useQueryClient();
   const [version, setVersion] = useState("");
+  const [progress, setProgress] = useState<{ mode: string; done: number; total: number } | null>(null);
+  const cancelRef = useRef(false);
 
   const q = useQuery({
     queryKey: ["benchmark-latest"],
@@ -32,10 +38,33 @@ export function BenchmarkSection() {
   });
 
   const mut = useMutation({
-    mutationFn: (mode: "quick" | "full") =>
-      runner({ data: { mode, releaseVersion: version || undefined } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["benchmark-latest"] }),
+    mutationFn: async (mode: "quick" | "full") => {
+      cancelRef.current = false;
+      const { runId, videos } = await starter({
+        data: { mode, releaseVersion: version || undefined },
+      });
+      setProgress({ mode, done: 0, total: videos.length });
+      for (let i = 0; i < videos.length; i++) {
+        if (cancelRef.current) break;
+        try {
+          await processOne({ data: { runId, videoId: videos[i].id } });
+        } catch (e) {
+          console.warn("[benchmark] video failed", videos[i].id, e);
+        }
+        setProgress({ mode, done: i + 1, total: videos.length });
+        // Refresh dashboard live every ~5 videos
+        if ((i + 1) % 5 === 0) qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+      }
+      await finalize({ data: { runId } });
+      return { runId };
+    },
+    onSettled: () => {
+      setProgress(null);
+      qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+    },
   });
+
+  const running = mut.isPending;
 
   return (
     <div className="space-y-4">
@@ -51,19 +80,31 @@ export function BenchmarkSection() {
             className="rounded border border-slate-300 px-2 py-1 text-xs"
           />
           <button
-            disabled={mut.isPending}
+            disabled={running}
             onClick={() => mut.mutate("quick")}
             className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {mut.isPending ? "Running…" : "Run Quick (10)"}
+            {running && progress?.mode === "quick"
+              ? `Quick ${progress.done}/${progress.total}`
+              : "Run Quick (10)"}
           </button>
           <button
-            disabled={mut.isPending}
+            disabled={running}
             onClick={() => mut.mutate("full")}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {mut.isPending ? "Running…" : "Run Full (200)"}
+            {running && progress?.mode === "full"
+              ? `Full ${progress.done}/${progress.total}`
+              : "Run Full (200)"}
           </button>
+          {running && (
+            <button
+              onClick={() => { cancelRef.current = true; }}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Stop
+            </button>
+          )}
         </div>
       </div>
 
@@ -78,6 +119,7 @@ export function BenchmarkSection() {
     </div>
   );
 }
+
 
 function BenchmarkBody({ data }: { data: LatestBenchmark }) {
   const { run, results, dataset } = data;

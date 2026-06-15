@@ -1,0 +1,1 @@
+UPDATE public.benchmark_runs SET status = 'failed', finished_at = now() WHERE status = 'running' AND started_at < now() - interval '5 minutes';

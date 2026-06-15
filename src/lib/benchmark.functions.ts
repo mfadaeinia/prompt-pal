@@ -206,39 +206,42 @@ export const getLatestBenchmark = createServerFn({ method: "GET" }).handler(
   },
 );
 
-// ---------------- Runner ----------------
+// ---------------- Runner (per-video, client-driven) ----------------
 
-const RunInput = z.object({
+const StartInput = z.object({
   mode: z.enum(["quick", "full"]),
   releaseVersion: z.string().max(80).optional(),
 });
+
+const ProcessInput = z.object({
+  runId: z.string().uuid(),
+  videoId: z.string().uuid(),
+});
+
+const FinalizeInput = z.object({ runId: z.string().uuid() });
 
 function wc(s: string) {
   const t = (s || "").trim();
   return t ? t.split(/\s+/).length : 0;
 }
 
-export const runBenchmark = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => RunInput.parse(d))
-  .handler(async ({ data }): Promise<{ runId: string }> => {
+/** Step 1 — create the run row, return the list of videos to process. */
+export const startBenchmarkRun = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => StartInput.parse(d))
+  .handler(async ({ data }): Promise<{ runId: string; videos: { id: string; youtube_url: string; title: string | null }[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { fetchTranscript } = await import("@/lib/transcript.functions");
-    const { explainSentence } = await import("@/lib/explain.functions");
 
-    // 1. Pick the dataset
     const limit = data.mode === "quick" ? 10 : 200;
     const { data: videos, error: vErr } = await supabaseAdmin
       .from("benchmark_videos" as any)
-      .select("*")
+      .select("id, youtube_url, title")
       .eq("active", true)
       .order("category", { ascending: true })
       .limit(limit);
     if (vErr) throw new Error(vErr.message);
-    const list = ((videos ?? []) as unknown) as BenchmarkVideoRow[];
+    const list = ((videos ?? []) as unknown) as { id: string; youtube_url: string; title: string | null }[];
     if (!list.length) throw new Error("No active benchmark videos. Seed the dataset first.");
 
-    // 2. Create run row
-    const startedAt = new Date().toISOString();
     const { data: runRow, error: rErr } = await supabaseAdmin
       .from("benchmark_runs" as any)
       .insert({
@@ -246,141 +249,170 @@ export const runBenchmark = createServerFn({ method: "POST" })
         status: "running",
         release_version: data.releaseVersion ?? null,
         total_videos: list.length,
-        started_at: startedAt,
+        started_at: new Date().toISOString(),
       } as any)
-      .select("*")
+      .select("id")
       .single();
     if (rErr) throw new Error(rErr.message);
-    const runId = (runRow as any).id as string;
 
-    // 3. Process videos sequentially to avoid rate-limit storms
-    let transcriptOk = 0;
-    let sentenceOk = 0;
-    let translationOk = 0;
-    let pipelineOk = 0;
+    return { runId: (runRow as any).id as string, videos: list };
+  });
 
-    for (const v of list) {
-      const t0 = Date.now();
-      let transcript_found = false;
-      let transcript_source: string | null = null;
-      let transcript_word_count = 0;
-      let sentence_count = 0;
-      let avg_sentence_length = 0;
-      let longest_sentence_words = 0;
-      let coverage_percent = 0;
-      let translation_success = false;
-      let failure_code: FailureCode | null = null;
-      let error_message: string | null = null;
+/** Step 2 — process ONE video and insert its result row. */
+export const processBenchmarkVideo = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => ProcessInput.parse(d))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { fetchTranscript } = await import("@/lib/transcript.functions");
+    const { explainSentence } = await import("@/lib/explain.functions");
 
-      try {
-        const tr = await fetchTranscript({ data: { url: v.youtube_url } });
-        transcript_found = true;
-        transcript_source = tr.source;
-        const sentences = tr.sentences ?? [];
-        sentence_count = sentences.length;
+    const { data: vRow, error: vErr } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("id, youtube_url, category")
+      .eq("id", data.videoId)
+      .single();
+    if (vErr) throw new Error(vErr.message);
+    const v = vRow as unknown as { id: string; youtube_url: string; category: string };
 
-        const wordsPerSentence = sentences.map((s) => wc(s.text));
-        const totalSentenceWords = wordsPerSentence.reduce((a, b) => a + b, 0);
-        longest_sentence_words = wordsPerSentence.reduce((m, n) => Math.max(m, n), 0);
-        avg_sentence_length = sentence_count
-          ? Number((totalSentenceWords / sentence_count).toFixed(2))
-          : 0;
-        transcript_word_count = totalSentenceWords;
-        coverage_percent =
-          totalSentenceWords > 0 ? 100 : 0; // sentences already are the transcript output
+    const t0 = Date.now();
+    let transcript_found = false;
+    let transcript_source: string | null = null;
+    let transcript_word_count = 0;
+    let sentence_count = 0;
+    let avg_sentence_length = 0;
+    let longest_sentence_words = 0;
+    let coverage_percent = 0;
+    let translation_success = false;
+    let failure_code: FailureCode | null = null;
+    let error_message: string | null = null;
 
-        // Failure code assignment (transcript-side)
-        if (transcript_word_count === 0) {
-          failure_code = "T02";
-        } else if (transcript_word_count < 50) {
-          failure_code = "T03";
-        } else if (sentence_count < 5) {
-          failure_code = "S01";
-        } else if (longest_sentence_words > 100) {
-          failure_code = "S02";
-        } else if (avg_sentence_length > 50 && sentence_count < 10) {
-          failure_code = "S03";
-        }
+    try {
+      const tr = await fetchTranscript({ data: { url: v.youtube_url } });
+      transcript_found = true;
+      transcript_source = tr.source;
+      const sentences = tr.sentences ?? [];
+      sentence_count = sentences.length;
 
-        const sentenceBuiltOk = !failure_code && sentence_count >= 5;
+      const wordsPerSentence = sentences.map((s) => wc(s.text));
+      const totalSentenceWords = wordsPerSentence.reduce((a, b) => a + b, 0);
+      longest_sentence_words = wordsPerSentence.reduce((m, n) => Math.max(m, n), 0);
+      avg_sentence_length = sentence_count
+        ? Number((totalSentenceWords / sentence_count).toFixed(2))
+        : 0;
+      transcript_word_count = totalSentenceWords;
+      coverage_percent = totalSentenceWords > 0 ? 100 : 0;
 
-        // Translation check on the first reasonable sentence
-        if (sentenceBuiltOk) {
-          const sample = sentences.find((s) => wc(s.text) >= 4) ?? sentences[0];
-          try {
-            const ex = await explainSentence({
-              data: { sentence: sample.text.slice(0, 800), targetLanguage: "English" },
-            });
-            const err = (ex as { error?: string }).error;
-            translation_success = !err && (ex.explanation?.length ?? 0) > 10;
-            if (!translation_success && !failure_code) failure_code = "L01";
-          } catch (e) {
-            translation_success = false;
-            if (!failure_code) failure_code = "L01";
-            error_message = e instanceof Error ? e.message : String(e);
-          }
-        }
-      } catch (e) {
-        error_message = e instanceof Error ? e.message : String(e);
-        // Classify retrieval errors
-        const msg = (error_message ?? "").toLowerCase();
-        if (msg.includes("subtitles") || msg.includes("no transcript") || msg.includes("not find")) {
-          failure_code = "T01";
-        } else if (!failure_code) {
-          failure_code = "U01";
+      if (transcript_word_count === 0) failure_code = "T02";
+      else if (transcript_word_count < 50) failure_code = "T03";
+      else if (sentence_count < 5) failure_code = "S01";
+      else if (longest_sentence_words > 100) failure_code = "S02";
+      else if (avg_sentence_length > 50 && sentence_count < 10) failure_code = "S03";
+
+      const sentenceBuiltOk = !failure_code && sentence_count >= 5;
+
+      if (sentenceBuiltOk) {
+        const sample = sentences.find((s) => wc(s.text) >= 4) ?? sentences[0];
+        try {
+          const ex = await explainSentence({
+            data: { sentence: sample.text.slice(0, 800), targetLanguage: "English" },
+          });
+          const err = (ex as { error?: string }).error;
+          translation_success = !err && (ex.explanation?.length ?? 0) > 10;
+          if (!translation_success && !failure_code) failure_code = "L01";
+        } catch (e) {
+          translation_success = false;
+          if (!failure_code) failure_code = "L01";
+          error_message = e instanceof Error ? e.message : String(e);
         }
       }
-
-      const { rating, reason } = classifyQuality({
-        sentenceCount: sentence_count,
-        avgSentenceLength: avg_sentence_length,
-        coveragePercent: coverage_percent,
-        transcriptFound: transcript_found,
-      });
-
-      const sentenceBuilt =
-        transcript_found && sentence_count >= 5 && !["S01", "S02", "S03"].includes(failure_code ?? "");
-      const pipelineFull =
-        sentenceBuilt && translation_success && rating === "high";
-
-      if (transcript_found) transcriptOk += 1;
-      if (sentenceBuilt) sentenceOk += 1;
-      if (translation_success) translationOk += 1;
-      if (pipelineFull) pipelineOk += 1;
-
-      const processing_time_ms = Date.now() - t0;
-
-      const { error: insErr } = await supabaseAdmin
-        .from("benchmark_video_results" as any)
-        .insert({
-          run_id: runId,
-          benchmark_video_id: v.id,
-          category: v.category,
-          transcript_found,
-          transcript_source,
-          transcript_word_count,
-          sentence_count,
-          avg_sentence_length,
-          longest_sentence_words,
-          coverage_percent,
-          translation_success,
-          quality_rating: rating,
-          quality_reason: reason,
-          failure_code,
-          processing_time_ms,
-          error_message,
-        } as any);
-      if (insErr) console.warn("[benchmark] result insert error", insErr.message);
+    } catch (e) {
+      error_message = e instanceof Error ? e.message : String(e);
+      const msg = (error_message ?? "").toLowerCase();
+      if (msg.includes("subtitles") || msg.includes("no transcript") || msg.includes("not find")) {
+        failure_code = "T01";
+      } else if (!failure_code) {
+        failure_code = "U01";
+      }
     }
 
-    const total = list.length;
+    const { rating, reason } = classifyQuality({
+      sentenceCount: sentence_count,
+      avgSentenceLength: avg_sentence_length,
+      coveragePercent: coverage_percent,
+      transcriptFound: transcript_found,
+    });
+
+    const processing_time_ms = Date.now() - t0;
+
+    const { error: insErr } = await supabaseAdmin
+      .from("benchmark_video_results" as any)
+      .insert({
+        run_id: data.runId,
+        benchmark_video_id: v.id,
+        category: v.category,
+        transcript_found,
+        transcript_source,
+        transcript_word_count,
+        sentence_count,
+        avg_sentence_length,
+        longest_sentence_words,
+        coverage_percent,
+        translation_success,
+        quality_rating: rating,
+        quality_reason: reason,
+        failure_code,
+        processing_time_ms,
+        error_message,
+      } as any);
+    if (insErr) throw new Error(insErr.message);
+
+    return { ok: true };
+  });
+
+/** Step 3 — aggregate result rows into the run row, mark completed. */
+export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => FinalizeInput.parse(d))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: results, error: resErr } = await supabaseAdmin
+      .from("benchmark_video_results" as any)
+      .select("transcript_found, sentence_count, failure_code, translation_success, quality_rating")
+      .eq("run_id", data.runId);
+    if (resErr) throw new Error(resErr.message);
+
+    const rows = (results ?? []) as unknown as Array<{
+      transcript_found: boolean;
+      sentence_count: number;
+      failure_code: FailureCode | null;
+      translation_success: boolean;
+      quality_rating: "high" | "medium" | "low";
+    }>;
+
+    const { data: runRow, error: rErr } = await supabaseAdmin
+      .from("benchmark_runs" as any)
+      .select("total_videos")
+      .eq("id", data.runId)
+      .single();
+    if (rErr) throw new Error(rErr.message);
+    const total = Math.max(1, (runRow as any).total_videos as number);
+
+    let transcriptOk = 0, sentenceOk = 0, translationOk = 0, pipelineOk = 0;
+    for (const r of rows) {
+      if (r.transcript_found) transcriptOk += 1;
+      const sentenceBuilt =
+        r.transcript_found && r.sentence_count >= 5 && !["S01", "S02", "S03"].includes(r.failure_code ?? "");
+      if (sentenceBuilt) sentenceOk += 1;
+      if (r.translation_success) translationOk += 1;
+      if (sentenceBuilt && r.translation_success && r.quality_rating === "high") pipelineOk += 1;
+    }
+
     const pct = (n: number) => Number(((n / total) * 100).toFixed(2));
-    const finishedAt = new Date().toISOString();
     const { error: upErr } = await supabaseAdmin
       .from("benchmark_runs" as any)
       .update({
         status: "completed",
-        finished_at: finishedAt,
+        finished_at: new Date().toISOString(),
         transcript_success_count: transcriptOk,
         sentence_success_count: sentenceOk,
         translation_success_count: translationOk,
@@ -390,8 +422,9 @@ export const runBenchmark = createServerFn({ method: "POST" })
         translation_success_rate: pct(translationOk),
         pipeline_success_rate: pct(pipelineOk),
       } as any)
-      .eq("id", runId);
-    if (upErr) console.warn("[benchmark] run update error", upErr.message);
+      .eq("id", data.runId);
+    if (upErr) throw new Error(upErr.message);
 
-    return { runId };
+    return { ok: true };
   });
+
