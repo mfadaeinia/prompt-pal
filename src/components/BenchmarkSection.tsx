@@ -62,7 +62,7 @@ export function BenchmarkSection() {
             onClick={() => mut.mutate("full")}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {mut.isPending ? "Running…" : "Run Full (50)"}
+            {mut.isPending ? "Running…" : "Run Full (200)"}
           </button>
         </div>
       </div>
