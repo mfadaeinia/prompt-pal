@@ -7,6 +7,7 @@ import {
   getTranscriptQualityMetrics,
   type TranscriptQualityMetrics,
 } from "@/lib/transcript-reports.functions";
+import { BenchmarkSection } from "@/components/BenchmarkSection";
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
@@ -59,6 +60,7 @@ function FounderPage() {
           </button>
         </header>
 
+        <BenchmarkSection />
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
         {data && <Dashboard m={data} />}

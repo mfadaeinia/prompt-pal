@@ -14,6 +14,192 @@ export type Database = {
   }
   public: {
     Tables: {
+      benchmark_runs: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          mode: string
+          notes: string | null
+          pipeline_success_count: number
+          pipeline_success_rate: number
+          release_version: string | null
+          run_date: string
+          sentence_success_count: number
+          sentence_success_rate: number
+          started_at: string
+          status: string
+          total_videos: number
+          transcript_success_count: number
+          transcript_success_rate: number
+          translation_success_count: number
+          translation_success_rate: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          mode: string
+          notes?: string | null
+          pipeline_success_count?: number
+          pipeline_success_rate?: number
+          release_version?: string | null
+          run_date?: string
+          sentence_success_count?: number
+          sentence_success_rate?: number
+          started_at?: string
+          status?: string
+          total_videos?: number
+          transcript_success_count?: number
+          transcript_success_rate?: number
+          translation_success_count?: number
+          translation_success_rate?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          mode?: string
+          notes?: string | null
+          pipeline_success_count?: number
+          pipeline_success_rate?: number
+          release_version?: string | null
+          run_date?: string
+          sentence_success_count?: number
+          sentence_success_rate?: number
+          started_at?: string
+          status?: string
+          total_videos?: number
+          transcript_success_count?: number
+          transcript_success_rate?: number
+          translation_success_count?: number
+          translation_success_rate?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      benchmark_video_results: {
+        Row: {
+          avg_sentence_length: number
+          benchmark_video_id: string
+          category: string
+          coverage_percent: number
+          created_at: string
+          error_message: string | null
+          failure_code: string | null
+          id: string
+          longest_sentence_words: number
+          processing_time_ms: number
+          quality_rating: string
+          quality_reason: string | null
+          run_id: string
+          sentence_count: number
+          transcript_found: boolean
+          transcript_source: string | null
+          transcript_word_count: number
+          translation_success: boolean
+        }
+        Insert: {
+          avg_sentence_length?: number
+          benchmark_video_id: string
+          category: string
+          coverage_percent?: number
+          created_at?: string
+          error_message?: string | null
+          failure_code?: string | null
+          id?: string
+          longest_sentence_words?: number
+          processing_time_ms?: number
+          quality_rating?: string
+          quality_reason?: string | null
+          run_id: string
+          sentence_count?: number
+          transcript_found?: boolean
+          transcript_source?: string | null
+          transcript_word_count?: number
+          translation_success?: boolean
+        }
+        Update: {
+          avg_sentence_length?: number
+          benchmark_video_id?: string
+          category?: string
+          coverage_percent?: number
+          created_at?: string
+          error_message?: string | null
+          failure_code?: string | null
+          id?: string
+          longest_sentence_words?: number
+          processing_time_ms?: number
+          quality_rating?: string
+          quality_reason?: string | null
+          run_id?: string
+          sentence_count?: number
+          transcript_found?: boolean
+          transcript_source?: string | null
+          transcript_word_count?: number
+          translation_success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmark_video_results_benchmark_video_id_fkey"
+            columns: ["benchmark_video_id"]
+            isOneToOne: false
+            referencedRelation: "benchmark_videos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "benchmark_video_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "benchmark_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      benchmark_videos: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          difficulty: string
+          id: string
+          language: string
+          notes: string | null
+          title: string | null
+          updated_at: string
+          video_id: string
+          youtube_url: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          language?: string
+          notes?: string | null
+          title?: string | null
+          updated_at?: string
+          video_id: string
+          youtube_url: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          language?: string
+          notes?: string | null
+          title?: string | null
+          updated_at?: string
+          video_id?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       early_access_signups: {
         Row: {
           created_at: string
