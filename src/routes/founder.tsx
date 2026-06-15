@@ -60,6 +60,7 @@ function FounderPage() {
           </button>
         </header>
 
+        <BenchmarkSection />
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
         {data && <Dashboard m={data} />}
