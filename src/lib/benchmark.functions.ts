@@ -226,7 +226,7 @@ export const runBenchmark = createServerFn({ method: "POST" })
     const { explainSentence } = await import("@/lib/explain.functions");
 
     // 1. Pick the dataset
-    const limit = data.mode === "quick" ? 10 : 50;
+    const limit = data.mode === "quick" ? 10 : 200;
     const { data: videos, error: vErr } = await supabaseAdmin
       .from("benchmark_videos" as any)
       .select("*")
