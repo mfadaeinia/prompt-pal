@@ -1,0 +1,2 @@
+ALTER TABLE public.benchmark_videos DROP CONSTRAINT IF EXISTS benchmark_videos_category_check;
+ALTER TABLE public.benchmark_videos ADD CONSTRAINT benchmark_videos_category_check CHECK (category IN ('TED','TED Talk','Podcast','Interview','Educational','News','NPO/NOS','Vlog','Gaming'));
