@@ -55,7 +55,7 @@ export function BenchmarkSection() {
         // Refresh dashboard live every ~5 videos
         if ((i + 1) % 5 === 0) qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
       }
-      await finalize({ data: { runId } });
+      await finalize({ data: { runId, status: cancelRef.current ? "failed" : "completed" } });
       return { runId };
     },
     onSettled: () => {
