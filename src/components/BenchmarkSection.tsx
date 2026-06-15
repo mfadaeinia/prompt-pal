@@ -260,12 +260,15 @@ function CategoryPerformance({ results }: { results: BenchmarkResultRow[] }) {
     byCat[c] = { total: 0, success: 0, highCount: 0, mediumCount: 0, lowCount: 0 };
   }
   for (const r of results) {
-    const k = r.category in byCat ? r.category : (byCat[r.category] = { total: 0, success: 0, highCount: 0, mediumCount: 0, lowCount: 0 }, r.category);
-    byCat[k].total += 1;
-    if (r.transcript_found && !r.failure_code) byCat[k].success += 1;
-    if (r.quality_rating === "high") byCat[k].highCount += 1;
-    else if (r.quality_rating === "medium") byCat[k].mediumCount += 1;
-    else byCat[k].lowCount += 1;
+    if (!byCat[r.category]) {
+      byCat[r.category] = { total: 0, success: 0, highCount: 0, mediumCount: 0, lowCount: 0 };
+    }
+    const b = byCat[r.category];
+    b.total += 1;
+    if (r.transcript_found && !r.failure_code) b.success += 1;
+    if (r.quality_rating === "high") b.highCount += 1;
+    else if (r.quality_rating === "medium") b.mediumCount += 1;
+    else b.lowCount += 1;
   }
 
   return (
