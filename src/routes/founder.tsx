@@ -7,6 +7,7 @@ import {
   getTranscriptQualityMetrics,
   type TranscriptQualityMetrics,
 } from "@/lib/transcript-reports.functions";
+import { BenchmarkSection } from "@/components/BenchmarkSection";
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
