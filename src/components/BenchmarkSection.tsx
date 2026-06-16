@@ -828,9 +828,13 @@ function UpdateGoldenDatasetModal({
         </div>
         <div className="space-y-3 p-4 text-xs text-slate-700">
           <p>
-            Paste a JSON array of <code>{`{ youtube_url, title?, category?, difficulty?, language?, active?, notes? }`}</code>{" "}
-            objects, or one YouTube URL per line. Matched on <code>video_id</code> — existing
-            rows are updated, new ones inserted.
+            Upload a <code>.xlsx</code> / <code>.csv</code> file (auto-detects columns
+            <em> URL</em>, <em>Title</em>, <em>Category</em>, <em>Language</em>,
+            <em> Difficulty</em>, <em>Notes</em>), paste a JSON array of{" "}
+            <code>{`{ youtube_url, title?, category?, difficulty?, language?, active?, notes? }`}</code>{" "}
+            objects, or paste one YouTube URL per line. Matched on <code>video_id</code> —
+            existing rows are updated, new ones inserted. Uploading a spreadsheet auto-enables
+            <strong> Replace mode</strong> so the dataset mirrors the file.
           </p>
           <div className="flex items-center gap-2">
             <input
