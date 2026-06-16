@@ -563,14 +563,71 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         download_size_mb = Number((transcript_length_chars / (1024 * 1024)).toFixed(4));
         coverage_percent = totalSentenceWords > 0 ? 100 : 0;
 
+        // ---- Sentence segmentation diagnostics ----
+        const shortFragCount = wordsPerSentence.filter((w) => w > 0 && w < 4).length;
+        const giantCount = wordsPerSentence.filter((w) => w > 35).length;
+        sentenceShortPct = sentence_count
+          ? Number(((shortFragCount / sentence_count) * 100).toFixed(1))
+          : 0;
+        sentenceGiantPct = sentence_count
+          ? Number(((giantCount / sentence_count) * 100).toFixed(1))
+          : 0;
+        const allText = sentences.map((s) => s.text).join(" ");
+        const sentencesWithTerminator = sentences.filter((s) =>
+          /[.!?…]\s*$/.test(s.text.trim()),
+        ).length;
+        sentencePunctPct = sentence_count
+          ? Number(((sentencesWithTerminator / sentence_count) * 100).toFixed(1))
+          : 0;
+        // Median gap between sentence boundaries (seconds)
+        const gaps: number[] = [];
+        for (let i = 1; i < sentences.length; i++) {
+          const g = sentences[i].offset - (sentences[i - 1].endTime ?? sentences[i - 1].offset);
+          if (Number.isFinite(g) && g >= 0) gaps.push(g);
+        }
+        if (gaps.length) {
+          const sorted = [...gaps].sort((a, b) => a - b);
+          const mid = sorted[Math.floor(sorted.length / 2)];
+          sentenceMedianGap = Number(mid.toFixed(2));
+        }
+        sentencePreview = sentences.slice(0, 20).map((s) => ({
+          text: s.text,
+          start: Number(s.offset.toFixed(2)),
+          end: Number((s.endTime ?? s.offset).toFixed(2)),
+          words: wc(s.text),
+        }));
+
+        // Sentence UX quality (independent of pipeline success).
+        const susReasons: string[] = [];
+        let susRating: "high" | "medium" | "low" = "high";
+        if (sentence_count < 10) susReasons.push(`only ${sentence_count} sentences`);
+        if (sentenceShortPct > 25) susReasons.push(`${sentenceShortPct}% short fragments`);
+        if (sentenceGiantPct > 10) susReasons.push(`${sentenceGiantPct}% giant sentences`);
+        if (sentencePunctPct < 60) susReasons.push(`punctuation coverage ${sentencePunctPct}%`);
+        if (avg_sentence_length > 28 || avg_sentence_length < 6)
+          susReasons.push(`avg length ${avg_sentence_length}w outside 6–28`);
+        if (susReasons.length >= 2 || sentenceGiantPct > 15 || sentence_count < 5)
+          susRating = "low";
+        else if (susReasons.length === 1) susRating = "medium";
+        sentenceQualityRating = susRating;
+        sentenceQualityReason = susReasons.length
+          ? susReasons.join("; ")
+          : `clean — avg ${avg_sentence_length}w, ${sentencePunctPct}% punctuated`;
+
+        // Pipeline-failure codes (NOT triggered by UX quality alone)
         if (transcript_word_count === 0) failure_code = "T02";
         else if (transcript_word_count < 50) failure_code = "T03";
         else if (sentence_count < 5) failure_code = "S01";
-        else if (longest_sentence_words > 100) failure_code = "S02";
-        else if (avg_sentence_length > 50 && sentence_count < 10) failure_code = "S03";
+        // S02/S03 are now informational-only — the splitOversize post-pass
+        // guarantees no >100-word sentences, so these codes are vestigial.
 
         const sentenceBuiltOk = !failure_code && sentence_count >= 5;
-        log({ step: "sentence_build", ok: sentenceBuiltOk, detail: `count=${sentence_count} avgLen=${avg_sentence_length}` });
+        log({
+          step: "sentence_build",
+          ok: sentenceBuiltOk,
+          detail: `count=${sentence_count} avgLen=${avg_sentence_length} short=${sentenceShortPct}% giant=${sentenceGiantPct}% punct=${sentencePunctPct}% ux=${susRating}`,
+        });
+        void allText;
 
         // STEP 4 — translation
         if (sentenceBuiltOk) {
