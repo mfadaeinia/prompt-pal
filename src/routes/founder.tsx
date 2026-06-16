@@ -8,6 +8,11 @@ import {
   getTranscriptQualityMetrics,
   type TranscriptQualityMetrics,
 } from "@/lib/transcript-reports.functions";
+import {
+  getTesterCohort,
+  type TesterCohortMetrics,
+  type TesterRow,
+} from "@/lib/tester-events.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
