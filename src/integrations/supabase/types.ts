@@ -82,16 +82,20 @@ export type Database = {
       }
       benchmark_video_results: {
         Row: {
+          ai_repair_success: boolean | null
+          ai_repair_used: boolean | null
           avg_sentence_length: number
           benchmark_video_id: string
           cache_hit: boolean | null
           category: string
           coverage_percent: number
           created_at: string
+          deterministic_quality: string | null
           download_size_mb: number | null
           download_status: string | null
           error_message: string | null
           failure_code: string | null
+          final_sentence_quality: string | null
           giant_sentence_pct: number | null
           http_status_code: number | null
           id: string
@@ -102,6 +106,8 @@ export type Database = {
           punctuation_coverage_pct: number | null
           quality_rating: string
           quality_reason: string | null
+          repair_diagnostics: Json | null
+          repair_reason: string | null
           run_id: string
           sentence_count: number
           sentence_preview: Json | null
@@ -118,16 +124,20 @@ export type Database = {
           video_url_status: string | null
         }
         Insert: {
+          ai_repair_success?: boolean | null
+          ai_repair_used?: boolean | null
           avg_sentence_length?: number
           benchmark_video_id: string
           cache_hit?: boolean | null
           category: string
           coverage_percent?: number
           created_at?: string
+          deterministic_quality?: string | null
           download_size_mb?: number | null
           download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          final_sentence_quality?: string | null
           giant_sentence_pct?: number | null
           http_status_code?: number | null
           id?: string
@@ -138,6 +148,8 @@ export type Database = {
           punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
+          repair_diagnostics?: Json | null
+          repair_reason?: string | null
           run_id: string
           sentence_count?: number
           sentence_preview?: Json | null
@@ -154,16 +166,20 @@ export type Database = {
           video_url_status?: string | null
         }
         Update: {
+          ai_repair_success?: boolean | null
+          ai_repair_used?: boolean | null
           avg_sentence_length?: number
           benchmark_video_id?: string
           cache_hit?: boolean | null
           category?: string
           coverage_percent?: number
           created_at?: string
+          deterministic_quality?: string | null
           download_size_mb?: number | null
           download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          final_sentence_quality?: string | null
           giant_sentence_pct?: number | null
           http_status_code?: number | null
           id?: string
@@ -174,6 +190,8 @@ export type Database = {
           punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
+          repair_diagnostics?: Json | null
+          repair_reason?: string | null
           run_id?: string
           sentence_count?: number
           sentence_preview?: Json | null
