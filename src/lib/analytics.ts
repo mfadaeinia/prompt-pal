@@ -107,6 +107,13 @@ export function track(event: string, props?: Record<string, any>) {
     }
   } catch {}
   posthog.capture(event, enrichedProps);
+
+  // Mirror to the tester cohort log (no-op if no tester_id is set).
+  try {
+    void import("./tester").then(({ recordTesterEventFromClient }) => {
+      recordTesterEventFromClient(event, enrichedProps);
+    });
+  } catch {}
 }
 
 export { posthog };
