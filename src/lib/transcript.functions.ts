@@ -979,16 +979,19 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     // -------- Layer 1: Cache --------
-    const cached = await readCache(videoId);
+    const requestedLanguage = data.requestedLanguage?.trim() || "_any_";
+    const cached = await readCache(videoId, requestedLanguage);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      const provenance = rowToProvenance(cached);
       console.log("[transcript-debug] cache HIT", {
         videoId,
         raw_chunks: cached.transcript_json.length,
         sentences: sentences.length,
         total_chars: chars,
         language: cached.language,
+        provenance,
       });
       logEvent({
         video_id: videoId,
@@ -1008,9 +1011,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         videoId,
         sentences,
         source: "cache",
+        cachedFromProvider: provenance.provider,
         language: cached.language,
         cacheHit: true,
         quality,
+        provenance,
         rawChunks: cached.transcript_json,
       };
     }
