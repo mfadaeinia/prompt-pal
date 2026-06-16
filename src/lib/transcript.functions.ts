@@ -1093,6 +1093,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         cacheHit: false,
         quality,
         providerTrace,
+        rawChunks: asr.chunks,
       };
     }
 
