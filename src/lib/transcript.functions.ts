@@ -559,8 +559,24 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   language: string | null;
-  source: "youtube" | "manual" | "fallback" | "asr";
+  source: "youtube" | "manual" | "fallback";
 }) {
+  // Safety: refuse to persist anything that doesn't have evidence of coming
+  // from real captions or real audio. "asr" (LLM-as-transcriber) is no longer
+  // a legal source — see Layer 4 comment.
+  const allowed = new Set(["youtube", "manual", "fallback"]);
+  if (!allowed.has(params.source)) {
+    console.warn("[transcript] refusing to cache invalid source", params.source);
+    return;
+  }
+  const totalChars = params.chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
+  if (!params.chunks.length || totalChars < 10) {
+    console.warn("[transcript] refusing to cache empty/tiny transcript", {
+      chunks: params.chunks.length,
+      chars: totalChars,
+    });
+    return;
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
@@ -577,6 +593,7 @@ async function writeCache(params: {
     );
   if (error) console.warn("[transcript] cache write error", error.message);
 }
+
 
 async function recordTranscriptReport(params: {
   videoId: string;
