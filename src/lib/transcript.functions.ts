@@ -1095,12 +1095,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         total_chars: chars,
         language: usedLang,
       });
-      await writeCache({
+      const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
         chunks: raw,
-        language: usedLang,
-        source: "youtube",
+        requestedLanguage,
+        provider: "youtube",
+        providerResponseLanguage: usedLang,
       });
       logEvent({
         video_id: videoId,
@@ -1116,6 +1117,9 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: usedLang,
         quality,
       });
+      if (!cacheWrite.ok) {
+        console.warn("[transcript-debug] youtube result not cached", cacheWrite.validation);
+      }
       return {
         videoId,
         sentences,
@@ -1123,6 +1127,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: usedLang,
         cacheHit: false,
         quality,
+        provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
       };
     }
