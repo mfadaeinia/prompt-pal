@@ -675,6 +675,7 @@ function Index() {
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource("manual");
+      setCachedFromProvider(null);
       setTranscriptQuality(res.quality);
       setLimitedMode(res.quality.quality === "low");
       setQualityBannerDismissed(false);
