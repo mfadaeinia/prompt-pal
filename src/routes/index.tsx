@@ -101,6 +101,7 @@ function Index() {
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
   const [selected, setSelected] = useState<TranscriptSentence | null>(null);
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
+  const [cachedFromProvider, setCachedFromProvider] = useState<string | null>(null);
   const [transcriptQuality, setTranscriptQuality] = useState<TranscriptQualityReport | null>(null);
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
