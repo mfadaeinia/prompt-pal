@@ -786,7 +786,7 @@ function UpdateGoldenDatasetModal({
     const name = file.name.toLowerCase();
     try {
       if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-        const XLSX = await import("xlsx");
+        const XLSX = (await import(/* @vite-ignore */ "xlsx/dist/xlsx.full.min.js")) as typeof import("xlsx");
         const buf = await file.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
