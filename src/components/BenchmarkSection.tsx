@@ -669,6 +669,77 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Quality Score Breakdown</h5>
         <ScoreBreakdownBlock row={row} />
 
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Sentence Segmentation Diagnostics</h5>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+          <dt className="text-slate-500">Sentence count</dt>
+          <dd className="font-mono">{row.sentence_count}</dd>
+          <dt className="text-slate-500">Avg words / sentence</dt>
+          <dd className="font-mono">{row.avg_sentence_length}</dd>
+          <dt className="text-slate-500">Longest sentence</dt>
+          <dd className="font-mono">{row.longest_sentence_words} words</dd>
+          <dt className="text-slate-500">Short fragments (&lt;4w)</dt>
+          <dd className="font-mono">{row.short_fragment_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Giant sentences (&gt;35w)</dt>
+          <dd className="font-mono">{row.giant_sentence_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Punctuation coverage</dt>
+          <dd className="font-mono">{row.punctuation_coverage_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Median gap between sentences</dt>
+          <dd className="font-mono">{row.median_gap_seconds != null ? `${row.median_gap_seconds}s` : "—"}</dd>
+          <dt className="text-slate-500">Sentence UX quality</dt>
+          <dd>
+            <span className={
+              row.sentence_quality_rating === "high" ? "text-green-700 font-semibold" :
+              row.sentence_quality_rating === "medium" ? "text-amber-700 font-semibold" :
+              "text-red-700 font-semibold"
+            }>{row.sentence_quality_rating ?? "—"}</span>
+            {row.sentence_quality_reason && (
+              <span className="text-slate-500"> — {row.sentence_quality_reason}</span>
+            )}
+          </dd>
+        </dl>
+
+        {row.sentence_preview && row.sentence_preview.length > 0 && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              First {row.sentence_preview.length} Sentence Units (manual inspection)
+            </h5>
+            <div className="overflow-hidden rounded border border-slate-200">
+              <table className="w-full text-[11px]">
+                <thead className="bg-slate-100 text-slate-600">
+                  <tr>
+                    <th className="w-10 px-2 py-1 text-left">#</th>
+                    <th className="w-24 px-2 py-1 text-left">Time</th>
+                    <th className="w-10 px-2 py-1 text-right">w</th>
+                    <th className="px-2 py-1 text-left">Sentence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {row.sentence_preview.map((s, i) => {
+                    const tooShort = s.words > 0 && s.words < 4;
+                    const tooLong = s.words > 35;
+                    const cls = tooShort ? "bg-amber-50" : tooLong ? "bg-red-50" : "";
+                    const fmt = (n: number) => {
+                      const m = Math.floor(n / 60);
+                      const sec = Math.floor(n % 60).toString().padStart(2, "0");
+                      return `${m}:${sec}`;
+                    };
+                    return (
+                      <tr key={i} className={`border-t border-slate-100 ${cls}`}>
+                        <td className="px-2 py-1 font-mono text-slate-400">{i + 1}</td>
+                        <td className="px-2 py-1 font-mono text-slate-500">
+                          {fmt(s.start)}–{fmt(s.end)}
+                        </td>
+                        <td className="px-2 py-1 text-right font-mono text-slate-500">{s.words}</td>
+                        <td className="px-2 py-1 text-slate-800">{s.text}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Pipeline Logs</h5>
         <div className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] font-mono">
           {(row.pipeline_logs ?? []).length === 0 && <div className="text-slate-400">No logs captured.</div>}

@@ -249,6 +249,95 @@ function segmentByChunksAndTiming(
   return out;
 }
 
+// Merge fragments under `minWords` into their nearest neighbor unless they
+// look like a valid short utterance (yes/no/thanks/etc).
+function mergeTinyFragments(
+  segs: TranscriptSentence[],
+  minWords = 3,
+): TranscriptSentence[] {
+  if (segs.length <= 1) return segs;
+  const valid = /^(yes|no|ok|okay|hi|hello|thanks|thank you|right|sure|exactly|maybe|wow|hmm|huh|nope|yeah|yep|absolutely)[.!?…]*$/i;
+  const out: TranscriptSentence[] = [];
+  for (const s of segs) {
+    const w = wordCount(s.text);
+    if (w < minWords && !valid.test(s.text.trim())) {
+      const prev = out[out.length - 1];
+      if (prev) {
+        prev.text = `${prev.text} ${s.text}`.replace(/\s+/g, " ").trim();
+        prev.endTime = s.endTime || prev.endTime;
+        prev.duration = Math.max(0, prev.endTime - prev.offset);
+        continue;
+      }
+    }
+    out.push({ ...s });
+  }
+  return out.map((s, i) => ({ ...s, id: i }));
+}
+
+// Hard-cap any sentence > maxWords by splitting on the strongest internal
+// boundary (punctuation, then conjunctions, then word-count chop). Preserves
+// the total time span and distributes it proportionally to word counts.
+function splitOversize(
+  segs: TranscriptSentence[],
+  maxWords = 35,
+): TranscriptSentence[] {
+  const out: TranscriptSentence[] = [];
+  for (const s of segs) {
+    const words = s.text.split(/\s+/);
+    if (words.length <= maxWords) {
+      out.push(s);
+      continue;
+    }
+    const splitPattern =
+      /[,;:—–]\s+|\s+(?:and|but|so|because|or|then|however|while|although)\s+/gi;
+    const parts: string[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    const target = Math.max(
+      15,
+      Math.floor(words.length / Math.ceil(words.length / maxWords)),
+    );
+    const text = s.text;
+    while ((m = splitPattern.exec(text)) !== null) {
+      const head = text.slice(last, m.index + m[0].length).trim();
+      if (wordCount(head) >= target * 0.7) {
+        parts.push(head);
+        last = m.index + m[0].length;
+      }
+    }
+    const tail = text.slice(last).trim();
+    if (tail) parts.push(tail);
+
+    const final: string[] = [];
+    for (const p of parts.length ? parts : [text]) {
+      const pw = p.split(/\s+/);
+      if (pw.length <= maxWords) {
+        final.push(p);
+      } else {
+        for (let i = 0; i < pw.length; i += maxWords) {
+          final.push(pw.slice(i, i + maxWords).join(" "));
+        }
+      }
+    }
+    const totalW = final.reduce((n, p) => n + wordCount(p), 0) || 1;
+    let cursor = s.offset;
+    const span = Math.max(0, (s.endTime || s.offset) - s.offset);
+    for (const part of final) {
+      const w = wordCount(part);
+      const dur = span * (w / totalW);
+      out.push({
+        id: 0,
+        text: part,
+        offset: cursor,
+        duration: dur,
+        endTime: cursor + dur,
+      });
+      cursor += dur;
+    }
+  }
+  return out.map((s, i) => ({ ...s, id: i }));
+}
+
 function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
   const cleaned = chunks
     .map((r) => ({
@@ -269,8 +358,6 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     0
   );
 
-  // Heuristic: punctuation is "sparse" if avg segment is huge OR any single
-  // segment is huge OR we ended up with <1 segment per 40 words.
   const sparse =
     avgWords > 30 ||
     longest > 60 ||
@@ -283,11 +370,9 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     final = punctSegments;
     strategy = "punctuation";
   } else if (punctSegments.length <= 3) {
-    // Almost no punctuation — segment purely from raw chunks + timing.
-    final = segmentByChunksAndTiming(cleaned);
+    final = segmentByChunksAndTiming(cleaned, { target: 14, max: 25, gapSeconds: 1.0 });
     strategy = "timing+chunks";
   } else {
-    // Mixed: split any oversize punctuation segment further.
     final = [];
     let id = 0;
     for (const seg of punctSegments) {
@@ -295,18 +380,21 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
         final.push({ ...seg, id: id++ });
         continue;
       }
-      // Find chunks overlapping this segment's time range and re-segment them.
       const segEnd = seg.endTime || seg.offset + 5;
       const subChunks = cleaned.filter(
         (c) => c.offset + c.duration >= seg.offset && c.offset <= segEnd
       );
       const subSegs = subChunks.length
-        ? segmentByChunksAndTiming(subChunks)
+        ? segmentByChunksAndTiming(subChunks, { target: 14, max: 25 })
         : [seg];
       for (const s of subSegs) final.push({ ...s, id: id++ });
     }
     strategy = "hybrid";
   }
+
+  // Post-passes: enforce sentence-unit quality invariants.
+  final = splitOversize(final, 35);
+  final = mergeTinyFragments(final, 3);
 
   const segWordCounts = final.map((s) => wordCount(s.text));
   const segMax = segWordCounts.reduce((m, n) => Math.max(m, n), 0);
