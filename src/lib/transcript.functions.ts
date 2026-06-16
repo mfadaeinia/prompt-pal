@@ -797,7 +797,7 @@ async function writeCache(params: {
     console.warn("[transcript] cache write error", error.message);
     return { ok: false, validation: { ok: false, reason: `db_error:${error.message}` } };
   }
-  return { ok: true, validation, provenance: data ? rowToProvenance(data as CacheRow) : undefined };
+  return { ok: true, validation, provenance: data ? rowToProvenance(data as unknown as CacheRow) : undefined };
 }
 
 /** Founder/debug: delete every cached row for a video, across all providers/languages. */
