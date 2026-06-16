@@ -1047,6 +1047,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: fb.language,
         cacheHit: false,
         quality,
+        rawChunks: fb.chunks,
       };
     }
 
