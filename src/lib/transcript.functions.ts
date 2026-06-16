@@ -794,6 +794,16 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       cache_hit: false,
     });
 
+    // Per-provider diagnostics (always returned/thrown so callers can attribute failures).
+    const transcribrTrace: TranscribrTrace = {
+      invoked: false, httpStatus: null, errorMessage: null,
+      rawSegments: 0, keptSegments: 0, discardedReason: null,
+    };
+    const asrTrace: AsrTrace = {
+      invoked: false, httpStatus: null, errorMessage: null,
+      rawSegments: 0, keptSegments: 0, discardedReason: null,
+    };
+
     // -------- Layer 2: YouTube captions --------
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
