@@ -159,6 +159,75 @@ function FounderPage() {
   );
 }
 
+function TranscriptCacheTools() {
+  const clearFn = useServerFn(clearTranscriptCacheForVideo);
+  const [videoId, setVideoId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  function parseVideoId(s: string): string | null {
+    const trimmed = s.trim();
+    const m = trimmed.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    );
+    if (m) return m[1];
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    return null;
+  }
+
+  async function onClear() {
+    const id = parseVideoId(videoId);
+    if (!id) {
+      setResult({ ok: false, message: "Enter a YouTube URL or 11-char video ID." });
+      return;
+    }
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await clearFn({ data: { videoId: id } });
+      setResult({ ok: true, message: `Removed ${res.removed} cached row(s) for ${id}.` });
+    } catch (err) {
+      setResult({ ok: false, message: err instanceof Error ? err.message : "Failed to clear cache." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Transcript Cache Tools
+      </h2>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <p className="mb-2 text-xs text-slate-500">
+          Removes every cached transcript row for this video (all providers / languages).
+          The next load will re-fetch from YouTube captions or Transcribr.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={videoId}
+            onChange={(e) => setVideoId(e.target.value)}
+            placeholder="YouTube URL or video ID"
+            className="min-w-[260px] flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900"
+          />
+          <button
+            onClick={onClear}
+            disabled={busy || !videoId.trim()}
+            className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {busy ? "Clearing…" : "Clear transcript cache"}
+          </button>
+        </div>
+        {result && (
+          <p className={`mt-2 text-xs ${result.ok ? "text-green-600" : "text-red-600"}`}>
+            {result.message}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
   function downloadCsv() {
     const headers = [
