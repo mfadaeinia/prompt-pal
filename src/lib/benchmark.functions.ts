@@ -10,10 +10,18 @@ export type FailureCode =
   | "V03" // Empty video file / zero-byte response
   | "V04" // Unsupported format / non-video URL
   // Transcript failures (after successful URL access)
-  | "T01" // No transcript after successful processing (captions not available)
+  | "T01" // No transcript after successful processing (legacy: captions not available)
   | "T02" // Empty transcript
   | "T03" // Transcript too short
   | "T04" // Provider blocked / rate-limited (transient — not a real failure)
+  // Caption-availability (informational — not counted as a hard failure
+  // when ASR fallback succeeds)
+  | "C01" // YouTube captions unavailable
+  // ASR fallback failures
+  | "A01" // ASR fallback failed (captions missing AND ASR could not produce a transcript)
+  | "A02" // Audio extraction failed (reserved — Worker runtime cannot extract audio locally)
+  | "A03" // ASR provider timeout
+  | "A04" // ASR provider returned empty transcript
   // Sentence-builder failures
   | "S01" // Too few sentences
   | "S02" // Giant merged sentence (>100 words in any one)
@@ -28,10 +36,15 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
   V02: "V02 — Download / probe timeout",
   V03: "V03 — Empty video file",
   V04: "V04 — Unsupported format",
-  T01: "T01 — No captions available",
+  T01: "T01 — No captions available (legacy)",
   T02: "T02 — Empty transcript",
   T03: "T03 — Transcript too short",
   T04: "T04 — Provider rate-limited (transient)",
+  C01: "C01 — YouTube captions unavailable (informational)",
+  A01: "A01 — ASR fallback failed",
+  A02: "A02 — Audio extraction failed",
+  A03: "A03 — ASR provider timeout",
+  A04: "A04 — ASR provider returned empty transcript",
   S01: "S01 — Too few sentences",
   S02: "S02 — Giant merged sentence",
   S03: "S03 — Missing sentence boundaries",
@@ -40,8 +53,16 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
 };
 
 export const ALL_FAILURE_CODES: FailureCode[] = [
-  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "T04", "S01", "S02", "S03", "L01", "P01",
+  "V01", "V02", "V03", "V04",
+  "T01", "T02", "T03", "T04",
+  "C01", "A01", "A02", "A03", "A04",
+  "S01", "S02", "S03",
+  "L01", "P01",
 ];
+
+/** Codes that are informational only — they should not count against the
+ *  transcript reliability score. */
+export const SOFT_FAILURE_CODES: FailureCode[] = ["T04", "C01"];
 
 export type BenchmarkMode = "quick" | "full";
 
@@ -555,8 +576,20 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         // Prefer the structured errorType attached by fetchTranscript when present.
         if (errorType === "rate_limited" || low.includes("too many requests") || low.includes("429") || low.includes("captcha")) {
           failure_code = "T04";
+        } else if (errorType === "asr_timeout") {
+          // Captions unavailable AND ASR provider timed out.
+          failure_code = "A03";
+        } else if (errorType === "asr_empty") {
+          // Captions unavailable AND ASR returned no segments.
+          failure_code = "A04";
+        } else if (errorType === "asr_failed") {
+          // Captions unavailable AND ASR provider failed (HTTP error / bad JSON / no key).
+          failure_code = "A01";
         } else if (errorType === "captions_disabled" || errorType === "not_found" || low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
-          failure_code = "T01";
+          // YouTube reported no captions and we have no further info — treat
+          // as a hard transcript failure since ASR wasn't reached or didn't
+          // surface its own error.
+          failure_code = "A01";
         } else if (errorType === "network" || low.includes("timeout") || low.includes("network")) {
           failure_code = "V02";
         } else {
