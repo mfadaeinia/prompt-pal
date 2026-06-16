@@ -1512,7 +1512,7 @@ function Index() {
                           </span>
                         )}
                         {transcriptSource && (
-                          <SourceBadge source={transcriptSource} />
+                          <SourceBadge source={transcriptSource} cachedFrom={cachedFromProvider} />
                         )}
                       </div>
                     </div>
