@@ -1068,11 +1068,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     // All layers failed — surface a single friendly message.
     // Prefer the ASR-specific error type so the benchmark can distinguish
     // A01/A03/A04 from a YouTube-only failure (C01).
-    let errorType: TranscriptErrorType;
-    if (asr.reason === "asr_timeout") errorType = "asr_timeout";
-    else if (asr.reason === "asr_empty") errorType = "asr_empty";
-    else if (asr.reason === "asr_failed") errorType = "asr_failed";
-    else errorType = classifyError(lastErr);
+    const errorType: TranscriptErrorType = classifyError(lastErr);
+
 
     console.error("[transcript-debug] ALL LAYERS FAILED", {
       videoId,
