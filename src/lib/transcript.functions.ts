@@ -102,6 +102,48 @@ export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSe
   return buildSentencesFromChunks(chunks);
 }
 
+/**
+ * Convert Whisper-style word-level timestamps into clickable sentence units.
+ *
+ * Each AsrWord becomes a 1-word RawChunk (offset = word.start, duration = end - start).
+ * The existing deterministic segmenter (`buildSentencesFromChunks`) then groups
+ * words by punctuation, timing gaps, capitalization, and max-word heuristics.
+ *
+ * Guarantees:
+ *   - Every sentence's `offset` traces back to a real word.start (no invented times).
+ *   - Every sentence's `endTime` traces back to a real word.end.
+ *   - No paraphrase/hallucination: text is concatenated verbatim from words[].
+ *   - Sentences are sorted by offset; ids reassigned 0..n-1.
+ *
+ * Invalid words (NaN, end <= start, empty text) are dropped silently.
+ */
+export function buildSentencesFromAsrWords(words: AsrWord[]): TranscriptSentence[] {
+  if (!Array.isArray(words) || words.length === 0) return [];
+
+  const chunks: RawChunk[] = [];
+  for (const w of words) {
+    if (!w || typeof w.text !== "string") continue;
+    const text = w.text.trim();
+    if (!text) continue;
+    const start = Number(w.start);
+    const end = Number(w.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+    if (end <= start) continue;
+    chunks.push({ text, offset: start, duration: end - start });
+  }
+
+  if (chunks.length === 0) return [];
+  chunks.sort((a, b) => a.offset - b.offset);
+
+  const sentences = buildSentencesFromChunks(chunks);
+  return sentences.map((s, i) => ({ ...s, id: i }));
+}
+
+/** Convenience wrapper: build sentences directly from an AsrResult. */
+export function buildSentencesFromAsrResult(asr: AsrResult): TranscriptSentence[] {
+  return buildSentencesFromAsrWords(asr.words);
+}
+
 function classifyError(err: unknown): TranscriptErrorType {
   const msg = (err instanceof Error ? err.message : String(err || "")).toLowerCase();
   if (
