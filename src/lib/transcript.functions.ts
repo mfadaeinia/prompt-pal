@@ -993,6 +993,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: asr.language,
         cacheHit: false,
         quality,
+        providerTrace,
       };
     }
 
