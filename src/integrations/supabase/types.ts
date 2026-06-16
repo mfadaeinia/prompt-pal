@@ -92,15 +92,22 @@ export type Database = {
           download_status: string | null
           error_message: string | null
           failure_code: string | null
+          giant_sentence_pct: number | null
           http_status_code: number | null
           id: string
           longest_sentence_words: number
+          median_gap_seconds: number | null
           pipeline_logs: Json | null
           processing_time_ms: number
+          punctuation_coverage_pct: number | null
           quality_rating: string
           quality_reason: string | null
           run_id: string
           sentence_count: number
+          sentence_preview: Json | null
+          sentence_quality_rating: string | null
+          sentence_quality_reason: string | null
+          short_fragment_pct: number | null
           transcript_found: boolean
           transcript_generated: boolean | null
           transcript_length_chars: number | null
@@ -121,15 +128,22 @@ export type Database = {
           download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          giant_sentence_pct?: number | null
           http_status_code?: number | null
           id?: string
           longest_sentence_words?: number
+          median_gap_seconds?: number | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
+          punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
           run_id: string
           sentence_count?: number
+          sentence_preview?: Json | null
+          sentence_quality_rating?: string | null
+          sentence_quality_reason?: string | null
+          short_fragment_pct?: number | null
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null
@@ -150,15 +164,22 @@ export type Database = {
           download_status?: string | null
           error_message?: string | null
           failure_code?: string | null
+          giant_sentence_pct?: number | null
           http_status_code?: number | null
           id?: string
           longest_sentence_words?: number
+          median_gap_seconds?: number | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
+          punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
           run_id?: string
           sentence_count?: number
+          sentence_preview?: Json | null
+          sentence_quality_rating?: string | null
+          sentence_quality_reason?: string | null
+          short_fragment_pct?: number | null
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null
