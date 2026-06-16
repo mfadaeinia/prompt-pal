@@ -32,16 +32,21 @@ export type TranscriptSource = "cache" | "youtube" | "fallback" | "asr" | "manua
 
 export type TranscriptQuality = "high" | "medium" | "low";
 
-export type TranscriptQualityReport = {
-  quality: TranscriptQuality;
-  reasons: string[];
-  metrics: {
-    sentenceCount: number;
-    avgWordsPerSentence: number;
-    shortFragmentRatio: number;
-    hasPunctuationInRaw: boolean;
-  };
+export type AsrWord = {
+  text: string;
+  start: number; // seconds
+  end: number;   // seconds
 };
+
+export type AsrResult = {
+  /** Detected language code (e.g. "en", "nl") */
+  language: string;
+  /** Word-level timestamps — required. Sentences are built from these. */
+  words: AsrWord[];
+  /** Raw provider segments kept only for debugging */
+  rawSegments?: unknown;
+};
+
 
 export type AsrTrace = {
   invoked: boolean;
