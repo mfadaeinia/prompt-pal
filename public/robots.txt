@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /founder
+
+Sitemap: https://native-lens.lovable.app/sitemap.xml

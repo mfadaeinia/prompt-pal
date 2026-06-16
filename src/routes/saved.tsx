@@ -22,6 +22,14 @@ export const Route = createFileRoute("/saved")({
         content:
           "Your personal collection of useful sentences and expressions saved from videos.",
       },
+      { property: "og:title", content: "My Expressions — NativeFlow" },
+      { property: "og:description", content: "Your personal collection of useful sentences and expressions saved from videos." },
+      { property: "og:url", content: "https://native-lens.lovable.app/saved" },
+      { name: "twitter:title", content: "My Expressions — NativeFlow" },
+      { name: "twitter:description", content: "Your personal collection of useful sentences and expressions saved from videos." },
+    ],
+    links: [
+      { rel: "canonical", href: "https://native-lens.lovable.app/saved" },
     ],
   }),
   component: SavedPage,
