@@ -835,7 +835,7 @@ function UpdateGoldenDatasetModal({
           <div className="flex items-center gap-2">
             <input
               type="file"
-              accept=".json,.txt,.csv"
+              accept=".json,.txt,.csv,.xlsx,.xls"
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) onFile(f);
