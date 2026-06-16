@@ -10,9 +10,10 @@ export type FailureCode =
   | "V03" // Empty video file / zero-byte response
   | "V04" // Unsupported format / non-video URL
   // Transcript failures (after successful URL access)
-  | "T01" // No transcript after successful processing
+  | "T01" // No transcript after successful processing (captions not available)
   | "T02" // Empty transcript
   | "T03" // Transcript too short
+  | "T04" // Provider blocked / rate-limited (transient — not a real failure)
   // Sentence-builder failures
   | "S01" // Too few sentences
   | "S02" // Giant merged sentence (>100 words in any one)
@@ -27,9 +28,10 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
   V02: "V02 — Download / probe timeout",
   V03: "V03 — Empty video file",
   V04: "V04 — Unsupported format",
-  T01: "T01 — No transcript after processing",
+  T01: "T01 — No captions available",
   T02: "T02 — Empty transcript",
   T03: "T03 — Transcript too short",
+  T04: "T04 — Provider rate-limited (transient)",
   S01: "S01 — Too few sentences",
   S02: "S02 — Giant merged sentence",
   S03: "S03 — Missing sentence boundaries",
@@ -38,7 +40,7 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
 };
 
 export const ALL_FAILURE_CODES: FailureCode[] = [
-  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "S01", "S02", "S03", "L01", "P01",
+  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "T04", "S01", "S02", "S03", "L01", "P01",
 ];
 
 export type BenchmarkMode = "quick" | "full";
@@ -405,7 +407,7 @@ export const startBenchmarkRun = createServerFn({ method: "POST" })
 /** Step 2 — process ONE video and insert its result row. */
 export const processBenchmarkVideo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ProcessInput.parse(d))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
+  .handler(async ({ data }): Promise<{ ok: true; rateLimited: boolean }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchTranscript } = await import("@/lib/transcript.functions");
     const { explainSentence } = await import("@/lib/explain.functions");
@@ -547,18 +549,21 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        const errorType = (e as { errorType?: string } | null)?.errorType;
         error_message = msg;
         const low = msg.toLowerCase();
-        // URL probe said OK but transcript can't be retrieved → granular T01
-        if (low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
+        // Prefer the structured errorType attached by fetchTranscript when present.
+        if (errorType === "rate_limited" || low.includes("too many requests") || low.includes("429") || low.includes("captcha")) {
+          failure_code = "T04";
+        } else if (errorType === "captions_disabled" || errorType === "not_found" || low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
           failure_code = "T01";
-        } else if (low.includes("timeout") || low.includes("network")) {
+        } else if (errorType === "network" || low.includes("timeout") || low.includes("network")) {
           failure_code = "V02";
         } else {
           failure_code = "P01";
         }
         download_status = "Failed";
-        log({ step: "transcript_fetch", ok: false, detail: msg });
+        log({ step: "transcript_fetch", ok: false, detail: `[${errorType ?? "?"}] ${msg}` });
       }
     }
 
@@ -602,7 +607,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
       } as any);
     if (insErr) throw new Error(insErr.message);
 
-    return { ok: true };
+    return { ok: true, rateLimited: failure_code === "T04" };
   });
 
 /** Step 3 — aggregate result rows into the run row, mark completed. */
