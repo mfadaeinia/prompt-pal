@@ -789,6 +789,17 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
                 />
               </div>
             )}
+
+            {row.ai_repair_used && row.repair_diagnostics && (
+              <RepairValidationPanel
+                accepted={!!row.ai_repair_success}
+                reason={row.repair_reason ?? null}
+                validationError={row.repair_diagnostics.validationError ?? null}
+                httpStatus={row.repair_diagnostics.aiHttpStatus ?? null}
+                rawChunks={row.repair_diagnostics.rawChunksPreview ?? []}
+                repaired={row.repair_diagnostics.repairedPreview ?? null}
+              />
+            )}
           </>
         )}
 
