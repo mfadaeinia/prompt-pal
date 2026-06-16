@@ -674,7 +674,7 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
     console.warn("[transcript] cache read error", error.message);
     return null;
   }
-  const rows = (data ?? []) as CacheRow[];
+  const rows = (data ?? []) as unknown as CacheRow[];
   if (!rows.length) return null;
   if (requestedLanguage === "_any_") return rows[0];
   const match = rows.find(
