@@ -1253,8 +1253,9 @@ export const saveManualTranscript = createServerFn({ method: "POST" })
       videoId,
       videoUrl: data.url,
       chunks,
-      language: null,
-      source: "manual",
+      requestedLanguage: "_any_",
+      provider: "manual",
+      providerResponseLanguage: null,
     });
     logEvent({ video_id: videoId, fetch_source: "manual", success: true });
     const quality = assessQuality(chunks, sentences);
