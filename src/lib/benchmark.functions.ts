@@ -761,6 +761,13 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_length_chars,
         translation_generated,
         pipeline_logs: logs as any,
+        short_fragment_pct: sentenceShortPct,
+        giant_sentence_pct: sentenceGiantPct,
+        punctuation_coverage_pct: sentencePunctPct,
+        median_gap_seconds: sentenceMedianGap,
+        sentence_quality_rating: transcript_found ? sentenceQualityRating : null,
+        sentence_quality_reason: transcript_found ? sentenceQualityReason : null,
+        sentence_preview: sentencePreview as any,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
