@@ -77,7 +77,11 @@ export type TranscriptErrorType =
   | "asr_empty"
   | "unknown";
 
-type RawChunk = { text: string; offset: number; duration: number };
+export type RawChunk = { text: string; offset: number; duration: number };
+
+export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSentence[] {
+  return buildSentencesFromChunks(chunks);
+}
 
 function classifyError(err: unknown): TranscriptErrorType {
   const msg = (err instanceof Error ? err.message : String(err || "")).toLowerCase();
