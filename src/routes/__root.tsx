@@ -146,6 +146,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
+    import("../lib/tester").then(({ captureTesterRefFromUrl }) => {
+      captureTesterRefFromUrl();
+    });
     import("../lib/analytics").then(({ initAnalytics, track }) => {
       initAnalytics();
       track("page_view", { path: window.location.pathname });
