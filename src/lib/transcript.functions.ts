@@ -57,6 +57,9 @@ export type TranscriptErrorType =
   | "captions_disabled"
   | "not_found"
   | "network"
+  | "asr_failed"
+  | "asr_timeout"
+  | "asr_empty"
   | "unknown";
 
 type RawChunk = { text: string; offset: number; duration: number };
