@@ -56,8 +56,28 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "NativeFlow — Learn languages from YouTube" },
       { property: "og:description", content: "Turn any YouTube video into an interactive language lesson." },
+      { property: "og:url", content: "https://native-lens.lovable.app/" },
       { name: "twitter:title", content: "NativeFlow — Learn languages from YouTube" },
       { name: "twitter:description", content: "Turn any YouTube video into an interactive language lesson." },
+    ],
+    links: [
+      { rel: "canonical", href: "https://native-lens.lovable.app/" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "NativeFlow",
+          applicationCategory: "EducationApplication",
+          operatingSystem: "Web",
+          url: "https://native-lens.lovable.app/",
+          description:
+            "Turn any YouTube video into an interactive language lesson with sentence-level translations and explanations.",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
+      },
     ],
   }),
   component: Index,
