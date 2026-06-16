@@ -809,7 +809,10 @@ export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
         r.transcript_found && r.sentence_count >= 5 && !["S01", "S02", "S03"].includes(r.failure_code ?? "");
       if (sentenceBuilt) sentenceOk += 1;
       if (r.translation_success) translationOk += 1;
-      if (sentenceBuilt && r.translation_success && r.quality_rating === "high") pipelineOk += 1;
+      // Pipeline success = transcript + sentence units + translation.
+      // Sentence UX quality (high/medium/low) is reported separately and
+      // does NOT mark the pipeline as failed.
+      if (r.transcript_found && sentenceBuilt && r.translation_success) pipelineOk += 1;
     }
 
     const pct = (n: number) => Number(((n / total) * 100).toFixed(2));
