@@ -628,6 +628,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
     let lastErr: unknown = null;
+    let blocked = false;
     const langCandidates = ["nl", "nl-NL", "en", "en-US", "en-GB", undefined];
     for (const lang of langCandidates) {
       try {
@@ -650,11 +651,23 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         }
       } catch (e) {
         lastErr = e;
+        const cls = classifyError(e);
         console.warn("[transcript-debug] youtube-transcript error", {
           lang: lang ?? "default",
+          classified: cls,
           message: e instanceof Error ? e.message : String(e),
         });
+        // If YouTube is blocking/throttling us, every other lang attempt will
+        // also fail and just burn quota. Bail out and let the fallback provider
+        // handle it.
+        if (cls === "rate_limited") {
+          blocked = true;
+          break;
+        }
       }
+    }
+    if (blocked) {
+      console.warn("[transcript-debug] youtube blocked — skipping remaining langs, going to fallback");
     }
 
     if (raw && raw.length) {
