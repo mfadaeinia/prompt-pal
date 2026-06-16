@@ -72,14 +72,30 @@ export type ProviderTrace = {
   asr: AsrTrace;
 };
 
+export type CacheProvenance = {
+  cacheKey: string;
+  videoId: string;
+  requestedLanguage: string;
+  provider: string; // "youtube" | "fallback" | "manual" | (legacy "unknown")
+  providerResponseLanguage: string | null;
+  sourceVersion: number;
+  transcriptLengthChars: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
   source: TranscriptSource;
+  /** When source==="cache", which provider produced the cached row. */
+  cachedFromProvider?: string | null;
   language?: string | null;
   cacheHit: boolean;
   quality: TranscriptQualityReport;
   providerTrace?: ProviderTrace;
+  /** Full provenance for the row we returned (cache hit OR newly written). */
+  provenance?: CacheProvenance | null;
   /** Raw caption chunks before deterministic segmentation. Populated for
    *  all success paths so downstream consumers (benchmark, repair) can
    *  re-segment without a second fetch. */
@@ -94,9 +110,9 @@ export type TranscriptErrorType =
   | "asr_failed"
   | "asr_timeout"
   | "asr_empty"
+  | "validation_failed"
   | "unknown";
 
-export type RawChunk = { text: string; offset: number; duration: number };
 
 export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSentence[] {
   return buildSentencesFromChunks(chunks);
