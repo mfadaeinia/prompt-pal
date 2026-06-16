@@ -616,28 +616,49 @@ export type Database = {
       }
       youtube_transcript_cache: {
         Row: {
+          cache_key: string
           created_at: string
+          id: string
           language: string | null
+          provider: string
+          provider_response_language: string | null
+          requested_language: string
           source: string
+          source_version: number
           transcript_json: Json
+          transcript_length_chars: number | null
           updated_at: string
           video_id: string
           video_url: string
         }
         Insert: {
+          cache_key: string
           created_at?: string
+          id?: string
           language?: string | null
+          provider?: string
+          provider_response_language?: string | null
+          requested_language?: string
           source?: string
+          source_version?: number
           transcript_json: Json
+          transcript_length_chars?: number | null
           updated_at?: string
           video_id: string
           video_url: string
         }
         Update: {
+          cache_key?: string
           created_at?: string
+          id?: string
           language?: string | null
+          provider?: string
+          provider_response_language?: string | null
+          requested_language?: string
           source?: string
+          source_version?: number
           transcript_json?: Json
+          transcript_length_chars?: number | null
           updated_at?: string
           video_id?: string
           video_url?: string
