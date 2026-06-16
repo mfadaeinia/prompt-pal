@@ -306,6 +306,50 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
   );
 }
 
+function TranscriptSourceMetrics({ results, total }: { results: BenchmarkResultRow[]; total: number }) {
+  const m = useMemo(() => {
+    const denom = Math.max(1, total);
+    const youtube = results.filter((r) => r.transcript_source === "youtube").length;
+    const cache = results.filter((r) => r.transcript_source === "cache").length;
+    const asr = results.filter((r) => r.transcript_source === "asr").length;
+    const fallback = results.filter((r) => r.transcript_source === "fallback").length;
+    const found = results.filter((r) => r.transcript_found).length;
+    // Caption availability = videos where YouTube (or its scraping fallback) produced captions.
+    const captionAvailable = youtube + cache + fallback;
+    // ASR was attempted whenever captions weren't available AND we have a recorded result.
+    const asrAttempted = results.length - captionAvailable;
+    const asrSuccess = asr;
+    return {
+      captionAvailabilityPct: Number(((captionAvailable / denom) * 100).toFixed(1)),
+      captionLabel: `${captionAvailable}/${total}`,
+      asrSuccessPct: asrAttempted > 0 ? Number(((asrSuccess / asrAttempted) * 100).toFixed(1)) : 0,
+      asrLabel: asrAttempted > 0 ? `${asrSuccess}/${asrAttempted}` : "0/0",
+      cacheHitPct: Number(((cache / denom) * 100).toFixed(1)),
+      cacheLabel: `${cache}/${total}`,
+      overallPct: Number(((found / denom) * 100).toFixed(1)),
+      overallLabel: `${found}/${total}`,
+    };
+  }, [results, total]);
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Transcript pipeline breakdown
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Caption availability" value={m.captionAvailabilityPct} target={70} count={m.captionLabel} />
+        <Kpi label="ASR fallback success" value={m.asrSuccessPct} target={80} count={m.asrLabel} />
+        <Kpi label="Cache hit rate" value={m.cacheHitPct} target={0} count={m.cacheLabel} />
+        <Kpi label="Overall transcript success" value={m.overallPct} target={95} count={m.overallLabel} />
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">
+        Caption availability = YouTube + cache + scrape. ASR success = % of caption-less videos rescued by Gemini ASR.
+      </p>
+    </div>
+  );
+}
+
+
 function SummaryInsights({ results, health }: { results: BenchmarkResultRow[]; health: DatasetHealth | null }) {
   const insights = useMemo(() => {
     const out: string[] = [];
