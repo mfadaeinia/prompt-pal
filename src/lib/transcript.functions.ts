@@ -509,15 +509,29 @@ async function recordTranscriptReport(params: {
 //   body:    { video_id }
 //   resp:    { transcript: [{text, start, duration}], language, ... }
 // ---------------------------------------------------------------------------
+export type TranscribrTrace = {
+  invoked: boolean;
+  httpStatus: number | null;
+  errorMessage: string | null;
+  rawSegments: number;
+  keptSegments: number;
+  discardedReason: string | null;
+};
+
 async function fetchFromFallbackProvider(params: {
   videoId: string;
   videoUrl: string;
+  trace: TranscribrTrace;
 }): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
+  const { trace } = params;
   const apiKey = process.env.TRANSCRIBR_API_KEY;
   if (!apiKey) {
+    trace.invoked = false;
+    trace.errorMessage = "TRANSCRIBR_API_KEY missing";
     console.warn("[transcript-debug] TRANSCRIBR_API_KEY missing — skipping fallback");
     return null;
   }
+  trace.invoked = true;
 
   try {
     const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
@@ -529,37 +543,43 @@ async function fetchFromFallbackProvider(params: {
       },
       body: JSON.stringify({ video_id: params.videoId }),
     });
-    console.log("[transcript-debug] Transcribr HTTP", {
-      status: res.status,
-      ok: res.ok,
-    });
+    trace.httpStatus = res.status;
+    console.log("[transcript-debug] Transcribr HTTP", { status: res.status, ok: res.ok });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
       console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
       return null;
     }
     const json: any = await res.json();
-    const transcript: any[] = Array.isArray(json?.transcript)
-      ? json.transcript
-      : [];
+    const transcript: any[] = Array.isArray(json?.transcript) ? json.transcript : [];
+    trace.rawSegments = transcript.length;
     console.log("[transcript-debug] Transcribr response", {
       transcript_items: transcript.length,
       language: json?.language ?? null,
       top_level_keys: json && typeof json === "object" ? Object.keys(json) : [],
     });
-    if (!transcript.length) return null;
+    if (!transcript.length) {
+      trace.discardedReason = "empty_transcript_array";
+      return null;
+    }
     const chunks: RawChunk[] = transcript
       .map((c) => ({
         text: String(c.text ?? ""),
-        // Transcribr returns seconds already.
         offset: Number(c.start ?? 0),
         duration: Number(c.duration ?? 0),
       }))
       .filter((c) => c.text.length > 0);
-    if (!chunks.length) return null;
+    trace.keptSegments = chunks.length;
+    if (!chunks.length) {
+      trace.discardedReason = "all_segments_blank_after_filter";
+      return null;
+    }
     return { chunks, language: json?.language ?? null };
   } catch (e) {
-    console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
+    const msg = e instanceof Error ? e.message : String(e);
+    trace.errorMessage = msg;
+    console.warn("[transcript-debug] Transcribr fetch threw", msg);
     return null;
   }
 }
