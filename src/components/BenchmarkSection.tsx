@@ -692,6 +692,348 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
   );
 }
 
+// ---------- Quality breakdown / explainability ----------
+
+function ScoreBar({ label, value }: { label: string; value: number }) {
+  const color =
+    value >= 80 ? "bg-green-500" : value >= 60 ? "bg-amber-500" : "bg-red-500";
+  const text =
+    value >= 80 ? "text-green-700" : value >= 60 ? "text-amber-700" : "text-red-700";
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <div className="w-24 text-slate-600">{label}</div>
+      <div className="h-2 flex-1 overflow-hidden rounded bg-slate-100">
+        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
+      </div>
+      <div className={`w-10 text-right font-semibold tabular-nums ${text}`}>{value}</div>
+    </div>
+  );
+}
+
+function ScoreBreakdownBlock({ row }: { row: BenchmarkResultRow }) {
+  const s = computeScores(row);
+  const reasons = triggeredReasons(row);
+  return (
+    <div className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
+      <ScoreBar label="Transcript" value={s.transcript} />
+      <ScoreBar label="Sentences" value={s.sentences} />
+      <ScoreBar label="Translation" value={s.translation} />
+      <ScoreBar label="Quality" value={s.quality} />
+      <div className="border-t border-slate-200 pt-2">
+        <ScoreBar label="Pipeline" value={s.pipeline} />
+        <div className="mt-1 text-[10px] text-slate-500">
+          Band: <strong>{pipelineBand(s.pipeline).toUpperCase()}</strong>
+        </div>
+      </div>
+      {reasons.length > 0 && (
+        <div className="mt-2 border-t border-slate-200 pt-2">
+          <div className="mb-1 text-[10px] font-semibold uppercase text-slate-500">
+            Why this isn't High
+          </div>
+          <ul className="space-y-0.5 text-[11px] text-amber-800">
+            {reasons.map((c) => (
+              <li key={c}>• {REASON_LABELS[c]}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AutoObservations({ results }: { results: BenchmarkResultRow[] }) {
+  const obs = useMemo(() => generateObservations(results), [results]);
+  if (!obs.length) return null;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Failure Analysis Insights
+      </h3>
+      <ul className="space-y-1 rounded-lg border border-indigo-200 bg-indigo-50 p-4 text-xs text-indigo-900">
+        {obs.map((o, i) => (
+          <li key={i}>• {o}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function QualityDistribution({ results }: { results: BenchmarkResultRow[] }) {
+  const { bands, total } = useMemo(() => {
+    const bands = { high: 0, medium: 0, low: 0 };
+    let total = 0;
+    for (const r of results) {
+      if (!r.transcript_found) continue;
+      total += 1;
+      const b = pipelineBand(computeScores(r).pipeline);
+      bands[b] += 1;
+    }
+    return { bands, total };
+  }, [results]);
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+  if (!total) return null;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Quality Distribution
+      </h3>
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="flex h-3 w-full overflow-hidden rounded bg-slate-100">
+          <div className="bg-green-500" style={{ width: `${pct(bands.high)}%` }} />
+          <div className="bg-amber-500" style={{ width: `${pct(bands.medium)}%` }} />
+          <div className="bg-red-500" style={{ width: `${pct(bands.low)}%` }} />
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+          <div>
+            <span className="inline-block h-2 w-2 rounded-full bg-green-500" />{" "}
+            High: <strong>{bands.high}</strong> ({pct(bands.high)}%)
+          </div>
+          <div>
+            <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />{" "}
+            Medium: <strong>{bands.medium}</strong> ({pct(bands.medium)}%)
+          </div>
+          <div>
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500" />{" "}
+            Low: <strong>{bands.low}</strong> ({pct(bands.low)}%)
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SourceAnalysis({ results }: { results: BenchmarkResultRow[] }) {
+  const stats = useMemo(() => aggregateBySource(results), [results]);
+  if (!stats.length) return null;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Source Analysis
+      </h3>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-50 text-left text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Source</th>
+              <th className="px-3 py-2">Videos</th>
+              <th className="px-3 py-2">Success</th>
+              <th className="px-3 py-2">Avg Quality</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats.map((s) => (
+              <tr key={s.source} className="border-t border-slate-100">
+                <td className="px-3 py-1.5 font-medium">{SOURCE_LABELS[s.source]}</td>
+                <td className="px-3 py-1.5 tabular-nums">{s.total}</td>
+                <td className="px-3 py-1.5 tabular-nums">
+                  {s.successPct}% <span className="text-slate-400">({s.success}/{s.total})</span>
+                </td>
+                <td
+                  className={`px-3 py-1.5 font-semibold tabular-nums ${
+                    s.avgQuality >= 80
+                      ? "text-green-700"
+                      : s.avgQuality >= 60
+                        ? "text-amber-700"
+                        : "text-red-700"
+                  }`}
+                >
+                  {s.avgQuality}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function QualityThresholds() {
+  const t = SCORE_THRESHOLDS;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Quality Thresholds (rules used)
+      </h3>
+      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 text-xs sm:grid-cols-2">
+        <div>
+          <div className="font-semibold text-slate-700">Pipeline bands</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>High = Pipeline ≥ {t.pipelineBands.high}</li>
+            <li>Medium = {t.pipelineBands.medium}–{t.pipelineBands.high - 1}</li>
+            <li>Low = &lt; {t.pipelineBands.medium}</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-slate-700">Pipeline weights</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>Transcript {Math.round(SCORE_WEIGHTS.transcript * 100)}%</li>
+            <li>Sentences {Math.round(SCORE_WEIGHTS.sentences * 100)}%</li>
+            <li>Translation {Math.round(SCORE_WEIGHTS.translation * 100)}%</li>
+            <li>Quality {Math.round(SCORE_WEIGHTS.quality * 100)}%</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-slate-700">Transcript score</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>0 at &lt; {t.transcript.minWords} words → 100 at ≥ {t.transcript.goodWords} words</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-slate-700">Sentence score</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>Count: 5 → {t.sentences.goodCount} sentences</li>
+            <li>Avg length sweet-spot: {t.sentences.avgMin}–{t.sentences.avgMax} words</li>
+            <li>Longest penalty above {t.sentences.longestSoftMax}; 0 above {t.sentences.longestHardMax}</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-slate-700">Quality score</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>Coverage {t.quality.minCoverage}% → {t.quality.goodCoverage}% (60% of quality)</li>
+            <li>Boundary cleanliness from longest-sentence length (40%)</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-slate-700">Translation</div>
+          <ul className="mt-1 space-y-0.5 text-slate-600">
+            <li>100 if sample translation succeeded, else 0</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type SortKey =
+  | "title"
+  | "pipeline"
+  | "transcript"
+  | "sentences"
+  | "translation"
+  | "quality"
+  | "words"
+  | "sentcount";
+
+function ScoredResultsTable({
+  results,
+  onOpen,
+}: {
+  results: BenchmarkResultRow[];
+  onOpen: (r: BenchmarkResultRow) => void;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>("pipeline");
+  const [asc, setAsc] = useState(false);
+
+  const rows = useMemo(() => {
+    const enriched = results.map((r) => ({ r, s: computeScores(r), reasons: triggeredReasons(r) }));
+    enriched.sort((a, b) => {
+      const get = (x: typeof a) => {
+        switch (sortKey) {
+          case "title":
+            return (x.r.video_title ?? x.r.video_id_ext ?? "").toLowerCase();
+          case "pipeline":
+            return x.s.pipeline;
+          case "transcript":
+            return x.s.transcript;
+          case "sentences":
+            return x.s.sentences;
+          case "translation":
+            return x.s.translation;
+          case "quality":
+            return x.s.quality;
+          case "words":
+            return x.r.transcript_word_count ?? 0;
+          case "sentcount":
+            return x.r.sentence_count ?? 0;
+        }
+      };
+      const av = get(a);
+      const bv = get(b);
+      if (av === bv) return 0;
+      return (av < bv ? -1 : 1) * (asc ? 1 : -1);
+    });
+    return enriched;
+  }, [results, sortKey, asc]);
+
+  if (!results.length) return null;
+
+  const Th = ({ k, label }: { k: SortKey; label: string }) => (
+    <th
+      className="cursor-pointer select-none px-2 py-2 hover:text-slate-900"
+      onClick={() => {
+        if (sortKey === k) setAsc(!asc);
+        else {
+          setSortKey(k);
+          setAsc(false);
+        }
+      }}
+    >
+      {label} {sortKey === k ? (asc ? "▲" : "▼") : ""}
+    </th>
+  );
+
+  const cellColor = (v: number) =>
+    v >= 80 ? "text-green-700" : v >= 60 ? "text-amber-700" : "text-red-700";
+
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Per-video Quality Breakdown{" "}
+        <span className="font-normal normal-case text-slate-400">
+          (click headers to sort, row for details)
+        </span>
+      </h3>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-50 text-left text-slate-500">
+            <tr>
+              <Th k="title" label="Video" />
+              <th className="px-2 py-2">Source</th>
+              <Th k="words" label="Words" />
+              <Th k="sentcount" label="Sent." />
+              <Th k="transcript" label="Transcript" />
+              <Th k="sentences" label="Sentences" />
+              <Th k="translation" label="Translation" />
+              <Th k="quality" label="Quality" />
+              <Th k="pipeline" label="Pipeline" />
+              <th className="px-2 py-2">Why not High</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ r, s, reasons }) => (
+              <tr
+                key={r.id}
+                className="cursor-pointer border-t border-slate-100 hover:bg-slate-50"
+                onClick={() => onOpen(r)}
+              >
+                <td className="max-w-[16rem] truncate px-2 py-1" title={r.video_title ?? ""}>
+                  {r.video_title ?? r.video_id_ext ?? "—"}
+                </td>
+                <td className="px-2 py-1 text-slate-600">{r.transcript_source ?? "—"}</td>
+                <td className="px-2 py-1 tabular-nums">{r.transcript_word_count ?? 0}</td>
+                <td className="px-2 py-1 tabular-nums">{r.sentence_count ?? 0}</td>
+                <td className={`px-2 py-1 font-semibold tabular-nums ${cellColor(s.transcript)}`}>{s.transcript}</td>
+                <td className={`px-2 py-1 font-semibold tabular-nums ${cellColor(s.sentences)}`}>{s.sentences}</td>
+                <td className={`px-2 py-1 font-semibold tabular-nums ${cellColor(s.translation)}`}>{s.translation}</td>
+                <td className={`px-2 py-1 font-semibold tabular-nums ${cellColor(s.quality)}`}>{s.quality}</td>
+                <td className={`px-2 py-1 font-bold tabular-nums ${cellColor(s.pipeline)}`}>{s.pipeline}</td>
+                <td className="px-2 py-1 text-[11px] text-amber-700">
+                  {reasons.length === 0 ? (
+                    <span className="text-green-700">—</span>
+                  ) : (
+                    reasons.map((c) => REASON_LABELS[c]).join(" · ")
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 // ---------- Update Golden Dataset modal ----------
 
 function UpdateGoldenDatasetButton({ onSaved }: { onSaved: () => void }) {
