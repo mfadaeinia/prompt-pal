@@ -7,12 +7,15 @@ import {
   startBenchmarkRun,
   processBenchmarkVideo,
   finalizeBenchmarkRun,
+  upsertBenchmarkVideos,
+  exportBenchmarkVideos,
   FAILURE_LABELS,
   ALL_FAILURE_CODES,
   type FailureCode,
   type LatestBenchmark,
   type BenchmarkResultRow,
   type DatasetHealth,
+  type UpsertBenchmarkResult,
 } from "@/lib/benchmark.functions";
 
 const CATEGORIES = ["TED", "Podcast", "Interview", "Educational", "News"];
@@ -117,6 +120,10 @@ export function BenchmarkSection() {
           >
             {healthQ.isFetching ? "Probing…" : "Check Dataset Health"}
           </button>
+          <UpdateGoldenDatasetButton onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+            qc.invalidateQueries({ queryKey: ["benchmark-health"] });
+          }} />
           <button
             disabled={running}
             onClick={() => mut.mutate("quick")}
@@ -645,6 +652,202 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
             </pre>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Update Golden Dataset modal ----------
+
+function UpdateGoldenDatasetButton({ onSaved }: { onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+      >
+        Update Golden Dataset
+      </button>
+      {open && (
+        <UpdateGoldenDatasetModal
+          onClose={() => setOpen(false)}
+          onSaved={() => {
+            onSaved();
+            setOpen(false);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+type ParsedEntry = {
+  youtube_url: string;
+  video_id?: string;
+  title?: string | null;
+  category?: string | null;
+  difficulty?: string | null;
+  language?: string | null;
+  active?: boolean;
+  notes?: string | null;
+};
+
+function parseDatasetPayload(input: string): ParsedEntry[] {
+  const trimmed = input.trim();
+  if (!trimmed) throw new Error("Paste a JSON array or one YouTube URL per line.");
+
+  // Try JSON first.
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    const parsed = JSON.parse(trimmed);
+    const arr = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.videos) ? parsed.videos : null;
+    if (!arr) throw new Error("JSON must be an array, or an object with a `videos` array.");
+    return arr.map((row: unknown, i: number) => {
+      if (typeof row === "string") return { youtube_url: row };
+      if (!row || typeof row !== "object" || typeof (row as ParsedEntry).youtube_url !== "string") {
+        throw new Error(`Row ${i + 1}: missing "youtube_url" string.`);
+      }
+      return row as ParsedEntry;
+    });
+  }
+
+  // Otherwise treat as one URL per line.
+  return trimmed
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("#"))
+    .map((youtube_url) => ({ youtube_url }));
+}
+
+function UpdateGoldenDatasetModal({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const upsert = useServerFn(upsertBenchmarkVideos);
+  const exportFn = useServerFn(exportBenchmarkVideos);
+  const [text, setText] = useState("");
+  const [replaceMode, setReplaceMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<UpsertBenchmarkResult | null>(null);
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      const videos = parseDatasetPayload(text);
+      return upsert({ data: { videos, replaceMode } });
+    },
+    onSuccess: (r) => {
+      setResult(r);
+      setError(null);
+      if (r.errors.length === 0) onSaved();
+    },
+    onError: (e) => setError(e instanceof Error ? e.message : String(e)),
+  });
+
+  const onFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => setText(String(reader.result ?? ""));
+    reader.readAsText(file);
+  };
+
+  const downloadCurrent = async () => {
+    try {
+      const { videos } = await exportFn();
+      const blob = new Blob([JSON.stringify(videos, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `benchmark-videos-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-200 p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Update Golden Dataset</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">✕</button>
+        </div>
+        <div className="space-y-3 p-4 text-xs text-slate-700">
+          <p>
+            Paste a JSON array of <code>{`{ youtube_url, title?, category?, difficulty?, language?, active?, notes? }`}</code>{" "}
+            objects, or one YouTube URL per line. Matched on <code>video_id</code> — existing
+            rows are updated, new ones inserted.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept=".json,.txt,.csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onFile(f);
+              }}
+              className="text-xs"
+            />
+            <button
+              onClick={downloadCurrent}
+              className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100"
+            >
+              Download current
+            </button>
+          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={`[\n  { "youtube_url": "https://youtu.be/abc12345678", "category": "TED" },\n  "https://youtu.be/def12345678"\n]`}
+            className="h-64 w-full rounded border border-slate-300 p-2 font-mono text-xs"
+          />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={replaceMode}
+              onChange={(e) => setReplaceMode(e.target.checked)}
+            />
+            <span>
+              Replace mode — deactivate any video <em>not</em> in this payload (no rows
+              deleted).
+            </span>
+          </label>
+          {error && (
+            <div className="rounded border border-red-200 bg-red-50 p-2 text-red-700">{error}</div>
+          )}
+          {result && (
+            <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-800">
+              Inserted {result.inserted} · Updated {result.updated} · Deactivated{" "}
+              {result.deactivated}
+              {result.errors.length > 0 && (
+                <ul className="mt-1 list-disc pl-5 text-red-700">
+                  {result.errors.slice(0, 10).map((e, i) => (
+                    <li key={i}>
+                      {e.youtube_url}: {e.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-slate-200 p-3">
+          <button
+            onClick={onClose}
+            className="rounded border border-slate-300 px-3 py-1.5 text-xs hover:bg-slate-100"
+          >
+            Close
+          </button>
+          <button
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending || !text.trim()}
+            className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            {saveMut.isPending ? "Saving…" : "Save dataset"}
+          </button>
+        </div>
       </div>
     </div>
   );
