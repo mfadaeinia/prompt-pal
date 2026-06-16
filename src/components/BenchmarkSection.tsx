@@ -131,25 +131,34 @@ export function BenchmarkSection() {
           <UpdateGoldenDatasetButton onSaved={() => {
             qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
             qc.invalidateQueries({ queryKey: ["benchmark-health"] });
+            qc.invalidateQueries({ queryKey: ["benchmark-dataset-size"] });
           }} />
-          <button
-            disabled={running}
-            onClick={() => mut.mutate("quick")}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {running && progress?.mode === "quick"
-              ? `Quick ${progress.done}/${progress.total}`
-              : "Run Quick (10)"}
-          </button>
-          <button
-            disabled={running}
-            onClick={() => mut.mutate("full")}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
-          >
-            {running && progress?.mode === "full"
-              ? `Full ${progress.done}/${progress.total}`
-              : "Run Full (200)"}
-          </button>
+          {(() => {
+            const total = sizeQ.data?.total ?? 0;
+            const quickCount = Math.min(10, total || 10);
+            return (
+              <>
+                <button
+                  disabled={running}
+                  onClick={() => mut.mutate("quick")}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {running && progress?.mode === "quick"
+                    ? `Quick ${progress.done}/${progress.total}`
+                    : `Run Quick (${quickCount})`}
+                </button>
+                <button
+                  disabled={running}
+                  onClick={() => mut.mutate("full")}
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                >
+                  {running && progress?.mode === "full"
+                    ? `Full ${progress.done}/${progress.total}`
+                    : `Run Full (${total})`}
+                </button>
+              </>
+            );
+          })()}
           {running && (
             <button
               onClick={() => { cancelRef.current = true; }}
