@@ -140,6 +140,19 @@ export type BenchmarkResultRow = {
     end: number;
     words: number;
   }> | null;
+  // Sentence repair (AI-assisted)
+  deterministic_quality: "high" | "medium" | "low" | null;
+  ai_repair_used: boolean | null;
+  ai_repair_success: boolean | null;
+  final_sentence_quality: "high" | "medium" | "low" | null;
+  repair_reason: string | null;
+  repair_diagnostics: {
+    deterministicPreview?: Array<{ text: string; start: number; end: number; words: number }>;
+    repairedPreview?: Array<{ text: string; start: number; end: number; words: number }> | null;
+    rawChunksPreview?: Array<{ i: number; start: number; end: number; text: string }>;
+    validationError?: string | null;
+    aiHttpStatus?: number | null;
+  } | null;
   // joined
   video_url?: string;
   video_id_ext?: string;
