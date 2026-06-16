@@ -65,6 +65,10 @@ export type FetchTranscriptResult = {
   cacheHit: boolean;
   quality: TranscriptQualityReport;
   providerTrace?: ProviderTrace;
+  /** Raw caption chunks before deterministic segmentation. Populated for
+   *  all success paths so downstream consumers (benchmark, repair) can
+   *  re-segment without a second fetch. */
+  rawChunks?: RawChunk[];
 };
 
 export type TranscriptErrorType =
@@ -77,7 +81,11 @@ export type TranscriptErrorType =
   | "asr_empty"
   | "unknown";
 
-type RawChunk = { text: string; offset: number; duration: number };
+export type RawChunk = { text: string; offset: number; duration: number };
+
+export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSentence[] {
+  return buildSentencesFromChunks(chunks);
+}
 
 function classifyError(err: unknown): TranscriptErrorType {
   const msg = (err instanceof Error ? err.message : String(err || "")).toLowerCase();
@@ -880,6 +888,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: cached.language,
         cacheHit: true,
         quality,
+        rawChunks: cached.transcript_json,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
@@ -986,6 +995,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: usedLang,
         cacheHit: false,
         quality,
+        rawChunks: raw,
       };
     }
 
@@ -1037,6 +1047,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: fb.language,
         cacheHit: false,
         quality,
+        rawChunks: fb.chunks,
       };
     }
 
@@ -1082,6 +1093,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         cacheHit: false,
         quality,
         providerTrace,
+        rawChunks: asr.chunks,
       };
     }
 

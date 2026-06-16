@@ -140,6 +140,19 @@ export type BenchmarkResultRow = {
     end: number;
     words: number;
   }> | null;
+  // Sentence repair (AI-assisted)
+  deterministic_quality: "high" | "medium" | "low" | null;
+  ai_repair_used: boolean | null;
+  ai_repair_success: boolean | null;
+  final_sentence_quality: "high" | "medium" | "low" | null;
+  repair_reason: string | null;
+  repair_diagnostics: {
+    deterministicPreview?: Array<{ text: string; start: number; end: number; words: number }>;
+    repairedPreview?: Array<{ text: string; start: number; end: number; words: number }> | null;
+    rawChunksPreview?: Array<{ i: number; start: number; end: number; text: string }>;
+    validationError?: string | null;
+    aiHttpStatus?: number | null;
+  } | null;
   // joined
   video_url?: string;
   video_id_ext?: string;
@@ -500,6 +513,14 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let sentenceQualityRating: "high" | "medium" | "low" = "low";
     let sentenceQualityReason: string | null = null;
 
+    // Sentence repair (AI-assisted) diagnostics
+    let deterministic_quality: "high" | "medium" | "low" | null = null;
+    let ai_repair_used = false;
+    let ai_repair_success = false;
+    let final_sentence_quality: "high" | "medium" | "low" | null = null;
+    let repair_reason: string | null = null;
+    let repair_diagnostics: any = null;
+
     // STEP 1 — probe URL accessibility
     try {
       const tProbe = Date.now();
@@ -558,7 +579,45 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_generated = true;
         transcript_source = tr.source;
         download_status = tr.source === "cache" ? "cache" : "Success";
-        const sentences = tr.sentences ?? [];
+
+        // ---- Sentence repair (deterministic → conditional AI repair) ----
+        let sentences = tr.sentences ?? [];
+        if (tr.rawChunks && tr.rawChunks.length && sentences.length) {
+          try {
+            const { repairSentencesIfNeeded } = await import(
+              "@/lib/sentence-repair.server"
+            );
+            const tRepair = Date.now();
+            const repair = await repairSentencesIfNeeded({
+              chunks: tr.rawChunks,
+              deterministic: sentences,
+            });
+            deterministic_quality = repair.deterministicQuality;
+            ai_repair_used = repair.aiRepairUsed;
+            ai_repair_success = repair.aiRepairSuccess;
+            final_sentence_quality = repair.finalQuality;
+            repair_reason = repair.repairReason;
+            repair_diagnostics = repair.diagnostics;
+            if (repair.finalSource === "ai_repaired") {
+              sentences = repair.final;
+            }
+            log({
+              step: "sentence_repair",
+              ok: true,
+              detail:
+                `det=${repair.deterministicQuality} used=${repair.aiRepairUsed}` +
+                ` success=${repair.aiRepairSuccess} final=${repair.finalQuality}` +
+                ` (${repair.repairReason})`,
+              ms: Date.now() - tRepair,
+            });
+          } catch (e) {
+            log({
+              step: "sentence_repair",
+              ok: false,
+              detail: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
         sentence_count = sentences.length;
 
         const wordsPerSentence = sentences.map((s) => wc(s.text));
@@ -768,6 +827,12 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         sentence_quality_rating: transcript_found ? sentenceQualityRating : null,
         sentence_quality_reason: transcript_found ? sentenceQualityReason : null,
         sentence_preview: sentencePreview as any,
+        deterministic_quality,
+        ai_repair_used,
+        ai_repair_success,
+        final_sentence_quality,
+        repair_reason,
+        repair_diagnostics: repair_diagnostics as any,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
