@@ -561,7 +561,10 @@ async function fetchFromFallbackProvider(params: {
   } catch (e) {
     console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
     return null;
+  }
 }
+
+
 
 
 // ---------------------------------------------------------------------------
