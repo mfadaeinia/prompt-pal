@@ -65,6 +65,10 @@ export type FetchTranscriptResult = {
   cacheHit: boolean;
   quality: TranscriptQualityReport;
   providerTrace?: ProviderTrace;
+  /** Raw caption chunks before deterministic segmentation. Populated for
+   *  all success paths so downstream consumers (benchmark, repair) can
+   *  re-segment without a second fetch. */
+  rawChunks?: RawChunk[];
 };
 
 export type TranscriptErrorType =
