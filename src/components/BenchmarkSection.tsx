@@ -790,6 +790,9 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
               </div>
             )}
           </>
+        )}
+
+
 
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Pipeline Logs</h5>
         <div className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] font-mono">
