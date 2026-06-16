@@ -7,12 +7,15 @@ import {
   startBenchmarkRun,
   processBenchmarkVideo,
   finalizeBenchmarkRun,
+  upsertBenchmarkVideos,
+  exportBenchmarkVideos,
   FAILURE_LABELS,
   ALL_FAILURE_CODES,
   type FailureCode,
   type LatestBenchmark,
   type BenchmarkResultRow,
   type DatasetHealth,
+  type UpsertBenchmarkResult,
 } from "@/lib/benchmark.functions";
 
 const CATEGORIES = ["TED", "Podcast", "Interview", "Educational", "News"];
