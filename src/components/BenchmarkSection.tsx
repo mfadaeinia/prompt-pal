@@ -31,6 +31,7 @@ const TARGETS = {
 export function BenchmarkSection() {
   const fetcher = useServerFn(getLatestBenchmark);
   const healthFetcher = useServerFn(getDatasetHealth);
+  const sizeFetcher = useServerFn(getDatasetSize);
   const starter = useServerFn(startBenchmarkRun);
   const processOne = useServerFn(processBenchmarkVideo);
   const finalize = useServerFn(finalizeBenchmarkRun);
@@ -43,6 +44,12 @@ export function BenchmarkSection() {
     queryKey: ["benchmark-latest"],
     queryFn: () => fetcher(),
     refetchInterval: 15_000,
+  });
+
+  const sizeQ = useQuery({
+    queryKey: ["benchmark-dataset-size"],
+    queryFn: () => sizeFetcher(),
+    refetchInterval: 60_000,
   });
 
   // Lazy-loaded — only triggered by button to avoid hammering YouTube oembed on every refresh
