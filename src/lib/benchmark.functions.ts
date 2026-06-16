@@ -735,3 +735,135 @@ export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ---------------- Golden dataset management ----------------
+
+function extractYoutubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+const GoldenVideoInput = z.object({
+  youtube_url: z.string().url(),
+  video_id: z.string().min(1).max(32).optional(),
+  title: z.string().max(500).nullable().optional(),
+  category: z.string().max(80).nullable().optional(),
+  difficulty: z.string().max(40).nullable().optional(),
+  language: z.string().max(20).nullable().optional(),
+  active: z.boolean().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+const UpsertInput = z.object({
+  videos: z.array(GoldenVideoInput).min(1).max(1000),
+  /** When true, every existing video NOT in the payload is set to active=false. */
+  replaceMode: z.boolean().optional(),
+});
+
+export type UpsertBenchmarkResult = {
+  inserted: number;
+  updated: number;
+  deactivated: number;
+  errors: { youtube_url: string; reason: string }[];
+};
+
+/** Upsert (and optionally replace) the active benchmark dataset.
+ *  Matches existing rows on `video_id`. Never deletes rows — out-of-payload
+ *  rows are only set to `active=false` when `replaceMode` is true. */
+export const upsertBenchmarkVideos = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => UpsertInput.parse(d))
+  .handler(async ({ data }): Promise<UpsertBenchmarkResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const errors: { youtube_url: string; reason: string }[] = [];
+    const normalized: Array<Required<Pick<z.infer<typeof GoldenVideoInput>, "youtube_url">> & {
+      video_id: string;
+      title: string | null;
+      category: string | null;
+      difficulty: string | null;
+      language: string | null;
+      active: boolean;
+      notes: string | null;
+    }> = [];
+
+    for (const v of data.videos) {
+      const vid = v.video_id ?? extractYoutubeId(v.youtube_url);
+      if (!vid) {
+        errors.push({ youtube_url: v.youtube_url, reason: "Could not extract YouTube video_id" });
+        continue;
+      }
+      normalized.push({
+        youtube_url: v.youtube_url,
+        video_id: vid,
+        title: v.title ?? null,
+        category: v.category ?? null,
+        difficulty: v.difficulty ?? null,
+        language: v.language ?? null,
+        active: v.active ?? true,
+        notes: v.notes ?? null,
+      });
+    }
+
+    // Deduplicate on video_id, last write wins.
+    const byId = new Map<string, (typeof normalized)[number]>();
+    for (const n of normalized) byId.set(n.video_id, n);
+    const rows = Array.from(byId.values());
+
+    // Find existing rows so we can report inserted vs updated counts.
+    const { data: existing, error: exErr } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("id, video_id");
+    if (exErr) throw new Error(exErr.message);
+    const existingIds = new Set<string>(((existing ?? []) as any[]).map((r) => r.video_id));
+    const incomingIds = new Set<string>(rows.map((r) => r.video_id));
+
+    let inserted = 0;
+    let updated = 0;
+
+    if (rows.length) {
+      const { error: upErr } = await supabaseAdmin
+        .from("benchmark_videos" as any)
+        .upsert(rows as any, { onConflict: "video_id" });
+      if (upErr) throw new Error(upErr.message);
+      for (const r of rows) {
+        if (existingIds.has(r.video_id)) updated++;
+        else inserted++;
+      }
+    }
+
+    let deactivated = 0;
+    if (data.replaceMode) {
+      const toDeactivate = ((existing ?? []) as any[])
+        .filter((r) => !incomingIds.has(r.video_id))
+        .map((r) => r.id);
+      if (toDeactivate.length) {
+        const { error: dErr } = await supabaseAdmin
+          .from("benchmark_videos" as any)
+          .update({ active: false } as any)
+          .in("id", toDeactivate);
+        if (dErr) throw new Error(dErr.message);
+        deactivated = toDeactivate.length;
+      }
+    }
+
+    return { inserted, updated, deactivated, errors };
+  });
+
+/** Export the current dataset as JSON (round-trip with upsertBenchmarkVideos). */
+export const exportBenchmarkVideos = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("benchmark_videos" as any)
+    .select("youtube_url, video_id, title, category, difficulty, language, active, notes")
+    .order("category", { ascending: true })
+    .order("title", { ascending: true });
+  if (error) throw new Error(error.message);
+  return { videos: (data ?? []) as unknown as Array<Record<string, unknown>> };
+});
