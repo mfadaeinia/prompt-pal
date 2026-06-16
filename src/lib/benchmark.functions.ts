@@ -407,7 +407,7 @@ export const startBenchmarkRun = createServerFn({ method: "POST" })
 /** Step 2 — process ONE video and insert its result row. */
 export const processBenchmarkVideo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ProcessInput.parse(d))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
+  .handler(async ({ data }): Promise<{ ok: true; rateLimited: boolean }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchTranscript } = await import("@/lib/transcript.functions");
     const { explainSentence } = await import("@/lib/explain.functions");
