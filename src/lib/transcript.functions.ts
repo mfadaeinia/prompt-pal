@@ -1026,11 +1026,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       errorType?: TranscriptErrorType;
       videoId?: string;
       providerMessage?: string;
+      providerTrace?: ProviderTrace;
     };
     err.errorType = errorType;
     err.videoId = videoId;
     err.providerMessage =
       lastErr instanceof Error ? lastErr.message : String(lastErr ?? "");
+    err.providerTrace = providerTrace;
     throw err;
   });
 
