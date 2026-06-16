@@ -549,18 +549,21 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        const errorType = (e as { errorType?: string } | null)?.errorType;
         error_message = msg;
         const low = msg.toLowerCase();
-        // URL probe said OK but transcript can't be retrieved → granular T01
-        if (low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
+        // Prefer the structured errorType attached by fetchTranscript when present.
+        if (errorType === "rate_limited" || low.includes("too many requests") || low.includes("429") || low.includes("captcha")) {
+          failure_code = "T04";
+        } else if (errorType === "captions_disabled" || errorType === "not_found" || low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
           failure_code = "T01";
-        } else if (low.includes("timeout") || low.includes("network")) {
+        } else if (errorType === "network" || low.includes("timeout") || low.includes("network")) {
           failure_code = "V02";
         } else {
           failure_code = "P01";
         }
         download_status = "Failed";
-        log({ step: "transcript_fetch", ok: false, detail: msg });
+        log({ step: "transcript_fetch", ok: false, detail: `[${errorType ?? "?"}] ${msg}` });
       }
     }
 
