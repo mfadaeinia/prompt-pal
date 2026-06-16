@@ -559,8 +559,24 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   language: string | null;
-  source: "youtube" | "manual" | "fallback" | "asr";
+  source: "youtube" | "manual" | "fallback";
 }) {
+  // Safety: refuse to persist anything that doesn't have evidence of coming
+  // from real captions or real audio. "asr" (LLM-as-transcriber) is no longer
+  // a legal source — see Layer 4 comment.
+  const allowed = new Set(["youtube", "manual", "fallback"]);
+  if (!allowed.has(params.source)) {
+    console.warn("[transcript] refusing to cache invalid source", params.source);
+    return;
+  }
+  const totalChars = params.chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
+  if (!params.chunks.length || totalChars < 10) {
+    console.warn("[transcript] refusing to cache empty/tiny transcript", {
+      chunks: params.chunks.length,
+      chars: totalChars,
+    });
+    return;
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
@@ -577,6 +593,7 @@ async function writeCache(params: {
     );
   if (error) console.warn("[transcript] cache write error", error.message);
 }
+
 
 async function recordTranscriptReport(params: {
   videoId: string;
@@ -699,143 +716,25 @@ async function fetchFromFallbackProvider(params: {
 
 
 // ---------------------------------------------------------------------------
-// Layer 4: Real ASR fallback — Lovable AI Gateway (Gemini video understanding)
-// Sends the YouTube URL directly to Gemini, which ingests the video and
-// returns a timestamped transcript. No audio download required, runs on
-// Cloudflare Workers. Returns null on any failure so the caller can decide
-// how to surface it (asr_failed / asr_timeout / asr_empty).
+// Layer 4 (LLM-as-transcriber) is permanently removed.
+//
+// We previously sent the YouTube URL to Gemini via the Lovable AI Gateway as
+// `file_data` and asked it to "transcribe". The gateway does NOT fetch and
+// decode the video — the model only sees the URL as text and hallucinates a
+// plausible-but-fake transcript that has nothing to do with the real audio.
+//
+// HARD RULE: transcript text may ONLY come from
+//   1. cached entries previously produced by (2) or (3)
+//   2. official YouTube captions (youtube-transcript)
+//   3. an audio-based ASR provider (Transcribr today)
+//   4. user-pasted manual text
+//
+// AI is allowed ONLY as a post-processor on text that already came from one
+// of the above sources (sentence boundary repair in sentence-repair.server.ts,
+// which validates token overlap and rejects hallucinated output). AI must
+// never invent words and must never be asked to "transcribe" from a URL.
 // ---------------------------------------------------------------------------
-type AsrResult =
-  | { ok: true; chunks: RawChunk[]; language: string | null }
-  | { ok: false; reason: "no_key" | "asr_timeout" | "asr_empty" | "asr_failed"; detail?: string };
 
-async function fetchFromAsrFallback(params: {
-  videoId: string;
-  videoUrl: string;
-  trace: AsrTrace;
-}): Promise<AsrResult> {
-  const { trace } = params;
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) {
-    trace.invoked = false;
-    trace.errorMessage = "LOVABLE_API_KEY missing";
-    console.warn("[transcript-debug] LOVABLE_API_KEY missing — skipping ASR fallback");
-    return { ok: false, reason: "no_key" };
-  }
-  trace.invoked = true;
-
-  const canonicalUrl = `https://www.youtube.com/watch?v=${params.videoId}`;
-  const prompt = [
-    "You are a precise speech-to-text engine.",
-    "Transcribe ALL spoken audio in this YouTube video into short sentence-level segments.",
-    "Return ONLY a JSON object of the exact shape:",
-    `{ "language": "<bcp47 code or null>", "segments": [{ "start": <seconds:number>, "duration": <seconds:number>, "text": "<sentence>" }] }`,
-    "Rules:",
-    "- One natural sentence per segment (split on sentence boundaries, not arbitrary chunks).",
-    "- start and duration are in seconds (floats OK).",
-    "- Preserve the original language. Do not translate.",
-    "- No commentary, no markdown, no surrounding text. JSON only.",
-    `Video URL: ${canonicalUrl}`,
-  ].join("\n");
-
-  const body = {
-    model: "google/gemini-2.5-flash",
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          { type: "file_data", file_data: { file_uri: canonicalUrl, mime_type: "video/*" } },
-        ],
-      },
-    ],
-    response_format: { type: "json_object" },
-  };
-
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 120_000);
-  try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "raw-fetch",
-      },
-      body: JSON.stringify(body),
-      signal: ctrl.signal,
-    });
-    clearTimeout(timer);
-    trace.httpStatus = res.status;
-
-    console.log("[transcript-debug] ASR HTTP", { status: res.status, ok: res.ok });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
-      console.warn("[transcript-debug] ASR error body", text.slice(0, 500));
-      if (res.status === 408 || res.status === 504) {
-        return { ok: false, reason: "asr_timeout", detail: `HTTP ${res.status}` };
-      }
-      return { ok: false, reason: "asr_failed", detail: `HTTP ${res.status}` };
-    }
-
-    const json: any = await res.json();
-    const raw: string = json?.choices?.[0]?.message?.content ?? "";
-    if (!raw) {
-      trace.discardedReason = "no_content_in_choices";
-      return { ok: false, reason: "asr_empty", detail: "no content" };
-    }
-
-    let parsed: any = null;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-      try {
-        parsed = JSON.parse(stripped);
-      } catch (e) {
-        trace.errorMessage = `invalid_json: ${e instanceof Error ? e.message : String(e)}`;
-        console.warn("[transcript-debug] ASR JSON parse failed", trace.errorMessage);
-        return { ok: false, reason: "asr_failed", detail: "invalid_json" };
-      }
-    }
-
-    const segments: any[] = Array.isArray(parsed?.segments) ? parsed.segments : [];
-    trace.rawSegments = segments.length;
-    const chunks: RawChunk[] = segments
-      .map((s) => ({
-        text: String(s?.text ?? "").trim(),
-        offset: Number(s?.start ?? 0),
-        duration: Number(s?.duration ?? 0),
-      }))
-      .filter((c) => c.text.length > 0);
-    trace.keptSegments = chunks.length;
-
-    for (let i = 0; i < chunks.length; i++) {
-      if (!(chunks[i].duration > 0)) {
-        const next = chunks[i + 1];
-        chunks[i].duration = next ? Math.max(0.5, next.offset - chunks[i].offset) : 3;
-      }
-    }
-
-    if (!chunks.length) {
-      trace.discardedReason = segments.length ? "all_segments_blank_after_filter" : "no_segments";
-      return { ok: false, reason: "asr_empty", detail: trace.discardedReason };
-    }
-    const language = typeof parsed?.language === "string" ? parsed.language : null;
-    console.log("[transcript-debug] ASR SUCCESS", { segments: chunks.length, language });
-    return { ok: true, chunks, language };
-  } catch (e) {
-    clearTimeout(timer);
-    const msg = e instanceof Error ? e.message : String(e);
-    trace.errorMessage = msg;
-    if (msg.toLowerCase().includes("abort")) {
-      return { ok: false, reason: "asr_timeout", detail: "client_abort_120s" };
-    }
-    console.warn("[transcript-debug] ASR fetch threw", msg);
-    return { ok: false, reason: "asr_failed", detail: msg };
-  }
-}
 
 
 export const fetchTranscript = createServerFn({ method: "POST" })
