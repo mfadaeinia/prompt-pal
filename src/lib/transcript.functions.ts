@@ -954,7 +954,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     // -------- Layer 4: Real ASR fallback (Gemini video understanding) --------
     console.log("[transcript-debug] trying ASR fallback (Gemini)");
-    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url });
+    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url, trace: asrTrace });
+    const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace };
     if (asr.ok) {
       const sentences = buildSentencesFromChunks(asr.chunks);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
