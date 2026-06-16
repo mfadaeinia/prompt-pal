@@ -995,6 +995,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: usedLang,
         cacheHit: false,
         quality,
+        rawChunks: raw,
       };
     }
 
