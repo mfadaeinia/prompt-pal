@@ -1152,12 +1152,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         sentences: sentences.length,
         total_chars: chars,
       });
-      await writeCache({
+      const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
         chunks: fb.chunks,
-        language: fb.language,
-        source: "fallback",
+        requestedLanguage,
+        provider: "fallback",
+        providerResponseLanguage: fb.language,
       });
       logEvent({
         video_id: videoId,
@@ -1173,6 +1174,9 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: fb.language,
         quality,
       });
+      if (!cacheWrite.ok) {
+        console.warn("[transcript-debug] fallback result not cached", cacheWrite.validation);
+      }
       return {
         videoId,
         sentences,
@@ -1180,6 +1184,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: fb.language,
         cacheHit: false,
         quality,
+        provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
       };
     }
