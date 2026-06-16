@@ -120,6 +120,10 @@ export function BenchmarkSection() {
           >
             {healthQ.isFetching ? "Probing…" : "Check Dataset Health"}
           </button>
+          <UpdateGoldenDatasetButton onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+            qc.invalidateQueries({ queryKey: ["benchmark-health"] });
+          }} />
           <button
             disabled={running}
             onClick={() => mut.mutate("quick")}
