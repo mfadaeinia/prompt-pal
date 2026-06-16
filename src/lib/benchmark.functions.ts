@@ -814,6 +814,12 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         sentence_quality_rating: transcript_found ? sentenceQualityRating : null,
         sentence_quality_reason: transcript_found ? sentenceQualityReason : null,
         sentence_preview: sentencePreview as any,
+        deterministic_quality,
+        ai_repair_used,
+        ai_repair_success,
+        final_sentence_quality,
+        repair_reason,
+        repair_diagnostics: repair_diagnostics as any,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
