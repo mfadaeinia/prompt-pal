@@ -746,10 +746,27 @@ function UpdateGoldenDatasetModal({
     onError: (e) => setError(e instanceof Error ? e.message : String(e)),
   });
 
-  const onFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => setText(String(reader.result ?? ""));
-    reader.readAsText(file);
+  const onFile = async (file: File) => {
+    setError(null);
+    const name = file.name.toLowerCase();
+    try {
+      if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+        const XLSX = await import("xlsx");
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null });
+        const entries = rowsToEntries(rows);
+        setText(JSON.stringify(entries, null, 2));
+        setReplaceMode(true);
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => setText(String(reader.result ?? ""));
+        reader.readAsText(file);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const downloadCurrent = async () => {
