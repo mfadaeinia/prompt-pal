@@ -1410,3 +1410,40 @@ function UpdateGoldenDatasetModal({
     </div>
   );
 }
+
+function fmtTime(n: number): string {
+  if (!Number.isFinite(n)) return "—";
+  const m = Math.floor(n / 60);
+  const sec = Math.floor(n % 60).toString().padStart(2, "0");
+  return `${m}:${sec}`;
+}
+
+function RepairColumn({
+  title,
+  items,
+  empty,
+}: {
+  title: string;
+  items: Array<{ label: string; text: string }>;
+  empty?: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded border border-slate-200">
+      <div className="border-b border-slate-200 bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+        {title}
+      </div>
+      <div className="max-h-72 overflow-y-auto p-1 text-[11px]">
+        {items.length === 0 ? (
+          <div className="px-2 py-3 text-center text-slate-400">{empty ?? "—"}</div>
+        ) : (
+          items.map((it, i) => (
+            <div key={i} className="border-b border-slate-100 px-2 py-1 last:border-0">
+              <div className="font-mono text-[10px] text-slate-500">{it.label}</div>
+              <div className="text-slate-800">{it.text}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
