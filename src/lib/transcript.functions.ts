@@ -615,59 +615,205 @@ function chunksFromManualText(text: string): RawChunk[] {
   }));
 }
 
-async function readCache(videoId: string) {
+const SOURCE_VERSION = 1;
+
+function makeCacheKey(videoId: string, requestedLanguage: string, provider: string, version = SOURCE_VERSION) {
+  return `${videoId}|${requestedLanguage}|${provider}|${version}`;
+}
+
+type CacheRow = {
+  id: string;
+  video_id: string;
+  transcript_json: RawChunk[];
+  language: string | null;
+  source: string | null;
+  provider: string | null;
+  requested_language: string | null;
+  provider_response_language: string | null;
+  source_version: number | null;
+  cache_key: string | null;
+  transcript_length_chars: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+function rowToProvenance(r: CacheRow): CacheProvenance {
+  return {
+    cacheKey: r.cache_key ?? makeCacheKey(r.video_id, r.requested_language ?? "_any_", r.provider ?? r.source ?? "unknown", r.source_version ?? 1),
+    videoId: r.video_id,
+    requestedLanguage: r.requested_language ?? "_any_",
+    provider: r.provider ?? r.source ?? "unknown",
+    providerResponseLanguage: r.provider_response_language ?? r.language ?? null,
+    sourceVersion: r.source_version ?? 1,
+    transcriptLengthChars: r.transcript_length_chars ?? 0,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+/**
+ * Look up a cached transcript. Matches by (video_id, requested_language).
+ *   - If requestedLanguage is "_any_", we accept any language and prefer the
+ *     most recently updated row.
+ *   - Otherwise we require requested_language === requestedLanguage OR
+ *     provider_response_language === requestedLanguage.
+ *   - We never silently return a row whose language disagrees with what was
+ *     asked for.
+ */
+async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
-    .select("transcript_json, language")
+    .select("id, video_id, transcript_json, language, source, provider, requested_language, provider_response_language, source_version, cache_key, transcript_length_chars, created_at, updated_at")
     .eq("video_id", videoId)
-    .maybeSingle();
+    .order("updated_at", { ascending: false });
   if (error) {
     console.warn("[transcript] cache read error", error.message);
     return null;
   }
-  return data as { transcript_json: RawChunk[]; language: string | null } | null;
+  const rows = (data ?? []) as CacheRow[];
+  if (!rows.length) return null;
+  if (requestedLanguage === "_any_") return rows[0];
+  const match = rows.find(
+    (r) =>
+      (r.requested_language && r.requested_language === requestedLanguage) ||
+      (r.provider_response_language && r.provider_response_language === requestedLanguage),
+  );
+  return match ?? null;
+}
+
+export type ValidationResult = {
+  ok: boolean;
+  reason?: string;
+  details?: Record<string, unknown>;
+};
+
+/**
+ * Validate a transcript before caching it.
+ *   - non-empty (≥10 chars, ≥1 chunk)
+ *   - has timestamps (not all zeros)
+ *   - plausible length vs. video duration (if known): expect ≥0.3 chars/sec
+ *   - language match (only when both expected & actual are present)
+ */
+export function validateTranscript(params: {
+  chunks: RawChunk[];
+  expectedLanguage?: string | null;
+  providerLanguage?: string | null;
+  videoDurationSeconds?: number | null;
+}): ValidationResult {
+  const { chunks } = params;
+  if (!chunks || chunks.length === 0) {
+    return { ok: false, reason: "empty_chunks" };
+  }
+  const totalChars = chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
+  if (totalChars < 10) {
+    return { ok: false, reason: "transcript_too_short", details: { chars: totalChars } };
+  }
+  const hasNonZeroOffset = chunks.some((c) => Number(c.offset) > 0);
+  const hasAnyDuration = chunks.some((c) => Number(c.duration) > 0);
+  if (!hasNonZeroOffset && !hasAnyDuration) {
+    return { ok: false, reason: "no_timestamps", details: { chunks: chunks.length } };
+  }
+  if (params.videoDurationSeconds && params.videoDurationSeconds > 30) {
+    const ratio = totalChars / params.videoDurationSeconds;
+    if (ratio < 0.3) {
+      return {
+        ok: false,
+        reason: "implausible_length_for_duration",
+        details: { chars: totalChars, seconds: params.videoDurationSeconds, charsPerSecond: Number(ratio.toFixed(2)) },
+      };
+    }
+  }
+  if (
+    params.expectedLanguage &&
+    params.providerLanguage &&
+    params.expectedLanguage !== "_any_" &&
+    !languagesMatch(params.expectedLanguage, params.providerLanguage)
+  ) {
+    return {
+      ok: false,
+      reason: "language_mismatch",
+      details: { expected: params.expectedLanguage, got: params.providerLanguage },
+    };
+  }
+  return { ok: true };
+}
+
+function languagesMatch(a: string, b: string): boolean {
+  const norm = (s: string) => s.toLowerCase().split(/[-_]/)[0];
+  return norm(a) === norm(b);
 }
 
 async function writeCache(params: {
   videoId: string;
   videoUrl: string;
   chunks: RawChunk[];
-  language: string | null;
-  source: "youtube" | "manual" | "fallback";
-}) {
-  // Safety: refuse to persist anything that doesn't have evidence of coming
-  // from real captions or real audio. "asr" (LLM-as-transcriber) is no longer
-  // a legal source — see Layer 4 comment.
+  requestedLanguage: string;
+  provider: "youtube" | "manual" | "fallback";
+  providerResponseLanguage: string | null;
+}): Promise<{ ok: boolean; provenance?: CacheProvenance; validation: ValidationResult }> {
   const allowed = new Set(["youtube", "manual", "fallback"]);
-  if (!allowed.has(params.source)) {
-    console.warn("[transcript] refusing to cache invalid source", params.source);
-    return;
+  if (!allowed.has(params.provider)) {
+    return { ok: false, validation: { ok: false, reason: `invalid_provider:${params.provider}` } };
   }
+  const validation = validateTranscript({
+    chunks: params.chunks,
+    expectedLanguage: params.requestedLanguage === "_any_" ? null : params.requestedLanguage,
+    providerLanguage: params.providerResponseLanguage,
+  });
+  if (!validation.ok) {
+    console.warn("[transcript] refusing to cache — validation failed", validation);
+    return { ok: false, validation };
+  }
+
   const totalChars = params.chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
-  if (!params.chunks.length || totalChars < 10) {
-    console.warn("[transcript] refusing to cache empty/tiny transcript", {
-      chunks: params.chunks.length,
-      chars: totalChars,
-    });
-    return;
-  }
+  const cacheKey = makeCacheKey(params.videoId, params.requestedLanguage, params.provider);
+  const now = new Date().toISOString();
+  const row = {
+    video_id: params.videoId,
+    video_url: params.videoUrl,
+    transcript_json: params.chunks,
+    language: params.providerResponseLanguage,
+    source: params.provider,
+    provider: params.provider,
+    requested_language: params.requestedLanguage,
+    provider_response_language: params.providerResponseLanguage,
+    source_version: SOURCE_VERSION,
+    cache_key: cacheKey,
+    transcript_length_chars: totalChars,
+    updated_at: now,
+  } as any;
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
-    .upsert(
-      {
-        video_id: params.videoId,
-        video_url: params.videoUrl,
-        transcript_json: params.chunks,
-        language: params.language,
-        source: params.source,
-        updated_at: new Date().toISOString(),
-      } as any,
-      { onConflict: "video_id" }
-    );
-  if (error) console.warn("[transcript] cache write error", error.message);
+    .upsert(row, { onConflict: "video_id,requested_language,provider,source_version" })
+    .select("id, video_id, transcript_json, language, source, provider, requested_language, provider_response_language, source_version, cache_key, transcript_length_chars, created_at, updated_at")
+    .maybeSingle();
+  if (error) {
+    console.warn("[transcript] cache write error", error.message);
+    return { ok: false, validation: { ok: false, reason: `db_error:${error.message}` } };
+  }
+  return { ok: true, validation, provenance: data ? rowToProvenance(data as CacheRow) : undefined };
 }
+
+/** Founder/debug: delete every cached row for a video, across all providers/languages. */
+export const clearTranscriptCacheForVideo = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ videoId: z.string().min(1).max(50) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: deleted, error } = await supabaseAdmin
+      .from("youtube_transcript_cache" as any)
+      .delete()
+      .eq("video_id", data.videoId)
+      .select("id, provider, requested_language");
+    if (error) throw new Error(error.message);
+    const rows = (deleted ?? []) as Array<{ id: string; provider: string; requested_language: string }>;
+    console.log("[transcript] cache cleared", { videoId: data.videoId, removed: rows.length });
+    return { ok: true, removed: rows.length, rows };
+  });
+
+
 
 
 async function recordTranscriptReport(params: {
