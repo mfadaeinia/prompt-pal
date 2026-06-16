@@ -896,6 +896,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const fb = await fetchFromFallbackProvider({
       videoId,
       videoUrl: data.url,
+      trace: transcribrTrace,
     });
     console.log("[transcript-debug] fallback result", {
       chunks: fb?.chunks.length ?? 0,
