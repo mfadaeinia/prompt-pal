@@ -28,7 +28,7 @@ export type TranscriptSentence = {
   endTime: number; // seconds
 };
 
-export type TranscriptSource = "cache" | "youtube" | "fallback" | "manual";
+export type TranscriptSource = "cache" | "youtube" | "fallback" | "asr" | "manual";
 
 export type TranscriptQuality = "high" | "medium" | "low";
 
