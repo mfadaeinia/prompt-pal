@@ -1,0 +1,1 @@
+DELETE FROM public.youtube_transcript_cache WHERE source = 'asr';
