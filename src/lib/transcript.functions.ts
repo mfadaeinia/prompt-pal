@@ -888,6 +888,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: cached.language,
         cacheHit: true,
         quality,
+        rawChunks: cached.transcript_json,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
