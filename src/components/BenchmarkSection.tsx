@@ -704,7 +704,7 @@ function parseDatasetPayload(input: string): ParsedEntry[] {
     if (!arr) throw new Error("JSON must be an array, or an object with a `videos` array.");
     return arr.map((row: unknown, i: number) => {
       if (typeof row === "string") return { youtube_url: row };
-      if (!row || typeof row !== "object" || typeof row.youtube_url !== "string") {
+      if (!row || typeof row !== "object" || typeof (row as ParsedEntry).youtube_url !== "string") {
         throw new Error(`Row ${i + 1}: missing "youtube_url" string.`);
       }
       return row as ParsedEntry;
