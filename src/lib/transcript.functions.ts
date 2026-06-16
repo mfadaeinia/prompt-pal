@@ -811,7 +811,7 @@ export const clearTranscriptCacheForVideo = createServerFn({ method: "POST" })
       .eq("video_id", data.videoId)
       .select("id, provider, requested_language");
     if (error) throw new Error(error.message);
-    const rows = (deleted ?? []) as Array<{ id: string; provider: string; requested_language: string }>;
+    const rows = (deleted ?? []) as unknown as Array<{ id: string; provider: string; requested_language: string }>;
     console.log("[transcript] cache cleared", { videoId: data.videoId, removed: rows.length });
     return { ok: true, removed: rows.length, rows };
   });
