@@ -576,8 +576,20 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         // Prefer the structured errorType attached by fetchTranscript when present.
         if (errorType === "rate_limited" || low.includes("too many requests") || low.includes("429") || low.includes("captcha")) {
           failure_code = "T04";
+        } else if (errorType === "asr_timeout") {
+          // Captions unavailable AND ASR provider timed out.
+          failure_code = "A03";
+        } else if (errorType === "asr_empty") {
+          // Captions unavailable AND ASR returned no segments.
+          failure_code = "A04";
+        } else if (errorType === "asr_failed") {
+          // Captions unavailable AND ASR provider failed (HTTP error / bad JSON / no key).
+          failure_code = "A01";
         } else if (errorType === "captions_disabled" || errorType === "not_found" || low.includes("subtitles") || low.includes("no transcript") || low.includes("not find") || low.includes("disabled")) {
-          failure_code = "T01";
+          // YouTube reported no captions and we have no further info — treat
+          // as a hard transcript failure since ASR wasn't reached or didn't
+          // surface its own error.
+          failure_code = "A01";
         } else if (errorType === "network" || low.includes("timeout") || low.includes("network")) {
           failure_code = "V02";
         } else {
