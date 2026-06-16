@@ -616,12 +616,17 @@ type AsrResult =
 async function fetchFromAsrFallback(params: {
   videoId: string;
   videoUrl: string;
+  trace: AsrTrace;
 }): Promise<AsrResult> {
+  const { trace } = params;
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) {
+    trace.invoked = false;
+    trace.errorMessage = "LOVABLE_API_KEY missing";
     console.warn("[transcript-debug] LOVABLE_API_KEY missing — skipping ASR fallback");
     return { ok: false, reason: "no_key" };
   }
+  trace.invoked = true;
 
   const canonicalUrl = `https://www.youtube.com/watch?v=${params.videoId}`;
   const prompt = [
@@ -637,8 +642,6 @@ async function fetchFromAsrFallback(params: {
     `Video URL: ${canonicalUrl}`,
   ].join("\n");
 
-  // OpenAI-compatible chat completion. Gemini through the Lovable AI Gateway
-  // accepts a YouTube URL as a video input via the file_data content part.
   const body = {
     model: "google/gemini-2.5-flash",
     messages: [
@@ -646,10 +649,7 @@ async function fetchFromAsrFallback(params: {
         role: "user",
         content: [
           { type: "text", text: prompt },
-          {
-            type: "file_data",
-            file_data: { file_uri: canonicalUrl, mime_type: "video/*" },
-          },
+          { type: "file_data", file_data: { file_uri: canonicalUrl, mime_type: "video/*" } },
         ],
       },
     ],
@@ -670,10 +670,12 @@ async function fetchFromAsrFallback(params: {
       signal: ctrl.signal,
     });
     clearTimeout(timer);
+    trace.httpStatus = res.status;
 
     console.log("[transcript-debug] ASR HTTP", { status: res.status, ok: res.ok });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
       console.warn("[transcript-debug] ASR error body", text.slice(0, 500));
       if (res.status === 408 || res.status === 504) {
         return { ok: false, reason: "asr_timeout", detail: `HTTP ${res.status}` };
@@ -683,23 +685,27 @@ async function fetchFromAsrFallback(params: {
 
     const json: any = await res.json();
     const raw: string = json?.choices?.[0]?.message?.content ?? "";
-    if (!raw) return { ok: false, reason: "asr_empty", detail: "no content" };
+    if (!raw) {
+      trace.discardedReason = "no_content_in_choices";
+      return { ok: false, reason: "asr_empty", detail: "no content" };
+    }
 
     let parsed: any = null;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // Strip code fences if the model added any.
       const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
       try {
         parsed = JSON.parse(stripped);
       } catch (e) {
-        console.warn("[transcript-debug] ASR JSON parse failed", e instanceof Error ? e.message : String(e));
+        trace.errorMessage = `invalid_json: ${e instanceof Error ? e.message : String(e)}`;
+        console.warn("[transcript-debug] ASR JSON parse failed", trace.errorMessage);
         return { ok: false, reason: "asr_failed", detail: "invalid_json" };
       }
     }
 
     const segments: any[] = Array.isArray(parsed?.segments) ? parsed.segments : [];
+    trace.rawSegments = segments.length;
     const chunks: RawChunk[] = segments
       .map((s) => ({
         text: String(s?.text ?? "").trim(),
@@ -707,8 +713,8 @@ async function fetchFromAsrFallback(params: {
         duration: Number(s?.duration ?? 0),
       }))
       .filter((c) => c.text.length > 0);
+    trace.keptSegments = chunks.length;
 
-    // Backfill durations if the model returned 0s.
     for (let i = 0; i < chunks.length; i++) {
       if (!(chunks[i].duration > 0)) {
         const next = chunks[i + 1];
@@ -716,13 +722,17 @@ async function fetchFromAsrFallback(params: {
       }
     }
 
-    if (!chunks.length) return { ok: false, reason: "asr_empty", detail: "no_segments" };
+    if (!chunks.length) {
+      trace.discardedReason = segments.length ? "all_segments_blank_after_filter" : "no_segments";
+      return { ok: false, reason: "asr_empty", detail: trace.discardedReason };
+    }
     const language = typeof parsed?.language === "string" ? parsed.language : null;
     console.log("[transcript-debug] ASR SUCCESS", { segments: chunks.length, language });
     return { ok: true, chunks, language };
   } catch (e) {
     clearTimeout(timer);
     const msg = e instanceof Error ? e.message : String(e);
+    trace.errorMessage = msg;
     if (msg.toLowerCase().includes("abort")) {
       return { ok: false, reason: "asr_timeout", detail: "client_abort_120s" };
     }
