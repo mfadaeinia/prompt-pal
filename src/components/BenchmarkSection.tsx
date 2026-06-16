@@ -284,12 +284,15 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       </div>
 
       {!datasetInvalid && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Kpi label="Transcript Success" value={run.transcript_success_rate} target={TARGETS.transcript} count={`${run.transcript_success_count}/${run.total_videos}`} />
-          <Kpi label="Sentence Processing" value={run.sentence_success_rate} target={TARGETS.sentence} count={`${run.sentence_success_count}/${run.total_videos}`} />
-          <Kpi label="Translation Success" value={run.translation_success_rate} target={TARGETS.translation} count={`${run.translation_success_count}/${run.total_videos}`} />
-          <Kpi label="Overall Pipeline" value={run.pipeline_success_rate} target={TARGETS.pipeline} count={`${run.pipeline_success_count}/${run.total_videos}`} />
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Kpi label="Transcript Success" value={run.transcript_success_rate} target={TARGETS.transcript} count={`${run.transcript_success_count}/${run.total_videos}`} />
+            <Kpi label="Sentence Processing" value={run.sentence_success_rate} target={TARGETS.sentence} count={`${run.sentence_success_count}/${run.total_videos}`} />
+            <Kpi label="Translation Success" value={run.translation_success_rate} target={TARGETS.translation} count={`${run.translation_success_count}/${run.total_videos}`} />
+            <Kpi label="Overall Pipeline" value={run.pipeline_success_rate} target={TARGETS.pipeline} count={`${run.pipeline_success_count}/${run.total_videos}`} />
+          </div>
+          <TranscriptSourceMetrics results={results} total={run.total_videos} />
+        </>
       )}
 
       <SummaryInsights results={results} health={health} />
