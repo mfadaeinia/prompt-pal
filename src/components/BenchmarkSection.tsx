@@ -331,10 +331,14 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       )}
 
       <SummaryInsights results={results} health={health} />
+      <AutoObservations results={results} />
+      <QualityDistribution results={results} />
+      <SourceAnalysis results={results} />
+      <QualityThresholds />
       <FailureBreakdown results={results} />
       <CategoryPerformance results={results} />
       <DatasetPanel dataset={dataset} />
-      <ResultsTable results={results} onOpen={setDrill} />
+      <ScoredResultsTable results={results} onOpen={setDrill} />
 
       {drill && <Drilldown row={drill} onClose={() => setDrill(null)} />}
     </div>
