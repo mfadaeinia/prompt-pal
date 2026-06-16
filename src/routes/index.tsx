@@ -1806,18 +1806,36 @@ function EarlyAccessSection() {
 }
 
 
-function SourceBadge({ source }: { source: TranscriptSource }) {
-  const map: Record<TranscriptSource, { label: string; cls: string }> = {
-    cache: { label: "cached", cls: "bg-primary/10 text-primary" },
-    youtube: { label: "youtube", cls: "bg-accent text-accent-foreground" },
-    fallback: { label: "fallback", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
-    asr: { label: "AI transcribed", cls: "bg-violet-500/15 text-violet-700 dark:text-violet-300" },
-    manual: { label: "manual", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
+function SourceBadge({ source, cachedFrom }: { source: TranscriptSource; cachedFrom?: string | null }) {
+  const labels: Record<string, string> = {
+    youtube: "YouTube captions",
+    fallback: "Transcribr fallback",
+    manual: "Manual paste",
+    asr: "AI transcribed",
+    unknown: "unknown",
   };
-  const m = map[source];
+  let label: string;
+  let cls: string;
+  if (source === "cache") {
+    const inner = cachedFrom ? labels[cachedFrom] ?? cachedFrom : "unknown source";
+    label = `Cache · ${inner}`;
+    cls = "bg-primary/10 text-primary";
+  } else if (source === "youtube") {
+    label = `Source: ${labels.youtube}`;
+    cls = "bg-accent text-accent-foreground";
+  } else if (source === "fallback") {
+    label = `Source: ${labels.fallback}`;
+    cls = "bg-sky-500/15 text-sky-700 dark:text-sky-300";
+  } else if (source === "manual") {
+    label = `Source: ${labels.manual}`;
+    cls = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  } else {
+    label = `Source: ${labels[source] ?? source}`;
+    cls = "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+  }
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium normal-case ${m.cls}`}>
-      {m.label}
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium normal-case ${cls}`}>
+      {label}
     </span>
   );
 }
