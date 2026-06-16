@@ -500,6 +500,14 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let sentenceQualityRating: "high" | "medium" | "low" = "low";
     let sentenceQualityReason: string | null = null;
 
+    // Sentence repair (AI-assisted) diagnostics
+    let deterministic_quality: "high" | "medium" | "low" | null = null;
+    let ai_repair_used = false;
+    let ai_repair_success = false;
+    let final_sentence_quality: "high" | "medium" | "low" | null = null;
+    let repair_reason: string | null = null;
+    let repair_diagnostics: any = null;
+
     // STEP 1 — probe URL accessibility
     try {
       const tProbe = Date.now();
