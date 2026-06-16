@@ -695,7 +695,6 @@ async function fetchFromAsrFallback(params: {
     return { ok: false, reason: "asr_failed", detail: msg };
   }
 }
-}
 
 
 export const fetchTranscript = createServerFn({ method: "POST" })
