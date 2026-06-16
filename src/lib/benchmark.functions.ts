@@ -127,6 +127,19 @@ export type BenchmarkResultRow = {
   transcript_length_chars: number;
   translation_generated: boolean;
   pipeline_logs: PipelineLogEntry[] | null;
+  // Sentence segmentation diagnostics
+  short_fragment_pct: number | null;
+  giant_sentence_pct: number | null;
+  punctuation_coverage_pct: number | null;
+  median_gap_seconds: number | null;
+  sentence_quality_rating: "high" | "medium" | "low" | null;
+  sentence_quality_reason: string | null;
+  sentence_preview: Array<{
+    text: string;
+    start: number;
+    end: number;
+    words: number;
+  }> | null;
   // joined
   video_url?: string;
   video_id_ext?: string;
