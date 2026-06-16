@@ -856,14 +856,27 @@ export const upsertBenchmarkVideos = createServerFn({ method: "POST" })
     return { inserted, updated, deactivated, errors };
   });
 
+export type BenchmarkVideoExport = {
+  youtube_url: string;
+  video_id: string;
+  title: string | null;
+  category: string | null;
+  difficulty: string | null;
+  language: string | null;
+  active: boolean;
+  notes: string | null;
+};
+
 /** Export the current dataset as JSON (round-trip with upsertBenchmarkVideos). */
-export const exportBenchmarkVideos = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("benchmark_videos" as any)
-    .select("youtube_url, video_id, title, category, difficulty, language, active, notes")
-    .order("category", { ascending: true })
-    .order("title", { ascending: true });
-  if (error) throw new Error(error.message);
-  return { videos: (data ?? []) as unknown as Array<Record<string, unknown>> };
-});
+export const exportBenchmarkVideos = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ videos: BenchmarkVideoExport[] }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("youtube_url, video_id, title, category, difficulty, language, active, notes")
+      .order("category", { ascending: true })
+      .order("title", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { videos: (data ?? []) as unknown as BenchmarkVideoExport[] };
+  },
+);
