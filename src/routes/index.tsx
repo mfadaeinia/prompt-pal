@@ -1771,12 +1771,17 @@ function EarlyAccessSection() {
             onSubmit={handleSubmit}
             className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row"
           >
+            <label htmlFor="early-access-email" className="sr-only">
+              Email address
+            </label>
             <Input
+              id="early-access-email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              aria-label="Email address"
               className="h-11 flex-1 rounded-full bg-background px-5"
               disabled={submitting}
             />
@@ -1832,7 +1837,7 @@ function ManualTranscriptFallback({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div>
-        <label className="text-xs font-medium text-foreground">
+        <label htmlFor="manual-transcript" className="text-xs font-medium text-foreground">
           Paste transcript manually
         </label>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -1840,6 +1845,7 @@ function ManualTranscriptFallback({
           e.g. <code className="rounded bg-muted px-1">[0:15] Hallo, hoe gaat het?</code>
         </p>
         <Textarea
+          id="manual-transcript"
           value={manualText}
           onChange={(e) => setManualText(e.target.value)}
           placeholder={"[0:00] First sentence.\n[0:04] Second sentence."}

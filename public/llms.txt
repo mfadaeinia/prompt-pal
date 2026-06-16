@@ -1,0 +1,10 @@
+# NativeFlow
+
+> Turn any YouTube video into an interactive language lesson. Click any sentence in the transcript to get instant translations, explanations, and expression notes — so you can learn from real native content without losing the flow.
+
+NativeFlow helps intermediate language learners understand and stay engaged with authentic podcasts and videos. Paste a YouTube URL, pick the language you want explanations in, and tap sentences in the transcript whenever you need help.
+
+## Pages
+
+- [Home](/): Paste a YouTube URL and learn from any video with sentence-level explanations.
+- [My Expressions](/saved): Your personal collection of useful sentences and expressions saved from videos.
