@@ -740,6 +740,57 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
           </>
         )}
 
+        {/* Sentence Repair drilldown */}
+        {(row.deterministic_quality || row.ai_repair_used) && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              AI-Assisted Sentence Repair
+            </h5>
+            <dl className="mb-2 grid grid-cols-[180px_1fr] gap-x-3 gap-y-1 text-xs">
+              <dt className="text-slate-500">Deterministic quality</dt>
+              <dd className="font-mono">{row.deterministic_quality ?? "—"}</dd>
+              <dt className="text-slate-500">AI repair used</dt>
+              <dd className="font-mono">{row.ai_repair_used ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">AI repair success</dt>
+              <dd className="font-mono">{row.ai_repair_success ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">Final sentence quality</dt>
+              <dd className="font-mono">{row.final_sentence_quality ?? "—"}</dd>
+              <dt className="text-slate-500">Reason</dt>
+              <dd className="text-slate-700">{row.repair_reason ?? "—"}</dd>
+            </dl>
+
+            {row.repair_diagnostics && (
+              <div className="grid gap-2 md:grid-cols-3">
+                <RepairColumn
+                  title="Raw caption chunks"
+                  items={(row.repair_diagnostics.rawChunksPreview ?? []).map((c) => ({
+                    label: `#${c.i} ${fmtTime(c.start)}–${fmtTime(c.end)}`,
+                    text: c.text,
+                  }))}
+                />
+                <RepairColumn
+                  title={`Deterministic sentences${row.deterministic_quality ? ` (${row.deterministic_quality})` : ""}`}
+                  items={(row.repair_diagnostics.deterministicPreview ?? []).map((s, i) => ({
+                    label: `#${i + 1} ${fmtTime(s.start)}–${fmtTime(s.end)} · ${s.words}w`,
+                    text: s.text,
+                  }))}
+                />
+                <RepairColumn
+                  title={`AI-repaired sentences${row.ai_repair_success ? " (accepted)" : row.ai_repair_used ? " (rejected)" : ""}`}
+                  items={(row.repair_diagnostics.repairedPreview ?? []).map((s, i) => ({
+                    label: `#${i + 1} ${fmtTime(s.start)}–${fmtTime(s.end)} · ${s.words}w`,
+                    text: s.text,
+                  }))}
+                  empty={
+                    row.ai_repair_used
+                      ? row.repair_diagnostics.validationError ?? "no output"
+                      : "not invoked"
+                  }
+                />
+              </div>
+            )}
+          </>
+
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Pipeline Logs</h5>
         <div className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] font-mono">
           {(row.pipeline_logs ?? []).length === 0 && <div className="text-slate-400">No logs captured.</div>}
