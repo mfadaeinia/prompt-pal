@@ -13,6 +13,7 @@ import {
   type TesterCohortMetrics,
   type TesterRow,
 } from "@/lib/tester-events.functions";
+import { clearTranscriptCacheForVideo } from "@/lib/transcript.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
