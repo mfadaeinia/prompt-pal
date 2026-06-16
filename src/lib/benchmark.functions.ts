@@ -314,6 +314,18 @@ async function probeYoutubeUrl(
   }
 }
 
+export const getDatasetSize = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ total: number }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("active", true);
+    if (error) throw new Error(error.message);
+    return { total: count ?? 0 };
+  },
+);
+
 export const getDatasetHealth = createServerFn({ method: "GET" }).handler(
   async (): Promise<DatasetHealth> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
