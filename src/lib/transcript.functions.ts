@@ -1051,51 +1051,19 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       };
     }
 
-    // -------- Layer 4: Real ASR fallback (Gemini video understanding) --------
-    console.log("[transcript-debug] trying ASR fallback (Gemini)");
-    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url, trace: asrTrace });
+    // -------- Layer 4: ASR fallback DISABLED --------
+    // Previously we sent the YouTube URL to Gemini via the Lovable AI Gateway
+    // as `file_data` and asked it to transcribe. The gateway does NOT fetch
+    // and decode the video — the model only receives the URL as text and
+    // hallucinates a plausible-but-fake transcript unrelated to the actual
+    // audio. Those fake transcripts were also being cached, so reloads
+    // returned the same garbage. Until we wire a real ASR backend (audio
+    // download + Whisper / Gemini audio file upload), this layer is off.
+    const asr = { ok: false as const, reason: "asr_failed" as const, detail: "asr_disabled_hallucination_risk" };
+    asrTrace.invoked = false;
+    asrTrace.errorMessage = "disabled: gateway file_uri to YouTube hallucinates";
     const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace };
-    if (asr.ok) {
-      const sentences = buildSentencesFromChunks(asr.chunks);
-      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
-      console.log("[transcript-debug] ASR fallback SUCCESS", {
-        videoId,
-        raw_chunks: asr.chunks.length,
-        sentences: sentences.length,
-        total_chars: chars,
-      });
-      await writeCache({
-        videoId,
-        videoUrl: data.url,
-        chunks: asr.chunks,
-        language: asr.language,
-        source: "asr",
-      });
-      logEvent({
-        video_id: videoId,
-        fetch_source: "asr",
-        success: true,
-        cache_hit: false,
-      });
-      const quality = assessQuality(asr.chunks, sentences);
-      await recordTranscriptReport({
-        videoId,
-        videoUrl: data.url,
-        source: "asr",
-        language: asr.language,
-        quality,
-      });
-      return {
-        videoId,
-        sentences,
-        source: "asr",
-        language: asr.language,
-        cacheHit: false,
-        quality,
-        providerTrace,
-        rawChunks: asr.chunks,
-      };
-    }
+
 
     // All layers failed — surface a single friendly message.
     // Prefer the ASR-specific error type so the benchmark can distinguish
