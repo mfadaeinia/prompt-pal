@@ -561,7 +561,137 @@ async function fetchFromFallbackProvider(params: {
   } catch (e) {
     console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
     return null;
+}
+
+
+// ---------------------------------------------------------------------------
+// Layer 4: Real ASR fallback — Lovable AI Gateway (Gemini video understanding)
+// Sends the YouTube URL directly to Gemini, which ingests the video and
+// returns a timestamped transcript. No audio download required, runs on
+// Cloudflare Workers. Returns null on any failure so the caller can decide
+// how to surface it (asr_failed / asr_timeout / asr_empty).
+// ---------------------------------------------------------------------------
+type AsrResult =
+  | { ok: true; chunks: RawChunk[]; language: string | null }
+  | { ok: false; reason: "no_key" | "asr_timeout" | "asr_empty" | "asr_failed"; detail?: string };
+
+async function fetchFromAsrFallback(params: {
+  videoId: string;
+  videoUrl: string;
+}): Promise<AsrResult> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) {
+    console.warn("[transcript-debug] LOVABLE_API_KEY missing — skipping ASR fallback");
+    return { ok: false, reason: "no_key" };
   }
+
+  const canonicalUrl = `https://www.youtube.com/watch?v=${params.videoId}`;
+  const prompt = [
+    "You are a precise speech-to-text engine.",
+    "Transcribe ALL spoken audio in this YouTube video into short sentence-level segments.",
+    "Return ONLY a JSON object of the exact shape:",
+    `{ "language": "<bcp47 code or null>", "segments": [{ "start": <seconds:number>, "duration": <seconds:number>, "text": "<sentence>" }] }`,
+    "Rules:",
+    "- One natural sentence per segment (split on sentence boundaries, not arbitrary chunks).",
+    "- start and duration are in seconds (floats OK).",
+    "- Preserve the original language. Do not translate.",
+    "- No commentary, no markdown, no surrounding text. JSON only.",
+    `Video URL: ${canonicalUrl}`,
+  ].join("\n");
+
+  // OpenAI-compatible chat completion. Gemini through the Lovable AI Gateway
+  // accepts a YouTube URL as a video input via the file_data content part.
+  const body = {
+    model: "google/gemini-2.5-flash",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "file_data",
+            file_data: { file_uri: canonicalUrl, mime_type: "video/*" },
+          },
+        ],
+      },
+    ],
+    response_format: { type: "json_object" },
+  };
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 120_000);
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": apiKey,
+        "X-Lovable-AIG-SDK": "raw-fetch",
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+
+    console.log("[transcript-debug] ASR HTTP", { status: res.status, ok: res.ok });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("[transcript-debug] ASR error body", text.slice(0, 500));
+      if (res.status === 408 || res.status === 504) {
+        return { ok: false, reason: "asr_timeout", detail: `HTTP ${res.status}` };
+      }
+      return { ok: false, reason: "asr_failed", detail: `HTTP ${res.status}` };
+    }
+
+    const json: any = await res.json();
+    const raw: string = json?.choices?.[0]?.message?.content ?? "";
+    if (!raw) return { ok: false, reason: "asr_empty", detail: "no content" };
+
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Strip code fences if the model added any.
+      const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      try {
+        parsed = JSON.parse(stripped);
+      } catch (e) {
+        console.warn("[transcript-debug] ASR JSON parse failed", e instanceof Error ? e.message : String(e));
+        return { ok: false, reason: "asr_failed", detail: "invalid_json" };
+      }
+    }
+
+    const segments: any[] = Array.isArray(parsed?.segments) ? parsed.segments : [];
+    const chunks: RawChunk[] = segments
+      .map((s) => ({
+        text: String(s?.text ?? "").trim(),
+        offset: Number(s?.start ?? 0),
+        duration: Number(s?.duration ?? 0),
+      }))
+      .filter((c) => c.text.length > 0);
+
+    // Backfill durations if the model returned 0s.
+    for (let i = 0; i < chunks.length; i++) {
+      if (!(chunks[i].duration > 0)) {
+        const next = chunks[i + 1];
+        chunks[i].duration = next ? Math.max(0.5, next.offset - chunks[i].offset) : 3;
+      }
+    }
+
+    if (!chunks.length) return { ok: false, reason: "asr_empty", detail: "no_segments" };
+    const language = typeof parsed?.language === "string" ? parsed.language : null;
+    console.log("[transcript-debug] ASR SUCCESS", { segments: chunks.length, language });
+    return { ok: true, chunks, language };
+  } catch (e) {
+    clearTimeout(timer);
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.toLowerCase().includes("abort")) {
+      return { ok: false, reason: "asr_timeout", detail: "client_abort_120s" };
+    }
+    console.warn("[transcript-debug] ASR fetch threw", msg);
+    return { ok: false, reason: "asr_failed", detail: msg };
+  }
+}
 }
 
 
