@@ -113,6 +113,8 @@ export type TranscriptErrorType =
   | "validation_failed"
   | "unknown";
 
+export type RawChunk = { text: string; offset: number; duration: number };
+
 
 export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSentence[] {
   return buildSentencesFromChunks(chunks);
