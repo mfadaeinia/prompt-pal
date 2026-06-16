@@ -894,22 +894,73 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       };
     }
 
+    // -------- Layer 4: Real ASR fallback (Gemini video understanding) --------
+    console.log("[transcript-debug] trying ASR fallback (Gemini)");
+    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url });
+    if (asr.ok) {
+      const sentences = buildSentencesFromChunks(asr.chunks);
+      const chars = sentences.reduce((n, s) => n + s.text.length, 0);
+      console.log("[transcript-debug] ASR fallback SUCCESS", {
+        videoId,
+        raw_chunks: asr.chunks.length,
+        sentences: sentences.length,
+        total_chars: chars,
+      });
+      await writeCache({
+        videoId,
+        videoUrl: data.url,
+        chunks: asr.chunks,
+        language: asr.language,
+        source: "asr",
+      });
+      logEvent({
+        video_id: videoId,
+        fetch_source: "asr",
+        success: true,
+        cache_hit: false,
+      });
+      const quality = assessQuality(asr.chunks, sentences);
+      await recordTranscriptReport({
+        videoId,
+        videoUrl: data.url,
+        source: "asr",
+        language: asr.language,
+        quality,
+      });
+      return {
+        videoId,
+        sentences,
+        source: "asr",
+        language: asr.language,
+        cacheHit: false,
+        quality,
+      };
+    }
 
     // All layers failed — surface a single friendly message.
-    const errorType = classifyError(lastErr);
+    // Prefer the ASR-specific error type so the benchmark can distinguish
+    // A01/A03/A04 from a YouTube-only failure (C01).
+    let errorType: TranscriptErrorType;
+    if (asr.reason === "asr_timeout") errorType = "asr_timeout";
+    else if (asr.reason === "asr_empty") errorType = "asr_empty";
+    else if (asr.reason === "asr_failed") errorType = "asr_failed";
+    else errorType = classifyError(lastErr);
+
     console.error("[transcript-debug] ALL LAYERS FAILED", {
       videoId,
       errorType,
+      asrReason: asr.reason,
+      asrDetail: asr.detail ?? null,
       lastErrorMessage: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
     });
     logEvent({
       video_id: videoId,
-      fetch_source: "fallback",
+      fetch_source: "asr",
       success: false,
       cache_hit: false,
       error_type: errorType,
       error_message:
-        lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
+        asr.detail ?? (lastErr instanceof Error ? lastErr.message : String(lastErr ?? "")),
     });
     const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
       errorType?: TranscriptErrorType;
