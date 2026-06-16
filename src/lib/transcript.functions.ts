@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
 
-const Input = z.object({ url: z.string().min(1).max(500) });
+const Input = z.object({
+  url: z.string().min(1).max(500),
+  requestedLanguage: z.string().min(1).max(20).optional(),
+});
 const ManualInput = z.object({
   url: z.string().min(1).max(500),
   text: z.string().min(1).max(200_000),
