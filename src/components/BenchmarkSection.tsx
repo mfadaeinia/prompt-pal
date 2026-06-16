@@ -1458,3 +1458,242 @@ function RepairColumn({
     </div>
   );
 }
+
+// ---------- AI Repair Validation drilldown ----------
+
+type PreviewSentence = { text: string; start: number; end: number; words: number };
+type RawChunkPreview = { i: number; start: number; end: number; text: string };
+
+type CheckStatus = "pass" | "fail" | "skip" | "info";
+type ValidationCheck = {
+  key: string;
+  label: string;
+  status: CheckStatus;
+  detail: string;
+  threshold?: string;
+};
+
+function tokenizeText(s: string): string[] {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s']/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function multisetOverlapPct(a: string[], b: string[]): number {
+  const ma = new Map<string, number>();
+  for (const t of a) ma.set(t, (ma.get(t) ?? 0) + 1);
+  const mb = new Map<string, number>();
+  for (const t of b) mb.set(t, (mb.get(t) ?? 0) + 1);
+  let inter = 0;
+  for (const [k, v] of ma) {
+    const w = mb.get(k);
+    if (w) inter += Math.min(v, w);
+  }
+  return inter / Math.max(a.length, b.length, 1);
+}
+
+function computeValidationChecks(args: {
+  rawChunks: RawChunkPreview[];
+  repaired: PreviewSentence[] | null;
+}): ValidationCheck[] {
+  const { rawChunks, repaired } = args;
+  const checks: ValidationCheck[] = [];
+
+  if (!repaired || repaired.length === 0) {
+    checks.push({
+      key: "output",
+      label: "AI returned sentences",
+      status: "fail",
+      detail: "No output captured from model",
+    });
+    return checks;
+  }
+
+  checks.push({
+    key: "output",
+    label: "AI returned sentences",
+    status: "pass",
+    detail: `${repaired.length} preview unit(s)`,
+  });
+
+  // Word-count ratio (preview window only)
+  const srcWords = rawChunks.reduce((n, c) => n + tokenizeText(c.text).length, 0);
+  const dstWords = repaired.reduce((n, s) => n + tokenizeText(s.text).length, 0);
+  const ratio = srcWords > 0 ? dstWords / srcWords : 0;
+  const ratioOk = ratio >= 0.7 && ratio <= 1.3;
+  checks.push({
+    key: "ratio",
+    label: "Content size ratio",
+    status: rawChunks.length === 0 ? "skip" : ratioOk ? "pass" : "fail",
+    detail: rawChunks.length === 0 ? "no raw preview" : `${ratio.toFixed(2)} (${dstWords}w / ${srcWords}w)`,
+    threshold: "0.70 – 1.30",
+  });
+
+  // Token overlap
+  const srcTok = rawChunks.flatMap((c) => tokenizeText(c.text));
+  const dstTok = repaired.flatMap((s) => tokenizeText(s.text));
+  const overlap = multisetOverlapPct(srcTok, dstTok);
+  checks.push({
+    key: "overlap",
+    label: "Token overlap (multiset)",
+    status: rawChunks.length === 0 ? "skip" : overlap >= 0.7 ? "pass" : "fail",
+    detail: rawChunks.length === 0 ? "no raw preview" : `${(overlap * 100).toFixed(0)}%`,
+    threshold: "≥ 70%",
+  });
+
+  // Timestamps present + end ≥ start
+  const badTs = repaired.filter(
+    (s) => !Number.isFinite(s.start) || !Number.isFinite(s.end) || s.end < s.start,
+  );
+  checks.push({
+    key: "timestamps",
+    label: "Timestamps present & end ≥ start",
+    status: badTs.length === 0 ? "pass" : "fail",
+    detail: badTs.length === 0 ? "all valid" : `${badTs.length} invalid unit(s)`,
+  });
+
+  // Monotonic order
+  let monoFails = 0;
+  let lastEnd = -Infinity;
+  for (const s of repaired) {
+    if (s.start + 0.5 < lastEnd) monoFails += 1;
+    lastEnd = s.end;
+  }
+  checks.push({
+    key: "monotonic",
+    label: "Monotonic ordering",
+    status: monoFails === 0 ? "pass" : "fail",
+    detail: monoFails === 0 ? "in order" : `${monoFails} out-of-order unit(s)`,
+  });
+
+  // In range of source
+  if (rawChunks.length > 0) {
+    const srcStart = rawChunks[0].start;
+    const srcEnd = rawChunks[rawChunks.length - 1].end;
+    const outOfRange = repaired.filter(
+      (s) => s.start < srcStart - 1 || s.end > srcEnd + 1,
+    ).length;
+    checks.push({
+      key: "range",
+      label: "Timestamps within source range",
+      status: outOfRange === 0 ? "pass" : "fail",
+      detail:
+        outOfRange === 0
+          ? `${fmtTime(srcStart)}–${fmtTime(srcEnd)}`
+          : `${outOfRange} unit(s) outside ${fmtTime(srcStart)}–${fmtTime(srcEnd)} (±1s)`,
+    });
+  } else {
+    checks.push({
+      key: "range",
+      label: "Timestamps within source range",
+      status: "skip",
+      detail: "no raw preview",
+    });
+  }
+
+  return checks;
+}
+
+function statusBadge(s: CheckStatus): { label: string; cls: string } {
+  switch (s) {
+    case "pass":
+      return { label: "PASS", cls: "bg-green-100 text-green-800 border-green-200" };
+    case "fail":
+      return { label: "FAIL", cls: "bg-red-100 text-red-800 border-red-200" };
+    case "skip":
+      return { label: "SKIP", cls: "bg-slate-100 text-slate-600 border-slate-200" };
+    default:
+      return { label: "INFO", cls: "bg-blue-100 text-blue-800 border-blue-200" };
+  }
+}
+
+function RepairValidationPanel({
+  accepted,
+  reason,
+  validationError,
+  httpStatus,
+  rawChunks,
+  repaired,
+}: {
+  accepted: boolean;
+  reason: string | null;
+  validationError: string | null;
+  httpStatus: number | null;
+  rawChunks: RawChunkPreview[];
+  repaired: PreviewSentence[] | null;
+}) {
+  const checks = useMemo(
+    () => computeValidationChecks({ rawChunks, repaired }),
+    [rawChunks, repaired],
+  );
+
+  // Outcome derivation: prefer recorded reason; surface ai_call_failed vs validation_failed clearly.
+  let outcome: { label: string; cls: string; sub: string };
+  if (accepted) {
+    outcome = {
+      label: "Accepted",
+      cls: "bg-green-50 border-green-200 text-green-900",
+      sub: reason ?? "all validation checks passed",
+    };
+  } else if (reason?.startsWith("ai_call_failed")) {
+    outcome = {
+      label: "Fallback — AI call failed",
+      cls: "bg-amber-50 border-amber-200 text-amber-900",
+      sub: `${reason}${httpStatus != null ? ` · HTTP ${httpStatus}` : ""}`,
+    };
+  } else if (reason?.startsWith("validation_failed")) {
+    outcome = {
+      label: "Fallback — validation failed",
+      cls: "bg-red-50 border-red-200 text-red-900",
+      sub: validationError ?? reason,
+    };
+  } else {
+    outcome = {
+      label: "Fallback",
+      cls: "bg-slate-50 border-slate-200 text-slate-800",
+      sub: reason ?? "deterministic output used",
+    };
+  }
+
+  return (
+    <div className="mt-3 rounded border border-slate-200">
+      <div className="border-b border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+          AI Repair Validation
+        </div>
+        <div className={`mt-1 inline-flex flex-col rounded border px-2 py-1 text-xs ${outcome.cls}`}>
+          <span className="font-semibold">{outcome.label}</span>
+          <span className="font-mono text-[11px] opacity-80">{outcome.sub}</span>
+        </div>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {checks.map((c) => {
+          const b = statusBadge(c.status);
+          return (
+            <div key={c.key} className="flex items-start gap-3 px-3 py-1.5 text-xs">
+              <span
+                className={`inline-block w-12 shrink-0 rounded border px-1 py-0.5 text-center font-mono text-[10px] ${b.cls}`}
+              >
+                {b.label}
+              </span>
+              <div className="flex-1">
+                <div className="font-medium text-slate-800">{c.label}</div>
+                <div className="font-mono text-[11px] text-slate-600">
+                  {c.detail}
+                  {c.threshold ? <span className="ml-2 text-slate-400">[{c.threshold}]</span> : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] text-slate-500">
+        Checks are computed from the captured preview window (first {rawChunks.length} raw chunks ·{" "}
+        {repaired?.length ?? 0} repaired units). Server-side validation runs over the full transcript and
+        is reflected in the outcome banner above.
+      </div>
+    </div>
+  );
+}
