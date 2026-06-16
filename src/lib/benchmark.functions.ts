@@ -597,6 +597,39 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         }
         download_status = "Failed";
         log({ step: "transcript_fetch", ok: false, detail: `[${errorType ?? "?"}] ${msg}` });
+        // Per-provider diagnostics — surface for every transcript failure
+        // (e.g. T01/A01) so the founder dashboard can answer:
+        //   • Was Transcribr invoked? What HTTP code / error did it return?
+        //   • Was ASR invoked? Did it return a transcript that got discarded?
+        const pt = (e as { providerTrace?: import("@/lib/transcript.functions").ProviderTrace } | null)?.providerTrace;
+        if (pt) {
+          const tr = pt.transcribr;
+          const trDiscarded = tr.rawSegments > 0 && tr.keptSegments === 0;
+          log({
+            step: "provider:transcribr",
+            ok: tr.keptSegments > 0,
+            detail:
+              `invoked=${tr.invoked ? "yes" : "no"}` +
+              ` http=${tr.httpStatus ?? "-"}` +
+              ` segments=${tr.rawSegments}` +
+              ` kept=${tr.keptSegments}` +
+              (trDiscarded ? ` discarded=${tr.discardedReason ?? "yes"}` : "") +
+              (tr.errorMessage ? ` error=${tr.errorMessage.slice(0, 160)}` : ""),
+          });
+          const ar = pt.asr;
+          const arDiscarded = ar.rawSegments > 0 && ar.keptSegments === 0;
+          log({
+            step: "provider:asr_gemini",
+            ok: ar.keptSegments > 0,
+            detail:
+              `invoked=${ar.invoked ? "yes" : "no"}` +
+              ` http=${ar.httpStatus ?? "-"}` +
+              ` segments=${ar.rawSegments}` +
+              ` kept=${ar.keptSegments}` +
+              (arDiscarded ? ` discarded=${ar.discardedReason ?? "yes"}` : "") +
+              (ar.errorMessage ? ` error=${ar.errorMessage.slice(0, 160)}` : ""),
+          });
+        }
       }
     }
 

@@ -43,6 +43,20 @@ export type TranscriptQualityReport = {
   };
 };
 
+export type AsrTrace = {
+  invoked: boolean;
+  httpStatus: number | null;
+  errorMessage: string | null;
+  rawSegments: number;
+  keptSegments: number;
+  discardedReason: string | null;
+};
+
+export type ProviderTrace = {
+  transcribr: TranscribrTrace;
+  asr: AsrTrace;
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
@@ -50,6 +64,7 @@ export type FetchTranscriptResult = {
   language?: string | null;
   cacheHit: boolean;
   quality: TranscriptQualityReport;
+  providerTrace?: ProviderTrace;
 };
 
 export type TranscriptErrorType =
@@ -509,15 +524,29 @@ async function recordTranscriptReport(params: {
 //   body:    { video_id }
 //   resp:    { transcript: [{text, start, duration}], language, ... }
 // ---------------------------------------------------------------------------
+export type TranscribrTrace = {
+  invoked: boolean;
+  httpStatus: number | null;
+  errorMessage: string | null;
+  rawSegments: number;
+  keptSegments: number;
+  discardedReason: string | null;
+};
+
 async function fetchFromFallbackProvider(params: {
   videoId: string;
   videoUrl: string;
+  trace: TranscribrTrace;
 }): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
+  const { trace } = params;
   const apiKey = process.env.TRANSCRIBR_API_KEY;
   if (!apiKey) {
+    trace.invoked = false;
+    trace.errorMessage = "TRANSCRIBR_API_KEY missing";
     console.warn("[transcript-debug] TRANSCRIBR_API_KEY missing — skipping fallback");
     return null;
   }
+  trace.invoked = true;
 
   try {
     const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
@@ -529,37 +558,43 @@ async function fetchFromFallbackProvider(params: {
       },
       body: JSON.stringify({ video_id: params.videoId }),
     });
-    console.log("[transcript-debug] Transcribr HTTP", {
-      status: res.status,
-      ok: res.ok,
-    });
+    trace.httpStatus = res.status;
+    console.log("[transcript-debug] Transcribr HTTP", { status: res.status, ok: res.ok });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
       console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
       return null;
     }
     const json: any = await res.json();
-    const transcript: any[] = Array.isArray(json?.transcript)
-      ? json.transcript
-      : [];
+    const transcript: any[] = Array.isArray(json?.transcript) ? json.transcript : [];
+    trace.rawSegments = transcript.length;
     console.log("[transcript-debug] Transcribr response", {
       transcript_items: transcript.length,
       language: json?.language ?? null,
       top_level_keys: json && typeof json === "object" ? Object.keys(json) : [],
     });
-    if (!transcript.length) return null;
+    if (!transcript.length) {
+      trace.discardedReason = "empty_transcript_array";
+      return null;
+    }
     const chunks: RawChunk[] = transcript
       .map((c) => ({
         text: String(c.text ?? ""),
-        // Transcribr returns seconds already.
         offset: Number(c.start ?? 0),
         duration: Number(c.duration ?? 0),
       }))
       .filter((c) => c.text.length > 0);
-    if (!chunks.length) return null;
+    trace.keptSegments = chunks.length;
+    if (!chunks.length) {
+      trace.discardedReason = "all_segments_blank_after_filter";
+      return null;
+    }
     return { chunks, language: json?.language ?? null };
   } catch (e) {
-    console.warn("[transcript-debug] Transcribr fetch threw", e instanceof Error ? e.message : String(e));
+    const msg = e instanceof Error ? e.message : String(e);
+    trace.errorMessage = msg;
+    console.warn("[transcript-debug] Transcribr fetch threw", msg);
     return null;
   }
 }
@@ -581,12 +616,17 @@ type AsrResult =
 async function fetchFromAsrFallback(params: {
   videoId: string;
   videoUrl: string;
+  trace: AsrTrace;
 }): Promise<AsrResult> {
+  const { trace } = params;
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) {
+    trace.invoked = false;
+    trace.errorMessage = "LOVABLE_API_KEY missing";
     console.warn("[transcript-debug] LOVABLE_API_KEY missing — skipping ASR fallback");
     return { ok: false, reason: "no_key" };
   }
+  trace.invoked = true;
 
   const canonicalUrl = `https://www.youtube.com/watch?v=${params.videoId}`;
   const prompt = [
@@ -602,8 +642,6 @@ async function fetchFromAsrFallback(params: {
     `Video URL: ${canonicalUrl}`,
   ].join("\n");
 
-  // OpenAI-compatible chat completion. Gemini through the Lovable AI Gateway
-  // accepts a YouTube URL as a video input via the file_data content part.
   const body = {
     model: "google/gemini-2.5-flash",
     messages: [
@@ -611,10 +649,7 @@ async function fetchFromAsrFallback(params: {
         role: "user",
         content: [
           { type: "text", text: prompt },
-          {
-            type: "file_data",
-            file_data: { file_uri: canonicalUrl, mime_type: "video/*" },
-          },
+          { type: "file_data", file_data: { file_uri: canonicalUrl, mime_type: "video/*" } },
         ],
       },
     ],
@@ -635,10 +670,12 @@ async function fetchFromAsrFallback(params: {
       signal: ctrl.signal,
     });
     clearTimeout(timer);
+    trace.httpStatus = res.status;
 
     console.log("[transcript-debug] ASR HTTP", { status: res.status, ok: res.ok });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
       console.warn("[transcript-debug] ASR error body", text.slice(0, 500));
       if (res.status === 408 || res.status === 504) {
         return { ok: false, reason: "asr_timeout", detail: `HTTP ${res.status}` };
@@ -648,23 +685,27 @@ async function fetchFromAsrFallback(params: {
 
     const json: any = await res.json();
     const raw: string = json?.choices?.[0]?.message?.content ?? "";
-    if (!raw) return { ok: false, reason: "asr_empty", detail: "no content" };
+    if (!raw) {
+      trace.discardedReason = "no_content_in_choices";
+      return { ok: false, reason: "asr_empty", detail: "no content" };
+    }
 
     let parsed: any = null;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // Strip code fences if the model added any.
       const stripped = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
       try {
         parsed = JSON.parse(stripped);
       } catch (e) {
-        console.warn("[transcript-debug] ASR JSON parse failed", e instanceof Error ? e.message : String(e));
+        trace.errorMessage = `invalid_json: ${e instanceof Error ? e.message : String(e)}`;
+        console.warn("[transcript-debug] ASR JSON parse failed", trace.errorMessage);
         return { ok: false, reason: "asr_failed", detail: "invalid_json" };
       }
     }
 
     const segments: any[] = Array.isArray(parsed?.segments) ? parsed.segments : [];
+    trace.rawSegments = segments.length;
     const chunks: RawChunk[] = segments
       .map((s) => ({
         text: String(s?.text ?? "").trim(),
@@ -672,8 +713,8 @@ async function fetchFromAsrFallback(params: {
         duration: Number(s?.duration ?? 0),
       }))
       .filter((c) => c.text.length > 0);
+    trace.keptSegments = chunks.length;
 
-    // Backfill durations if the model returned 0s.
     for (let i = 0; i < chunks.length; i++) {
       if (!(chunks[i].duration > 0)) {
         const next = chunks[i + 1];
@@ -681,13 +722,17 @@ async function fetchFromAsrFallback(params: {
       }
     }
 
-    if (!chunks.length) return { ok: false, reason: "asr_empty", detail: "no_segments" };
+    if (!chunks.length) {
+      trace.discardedReason = segments.length ? "all_segments_blank_after_filter" : "no_segments";
+      return { ok: false, reason: "asr_empty", detail: trace.discardedReason };
+    }
     const language = typeof parsed?.language === "string" ? parsed.language : null;
     console.log("[transcript-debug] ASR SUCCESS", { segments: chunks.length, language });
     return { ok: true, chunks, language };
   } catch (e) {
     clearTimeout(timer);
     const msg = e instanceof Error ? e.message : String(e);
+    trace.errorMessage = msg;
     if (msg.toLowerCase().includes("abort")) {
       return { ok: false, reason: "asr_timeout", detail: "client_abort_120s" };
     }
@@ -758,6 +803,16 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       success: false,
       cache_hit: false,
     });
+
+    // Per-provider diagnostics (always returned/thrown so callers can attribute failures).
+    const transcribrTrace: TranscribrTrace = {
+      invoked: false, httpStatus: null, errorMessage: null,
+      rawSegments: 0, keptSegments: 0, discardedReason: null,
+    };
+    const asrTrace: AsrTrace = {
+      invoked: false, httpStatus: null, errorMessage: null,
+      rawSegments: 0, keptSegments: 0, discardedReason: null,
+    };
 
     // -------- Layer 2: YouTube captions --------
     let raw: RawChunk[] | null = null;
@@ -851,6 +906,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const fb = await fetchFromFallbackProvider({
       videoId,
       videoUrl: data.url,
+      trace: transcribrTrace,
     });
     console.log("[transcript-debug] fallback result", {
       chunks: fb?.chunks.length ?? 0,
@@ -898,7 +954,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     // -------- Layer 4: Real ASR fallback (Gemini video understanding) --------
     console.log("[transcript-debug] trying ASR fallback (Gemini)");
-    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url });
+    const asr = await fetchFromAsrFallback({ videoId, videoUrl: data.url, trace: asrTrace });
+    const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace };
     if (asr.ok) {
       const sentences = buildSentencesFromChunks(asr.chunks);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
@@ -936,6 +993,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: asr.language,
         cacheHit: false,
         quality,
+        providerTrace,
       };
     }
 
@@ -968,11 +1026,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       errorType?: TranscriptErrorType;
       videoId?: string;
       providerMessage?: string;
+      providerTrace?: ProviderTrace;
     };
     err.errorType = errorType;
     err.videoId = videoId;
     err.providerMessage =
       lastErr instanceof Error ? lastErr.message : String(lastErr ?? "");
+    err.providerTrace = providerTrace;
     throw err;
   });
 
