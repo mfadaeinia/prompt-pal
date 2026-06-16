@@ -43,6 +43,20 @@ export type TranscriptQualityReport = {
   };
 };
 
+export type AsrTrace = {
+  invoked: boolean;
+  httpStatus: number | null;
+  errorMessage: string | null;
+  rawSegments: number;
+  keptSegments: number;
+  discardedReason: string | null;
+};
+
+export type ProviderTrace = {
+  transcribr: TranscribrTrace;
+  asr: AsrTrace;
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
@@ -50,6 +64,7 @@ export type FetchTranscriptResult = {
   language?: string | null;
   cacheHit: boolean;
   quality: TranscriptQualityReport;
+  providerTrace?: ProviderTrace;
 };
 
 export type TranscriptErrorType =
