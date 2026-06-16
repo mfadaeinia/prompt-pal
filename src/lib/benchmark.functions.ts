@@ -10,9 +10,10 @@ export type FailureCode =
   | "V03" // Empty video file / zero-byte response
   | "V04" // Unsupported format / non-video URL
   // Transcript failures (after successful URL access)
-  | "T01" // No transcript after successful processing
+  | "T01" // No transcript after successful processing (captions not available)
   | "T02" // Empty transcript
   | "T03" // Transcript too short
+  | "T04" // Provider blocked / rate-limited (transient — not a real failure)
   // Sentence-builder failures
   | "S01" // Too few sentences
   | "S02" // Giant merged sentence (>100 words in any one)
@@ -27,9 +28,10 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
   V02: "V02 — Download / probe timeout",
   V03: "V03 — Empty video file",
   V04: "V04 — Unsupported format",
-  T01: "T01 — No transcript after processing",
+  T01: "T01 — No captions available",
   T02: "T02 — Empty transcript",
   T03: "T03 — Transcript too short",
+  T04: "T04 — Provider rate-limited (transient)",
   S01: "S01 — Too few sentences",
   S02: "S02 — Giant merged sentence",
   S03: "S03 — Missing sentence boundaries",
@@ -38,7 +40,7 @@ export const FAILURE_LABELS: Record<FailureCode, string> = {
 };
 
 export const ALL_FAILURE_CODES: FailureCode[] = [
-  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "S01", "S02", "S03", "L01", "P01",
+  "V01", "V02", "V03", "V04", "T01", "T02", "T03", "T04", "S01", "S02", "S03", "L01", "P01",
 ];
 
 export type BenchmarkMode = "quick" | "full";
