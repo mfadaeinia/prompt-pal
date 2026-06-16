@@ -79,15 +79,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "NativeFlow" },
-      { name: "description", content: "Understand real Dutch videos instantly. Click any subtitle sentence to get translations, explanations, and expressions in context." },
+      { name: "description", content: "NativeFlow turns real YouTube videos into interactive language lessons with sentence-level translations and explanations." },
       { name: "author", content: "NativeFlow" },
-      { property: "og:title", content: "NativeFlow" },
-      { property: "og:description", content: "Understand real content instantly." },
       { property: "og:site_name", content: "NativeFlow" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "NativeFlow" },
-      { name: "twitter:description", content: "Understand real content instantly." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/91373f16-7404-4f9b-857a-ee2de4903c31" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/91373f16-7404-4f9b-857a-ee2de4903c31" },
       // Cache-busting: force browsers to always fetch fresh HTML so they never load a stale asset manifest
@@ -99,6 +96,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: appCss,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "NativeFlow",
+              url: "https://native-lens.lovable.app",
+            },
+            {
+              "@type": "WebSite",
+              name: "NativeFlow",
+              url: "https://native-lens.lovable.app",
+            },
+          ],
+        }),
       },
     ],
   }),
