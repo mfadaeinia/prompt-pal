@@ -491,6 +491,15 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let cache_hit = false;
     let transcript_generated = false;
 
+    // Sentence diagnostics (populated after segmentation)
+    let sentenceShortPct = 0;
+    let sentenceGiantPct = 0;
+    let sentencePunctPct = 0;
+    let sentenceMedianGap: number | null = null;
+    let sentencePreview: Array<{ text: string; start: number; end: number; words: number }> = [];
+    let sentenceQualityRating: "high" | "medium" | "low" = "low";
+    let sentenceQualityReason: string | null = null;
+
     // STEP 1 — probe URL accessibility
     try {
       const tProbe = Date.now();
