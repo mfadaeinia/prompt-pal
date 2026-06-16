@@ -607,7 +607,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
       } as any);
     if (insErr) throw new Error(insErr.message);
 
-    return { ok: true };
+    return { ok: true, rateLimited: failure_code === "T04" };
   });
 
 /** Step 3 — aggregate result rows into the run row, mark completed. */
