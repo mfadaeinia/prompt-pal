@@ -448,7 +448,7 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   language: string | null;
-  source: "youtube" | "manual" | "fallback";
+  source: "youtube" | "manual" | "fallback" | "asr";
 }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin
