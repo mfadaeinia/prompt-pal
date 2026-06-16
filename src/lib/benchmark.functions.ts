@@ -566,7 +566,45 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_generated = true;
         transcript_source = tr.source;
         download_status = tr.source === "cache" ? "cache" : "Success";
-        const sentences = tr.sentences ?? [];
+
+        // ---- Sentence repair (deterministic → conditional AI repair) ----
+        let sentences = tr.sentences ?? [];
+        if (tr.rawChunks && tr.rawChunks.length && sentences.length) {
+          try {
+            const { repairSentencesIfNeeded } = await import(
+              "@/lib/sentence-repair.server"
+            );
+            const tRepair = Date.now();
+            const repair = await repairSentencesIfNeeded({
+              chunks: tr.rawChunks,
+              deterministic: sentences,
+            });
+            deterministic_quality = repair.deterministicQuality;
+            ai_repair_used = repair.aiRepairUsed;
+            ai_repair_success = repair.aiRepairSuccess;
+            final_sentence_quality = repair.finalQuality;
+            repair_reason = repair.repairReason;
+            repair_diagnostics = repair.diagnostics;
+            if (repair.finalSource === "ai_repaired") {
+              sentences = repair.final;
+            }
+            log({
+              step: "sentence_repair",
+              ok: true,
+              detail:
+                `det=${repair.deterministicQuality} used=${repair.aiRepairUsed}` +
+                ` success=${repair.aiRepairSuccess} final=${repair.finalQuality}` +
+                ` (${repair.repairReason})`,
+              ms: Date.now() - tRepair,
+            });
+          } catch (e) {
+            log({
+              step: "sentence_repair",
+              ok: false,
+              detail: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
         sentence_count = sentences.length;
 
         const wordsPerSentence = sentences.map((s) => wc(s.text));
