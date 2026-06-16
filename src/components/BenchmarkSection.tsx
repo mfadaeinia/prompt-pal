@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   getLatestBenchmark,
   getDatasetHealth,
+  getDatasetSize,
   startBenchmarkRun,
   processBenchmarkVideo,
   finalizeBenchmarkRun,
