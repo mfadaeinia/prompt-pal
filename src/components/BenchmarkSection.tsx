@@ -719,6 +719,41 @@ function parseDatasetPayload(input: string): ParsedEntry[] {
     .map((youtube_url) => ({ youtube_url }));
 }
 
+function pickField(row: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of Object.keys(row)) {
+    const norm = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (keys.includes(norm)) {
+      const v = row[k];
+      if (v == null) return null;
+      const s = String(v).trim();
+      return s ? s : null;
+    }
+  }
+  return null;
+}
+
+/** Map free-form spreadsheet rows (e.g. the ValidationBenchmark .xlsx) to
+ *  ParsedEntry objects. Recognizes URL/Title/Category/Language/Difficulty/Notes
+ *  in any case, with or without spaces. */
+function rowsToEntries(rows: Record<string, unknown>[]): ParsedEntry[] {
+  const out: ParsedEntry[] = [];
+  for (const row of rows) {
+    const url = pickField(row, ["url", "youtubeurl", "videourl", "link"]);
+    if (!url) continue;
+    out.push({
+      youtube_url: url,
+      title: pickField(row, ["title", "name"]),
+      category: pickField(row, ["category", "type"]),
+      language: pickField(row, ["language", "lang"]),
+      difficulty: pickField(row, ["difficulty", "level"]),
+      notes: pickField(row, ["notes", "note", "comment", "comments"]),
+      active: true,
+    });
+  }
+  if (!out.length) throw new Error("No rows with a URL column found in the spreadsheet.");
+  return out;
+}
+
 function UpdateGoldenDatasetModal({
   onClose,
   onSaved,
