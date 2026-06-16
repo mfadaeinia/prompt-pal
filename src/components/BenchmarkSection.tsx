@@ -18,6 +18,17 @@ import {
   type DatasetHealth,
   type UpsertBenchmarkResult,
 } from "@/lib/benchmark.functions";
+import {
+  computeScores,
+  pipelineBand,
+  triggeredReasons,
+  REASON_LABELS,
+  aggregateBySource,
+  SOURCE_LABELS,
+  generateObservations,
+  SCORE_THRESHOLDS,
+  SCORE_WEIGHTS,
+} from "@/lib/benchmark-scoring";
 
 const CATEGORIES = ["TED", "Podcast", "Interview", "Educational", "News"];
 
