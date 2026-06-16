@@ -98,6 +98,7 @@ function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
+  const cohortFetcher = useServerFn(getTesterCohort);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["founder-metrics"],
     queryFn: () => fetcher(),
@@ -111,6 +112,11 @@ function FounderPage() {
   const txQ = useQuery({
     queryKey: ["transcript-quality-metrics"],
     queryFn: () => txFetcher(),
+    refetchInterval: 30_000,
+  });
+  const cohortQ = useQuery({
+    queryKey: ["tester-cohort"],
+    queryFn: () => cohortFetcher(),
     refetchInterval: 30_000,
   });
 
@@ -129,19 +135,146 @@ function FounderPage() {
               refetch();
               libQ.refetch();
               txQ.refetch();
+              cohortQ.refetch();
             }}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
           >
-            {isFetching || libQ.isFetching || txQ.isFetching ? "Refreshing…" : "Refresh"}
+            {isFetching || libQ.isFetching || txQ.isFetching || cohortQ.isFetching
+              ? "Refreshing…"
+              : "Refresh"}
           </button>
         </header>
 
+        {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         <BenchmarkSection />
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
         {data && <Dashboard m={data} />}
         {libQ.data && <LibrarySection m={libQ.data} />}
         {txQ.data && <TranscriptQualitySection m={txQ.data} />}
+      </div>
+    </div>
+  );
+}
+
+function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
+  function downloadCsv() {
+    const headers = [
+      "tester_id",
+      "first_seen_at",
+      "last_seen_at",
+      "total_sessions",
+      "videos_loaded",
+      "sentence_clicks",
+      "expressions_saved",
+      "feedback_submitted_count",
+      "activated",
+      "returned_7d",
+    ];
+    const escape = (v: string | number | boolean) => {
+      const s = String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [
+      headers.join(","),
+      ...m.testers.map((t) =>
+        [
+          t.tester_id,
+          t.first_seen_at,
+          t.last_seen_at,
+          t.total_sessions,
+          t.videos_loaded,
+          t.sentence_clicks,
+          t.expressions_saved,
+          t.feedback_submitted_count,
+          t.activated,
+          t.returned_7d,
+        ]
+          .map(escape)
+          .join(","),
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tester-cohort-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          User Test Cohort
+        </h2>
+        <button
+          onClick={downloadCsv}
+          disabled={m.testers.length === 0}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+        >
+          Export CSV
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <Stat label="Testers invited" value={m.invited} />
+        <Stat
+          label="Testers activated"
+          value={m.totals.activated}
+          hint="≥1 video AND ≥3 sentence clicks"
+        />
+        <Stat label="Loaded ≥1 video" value={m.totals.loadedVideo} />
+        <Stat label="Clicked ≥3 sentences" value={m.totals.clickedThreeSentences} />
+        <Stat label="Returned in 7 days" value={m.totals.returned7d} hint="day 6–10 after first seen" />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-50 text-left text-slate-500">
+            <tr>
+              <th className="px-2 py-2">Tester</th>
+              <th className="px-2 py-2">First seen</th>
+              <th className="px-2 py-2">Last seen</th>
+              <th className="px-2 py-2">Sessions</th>
+              <th className="px-2 py-2">Videos</th>
+              <th className="px-2 py-2">Clicks</th>
+              <th className="px-2 py-2">Saved</th>
+              <th className="px-2 py-2">Feedback</th>
+              <th className="px-2 py-2">Activated</th>
+              <th className="px-2 py-2">Returned&nbsp;7d</th>
+            </tr>
+          </thead>
+          <tbody>
+            {m.testers.map((t: TesterRow) => (
+              <tr key={t.tester_id} className="border-t border-slate-100">
+                <td className="px-2 py-1 font-mono">{t.tester_id}</td>
+                <td className="px-2 py-1 text-slate-500">
+                  {new Date(t.first_seen_at).toLocaleString()}
+                </td>
+                <td className="px-2 py-1 text-slate-500">
+                  {new Date(t.last_seen_at).toLocaleString()}
+                </td>
+                <td className="px-2 py-1">{t.total_sessions}</td>
+                <td className="px-2 py-1">{t.videos_loaded}</td>
+                <td className="px-2 py-1">{t.sentence_clicks}</td>
+                <td className="px-2 py-1">{t.expressions_saved}</td>
+                <td className="px-2 py-1">{t.feedback_submitted_count}</td>
+                <td className="px-2 py-1">{t.activated ? "✓" : "—"}</td>
+                <td className="px-2 py-1">{t.returned_7d ? "✓" : "—"}</td>
+              </tr>
+            ))}
+            {m.testers.length === 0 && (
+              <tr>
+                <td className="px-2 py-3 text-slate-400" colSpan={10}>
+                  No tester activity yet. Share links like{" "}
+                  <code>/?ref=tester_001</code> to start tracking.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
