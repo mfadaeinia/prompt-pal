@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
 import {
@@ -25,6 +25,7 @@ import {
   type TruthLabel,
 } from "@/lib/transcript-review.functions";
 import { clearBenchmarkTranscriptCache } from "@/lib/transcript.functions";
+import { traceTranscriptPipeline, type PipelineTrace } from "@/lib/transcript-trace.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
@@ -158,6 +159,7 @@ function FounderPage() {
         </header>
 
         {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
+        <PipelineTraceSection />
         <TranscriptCacheTools />
         <TranscriptTruthSection />
         <BenchmarkSection />
@@ -921,7 +923,7 @@ function Dashboard({ m }: { m: FounderMetrics }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -955,4 +957,188 @@ function fmtDur(s: number) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+}
+
+function PipelineTraceSection() {
+  const traceFn = useServerFn(traceTranscriptPipeline);
+  const [url, setUrl] = useState("");
+  const [lang, setLang] = useState("");
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [trace, setTrace] = useState<PipelineTrace | null>(null);
+
+  async function run() {
+    if (!url.trim()) return;
+    setRunning(true);
+    setError(null);
+    setTrace(null);
+    try {
+      const res = await traceFn({
+        data: { url: url.trim(), expectedLanguage: lang.trim() || undefined },
+      });
+      setTrace(res);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Single-Video Pipeline Trace
+      </h2>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <p className="text-xs text-slate-500">
+          Read-only walkthrough of every layer in <code>fetchTranscript</code>. Does
+          not write to cache or benchmark tables. Order: validate → cache →
+          YouTube captions → Transcribr → Gemini (disabled).
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="YouTube URL or 11-char video id"
+            className="flex-1 min-w-[280px] rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+          <input
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            placeholder="Expected language (e.g. nl, en) — optional"
+            className="w-72 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+          <button
+            onClick={run}
+            disabled={running || !url.trim()}
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {running ? "Tracing…" : "Run trace"}
+          </button>
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {trace && <TraceResult trace={trace} />}
+      </div>
+    </section>
+  );
+}
+
+function TraceResult({ trace }: { trace: PipelineTrace }) {
+  return (
+    <div className="space-y-3 text-sm">
+      <TraceBlock title="Input">
+        <Row k="raw_url" v={trace.input.rawUrl} />
+        <Row k="video_id" v={trace.input.videoId ?? "(none)"} />
+        <Row k="video_url" v={trace.input.videoUrl} />
+        <Row k="expected_language" v={trace.input.expectedLanguage ?? "_any_"} />
+      </TraceBlock>
+
+      <TraceBlock title="Step 1 — Validate YouTube video (oEmbed)" status={trace.step1_validate.status}>
+        <Row k="attempted" v={String(trace.step1_validate.attempted)} />
+        <Row k="http_status" v={trace.step1_validate.httpStatus ?? "—"} />
+        <Row k="title" v={trace.step1_validate.title ?? "—"} />
+        <Row k="author" v={trace.step1_validate.author ?? "—"} />
+        <Row k="error" v={trace.step1_validate.errorMessage ?? "—"} />
+      </TraceBlock>
+
+      <TraceBlock title="Step 2 — Cache lookup" status={trace.step2_cache.status}>
+        <Row k="attempted" v={String(trace.step2_cache.attempted)} />
+        <Row k="cache_hit" v={String(trace.step2_cache.hit)} />
+        <Row k="rows_for_video_id" v={trace.step2_cache.rowsForVideo} />
+        <Row k="cache_row_id" v={trace.step2_cache.cacheRowId ?? "—"} />
+        <Row k="cache_key" v={trace.step2_cache.cacheKey ?? "—"} />
+        <Row k="provider" v={trace.step2_cache.provider ?? "—"} />
+        <Row k="language" v={trace.step2_cache.language ?? "—"} />
+        <Row k="length_chars" v={trace.step2_cache.transcriptLengthChars ?? "—"} />
+        <Row k="updated_at" v={trace.step2_cache.updatedAt ?? "—"} />
+        {!trace.step2_cache.hit && <Row k="miss_reason" v={trace.step2_cache.missReason ?? "—"} />}
+      </TraceBlock>
+
+      <TraceBlock title="Step 3 — YouTube captions" status={trace.step3_youtube.status}>
+        <Row k="attempted" v={String(trace.step3_youtube.attempted)} />
+        <Row k="language_used" v={trace.step3_youtube.languageUsed ?? "—"} />
+        <Row k="chunks" v={trace.step3_youtube.chunkCount} />
+        <Row k="transcript_chars" v={trace.step3_youtube.transcriptChars} />
+        <Row k="error" v={trace.step3_youtube.errorMessage ?? "—"} />
+        {trace.step3_youtube.attempts.length > 0 && (
+          <div className="mt-2">
+            <div className="text-xs font-medium text-slate-500 mb-1">Per-language attempts</div>
+            <table className="w-full text-xs">
+              <thead className="text-slate-500">
+                <tr><th className="text-left">lang</th><th className="text-left">ok</th><th className="text-left">chunks</th><th className="text-left">error</th></tr>
+              </thead>
+              <tbody>
+                {trace.step3_youtube.attempts.map((a, i) => (
+                  <tr key={i} className="border-t border-slate-100">
+                    <td className="py-1 pr-2">{a.lang}</td>
+                    <td className="py-1 pr-2">{a.ok ? "✓" : "✗"}</td>
+                    <td className="py-1 pr-2">{a.chunks}</td>
+                    <td className="py-1 pr-2 text-slate-600">{a.error ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </TraceBlock>
+
+      <TraceBlock title="Step 4 — Transcribr fallback" status={trace.step4_transcribr.status}>
+        <Row k="attempted" v={String(trace.step4_transcribr.attempted)} />
+        <Row k="request_sent" v={String(trace.step4_transcribr.requestSent)} />
+        <Row k="http_status" v={trace.step4_transcribr.httpStatus ?? "—"} />
+        <Row k="language_returned" v={trace.step4_transcribr.languageReturned ?? "—"} />
+        <Row k="raw_segments" v={trace.step4_transcribr.rawSegments} />
+        <Row k="kept_segments" v={trace.step4_transcribr.keptSegments} />
+        <Row k="transcript_chars" v={trace.step4_transcribr.transcriptChars} />
+        <Row k="skip_reason" v={trace.step4_transcribr.skipReason ?? "—"} />
+        <Row k="error" v={trace.step4_transcribr.errorMessage ?? "—"} />
+        {trace.step4_transcribr.responseBodySnippet && (
+          <div className="mt-2">
+            <div className="text-xs font-medium text-slate-500 mb-1">Response body (truncated)</div>
+            <pre className="overflow-x-auto rounded bg-slate-50 p-2 text-[11px] text-slate-700">{trace.step4_transcribr.responseBodySnippet}</pre>
+          </div>
+        )}
+      </TraceBlock>
+
+      <TraceBlock title="Step 5 — Gemini ASR fallback" status={"disabled" as any}>
+        <Row k="attempted" v={String(trace.step5_gemini.attempted)} />
+        <Row k="status" v="DISABLED" />
+        <Row k="reason" v={trace.step5_gemini.reason} />
+      </TraceBlock>
+
+      <TraceBlock title="Final result" status={trace.final.transcriptGenerated ? "ok" : "fail"}>
+        <Row k="transcript_generated" v={String(trace.final.transcriptGenerated)} />
+        <Row k="final_source" v={trace.final.finalSource} />
+        <Row k="failure_code" v={trace.final.failureCode ?? "—"} />
+        <Row k="failure_reason" v={trace.final.failureReason ?? "—"} />
+      </TraceBlock>
+    </div>
+  );
+}
+
+function TraceBlock({ title, status, children }: { title: string; status?: "ok" | "fail" | "skipped" | "disabled"; children: ReactNode }) {
+  const color =
+    status === "ok" ? "bg-emerald-100 text-emerald-800"
+    : status === "fail" ? "bg-red-100 text-red-800"
+    : status === "disabled" ? "bg-amber-100 text-amber-800"
+    : status === "skipped" ? "bg-slate-100 text-slate-600"
+    : "bg-slate-100 text-slate-600";
+  return (
+    <div className="rounded-md border border-slate-200 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-semibold text-slate-800">{title}</div>
+        {status && <span className={`rounded px-2 py-0.5 text-[10px] font-medium uppercase ${color}`}>{status}</span>}
+      </div>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
+
+function Row({ k, v }: { k: string; v: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[200px_1fr] gap-2 text-xs">
+      <div className="text-slate-500">{k}</div>
+      <div className="text-slate-800 break-all">{v}</div>
+    </div>
+  );
 }
