@@ -651,6 +651,15 @@ function Index() {
       setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
       setTranscriptRawChunks(res.rawChunks ?? []);
+      if (res.sentences.length < MIN_LEARNING_SENTENCES) {
+        console.error("[learning-mode][gate] transcript not usable", {
+          videoId: res.videoId,
+          transcriptLength: fullText.length,
+          sentenceCount: res.sentences.length,
+          transcriptSource: res.source,
+          processingStage: "post_segmentation",
+        });
+      }
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
