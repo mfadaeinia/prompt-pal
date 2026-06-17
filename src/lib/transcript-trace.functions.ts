@@ -21,15 +21,48 @@ const Input = z.object({
   expectedLanguage: z.string().max(20).optional(),
 });
 
-function extractVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
+const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+export function extractVideoId(input: string): string | null {
+  if (!input) return null;
+  const raw = input.trim();
+  if (VIDEO_ID_RE.test(raw)) return raw;
+
+  // Allow bare URLs without protocol
+  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  let u: URL;
+  try {
+    u = new URL(withProto);
+  } catch {
+    return null;
   }
+
+  const host = u.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
+  const segments = u.pathname.split("/").filter(Boolean);
+
+  const valid = (s: string | null | undefined): string | null =>
+    s && VIDEO_ID_RE.test(s) ? s : null;
+
+  if (host === "youtu.be") {
+    return valid(segments[0] ?? null);
+  }
+
+  if (host === "youtube.com" || host.endsWith(".youtube.com")) {
+    // /watch?v=ID  (regardless of other query params)
+    if (segments[0] === "watch") {
+      const v = valid(u.searchParams.get("v"));
+      if (v) return v;
+    }
+    // /shorts/ID, /embed/ID, /live/ID, /v/ID
+    if (["shorts", "embed", "live", "v"].includes(segments[0])) {
+      return valid(segments[1] ?? null);
+    }
+    // Fallback: any ?v= param
+    const v = valid(u.searchParams.get("v"));
+    if (v) return v;
+  }
+
   return null;
 }
 
