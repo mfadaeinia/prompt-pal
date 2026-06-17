@@ -117,9 +117,43 @@ function makeTrace(): OpenAiAsrTrace {
     audio_url_field_used: null,
     audio_download_status: null,
     audio_size_mb: null,
+    extractor_latency_ms: null,
+    extractor_response_body: null,
+    extractor_audio_url: null,
+    extractor_failure_reason: null,
     failureCode: null,
   };
 }
+
+/** Classify an extractor failure based on HTTP status, response status, and any
+ *  human-readable message from the provider. Provider-agnostic — works for
+ *  youtube-mp36 today and any future extractor with similar semantics. */
+export function classifyExtractorFailure(args: {
+  httpStatus: number | null;
+  responseStatus: string | null;
+  message: string | null;
+  failureCode: OpenAiAsrTrace["failureCode"];
+}): OpenAiAsrTrace["extractor_failure_reason"] {
+  const { httpStatus, responseStatus, failureCode } = args;
+  if (failureCode === "audio_extract_no_key") return "provider_no_key";
+  if (failureCode === "audio_download_failed") return "extraction_failed";
+  if (failureCode === "asr_timeout") return "provider_timeout";
+  const msg = (args.message ?? "").toLowerCase();
+  if (httpStatus === 429) return "provider_rate_limit";
+  if (httpStatus && httpStatus >= 500) return "extraction_failed";
+  if (/age[- ]?restrict/.test(msg)) return "age_restricted";
+  if (/private/.test(msg)) return "private_video";
+  if (/\b(geo|country|region|not available in)\b/.test(msg)) return "geo_restricted";
+  if (/\blive\b|livestream|live stream|ongoing/.test(msg)) return "live_stream";
+  if (/unavailable|removed|deleted|not available|does not exist|404/.test(msg))
+    return "video_unavailable";
+  if (responseStatus === "fail") return "extraction_failed";
+  if (failureCode === "audio_extract_empty") return "provider_timeout";
+  if (failureCode === "audio_extract_http") return "extraction_failed";
+  if (failureCode) return "provider_unknown";
+  return null;
+}
+
 
 /**
  * Fetch a temporary audio URL for a YouTube video via RapidAPI youtube-mp36.
