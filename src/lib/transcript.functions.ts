@@ -1063,7 +1063,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
     const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
     const requestedLanguage = spokenLanguage ?? "_any_";
-    const cached = await readCache(videoId, requestedLanguage);
+    const cached = data.skipCache ? null : await readCache(videoId, requestedLanguage);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
