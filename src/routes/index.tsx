@@ -586,8 +586,8 @@ function Index() {
         returnedVideoId: res.videoId,
         source: res.source,
         cacheHit: res.cacheHit,
-        cacheRowId: res.cacheRowId,
-        cacheKey: res.cacheKey,
+        cacheRowId: res.provenance?.cacheRowId,
+        cacheKey: res.provenance?.cacheKey,
         provider: res.cachedFromProvider ?? res.source,
         segments: res.sentences.length,
         total_chars: fullText.length,
@@ -616,8 +616,8 @@ function Index() {
         console.error("[transcript-debug][client] ❌ video_id mismatch — refusing to apply", {
           requestedVideoId: vars.requestedVideoId,
           returnedVideoId: res.videoId,
-          cacheRowId: res.cacheRowId,
-          cacheKey: res.cacheKey,
+          cacheRowId: res.provenance?.cacheRowId,
+          cacheKey: res.provenance?.cacheKey,
         });
         return;
       }
@@ -628,8 +628,8 @@ function Index() {
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
-      setTranscriptCacheRowId(res.cacheRowId ?? null);
-      setTranscriptCacheKey(res.cacheKey ?? null);
+      setTranscriptCacheRowId(res.provenance?.cacheRowId ?? null);
+      setTranscriptCacheKey(res.provenance?.cacheKey ?? null);
       setTranscriptLoadedAt(new Date().toISOString());
       setTranscriptQuality(res.quality);
       setLimitedMode(res.quality.quality === "low");
