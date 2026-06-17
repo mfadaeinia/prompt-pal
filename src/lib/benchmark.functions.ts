@@ -653,8 +653,20 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             asr_duration_ms = ag.durationMs;
             asr_language = ag.language;
             asr_failure_code = ag.failureCode;
+            if (ag.provider === "openai") openai_invoked = (ag.segmentsCount ?? 0) > 0 || ag.httpStatus != null;
+            if (ag.extractor) {
+              extractor_provider = ag.extractor.provider;
+              extractor_http_status = ag.extractor.httpStatus;
+              extractor_response_status = ag.extractor.responseStatus;
+              extractor_response_body = ag.extractor.responseBody;
+              extractor_audio_url_found = ag.extractor.audioUrlFound;
+              extractor_audio_url = ag.extractor.audioUrl;
+              extractor_latency_ms = ag.extractor.latencyMs;
+              extractor_failure_reason = ag.extractor.failureReason;
+            }
           }
         }
+
 
 
 
