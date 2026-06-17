@@ -626,6 +626,7 @@ function Index() {
       setVideoId(res.videoId);
       setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
+      setTranscriptRawChunks(res.rawChunks ?? []);
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
