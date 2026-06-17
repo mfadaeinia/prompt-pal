@@ -103,6 +103,16 @@ function Index() {
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [cachedFromProvider, setCachedFromProvider] = useState<string | null>(null);
   const [transcriptQuality, setTranscriptQuality] = useState<TranscriptQualityReport | null>(null);
+  // Anti-stale-transcript guards. requestSeqRef monotonically increments per
+  // user-initiated load; only the latest seq is allowed to write to UI state.
+  // requestedVideoId tracks what the user just asked for so we can compare
+  // against the server response and refuse mismatches.
+  const requestSeqRef = useRef(0);
+  const [requestedVideoId, setRequestedVideoId] = useState<string | null>(null);
+  const [transcriptVideoId, setTranscriptVideoId] = useState<string | null>(null);
+  const [transcriptCacheRowId, setTranscriptCacheRowId] = useState<string | null>(null);
+  const [transcriptCacheKey, setTranscriptCacheKey] = useState<string | null>(null);
+  const [transcriptLoadedAt, setTranscriptLoadedAt] = useState<string | null>(null);
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
