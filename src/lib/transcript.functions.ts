@@ -1242,8 +1242,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     // -------- Layer 3: ASR provider (Transcribr default, OpenAI behind flag) --------
     const { getAsrProvider, transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
-    const asrProvider = getAsrProvider();
-    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider);
+    const asrProvider = data.forceProvider ?? getAsrProvider();
+    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider, data.forceProvider ? "(forced)" : "");
 
     let fb: { chunks: RawChunk[]; language: string | null } | null = null;
     let fbSource: "fallback" | "openai" = "fallback";
