@@ -508,6 +508,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let sentenceShortPct = 0;
     let sentenceGiantPct = 0;
     let sentencePunctPct = 0;
+    let transcriptText: string | null = null;
+    let transcriptPreview: string | null = null;
     let sentenceMedianGap: number | null = null;
     let sentencePreview: Array<{ text: string; start: number; end: number; words: number }> = [];
     let sentenceQualityRating: "high" | "medium" | "low" = "low";
@@ -664,6 +666,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
           end: Number((s.endTime ?? s.offset).toFixed(2)),
           words: wc(s.text),
         }));
+        // Capture full transcript text for human review
+        transcriptText = sentences.map((s) => s.text).join(" ").trim();
+        transcriptPreview = transcriptText.slice(0, 200);
 
         // Sentence UX quality (independent of pipeline success).
         const susReasons: string[] = [];
@@ -833,6 +838,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         final_sentence_quality,
         repair_reason,
         repair_diagnostics: repair_diagnostics as any,
+        transcript_text: transcriptText,
+        transcript_preview: transcriptPreview,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
