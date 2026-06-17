@@ -1083,6 +1083,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "cache",
         cachedFromProvider: provenance.provider,
         language: cached.language,
+        spokenLanguage,
+        transcriptLanguage: cached.language,
         cacheHit: true,
         quality,
         provenance,
