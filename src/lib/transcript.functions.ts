@@ -643,6 +643,7 @@ type CacheRow = {
 
 function rowToProvenance(r: CacheRow): CacheProvenance {
   return {
+    cacheRowId: r.id,
     cacheKey: r.cache_key ?? makeCacheKey(r.video_id, r.requested_language ?? "_any_", r.provider ?? r.source ?? "unknown", r.source_version ?? 1),
     videoId: r.video_id,
     requestedLanguage: r.requested_language ?? "_any_",
