@@ -161,6 +161,7 @@ async function downloadAudio(
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   try {
     const res = await fetch(audioUrl);
+    trace.audio_download_status = res.status;
     if (!res.ok) {
       trace.failureCode = "audio_download_failed";
       trace.audioExtractError = `audio download HTTP ${res.status}`;
@@ -170,14 +171,16 @@ async function downloadAudio(
     if (len && len > OPENAI_AUDIO_LIMIT_BYTES) {
       trace.failureCode = "audio_too_large";
       trace.audioBytes = len;
-      trace.audioExtractError = `audio ${(len / 1024 / 1024).toFixed(1)} MB exceeds 25 MB`;
+      trace.audio_size_mb = +(len / 1024 / 1024).toFixed(2);
+      trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
       return null;
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     trace.audioBytes = buf.byteLength;
+    trace.audio_size_mb = +(buf.byteLength / 1024 / 1024).toFixed(2);
     if (buf.byteLength > OPENAI_AUDIO_LIMIT_BYTES) {
       trace.failureCode = "audio_too_large";
-      trace.audioExtractError = `audio ${(buf.byteLength / 1024 / 1024).toFixed(1)} MB exceeds 25 MB`;
+      trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
       return null;
     }
     return { bytes: buf, contentType: res.headers.get("content-type") || "audio/mpeg" };
@@ -187,6 +190,7 @@ async function downloadAudio(
     return null;
   }
 }
+
 
 function classifyOpenAiStatus(status: number): OpenAiAsrTrace["failureCode"] {
   if (status === 401) return "openai_unauthorized";
