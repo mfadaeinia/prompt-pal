@@ -1295,8 +1295,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     console.error("[transcript-debug] ALL LAYERS FAILED", {
       videoId,
       errorType,
-      asrReason: asr.reason,
-      asrDetail: asr.detail ?? null,
+      asrProvider: asrGeneric.provider,
+      asrFailureCode: asrGeneric.failureCode,
       lastErrorMessage: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
     });
     logEvent({
@@ -1306,7 +1306,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       cache_hit: false,
       error_type: errorType,
       error_message:
-        asr.detail ?? (lastErr instanceof Error ? lastErr.message : String(lastErr ?? "")),
+        asrGeneric.failureCode ?? (lastErr instanceof Error ? lastErr.message : String(lastErr ?? "")),
     });
     const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
       errorType?: TranscriptErrorType;
