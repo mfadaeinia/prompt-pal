@@ -1347,9 +1347,11 @@ function Index() {
               setUrl={setUrl}
               targetLang={targetLang}
               setTargetLang={setTargetLang}
+              spokenLang={spokenLang}
+              setSpokenLang={setSpokenLang}
               loading={loadMutation.isPending}
               onSubmit={(u) => {
-                track("custom_video_attempted", { video_url: u });
+                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
                 setView("demo");
                 submitLoad(u);
               }}
