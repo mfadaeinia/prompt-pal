@@ -106,6 +106,7 @@ export type Database = {
           median_gap_seconds: number | null
           pipeline_logs: Json | null
           processing_time_ms: number
+          provider_error: string | null
           punctuation_coverage_pct: number | null
           quality_rating: string
           quality_reason: string | null
@@ -121,6 +122,11 @@ export type Database = {
           sentence_quality_rating: string | null
           sentence_quality_reason: string | null
           short_fragment_pct: number | null
+          transcribr_duration_ms: number | null
+          transcribr_error: string | null
+          transcribr_invoked: boolean | null
+          transcribr_segments_count: number | null
+          transcribr_status: number | null
           transcript_found: boolean
           transcript_generated: boolean | null
           transcript_length_chars: number | null
@@ -158,6 +164,7 @@ export type Database = {
           median_gap_seconds?: number | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
+          provider_error?: string | null
           punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
@@ -173,6 +180,11 @@ export type Database = {
           sentence_quality_rating?: string | null
           sentence_quality_reason?: string | null
           short_fragment_pct?: number | null
+          transcribr_duration_ms?: number | null
+          transcribr_error?: string | null
+          transcribr_invoked?: boolean | null
+          transcribr_segments_count?: number | null
+          transcribr_status?: number | null
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null
@@ -210,6 +222,7 @@ export type Database = {
           median_gap_seconds?: number | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
+          provider_error?: string | null
           punctuation_coverage_pct?: number | null
           quality_rating?: string
           quality_reason?: string | null
@@ -225,6 +238,11 @@ export type Database = {
           sentence_quality_rating?: string | null
           sentence_quality_reason?: string | null
           short_fragment_pct?: number | null
+          transcribr_duration_ms?: number | null
+          transcribr_error?: string | null
+          transcribr_invoked?: boolean | null
+          transcribr_segments_count?: number | null
+          transcribr_status?: number | null
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null

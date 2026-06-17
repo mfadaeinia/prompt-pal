@@ -117,6 +117,13 @@ export type BenchmarkResultRow = {
   failure_code: FailureCode | null;
   processing_time_ms: number;
   error_message: string | null;
+  provider_error: string | null;
+  // Transcribr provider diagnostics (persisted per-row).
+  transcribr_invoked: boolean | null;
+  transcribr_status: number | null;
+  transcribr_error: string | null;
+  transcribr_segments_count: number | null;
+  transcribr_duration_ms: number | null;
   // Pipeline trace
   video_url_status: string | null;
   http_status_code: number | null;
@@ -495,6 +502,12 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let translation_generated = false;
     let failure_code: FailureCode | null = null;
     let error_message: string | null = null;
+    let provider_error: string | null = null;
+    let transcribr_invoked: boolean | null = null;
+    let transcribr_status: number | null = null;
+    let transcribr_error: string | null = null;
+    let transcribr_segments_count: number | null = null;
+    let transcribr_duration_ms: number | null = null;
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
@@ -585,6 +598,22 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         download_status = tr.source === "cache" ? "cache" : "Success";
         cacheRowId = tr.provenance?.cacheRowId ?? null;
         cacheKey = tr.provenance?.cacheKey ?? null;
+
+        // Capture Transcribr trace on success path too (e.g. if Transcribr
+        // was attempted and failed before YouTube captions succeeded, or
+        // when source === "fallback" the trace shows what Transcribr returned).
+        {
+          const tr2 = tr.providerTrace?.transcribr;
+          if (tr2) {
+            transcribr_invoked = tr2.invoked;
+            transcribr_status = tr2.httpStatus;
+            transcribr_error = tr2.errorMessage;
+            transcribr_segments_count = tr2.rawSegments;
+            transcribr_duration_ms = tr2.durationMs;
+          }
+        }
+
+
 
 
         // ---- Sentence repair (deterministic → conditional AI repair) ----
@@ -731,6 +760,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const errorType = (e as { errorType?: string } | null)?.errorType;
+        const providerMessage = (e as { providerMessage?: string } | null)?.providerMessage ?? null;
+        // Keep the raw provider error separate from the friendly user-facing message.
+        provider_error = providerMessage ?? msg;
         error_message = msg;
         const low = msg.toLowerCase();
         // Prefer the structured errorType attached by fetchTranscript when present.
@@ -764,6 +796,13 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         const pt = (e as { providerTrace?: import("@/lib/transcript.functions").ProviderTrace } | null)?.providerTrace;
         if (pt) {
           const tr = pt.transcribr;
+          // Persist Transcribr diagnostics directly to dedicated columns
+          // so failures can be aggregated without parsing the log array.
+          transcribr_invoked = tr.invoked;
+          transcribr_status = tr.httpStatus;
+          transcribr_error = tr.errorMessage;
+          transcribr_segments_count = tr.rawSegments;
+          transcribr_duration_ms = tr.durationMs;
           const trDiscarded = tr.rawSegments > 0 && tr.keptSegments === 0;
           log({
             step: "provider:transcribr",
@@ -821,6 +860,12 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         failure_code,
         processing_time_ms,
         error_message,
+        provider_error,
+        transcribr_invoked,
+        transcribr_status,
+        transcribr_error,
+        transcribr_segments_count,
+        transcribr_duration_ms,
         video_url_status,
         http_status_code,
         download_status,

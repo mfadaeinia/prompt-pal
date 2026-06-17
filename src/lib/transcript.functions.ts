@@ -893,6 +893,7 @@ export type TranscribrTrace = {
   rawSegments: number;
   keptSegments: number;
   discardedReason: string | null;
+  durationMs: number | null;
 };
 
 async function fetchFromFallbackProvider(params: {
@@ -909,6 +910,7 @@ async function fetchFromFallbackProvider(params: {
     return null;
   }
   trace.invoked = true;
+  const tStart = Date.now();
 
   try {
     const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
@@ -925,6 +927,7 @@ async function fetchFromFallbackProvider(params: {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
+      trace.durationMs = Date.now() - tStart;
       console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
       return null;
     }
@@ -938,6 +941,7 @@ async function fetchFromFallbackProvider(params: {
     });
     if (!transcript.length) {
       trace.discardedReason = "empty_transcript_array";
+      trace.durationMs = Date.now() - tStart;
       return null;
     }
     const chunks: RawChunk[] = transcript
@@ -950,12 +954,15 @@ async function fetchFromFallbackProvider(params: {
     trace.keptSegments = chunks.length;
     if (!chunks.length) {
       trace.discardedReason = "all_segments_blank_after_filter";
+      trace.durationMs = Date.now() - tStart;
       return null;
     }
+    trace.durationMs = Date.now() - tStart;
     return { chunks, language: json?.language ?? null };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     trace.errorMessage = msg;
+    trace.durationMs = Date.now() - tStart;
     console.warn("[transcript-debug] Transcribr fetch threw", msg);
     return null;
   }
@@ -1058,6 +1065,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const transcribrTrace: TranscribrTrace = {
       invoked: false, httpStatus: null, errorMessage: null,
       rawSegments: 0, keptSegments: 0, discardedReason: null,
+      durationMs: null,
     };
     const asrTrace: AsrTrace = {
       invoked: false, httpStatus: null, errorMessage: null,
@@ -1154,6 +1162,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
+        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
       };
     }
 
@@ -1211,6 +1220,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
+        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
       };
     }
 
