@@ -1509,8 +1509,15 @@ function Index() {
                 <button
                   role="tab"
                   aria-selected={studyMode}
+                  disabled={loadMutation.isSuccess && !hasUsableTranscript}
+                  title={
+                    loadMutation.isSuccess && !hasUsableTranscript
+                      ? "Learning Mode unavailable: transcript has too few sentences"
+                      : undefined
+                  }
                   onClick={() => {
                     if (studyMode) return;
+                    if (loadMutation.isSuccess && !hasUsableTranscript) return;
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
@@ -1518,7 +1525,7 @@ function Index() {
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  } ${loadMutation.isSuccess && !hasUsableTranscript ? "cursor-not-allowed opacity-50" : ""}`}
                 >
                   <BookOpen className="h-4 w-4" />
                   Learning Mode
