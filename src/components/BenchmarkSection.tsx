@@ -162,21 +162,31 @@ export function BenchmarkSection() {
               <>
                 <button
                   disabled={running}
-                  onClick={() => mut.mutate("quick")}
+                  onClick={() => mut.mutate({ mode: "quick" })}
                   className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {running && progress?.mode === "quick"
+                  {running && progress?.mode === "quick" && progress.pipelineMode === "current"
                     ? `Quick ${progress.done}/${progress.total}`
                     : `Run Quick (${quickCount})`}
                 </button>
                 <button
                   disabled={running}
-                  onClick={() => mut.mutate("full")}
+                  onClick={() => mut.mutate({ mode: "full" })}
                   className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
                 >
-                  {running && progress?.mode === "full"
+                  {running && progress?.mode === "full" && progress.pipelineMode === "current"
                     ? `Full ${progress.done}/${progress.total}`
                     : `Run Full (${total})`}
+                </button>
+                <button
+                  disabled={running}
+                  onClick={() => mut.mutate({ mode: "full", pipelineMode: "openai_only" })}
+                  title="Ignores cache and YouTube captions. Forces ASR_PROVIDER=openai."
+                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {running && progress?.pipelineMode === "openai_only"
+                    ? `OpenAI-Only ${progress.done}/${progress.total}`
+                    : `Run OpenAI-Only (${total})`}
                 </button>
               </>
             );
