@@ -1629,32 +1629,52 @@ function Index() {
                       </div>
                     </div>
 
-                    <ol ref={listRef} className="flex-1 overflow-y-auto">
-                      {sentences.map((s) => {
-                        const active = studyMode && selected?.id === s.id;
-                        const playing = playingId === s.id;
-                        return (
-                          <li key={s.id}>
+                    {loadMutation.isSuccess && sentences.length === 0 ? (
+                      <div className="flex-1 overflow-y-auto p-6 text-sm">
+                        <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-red-700 dark:text-red-300">
+                          <div className="font-semibold">Transcript generated but sentence parsing failed.</div>
+                          <div className="mt-1 text-xs opacity-80">
+                            The provider returned {transcriptRawChunks.length} raw chunk{transcriptRawChunks.length === 1 ? "" : "s"} but
+                            our segmenter produced 0 sentences. Try another video, or reload to retry.
+                          </div>
+                          {url && (
                             <button
-                              data-sid={s.id}
-                              onClick={() => jumpTo(s)}
-                              className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                                active
-                                  ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
-                                  : playing
-                                  ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                                  : "border-l-transparent text-foreground/85"
-                              }`}
+                              onClick={() => submitLoad(url)}
+                              className="mt-3 rounded-full border border-red-500/50 px-3 py-1 text-xs font-semibold hover:bg-red-500/20"
                             >
-                              <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                                {formatTime(s.offset)}
-                              </span>
-                              {s.text}
+                              Retry
                             </button>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <ol ref={listRef} className="flex-1 overflow-y-auto">
+                        {sentences.map((s) => {
+                          const active = studyMode && selected?.id === s.id;
+                          const playing = playingId === s.id;
+                          return (
+                            <li key={s.id}>
+                              <button
+                                data-sid={s.id}
+                                onClick={() => jumpTo(s)}
+                                className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                                  active
+                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                    : playing
+                                    ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                                    : "border-l-transparent text-foreground/85"
+                                }`}
+                              >
+                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                                  {formatTime(s.offset)}
+                                </span>
+                                {s.text}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
 
                     {activeOutOfView && playingId !== null && (
                       <button
