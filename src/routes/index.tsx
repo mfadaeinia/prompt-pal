@@ -154,6 +154,18 @@ function Index() {
   );
   const devPanelEnabled = isDevPanelEnabled();
 
+  // Learning Mode usability gate. A transcript with fewer than 5 sentences
+  // produces an empty / broken Learning Mode UI, so we treat it as failed
+  // and show a dedicated error state instead.
+  const MIN_LEARNING_SENTENCES = 5;
+  const hasUsableTranscript = sentences.length >= MIN_LEARNING_SENTENCES;
+  const processingStatus: "success" | "partial_success" | "failed" =
+    sentences.length >= MIN_LEARNING_SENTENCES
+      ? "success"
+      : sentences.length > 0
+        ? "partial_success"
+        : "failed";
+
   useEffect(() => {
     setBrowserId(getBrowserId());
   }, []);
@@ -639,6 +651,15 @@ function Index() {
       setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
       setTranscriptRawChunks(res.rawChunks ?? []);
+      if (res.sentences.length < MIN_LEARNING_SENTENCES) {
+        console.error("[learning-mode][gate] transcript not usable", {
+          videoId: res.videoId,
+          transcriptLength: res.sentences.reduce((n, s) => n + s.text.length, 0),
+          sentenceCount: res.sentences.length,
+          transcriptSource: res.source,
+          processingStage: "post_segmentation",
+        });
+      }
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
@@ -749,6 +770,16 @@ function Index() {
     if (requestedId) setVideoId(requestedId);
     loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
   };
+
+  // Hard gate: never allow Learning Mode when transcript isn't usable.
+  useEffect(() => {
+    if (loadMutation.isSuccess && !hasUsableTranscript && studyMode) {
+      setStudyMode(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUsableTranscript, loadMutation.isSuccess]);
+
+
 
 
   const manualMutation = useMutation({
@@ -1478,8 +1509,15 @@ function Index() {
                 <button
                   role="tab"
                   aria-selected={studyMode}
+                  disabled={loadMutation.isSuccess && !hasUsableTranscript}
+                  title={
+                    loadMutation.isSuccess && !hasUsableTranscript
+                      ? "Learning Mode unavailable: transcript has too few sentences"
+                      : undefined
+                  }
                   onClick={() => {
                     if (studyMode) return;
+                    if (loadMutation.isSuccess && !hasUsableTranscript) return;
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
@@ -1487,7 +1525,7 @@ function Index() {
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  } ${loadMutation.isSuccess && !hasUsableTranscript ? "cursor-not-allowed opacity-50" : ""}`}
                 >
                   <BookOpen className="h-4 w-4" />
                   Learning Mode
@@ -1514,6 +1552,61 @@ function Index() {
             </div>
 
 
+            {loadMutation.isSuccess && !hasUsableTranscript ? (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
+                <h2 className="text-lg font-semibold">
+                  This video cannot be used in Learning Mode
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We found subtitles or transcript data, but could not extract enough
+                  learning sentences from this video.
+                </p>
+                {devPanelEnabled && (
+                  <div className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-[11px] leading-snug text-muted-foreground">
+                    <div>Transcript fetched: <b>YES</b></div>
+                    <div>
+                      Transcript length:{" "}
+                      <b>
+                        {sentences.reduce((n, s) => n + s.text.length, 0) ||
+                          transcriptRawChunks.reduce((n, c) => n + c.text.length, 0)}
+                      </b>{" "}
+                      chars
+                    </div>
+                    <div>Sentence count: <b>{sentences.length}</b></div>
+                    <div>Processing status: <b>{processingStatus}</b></div>
+                    <div>Learning Mode usable: <b>NO</b></div>
+                    <div>Transcript source: <b>{transcriptSource ?? "—"}</b></div>
+                    <div>Video id: <b>{videoId ?? "—"}</b></div>
+                  </div>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStudyMode(false);
+                      setSelected(null);
+                    }}
+                  >
+                    Back to Watch Mode
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSentences([]);
+                      setVideoId(null);
+                      setTranscriptVideoId(null);
+                      setSelected(null);
+                      setTranscriptQuality(null);
+                      loadMutation.reset();
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Try Another Video
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <div
               className={`grid gap-6 ${
                 studyMode
@@ -1732,6 +1825,7 @@ function Index() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Supporting/marketing content lives BELOW the product. */}
             <section className="space-y-4 pt-8">
