@@ -1239,7 +1239,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     };
 
     if (asrProvider === "openai") {
-      const expectedLang = requestedLanguage === "_any_" ? null : requestedLanguage;
+      // Pass the SPOKEN language (never the learner's help/target language).
+      const expectedLang = spokenLanguage;
       const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: expectedLang });
       asrGeneric.provider = "openai";
       asrGeneric.model = oa.trace.model;
