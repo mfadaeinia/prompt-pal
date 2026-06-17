@@ -1111,11 +1111,32 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     };
 
     // -------- Layer 2: YouTube captions --------
+    //
+    // CRITICAL: never iterate through unrelated languages here. youtube-transcript
+    // happily returns YouTube's AUTO-TRANSLATED caption track for a language
+    // the video isn't actually in (e.g. asking for "nl" on an English video
+    // yields a machine-translated Dutch transcript). That's how transcripts
+    // ended up in the wrong language.
+    //
+    // Strategy:
+    //   - If the caller declared a spoken language → request exactly that
+    //     (and its regional variants).
+    //   - Otherwise → request the video's DEFAULT/ORIGINAL track only
+    //     (no `lang` option = original creator-uploaded captions).
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
     let lastErr: unknown = null;
     let blocked = false;
-    const langCandidates = ["nl", "nl-NL", "en", "en-US", "en-GB", undefined];
+    const langCandidates: (string | undefined)[] = spokenLanguage
+      ? [
+          spokenLanguage,
+          // common regional variants
+          spokenLanguage === "en" ? "en-US" : null,
+          spokenLanguage === "en" ? "en-GB" : null,
+          spokenLanguage === "nl" ? "nl-NL" : null,
+          undefined, // last-resort: original track
+        ].filter((v): v is string | undefined => v !== null)
+      : [undefined]; // auto-detect: only the original track
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1132,7 +1153,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
-          usedLang = lang ?? null;
+          usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
       } catch (e) {
@@ -1143,9 +1164,6 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           classified: cls,
           message: e instanceof Error ? e.message : String(e),
         });
-        // If YouTube is blocking/throttling us, every other lang attempt will
-        // also fail and just burn quota. Bail out and let the fallback provider
-        // handle it.
         if (cls === "rate_limited") {
           blocked = true;
           break;
