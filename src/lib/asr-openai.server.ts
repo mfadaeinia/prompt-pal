@@ -38,6 +38,27 @@ export type OpenAiAsrTrace = {
   audio_download_status: number | null;
   audio_size_mb: number | null;
 
+  // --- New: rich extractor diagnostics ---
+  /** Total time spent on audio extraction (poll loop), ms. */
+  extractor_latency_ms: number | null;
+  /** Raw response body from the extractor (last poll), truncated. */
+  extractor_response_body: string | null;
+  /** Resolved temporary audio URL when extraction succeeded. */
+  extractor_audio_url: string | null;
+  /** Classified extractor failure reason (provider-agnostic). */
+  extractor_failure_reason:
+    | null
+    | "video_unavailable"
+    | "age_restricted"
+    | "geo_restricted"
+    | "live_stream"
+    | "private_video"
+    | "extraction_failed"
+    | "provider_rate_limit"
+    | "provider_timeout"
+    | "provider_no_key"
+    | "provider_unknown";
+
   failureCode:
     | null
     | "audio_extract_no_key"
@@ -55,6 +76,7 @@ export type OpenAiAsrTrace = {
     | "asr_timeout"
     | "unknown";
 };
+
 
 
 export type OpenAiAsrResult = {
