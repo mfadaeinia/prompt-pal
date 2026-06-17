@@ -654,7 +654,7 @@ function Index() {
       if (res.sentences.length < MIN_LEARNING_SENTENCES) {
         console.error("[learning-mode][gate] transcript not usable", {
           videoId: res.videoId,
-          transcriptLength: fullText.length,
+          transcriptLength: res.sentences.reduce((n, s) => n + s.text.length, 0),
           sentenceCount: res.sentences.length,
           transcriptSource: res.source,
           processingStage: "post_segmentation",
