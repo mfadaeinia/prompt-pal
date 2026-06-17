@@ -508,6 +508,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let sentenceShortPct = 0;
     let sentenceGiantPct = 0;
     let sentencePunctPct = 0;
+    let transcriptText: string | null = null;
+    let transcriptPreview: string | null = null;
     let sentenceMedianGap: number | null = null;
     let sentencePreview: Array<{ text: string; start: number; end: number; words: number }> = [];
     let sentenceQualityRating: "high" | "medium" | "low" = "low";
@@ -664,6 +666,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
           end: Number((s.endTime ?? s.offset).toFixed(2)),
           words: wc(s.text),
         }));
+        // Capture full transcript text for human review
+        transcriptText = sentences.map((s) => s.text).join(" ").trim();
+        transcriptPreview = transcriptText.slice(0, 200);
 
         // Sentence UX quality (independent of pipeline success).
         const susReasons: string[] = [];
@@ -833,6 +838,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         final_sentence_quality,
         repair_reason,
         repair_diagnostics: repair_diagnostics as any,
+        transcript_text: transcriptText,
+        transcript_preview: transcriptPreview,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
@@ -898,6 +905,38 @@ export const finalizeBenchmarkRun = createServerFn({ method: "POST" })
       } as any)
       .eq("id", data.runId);
     if (upErr) throw new Error(upErr.message);
+
+    // Auto-sample up to 5 results per quality bucket for the founder review queue
+    try {
+      const { data: sampleRows } = await supabaseAdmin
+        .from("benchmark_video_results" as any)
+        .select("id, quality_rating, transcript_found")
+        .eq("run_id", data.runId);
+      const eligible = ((sampleRows ?? []) as any[]).filter((r) => r.transcript_found);
+      const pickN = <T,>(arr: T[], n: number): T[] => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a.slice(0, n);
+      };
+      const buckets: Array<["high" | "medium" | "low", any[]]> = [
+        ["high", eligible.filter((r) => r.quality_rating === "high")],
+        ["medium", eligible.filter((r) => r.quality_rating === "medium")],
+        ["low", eligible.filter((r) => r.quality_rating === "low")],
+      ];
+      for (const [bucket, rows] of buckets) {
+        const picks = pickN(rows, 5);
+        if (picks.length === 0) continue;
+        await supabaseAdmin
+          .from("benchmark_video_results" as any)
+          .update({ sampling_bucket: bucket } as any)
+          .in("id", picks.map((p) => p.id));
+      }
+    } catch (e) {
+      console.error("[benchmark] sampling failed", e);
+    }
 
     return { ok: true };
   });
