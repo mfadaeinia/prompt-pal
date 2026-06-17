@@ -1524,7 +1524,8 @@ function Index() {
                 {isDevPanelEnabled() && (
                   <div
                     className={`rounded-md border px-3 py-2 text-[11px] font-mono leading-snug ${
-                      requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId
+                      (requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId) ||
+                      (spokenLang && transcriptLanguage && transcriptLanguage.toLowerCase().split(/[-_]/)[0] !== spokenLang.toLowerCase().split(/[-_]/)[0])
                         ? "border-red-500 bg-red-500/10 text-red-700"
                         : "border-border bg-muted/40 text-muted-foreground"
                     }`}
@@ -1533,6 +1534,10 @@ function Index() {
                       <span>current_video_id: <b>{videoId ?? "—"}</b></span>
                       <span>requested_video_id: <b>{requestedVideoId ?? "—"}</b></span>
                       <span>transcript_video_id: <b>{transcriptVideoId ?? "—"}</b></span>
+                      <span>spoken_language: <b>{spokenLang || "auto"}</b></span>
+                      <span>target_language: <b>{targetLang}</b></span>
+                      <span>transcript_language: <b>{transcriptLanguage ?? "—"}</b></span>
+                      <span>translation_language: <b>{targetLang}</b></span>
                       <span>source: {transcriptSource ?? "—"}</span>
                       <span>provider: {cachedFromProvider ?? "—"}</span>
                       <span>chunk_count: <b>{transcriptRawChunks.length}</b></span>
@@ -1561,6 +1566,9 @@ function Index() {
                     )}
                     {requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId && (
                       <div className="mt-1 font-bold">⚠ VIDEO ID MISMATCH — transcript does not belong to current video</div>
+                    )}
+                    {spokenLang && transcriptLanguage && transcriptLanguage.toLowerCase().split(/[-_]/)[0] !== spokenLang.toLowerCase().split(/[-_]/)[0] && (
+                      <div className="mt-1 font-bold">⚠ LANGUAGE MISMATCH — transcript language ({transcriptLanguage}) ≠ spoken language ({spokenLang})</div>
                     )}
                   </div>
                 )}
