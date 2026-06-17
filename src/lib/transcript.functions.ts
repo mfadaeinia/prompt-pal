@@ -1319,6 +1319,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "fallback",
         cachedFromProvider: fbSource,
         language: fb.language,
+        spokenLanguage,
+        transcriptLanguage: fb.language,
         cacheHit: false,
         quality,
         provenance: cacheWrite.provenance ?? null,
