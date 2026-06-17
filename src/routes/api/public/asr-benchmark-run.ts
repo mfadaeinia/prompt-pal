@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
               const v = list[i];
               const t0 = Date.now();
               try {
-                await (processBenchmarkVideo as any)({ data: { runId, videoId: v.id } });
+                await (processBenchmarkVideo as any)({ data: { runId, videoId: v.id, pipelineMode } });
                 log(`[${i + 1}/${list.length}] ok ${v.id} ${Date.now() - t0}ms`);
               } catch (e) {
                 log(`[${i + 1}/${list.length}] ERR ${v.id} ${Date.now() - t0}ms ${e instanceof Error ? e.message : String(e)}`);
