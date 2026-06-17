@@ -4,6 +4,15 @@ import { YoutubeTranscript } from "youtube-transcript";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
+  /**
+   * The language SPOKEN in the video (ISO-639-1, e.g. "en", "nl").
+   * This is the only language we pass to caption / ASR providers.
+   * NEVER pass the learner's help/target language here — that would make
+   * us request an auto-translated caption track instead of the real one.
+   * Leave undefined to auto-detect (use the video's default/original track).
+   */
+  spokenLanguage: z.string().min(1).max(20).optional(),
+  /** Deprecated alias for spokenLanguage (kept for back-compat). */
   requestedLanguage: z.string().min(1).max(20).optional(),
 });
 const ManualInput = z.object({
