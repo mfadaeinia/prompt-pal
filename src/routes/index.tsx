@@ -645,6 +645,9 @@ function Index() {
       setTranscriptCacheRowId(res.provenance?.cacheRowId ?? null);
       setTranscriptCacheKey(res.provenance?.cacheKey ?? null);
       setTranscriptLoadedAt(new Date().toISOString());
+      setTranscriptLanguage(
+        (res as any).transcriptLanguage ?? res.language ?? null,
+      );
       setTranscriptQuality(res.quality);
       setLimitedMode(res.quality.quality === "low");
       setQualityBannerDismissed(false);
