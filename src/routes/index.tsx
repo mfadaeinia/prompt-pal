@@ -113,6 +113,7 @@ function Index() {
   const [transcriptCacheRowId, setTranscriptCacheRowId] = useState<string | null>(null);
   const [transcriptCacheKey, setTranscriptCacheKey] = useState<string | null>(null);
   const [transcriptLoadedAt, setTranscriptLoadedAt] = useState<string | null>(null);
+  const [transcriptRawChunks, setTranscriptRawChunks] = useState<{ text: string; offset: number; duration: number }[]>([]);
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
