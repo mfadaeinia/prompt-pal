@@ -24,6 +24,7 @@ import {
   type AccuracyMetrics,
   type TruthLabel,
 } from "@/lib/transcript-review.functions";
+import { clearBenchmarkTranscriptCache } from "@/lib/transcript.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
