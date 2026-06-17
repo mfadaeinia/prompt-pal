@@ -154,8 +154,8 @@ async function extractAudioUrl(
         json = null;
       }
       const status = String(json?.status ?? "").toLowerCase();
-      lastStatus = status;
       trace.rapidapi_response_status = status || null;
+
 
       let link: string | null = null;
       let field: "link" | "url" | null = null;
