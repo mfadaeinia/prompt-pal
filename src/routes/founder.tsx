@@ -158,6 +158,7 @@ function FounderPage() {
 
         {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         <TranscriptCacheTools />
+        <TranscriptTruthSection />
         <BenchmarkSection />
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
