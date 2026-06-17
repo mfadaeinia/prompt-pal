@@ -351,7 +351,15 @@ export async function transcribeWithOpenAi(params: {
     }
     if (params.expectedLanguage && params.expectedLanguage !== "_any_" && trace.language) {
       const expected = params.expectedLanguage.toLowerCase().split(/[-_]/)[0];
-      const got = trace.language.toLowerCase().split(/[-_]/)[0];
+      // OpenAI returns full names ("dutch", "english"); normalize to ISO-639-1.
+      const LANG_NAME_TO_ISO: Record<string, string> = {
+        dutch: "nl", english: "en", german: "de", french: "fr", spanish: "es",
+        italian: "it", portuguese: "pt", polish: "pl", russian: "ru",
+        japanese: "ja", chinese: "zh", korean: "ko", turkish: "tr",
+        arabic: "ar", swedish: "sv", danish: "da", norwegian: "no", finnish: "fi",
+      };
+      const raw = trace.language.toLowerCase().split(/[-_]/)[0];
+      const got = LANG_NAME_TO_ISO[raw] ?? raw;
       if (expected !== got) {
         trace.failureCode = "openai_wrong_language";
         trace.errorMessage = `language mismatch expected=${expected} got=${got}`;
