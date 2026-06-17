@@ -95,7 +95,15 @@ function Index() {
 
 
   const [url, setUrl] = useState("");
+  // targetLang = learner's help/translation language (used by explainSentence).
   const [targetLang, setTargetLang] = useState("English");
+  // spokenLang = language ACTUALLY spoken in the video, sent to the transcript
+  // provider. "" means auto/original (let the provider pick the original track).
+  // MUST be ISO-639-1 (e.g. "en", "nl") because that's what YouTube/OpenAI
+  // expect. Never pass `targetLang` here — it would request an auto-translated
+  // caption track and produce the wrong-language transcript bug.
+  const [spokenLang, setSpokenLang] = useState<string>("");
+  const [transcriptLanguage, setTranscriptLanguage] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [videoTitle, setVideoTitle] = useState<string | null>(null);
   const [sentences, setSentences] = useState<TranscriptSentence[]>([]);
