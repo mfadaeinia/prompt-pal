@@ -513,14 +513,6 @@ function Index() {
     return () => window.clearInterval(tryer);
   }, [sentences]);
 
-  // Hard gate: never allow Learning Mode when transcript isn't usable.
-  useEffect(() => {
-    if (loadMutation.isSuccess && !hasUsableTranscript && studyMode) {
-      setStudyMode(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasUsableTranscript, loadMutation.isSuccess]);
-
   // Track when the limited-mode quality banner is shown.
   useEffect(() => {
     if (
