@@ -20,6 +20,13 @@ export type ReviewQueueItem = {
   reviewed_at: string | null;
   transcript_truth_label: TruthLabel;
   sampling_bucket: "high" | "medium" | "low" | null;
+  cache_row_id: string | null;
+  cache_key: string | null;
+  cache_provider: string | null;
+  cache_language: string | null;
+  cache_created_at: string | null;
+  cache_updated_at: string | null;
+  cache_validation_status: "valid" | "suspect" | "corrupted" | "unreviewed";
 };
 
 export type ReviewDetail = ReviewQueueItem & {
