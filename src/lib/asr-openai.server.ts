@@ -26,6 +26,15 @@ export type OpenAiAsrTrace = {
   audioBytes: number | null;
   audioExtractStatus: number | null;
   audioExtractError: string | null;
+  // RapidAPI step diagnostics
+  rapidapi_host: string | null;
+  rapidapi_endpoint: string | null;
+  rapidapi_http_status: number | null;
+  rapidapi_response_status: string | null;
+  audio_url_found: boolean;
+  audio_url_field_used: "link" | "url" | null;
+  audio_download_status: number | null;
+  audio_size_mb: number | null;
   failureCode:
     | null
     | "audio_extract_no_key"
@@ -43,6 +52,7 @@ export type OpenAiAsrTrace = {
     | "asr_timeout"
     | "unknown";
 };
+
 
 export type OpenAiAsrResult = {
   chunks: Array<{ text: string; offset: number; duration: number }>;
