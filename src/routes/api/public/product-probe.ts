@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/product-probe")({
           const { fetchTranscript } = await import("@/lib/transcript.functions");
           const t0 = Date.now();
           // Invoke the server fn handler directly (bypass HTTP framing).
-          const res = await (fetchTranscript as any).handler({ data: { url } });
+          const res = await (fetchTranscript as any)({ data: { url } });
           const elapsedMs = Date.now() - t0;
           return new Response(
             JSON.stringify({
