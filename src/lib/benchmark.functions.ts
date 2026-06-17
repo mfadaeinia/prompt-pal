@@ -124,6 +124,16 @@ export type BenchmarkResultRow = {
   transcribr_error: string | null;
   transcribr_segments_count: number | null;
   transcribr_duration_ms: number | null;
+  // Generic ASR diagnostics (provider-agnostic).
+  asr_provider: string | null;
+  asr_model: string | null;
+  asr_http_status: number | null;
+  asr_error_body: string | null;
+  asr_segments_count: number | null;
+  asr_duration_ms: number | null;
+  asr_language: string | null;
+  asr_failure_code: string | null;
+
   // Audio extractor diagnostics (provider-agnostic).
   extractor_provider: string | null;
   extractor_http_status: number | null;
