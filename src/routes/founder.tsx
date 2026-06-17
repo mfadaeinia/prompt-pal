@@ -360,6 +360,8 @@ function TranscriptTruthSection() {
                 <th className="px-2 py-1">When</th>
                 <th className="px-2 py-1">Video</th>
                 <th className="px-2 py-1">Source</th>
+                <th className="px-2 py-1">Cache row</th>
+                <th className="px-2 py-1">Cache age</th>
                 <th className="px-2 py-1">Quality</th>
                 <th className="px-2 py-1">Bucket</th>
                 <th className="px-2 py-1">Preview</th>
@@ -379,26 +381,48 @@ function TranscriptTruthSection() {
                     ) : (
                       r.video_title ?? r.video_id
                     )}
+                    <div className="font-mono text-[10px] text-slate-400">{r.video_id}</div>
                   </td>
-                  <td className="px-2 py-1 font-mono">{r.transcript_source ?? "—"}</td>
+                  <td className="px-2 py-1 font-mono">
+                    {r.transcript_source ?? "—"}
+                    {r.cache_provider && <div className="text-[10px] text-slate-400">cache:{r.cache_provider}/{r.cache_language ?? "?"}</div>}
+                  </td>
+                  <td className="px-2 py-1 font-mono text-[10px] text-slate-500">{r.cache_row_id ? r.cache_row_id.slice(0, 8) : "—"}</td>
+                  <td className="px-2 py-1 text-[10px] text-slate-500">{r.cache_updated_at ? new Date(r.cache_updated_at).toLocaleString() : "—"}</td>
                   <td className={"px-2 py-1 font-medium " + qualityColor(r.quality_rating)}>{r.quality_rating}</td>
                   <td className="px-2 py-1">{r.sampling_bucket ?? "—"}</td>
                   <td className="max-w-md px-2 py-1 text-slate-600">
                     {r.transcript_preview ? r.transcript_preview.slice(0, 120) + (r.transcript_preview.length > 120 ? "…" : "") : "—"}
                   </td>
                   <td className="px-2 py-1">{truthBadge(r.transcript_truth_label)}</td>
-                  <td className="px-2 py-1">
+                  <td className="px-2 py-1 whitespace-nowrap">
                     <button
                       onClick={() => { setOpenId(r.id === openId ? null : r.id); setNotes(""); }}
                       className="rounded-md bg-slate-900 px-2 py-1 text-xs text-white hover:bg-slate-700"
                     >
                       {openId === r.id ? "Close" : "Review"}
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (!r.video_id) return;
+                        if (!confirm(`Purge cache for ${r.video_id}?`)) return;
+                        try {
+                          const res = await purgeOneFn({ data: { videoId: r.video_id } });
+                          alert(`Removed ${res.removed} row(s).`);
+                          qc.invalidateQueries({ queryKey: ["transcript-review-queue"] });
+                        } catch (e) {
+                          alert("Purge failed: " + (e instanceof Error ? e.message : String(e)));
+                        }
+                      }}
+                      className="ml-1 rounded-md border border-red-300 bg-white px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                    >
+                      Purge
+                    </button>
                   </td>
                 </tr>
               ))}
               {(queueQ.data ?? []).length === 0 && (
-                <tr><td className="px-2 py-3 text-slate-400" colSpan={8}>No videos match the filters.</td></tr>
+                <tr><td className="px-2 py-3 text-slate-400" colSpan={10}>No videos match the filters.</td></tr>
               )}
             </tbody>
           </table>
