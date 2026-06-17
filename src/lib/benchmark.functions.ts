@@ -117,6 +117,13 @@ export type BenchmarkResultRow = {
   failure_code: FailureCode | null;
   processing_time_ms: number;
   error_message: string | null;
+  provider_error: string | null;
+  // Transcribr provider diagnostics (persisted per-row).
+  transcribr_invoked: boolean | null;
+  transcribr_status: number | null;
+  transcribr_error: string | null;
+  transcribr_segments_count: number | null;
+  transcribr_duration_ms: number | null;
   // Pipeline trace
   video_url_status: string | null;
   http_status_code: number | null;
