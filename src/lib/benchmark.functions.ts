@@ -508,6 +508,16 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let transcribr_error: string | null = null;
     let transcribr_segments_count: number | null = null;
     let transcribr_duration_ms: number | null = null;
+    // Generic ASR diagnostics (provider-agnostic; populated for whichever
+    // provider ASR_PROVIDER selected — currently "transcribr" or "openai").
+    let asr_provider: string | null = null;
+    let asr_model: string | null = null;
+    let asr_http_status: number | null = null;
+    let asr_error_body: string | null = null;
+    let asr_segments_count: number | null = null;
+    let asr_duration_ms: number | null = null;
+    let asr_language: string | null = null;
+    let asr_failure_code: string | null = null;
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
