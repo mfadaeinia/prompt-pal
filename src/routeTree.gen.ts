@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -34,18 +35,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAsrProbeRoute = ApiPublicAsrProbeRouteImport.update({
+  id: '/api/public/asr-probe',
+  path: '/api/public/asr-probe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,25 @@ export interface FileRoutesById {
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/founder' | '/saved' | '/sitemap.xml'
+  fullPaths:
+    | '/'
+    | '/founder'
+    | '/saved'
+    | '/sitemap.xml'
+    | '/api/public/asr-probe'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/founder' | '/saved' | '/sitemap.xml'
-  id: '__root__' | '/' | '/founder' | '/saved' | '/sitemap.xml'
+  to: '/' | '/founder' | '/saved' | '/sitemap.xml' | '/api/public/asr-probe'
+  id:
+    | '__root__'
+    | '/'
+    | '/founder'
+    | '/saved'
+    | '/sitemap.xml'
+    | '/api/public/asr-probe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +87,7 @@ export interface RootRouteChildren {
   FounderRoute: typeof FounderRoute
   SavedRoute: typeof SavedRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/asr-probe': {
+      id: '/api/public/asr-probe'
+      path: '/api/public/asr-probe'
+      fullPath: '/api/public/asr-probe'
+      preLoaderRoute: typeof ApiPublicAsrProbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,17 +135,8 @@ const rootRouteChildren: RootRouteChildren = {
   FounderRoute: FounderRoute,
   SavedRoute: SavedRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
