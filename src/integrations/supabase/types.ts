@@ -108,7 +108,11 @@ export type Database = {
           quality_reason: string | null
           repair_diagnostics: Json | null
           repair_reason: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by_founder: boolean
           run_id: string
+          sampling_bucket: string | null
           sentence_count: number
           sentence_preview: Json | null
           sentence_quality_rating: string | null
@@ -117,7 +121,10 @@ export type Database = {
           transcript_found: boolean
           transcript_generated: boolean | null
           transcript_length_chars: number | null
+          transcript_preview: string | null
           transcript_source: string | null
+          transcript_text: string | null
+          transcript_truth_label: string
           transcript_word_count: number
           translation_generated: boolean | null
           translation_success: boolean
@@ -150,7 +157,11 @@ export type Database = {
           quality_reason?: string | null
           repair_diagnostics?: Json | null
           repair_reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by_founder?: boolean
           run_id: string
+          sampling_bucket?: string | null
           sentence_count?: number
           sentence_preview?: Json | null
           sentence_quality_rating?: string | null
@@ -159,7 +170,10 @@ export type Database = {
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null
+          transcript_preview?: string | null
           transcript_source?: string | null
+          transcript_text?: string | null
+          transcript_truth_label?: string
           transcript_word_count?: number
           translation_generated?: boolean | null
           translation_success?: boolean
@@ -192,7 +206,11 @@ export type Database = {
           quality_reason?: string | null
           repair_diagnostics?: Json | null
           repair_reason?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by_founder?: boolean
           run_id?: string
+          sampling_bucket?: string | null
           sentence_count?: number
           sentence_preview?: Json | null
           sentence_quality_rating?: string | null
@@ -201,7 +219,10 @@ export type Database = {
           transcript_found?: boolean
           transcript_generated?: boolean | null
           transcript_length_chars?: number | null
+          transcript_preview?: string | null
           transcript_source?: string | null
+          transcript_text?: string | null
+          transcript_truth_label?: string
           transcript_word_count?: number
           translation_generated?: boolean | null
           translation_success?: boolean
