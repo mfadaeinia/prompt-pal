@@ -1033,6 +1033,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_preview: transcriptPreview,
         cache_row_id: cacheRowId,
         cache_key: cacheKey,
+        pipeline_mode: pipelineMode,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
