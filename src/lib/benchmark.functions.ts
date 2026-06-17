@@ -583,6 +583,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_generated = true;
         transcript_source = tr.source;
         download_status = tr.source === "cache" ? "cache" : "Success";
+        cacheRowId = tr.provenance?.cacheRowId ?? null;
+        cacheKey = tr.provenance?.cacheKey ?? null;
+
 
         // ---- Sentence repair (deterministic → conditional AI repair) ----
         let sentences = tr.sentences ?? [];
