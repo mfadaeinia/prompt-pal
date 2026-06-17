@@ -1520,12 +1520,30 @@ function Index() {
                       <span>transcript_video_id: <b>{transcriptVideoId ?? "—"}</b></span>
                       <span>source: {transcriptSource ?? "—"}</span>
                       <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>chunk_count: <b>{transcriptRawChunks.length}</b></span>
+                      <span>sentence_count: <b>{sentences.length}</b></span>
                       <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
                       <span>cache_key: {transcriptCacheKey ?? "—"}</span>
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
                     </div>
+                    {transcriptRawChunks.length > 0 && (
+                      <div className="mt-1 border-t border-border/40 pt-1">
+                        <div className="font-semibold">first_3_chunks:</div>
+                        {transcriptRawChunks.slice(0, 3).map((c, i) => (
+                          <div key={i} className="truncate">[{c.offset.toFixed(2)}s +{c.duration.toFixed(2)}] {c.text}</div>
+                        ))}
+                      </div>
+                    )}
+                    {sentences.length > 0 && (
+                      <div className="mt-1 border-t border-border/40 pt-1">
+                        <div className="font-semibold">first_3_sentences:</div>
+                        {sentences.slice(0, 3).map((s) => (
+                          <div key={s.id} className="truncate">#{s.id} [{s.offset.toFixed(2)}s] {s.text}</div>
+                        ))}
+                      </div>
+                    )}
                     {requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId && (
                       <div className="mt-1 font-bold">⚠ VIDEO ID MISMATCH — transcript does not belong to current video</div>
                     )}
