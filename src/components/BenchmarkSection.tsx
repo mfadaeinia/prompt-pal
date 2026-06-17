@@ -331,6 +331,7 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       )}
 
       <SummaryInsights results={results} health={health} />
+      <TranscribrBreakdown results={results} />
       <AutoObservations results={results} />
       <QualityDistribution results={results} />
       <SourceAnalysis results={results} />
