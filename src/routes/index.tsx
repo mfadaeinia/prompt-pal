@@ -1552,6 +1552,61 @@ function Index() {
             </div>
 
 
+            {loadMutation.isSuccess && !hasUsableTranscript ? (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
+                <h2 className="text-lg font-semibold">
+                  This video cannot be used in Learning Mode
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We found subtitles or transcript data, but could not extract enough
+                  learning sentences from this video.
+                </p>
+                {devPanelEnabled && (
+                  <div className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-[11px] leading-snug text-muted-foreground">
+                    <div>Transcript fetched: <b>YES</b></div>
+                    <div>
+                      Transcript length:{" "}
+                      <b>
+                        {sentences.reduce((n, s) => n + s.text.length, 0) ||
+                          transcriptRawChunks.reduce((n, c) => n + c.text.length, 0)}
+                      </b>{" "}
+                      chars
+                    </div>
+                    <div>Sentence count: <b>{sentences.length}</b></div>
+                    <div>Processing status: <b>{processingStatus}</b></div>
+                    <div>Learning Mode usable: <b>NO</b></div>
+                    <div>Transcript source: <b>{transcriptSource ?? "—"}</b></div>
+                    <div>Video id: <b>{videoId ?? "—"}</b></div>
+                  </div>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStudyMode(false);
+                      setSelected(null);
+                    }}
+                  >
+                    Back to Watch Mode
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSentences([]);
+                      setVideoId(null);
+                      setTranscriptVideoId(null);
+                      setSelected(null);
+                      setTranscriptQuality(null);
+                      loadMutation.reset();
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Try Another Video
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <div
               className={`grid gap-6 ${
                 studyMode
