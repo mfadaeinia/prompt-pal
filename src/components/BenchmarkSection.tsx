@@ -10,6 +10,7 @@ import {
   finalizeBenchmarkRun,
   upsertBenchmarkVideos,
   exportBenchmarkVideos,
+  getPipelineComparison,
   FAILURE_LABELS,
   ALL_FAILURE_CODES,
   type FailureCode,
@@ -17,6 +18,7 @@ import {
   type BenchmarkResultRow,
   type DatasetHealth,
   type UpsertBenchmarkResult,
+  type PipelineComparison,
 } from "@/lib/benchmark.functions";
 import {
   computeScores,
