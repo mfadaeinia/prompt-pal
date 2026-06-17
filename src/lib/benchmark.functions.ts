@@ -849,6 +849,29 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
               (arDiscarded ? ` discarded=${ar.discardedReason ?? "yes"}` : "") +
               (ar.errorMessage ? ` error=${ar.errorMessage.slice(0, 160)}` : ""),
           });
+          const ag = pt.asrGeneric;
+          if (ag) {
+            asr_provider = ag.provider;
+            asr_model = ag.model;
+            asr_http_status = ag.httpStatus;
+            asr_error_body = ag.errorBody;
+            asr_segments_count = ag.segmentsCount;
+            asr_duration_ms = ag.durationMs;
+            asr_language = ag.language;
+            asr_failure_code = ag.failureCode;
+            log({
+              step: `provider:asr_${ag.provider ?? "unknown"}`,
+              ok: (ag.segmentsCount ?? 0) > 0 && !ag.failureCode,
+              detail:
+                `provider=${ag.provider ?? "-"}` +
+                ` model=${ag.model ?? "-"}` +
+                ` http=${ag.httpStatus ?? "-"}` +
+                ` segments=${ag.segmentsCount ?? 0}` +
+                ` lang=${ag.language ?? "-"}` +
+                (ag.failureCode ? ` failure=${ag.failureCode}` : "") +
+                (ag.errorBody ? ` error=${ag.errorBody.slice(0, 160)}` : ""),
+            });
+          }
         }
       }
     }
