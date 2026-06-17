@@ -768,10 +768,10 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   requestedLanguage: string;
-  provider: "youtube" | "manual" | "fallback";
+  provider: "youtube" | "manual" | "fallback" | "openai";
   providerResponseLanguage: string | null;
 }): Promise<{ ok: boolean; provenance?: CacheProvenance; validation: ValidationResult }> {
-  const allowed = new Set(["youtube", "manual", "fallback"]);
+  const allowed = new Set(["youtube", "manual", "fallback", "openai"]);
   if (!allowed.has(params.provider)) {
     return { ok: false, validation: { ok: false, reason: `invalid_provider:${params.provider}` } };
   }
