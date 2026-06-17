@@ -576,8 +576,9 @@ function Kpi({ label, value, target, count }: { label: string; value: number; ta
 function AudioExtractionPanel({ results }: { results: BenchmarkResultRow[] }) {
   const m = useMemo(() => {
     const openaiRows = results.filter(
-      (r) => r.openai_invoked || r.extractor_provider || r.asr_provider === "openai",
+      (r) => r.openai_invoked || r.extractor_provider != null,
     );
+
     const attempts = openaiRows.length;
     const success = openaiRows.filter((r) => r.extractor_audio_url_found).length;
     const failures = openaiRows.filter(
