@@ -1216,6 +1216,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         sentences,
         source: "youtube",
         language: usedLang,
+        spokenLanguage,
+        transcriptLanguage: usedLang,
         cacheHit: false,
         quality,
         provenance: cacheWrite.provenance ?? null,
