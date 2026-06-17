@@ -99,7 +99,15 @@ function makeTrace(): OpenAiAsrTrace {
   };
 }
 
-/** Fetch a temporary audio URL for a YouTube video via RapidAPI youtube-mp36. */
+/**
+ * Fetch a temporary audio URL for a YouTube video via RapidAPI youtube-mp36.
+ * youtube-mp36 is asynchronous: the first call often returns `status: "processing"`
+ * while the MP3 is being generated. We poll the same endpoint until the job
+ * resolves to a downloadable link, fails, or we exhaust the polling budget.
+ */
+const POLL_INTERVAL_MS = 3_000;
+const POLL_MAX_MS = 45_000;
+
 async function extractAudioUrl(
   videoId: string,
   trace: OpenAiAsrTrace,
@@ -115,49 +123,80 @@ async function extractAudioUrl(
     trace.audioExtractError = "RAPIDAPI_KEY not set";
     return null;
   }
-  try {
-    const res = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": host,
-        "x-rapidapi-key": key,
-      },
-    });
-    trace.audioExtractStatus = res.status;
-    trace.rapidapi_http_status = res.status;
-    const text = await res.text().catch(() => "");
-    if (!res.ok) {
+
+  const pollStart = Date.now();
+  let lastStatus = "";
+  let lastJsonError: string | null = null;
+
+  while (true) {
+    trace.rapidapi_poll_attempts += 1;
+    try {
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": host,
+          "x-rapidapi-key": key,
+        },
+      });
+      trace.audioExtractStatus = res.status;
+      trace.rapidapi_http_status = res.status;
+      const text = await res.text().catch(() => "");
+      if (!res.ok) {
+        trace.failureCode = "audio_extract_http";
+        trace.audioExtractError = text.slice(0, 300) || `HTTP ${res.status}`;
+        trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        return null;
+      }
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {
+        lastJsonError = "non-json audio service response";
+        json = null;
+      }
+      const status = String(json?.status ?? "").toLowerCase();
+      lastStatus = status;
+      trace.rapidapi_response_status = status || null;
+
+      let link: string | null = null;
+      let field: "link" | "url" | null = null;
+      if (json?.link) { link = String(json.link); field = "link"; }
+      else if (json?.url) { link = String(json.url); field = "url"; }
+
+      // Success: a usable link is present (some providers return ok|completed; trust the link).
+      if (link && status !== "processing" && status !== "fail") {
+        trace.audio_url_found = true;
+        trace.audio_url_field_used = field;
+        trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        return link;
+      }
+
+      // Hard failure from provider — stop polling.
+      if (status === "fail") {
+        trace.failureCode = "audio_extract_empty";
+        trace.audioExtractError = `status=fail${json?.msg ? `: ${json.msg}` : ""}`;
+        trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        return null;
+      }
+
+      // Still processing (or no link yet) — keep polling until budget exhausted.
+      const elapsed = Date.now() - pollStart;
+      if (elapsed + POLL_INTERVAL_MS >= POLL_MAX_MS) {
+        trace.failureCode = "audio_extract_empty";
+        trace.audioExtractError =
+          lastJsonError ?? `status=${status || "no-link"} after ${trace.rapidapi_poll_attempts} polls`;
+        trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        return null;
+      }
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    } catch (e) {
       trace.failureCode = "audio_extract_http";
-      trace.audioExtractError = text.slice(0, 300) || `HTTP ${res.status}`;
+      trace.audioExtractError = e instanceof Error ? e.message : String(e);
+      trace.rapidapi_poll_total_ms = Date.now() - pollStart;
       return null;
     }
-    let json: any = null;
-    try { json = JSON.parse(text); } catch {
-      trace.failureCode = "audio_extract_empty";
-      trace.audioExtractError = "non-json audio service response";
-      return null;
-    }
-    trace.rapidapi_response_status = json?.status != null ? String(json.status) : null;
-    let link: string | null = null;
-    let field: "link" | "url" | null = null;
-    if (json?.link) { link = String(json.link); field = "link"; }
-    else if (json?.url) { link = String(json.url); field = "url"; }
-    const status = String(json?.status ?? "").toLowerCase();
-    if (!link || status === "processing" || status === "fail") {
-      trace.failureCode = "audio_extract_empty";
-      trace.audioExtractError = `status=${status || "no-link"}`;
-      return null;
-    }
-    trace.audio_url_found = true;
-    trace.audio_url_field_used = field;
-    return link;
-  } catch (e) {
-    trace.failureCode = "audio_extract_http";
-    trace.audioExtractError = e instanceof Error ? e.message : String(e);
-    return null;
   }
 }
+
 
 
 
