@@ -4,6 +4,15 @@ import { YoutubeTranscript } from "youtube-transcript";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
+  /**
+   * The language SPOKEN in the video (ISO-639-1, e.g. "en", "nl").
+   * This is the only language we pass to caption / ASR providers.
+   * NEVER pass the learner's help/target language here — that would make
+   * us request an auto-translated caption track instead of the real one.
+   * Leave undefined to auto-detect (use the video's default/original track).
+   */
+  spokenLanguage: z.string().min(1).max(20).optional(),
+  /** Deprecated alias for spokenLanguage (kept for back-compat). */
   requestedLanguage: z.string().min(1).max(20).optional(),
 });
 const ManualInput = z.object({
@@ -108,7 +117,15 @@ export type FetchTranscriptResult = {
   source: TranscriptSource;
   /** When source==="cache", which provider produced the cached row. */
   cachedFromProvider?: string | null;
+  /** Language that came back from the caption/ASR provider (i.e. what's
+   *  actually in the transcript text). Equivalent to spoken_language when
+   *  validated. Null when the provider didn't report it. */
   language?: string | null;
+  /** Spoken language the caller asked us to transcribe (echoed back). */
+  spokenLanguage?: string | null;
+  /** Same as language; explicit field so the UI can show
+   *  "Transcript language" without aliasing the provider response. */
+  transcriptLanguage?: string | null;
   cacheHit: boolean;
   quality: TranscriptQualityReport;
   providerTrace?: ProviderTrace;
@@ -1025,7 +1042,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     // -------- Layer 1: Cache --------
-    const requestedLanguage = data.requestedLanguage?.trim() || "_any_";
+    // Resolve the SPOKEN language: prefer `spokenLanguage`, fall back to the
+    // legacy `requestedLanguage` field (treated as spoken language for
+    // back-compat). NEVER treat the learner's UI/help language as the spoken
+    // language — that would pull auto-translated caption tracks.
+    const spokenLanguageRaw =
+      (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
+    const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
+    const requestedLanguage = spokenLanguage ?? "_any_";
     const cached = await readCache(videoId, requestedLanguage);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
@@ -1059,6 +1083,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "cache",
         cachedFromProvider: provenance.provider,
         language: cached.language,
+        spokenLanguage,
+        transcriptLanguage: cached.language,
         cacheHit: true,
         quality,
         provenance,
@@ -1087,11 +1113,32 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     };
 
     // -------- Layer 2: YouTube captions --------
+    //
+    // CRITICAL: never iterate through unrelated languages here. youtube-transcript
+    // happily returns YouTube's AUTO-TRANSLATED caption track for a language
+    // the video isn't actually in (e.g. asking for "nl" on an English video
+    // yields a machine-translated Dutch transcript). That's how transcripts
+    // ended up in the wrong language.
+    //
+    // Strategy:
+    //   - If the caller declared a spoken language → request exactly that
+    //     (and its regional variants).
+    //   - Otherwise → request the video's DEFAULT/ORIGINAL track only
+    //     (no `lang` option = original creator-uploaded captions).
     let raw: RawChunk[] | null = null;
     let usedLang: string | null = null;
     let lastErr: unknown = null;
     let blocked = false;
-    const langCandidates = ["nl", "nl-NL", "en", "en-US", "en-GB", undefined];
+    const langCandidates: (string | undefined)[] = spokenLanguage
+      ? [
+          spokenLanguage,
+          // common regional variants
+          spokenLanguage === "en" ? "en-US" : null,
+          spokenLanguage === "en" ? "en-GB" : null,
+          spokenLanguage === "nl" ? "nl-NL" : null,
+          undefined, // last-resort: original track
+        ].filter((v): v is string | undefined => v !== null)
+      : [undefined]; // auto-detect: only the original track
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1108,7 +1155,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
-          usedLang = lang ?? null;
+          usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
       } catch (e) {
@@ -1119,9 +1166,6 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           classified: cls,
           message: e instanceof Error ? e.message : String(e),
         });
-        // If YouTube is blocking/throttling us, every other lang attempt will
-        // also fail and just burn quota. Bail out and let the fallback provider
-        // handle it.
         if (cls === "rate_limited") {
           blocked = true;
           break;
@@ -1172,6 +1216,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         sentences,
         source: "youtube",
         language: usedLang,
+        spokenLanguage,
+        transcriptLanguage: usedLang,
         cacheHit: false,
         quality,
         provenance: cacheWrite.provenance ?? null,
@@ -1193,7 +1239,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     };
 
     if (asrProvider === "openai") {
-      const expectedLang = requestedLanguage === "_any_" ? null : requestedLanguage;
+      // Pass the SPOKEN language (never the learner's help/target language).
+      const expectedLang = spokenLanguage;
       const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: expectedLang });
       asrGeneric.provider = "openai";
       asrGeneric.model = oa.trace.model;
@@ -1272,6 +1319,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         source: "fallback",
         cachedFromProvider: fbSource,
         language: fb.language,
+        spokenLanguage,
+        transcriptLanguage: fb.language,
         cacheHit: false,
         quality,
         provenance: cacheWrite.provenance ?? null,
