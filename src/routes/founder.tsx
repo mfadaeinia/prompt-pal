@@ -170,6 +170,335 @@ function FounderPage() {
   );
 }
 
+function TranscriptTruthSection() {
+  const queueFetcher = useServerFn(getTranscriptReviewQueue);
+  const metricsFetcher = useServerFn(getTranscriptAccuracyMetrics);
+  const detailFetcher = useServerFn(getTranscriptReviewDetail);
+  const labelFn = useServerFn(setTranscriptTruthLabel);
+  const qc = useQueryClient();
+
+  const [score, setScore] = useState<"all" | "high" | "medium" | "low">("all");
+  const [source, setSource] = useState<string>("all");
+  const [reviewed, setReviewed] = useState<"all" | "unreviewed" | "reviewed">("unreviewed");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const metricsQ = useQuery({
+    queryKey: ["transcript-accuracy"],
+    queryFn: () => metricsFetcher(),
+    refetchInterval: 60_000,
+  });
+  const queueQ = useQuery({
+    queryKey: ["transcript-review-queue", score, source, reviewed],
+    queryFn: () => queueFetcher({ data: { score, source, reviewed, limit: 100 } }),
+  });
+  const detailQ = useQuery({
+    queryKey: ["transcript-review-detail", openId],
+    queryFn: () => detailFetcher({ data: { resultId: openId! } }),
+    enabled: !!openId,
+  });
+
+  const m = metricsQ.data;
+  const sourcesFromMetrics = m?.bySource.map((s) => s.source) ?? [];
+
+  async function submitLabel(label: TruthLabel) {
+    if (!openId) return;
+    setSaving(true);
+    try {
+      await labelFn({ data: { resultId: openId, label, notes: notes || undefined } });
+      setNotes("");
+      setOpenId(null);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["transcript-accuracy"] }),
+        qc.invalidateQueries({ queryKey: ["transcript-review-queue"] }),
+      ]);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Transcript Truth Validation
+      </h2>
+
+      {/* KPI row */}
+      {m && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat
+            label="Transcript Accuracy"
+            value={`${m.accuracyPct}%`}
+            hint={`${m.accurateCount} / ${m.totalReviewed} reviewed`}
+          />
+          <Stat
+            label="Generation Success"
+            value={`${m.latestRun.generationSuccessPct}%`}
+            hint="latest run"
+          />
+          <Stat
+            label="Quality Score (high)"
+            value={`${m.latestRun.qualityScorePct}%`}
+            hint="latest run"
+          />
+          <Stat
+            label="Accuracy in latest run"
+            value={`${m.latestRun.accuracyPct}%`}
+            hint={`${m.latestRun.reviewedInRun} reviewed`}
+          />
+        </div>
+      )}
+
+      {/* Source accuracy table */}
+      {m && m.bySource.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Source Accuracy
+          </div>
+          <table className="min-w-full text-xs">
+            <thead className="text-left text-slate-500">
+              <tr>
+                <th className="px-2 py-1">Source</th>
+                <th className="px-2 py-1">Reviewed</th>
+                <th className="px-2 py-1">Accurate</th>
+                <th className="px-2 py-1">Mostly</th>
+                <th className="px-2 py-1">Incorrect</th>
+                <th className="px-2 py-1">Accuracy %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {m.bySource.map((s) => (
+                <tr key={s.source} className="border-t border-slate-100">
+                  <td className="px-2 py-1 font-mono">{s.source}</td>
+                  <td className="px-2 py-1">{s.reviewed}</td>
+                  <td className="px-2 py-1 text-green-600">{s.accurate}</td>
+                  <td className="px-2 py-1 text-amber-600">{s.mostly_accurate}</td>
+                  <td className="px-2 py-1 text-red-600">{s.incorrect}</td>
+                  <td className="px-2 py-1 font-medium">{s.accuracy_pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Insights */}
+      {m && m.insights.length > 0 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Insights
+          </div>
+          <ul className="list-disc space-y-1 pl-5 text-xs text-slate-700">
+            {m.insights.map((i, idx) => (
+              <li key={idx}>{i}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Review Queue */}
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Review Queue
+          </div>
+          <Select label="Score" value={score} onChange={(v) => setScore(v as any)}
+            options={[["all","All"],["high","High"],["medium","Medium"],["low","Low"]]} />
+          <Select label="Source" value={source} onChange={setSource}
+            options={[["all","All"], ...sourcesFromMetrics.map((s) => [s, s] as [string,string])]} />
+          <Select label="Reviewed" value={reviewed} onChange={(v) => setReviewed(v as any)}
+            options={[["unreviewed","Unreviewed"],["reviewed","Reviewed"],["all","All"]]} />
+          <button
+            onClick={() => queueQ.refetch()}
+            className="ml-auto rounded-md border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-100"
+          >
+            {queueQ.isFetching ? "…" : "Refresh"}
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-xs">
+            <thead className="text-left text-slate-500">
+              <tr>
+                <th className="px-2 py-1">When</th>
+                <th className="px-2 py-1">Video</th>
+                <th className="px-2 py-1">Source</th>
+                <th className="px-2 py-1">Quality</th>
+                <th className="px-2 py-1">Bucket</th>
+                <th className="px-2 py-1">Preview</th>
+                <th className="px-2 py-1">Label</th>
+                <th className="px-2 py-1"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(queueQ.data ?? []).map((r: ReviewQueueItem) => (
+                <tr key={r.id} className="border-t border-slate-100 align-top">
+                  <td className="px-2 py-1 text-slate-500">{new Date(r.created_at).toLocaleDateString()}</td>
+                  <td className="px-2 py-1">
+                    {r.video_url ? (
+                      <a href={r.video_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                        {r.video_title ?? r.video_id}
+                      </a>
+                    ) : (
+                      r.video_title ?? r.video_id
+                    )}
+                  </td>
+                  <td className="px-2 py-1 font-mono">{r.transcript_source ?? "—"}</td>
+                  <td className={"px-2 py-1 font-medium " + qualityColor(r.quality_rating)}>{r.quality_rating}</td>
+                  <td className="px-2 py-1">{r.sampling_bucket ?? "—"}</td>
+                  <td className="max-w-md px-2 py-1 text-slate-600">
+                    {r.transcript_preview ? r.transcript_preview.slice(0, 120) + (r.transcript_preview.length > 120 ? "…" : "") : "—"}
+                  </td>
+                  <td className="px-2 py-1">{truthBadge(r.transcript_truth_label)}</td>
+                  <td className="px-2 py-1">
+                    <button
+                      onClick={() => { setOpenId(r.id === openId ? null : r.id); setNotes(""); }}
+                      className="rounded-md bg-slate-900 px-2 py-1 text-xs text-white hover:bg-slate-700"
+                    >
+                      {openId === r.id ? "Close" : "Review"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {(queueQ.data ?? []).length === 0 && (
+                <tr><td className="px-2 py-3 text-slate-400" colSpan={8}>No videos match the filters.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Detail panel */}
+        {openId && (
+          <div className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-4">
+            {detailQ.isLoading && <p className="text-xs text-slate-500">Loading…</p>}
+            {detailQ.data && <ReviewDetailPanel
+              d={detailQ.data}
+              notes={notes}
+              setNotes={setNotes}
+              saving={saving}
+              onLabel={submitLabel}
+            />}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReviewDetailPanel({
+  d, notes, setNotes, saving, onLabel,
+}: {
+  d: ReviewDetail;
+  notes: string;
+  setNotes: (s: string) => void;
+  saving: boolean;
+  onLabel: (l: TruthLabel) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="text-sm font-semibold">{d.video_title ?? d.video_id}</div>
+        {d.video_url && (
+          <a href={d.video_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+            {d.video_url}
+          </a>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+        <KV k="Source" v={d.transcript_source ?? "—"} />
+        <KV k="Quality" v={d.quality_rating} />
+        <KV k="Sentences" v={String(d.sentence_count)} />
+        <KV k="Words" v={String(d.transcript_word_count)} />
+        <KV k="Avg len" v={d.avg_sentence_length.toFixed(1)} />
+        <KV k="Coverage" v={`${d.coverage_percent}%`} />
+        <KV k="Translation" v={d.translation_success ? "✓" : "—"} />
+        <KV k="Failure" v={d.failure_code ?? "—"} />
+      </div>
+      {d.transcript_preview && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase text-slate-500">First 200 chars</div>
+          <div className="rounded border border-slate-200 bg-white p-2 text-xs">{d.transcript_preview}</div>
+        </div>
+      )}
+      <div>
+        <div className="text-[10px] font-semibold uppercase text-slate-500">Full transcript</div>
+        <div className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded border border-slate-200 bg-white p-2 text-xs leading-relaxed">
+          {d.transcript_text ?? "(no transcript text captured for this row)"}
+        </div>
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Optional review notes…"
+        className="w-full rounded-md border border-slate-300 p-2 text-xs"
+        rows={2}
+      />
+      <div className="flex flex-wrap gap-2">
+        <button disabled={saving} onClick={() => onLabel("accurate")}
+          className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">
+          ✓ Accurate
+        </button>
+        <button disabled={saving} onClick={() => onLabel("mostly_accurate")}
+          className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600 disabled:opacity-50">
+          △ Mostly Accurate
+        </button>
+        <button disabled={saving} onClick={() => onLabel("incorrect")}
+          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50">
+          ✗ Incorrect
+        </button>
+        <button disabled={saving} onClick={() => onLabel("not_reviewed")}
+          className="ml-auto rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-50">
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Select({
+  label, value, onChange, options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<[string, string]>;
+}) {
+  return (
+    <label className="flex items-center gap-1 text-xs text-slate-600">
+      <span>{label}:</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs"
+      >
+        {options.map(([v, l]) => (
+          <option key={v} value={v}>{l}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function KV({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="rounded border border-slate-200 bg-white px-2 py-1">
+      <div className="text-[10px] uppercase text-slate-400">{k}</div>
+      <div className="font-medium text-slate-800">{v}</div>
+    </div>
+  );
+}
+
+function truthBadge(label: TruthLabel) {
+  const map: Record<TruthLabel, { text: string; cls: string }> = {
+    accurate: { text: "✓ Accurate", cls: "bg-green-100 text-green-700" },
+    mostly_accurate: { text: "△ Mostly", cls: "bg-amber-100 text-amber-700" },
+    incorrect: { text: "✗ Incorrect", cls: "bg-red-100 text-red-700" },
+    not_reviewed: { text: "— Unreviewed", cls: "bg-slate-100 text-slate-500" },
+  };
+  const b = map[label];
+  return <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${b.cls}`}>{b.text}</span>;
+}
+
 function TranscriptCacheTools() {
   const clearFn = useServerFn(clearTranscriptCacheForVideo);
   const [videoId, setVideoId] = useState("");
