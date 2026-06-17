@@ -818,6 +818,29 @@ export const clearTranscriptCacheForVideo = createServerFn({ method: "POST" })
     return { ok: true, removed: rows.length, rows };
   });
 
+/** Founder/debug: delete every cached row for every active benchmark video. */
+export const clearBenchmarkTranscriptCache = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: true; removed: number }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: vids, error: vErr } = await supabaseAdmin
+      .from("benchmark_videos" as any)
+      .select("video_id")
+      .eq("active", true);
+    if (vErr) throw new Error(vErr.message);
+    const ids = ((vids ?? []) as any[]).map((r) => r.video_id).filter(Boolean);
+    if (!ids.length) return { ok: true, removed: 0 };
+    const { data: deleted, error } = await supabaseAdmin
+      .from("youtube_transcript_cache" as any)
+      .delete()
+      .in("video_id", ids)
+      .select("id");
+    if (error) throw new Error(error.message);
+    const removed = (deleted ?? []).length;
+    console.log("[transcript] benchmark cache cleared", { removed });
+    return { ok: true, removed };
+  });
+
+
 
 
 
