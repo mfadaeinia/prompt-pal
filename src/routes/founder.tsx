@@ -923,7 +923,7 @@ function Dashboard({ m }: { m: FounderMetrics }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -1116,7 +1116,7 @@ function TraceResult({ trace }: { trace: PipelineTrace }) {
   );
 }
 
-function TraceBlock({ title, status, children }: { title: string; status?: "ok" | "fail" | "skipped" | "disabled"; children: React.ReactNode }) {
+function TraceBlock({ title, status, children }: { title: string; status?: "ok" | "fail" | "skipped" | "disabled"; children: ReactNode }) {
   const color =
     status === "ok" ? "bg-emerald-100 text-emerald-800"
     : status === "fail" ? "bg-red-100 text-red-800"
@@ -1134,7 +1134,7 @@ function TraceBlock({ title, status, children }: { title: string; status?: "ok" 
   );
 }
 
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
+function Row({ k, v }: { k: string; v: ReactNode }) {
   return (
     <div className="grid grid-cols-[200px_1fr] gap-2 text-xs">
       <div className="text-slate-500">{k}</div>
