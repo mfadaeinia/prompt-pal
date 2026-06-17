@@ -183,6 +183,8 @@ function TranscriptTruthSection() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const metricsQ = useQuery({
     queryKey: ["transcript-accuracy"],
@@ -202,17 +204,34 @@ function TranscriptTruthSection() {
   const m = metricsQ.data;
   const sourcesFromMetrics = m?.bySource.map((s) => s.source) ?? [];
 
+  useEffect(() => {
+    if (openId && typeof document !== "undefined") {
+      const el = document.getElementById("transcript-review-detail-panel");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [openId]);
+
   async function submitLabel(label: TruthLabel) {
-    if (!openId) return;
+    if (!openId) {
+      setLabelError("No row selected. Click Review on a row first.");
+      return;
+    }
     setSaving(true);
+    setLabelError(null);
     try {
+      console.log("[transcript-review] saving label", { resultId: openId, label });
       await labelFn({ data: { resultId: openId, label, notes: notes || undefined } });
+      setLastSaved(`Saved "${label}" at ${new Date().toLocaleTimeString()}`);
       setNotes("");
       setOpenId(null);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["transcript-accuracy"] }),
         qc.invalidateQueries({ queryKey: ["transcript-review-queue"] }),
       ]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[transcript-review] save failed", err);
+      setLabelError(msg);
     } finally {
       setSaving(false);
     }
