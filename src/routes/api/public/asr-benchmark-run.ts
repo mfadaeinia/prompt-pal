@@ -33,6 +33,7 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
             release_version: version,
             total_videos: list.length,
             started_at: new Date().toISOString(),
+            pipeline_mode: pipelineMode,
           } as any)
           .select("id")
           .single();
