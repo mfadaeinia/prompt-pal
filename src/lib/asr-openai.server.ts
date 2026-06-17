@@ -88,7 +88,10 @@ function makeTrace(): OpenAiAsrTrace {
     rapidapi_endpoint: null,
     rapidapi_http_status: null,
     rapidapi_response_status: null,
+    rapidapi_poll_attempts: 0,
+    rapidapi_poll_total_ms: 0,
     audio_url_found: false,
+
     audio_url_field_used: null,
     audio_download_status: null,
     audio_size_mb: null,
