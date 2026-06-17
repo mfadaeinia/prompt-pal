@@ -124,6 +124,16 @@ export type BenchmarkResultRow = {
   transcribr_error: string | null;
   transcribr_segments_count: number | null;
   transcribr_duration_ms: number | null;
+  // Audio extractor diagnostics (provider-agnostic).
+  extractor_provider: string | null;
+  extractor_http_status: number | null;
+  extractor_response_status: string | null;
+  extractor_response_body: string | null;
+  extractor_audio_url_found: boolean | null;
+  extractor_audio_url: string | null;
+  extractor_latency_ms: number | null;
+  extractor_failure_reason: string | null;
+  openai_invoked: boolean | null;
   // Pipeline trace
   video_url_status: string | null;
   http_status_code: number | null;
@@ -165,6 +175,7 @@ export type BenchmarkResultRow = {
   video_id_ext?: string;
   video_title?: string | null;
 };
+
 
 // ---------------- Deterministic quality classification ----------------
 
