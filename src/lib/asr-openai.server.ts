@@ -126,7 +126,7 @@ async function extractAudioUrl(
 
   const pollStart = Date.now();
   let lastJsonError: string | null = null;
-  let lastJsonError: string | null = null;
+
 
   while (true) {
     trace.rapidapi_poll_attempts += 1;
