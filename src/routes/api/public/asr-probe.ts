@@ -20,8 +20,8 @@ export const Route = createFileRoute("/api/public/asr-probe")({
         try {
           const { transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
           const videoId = (url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/)?.[1]) ?? url;
-          const result = await transcribeWithOpenAi({ videoId, requestedLanguage: "nl" });
-          const preview = result.chunks.slice(0, 8).map((c: any) => c.text).join(" ");
+          const result = await transcribeWithOpenAi({ videoId, expectedLanguage: "nl" });
+          const preview = (result.result?.chunks ?? []).slice(0, 8).map((c) => c.text).join(" ");
           return new Response(
             JSON.stringify({
               videoId,
@@ -31,11 +31,12 @@ export const Route = createFileRoute("/api/public/asr-probe")({
                 has_OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
               },
               trace: result.trace,
-              chunkCount: result.chunks.length,
+              chunkCount: result.result?.chunks.length ?? 0,
               preview,
             }, null, 2),
             { headers: { "content-type": "application/json" } },
           );
+
         } catch (e) {
           return new Response(
             JSON.stringify({ error: e instanceof Error ? e.message : String(e), stack: e instanceof Error ? e.stack : null }, null, 2),
