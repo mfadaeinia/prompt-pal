@@ -87,6 +87,9 @@ export type Database = {
           avg_sentence_length: number
           benchmark_video_id: string
           cache_hit: boolean | null
+          cache_key: string | null
+          cache_row_id: string | null
+          cache_validation_status: string
           category: string
           coverage_percent: number
           created_at: string
@@ -136,6 +139,9 @@ export type Database = {
           avg_sentence_length?: number
           benchmark_video_id: string
           cache_hit?: boolean | null
+          cache_key?: string | null
+          cache_row_id?: string | null
+          cache_validation_status?: string
           category: string
           coverage_percent?: number
           created_at?: string
@@ -185,6 +191,9 @@ export type Database = {
           avg_sentence_length?: number
           benchmark_video_id?: string
           cache_hit?: boolean | null
+          cache_key?: string | null
+          cache_row_id?: string | null
+          cache_validation_status?: string
           category?: string
           coverage_percent?: number
           created_at?: string
