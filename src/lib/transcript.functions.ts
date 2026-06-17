@@ -117,7 +117,15 @@ export type FetchTranscriptResult = {
   source: TranscriptSource;
   /** When source==="cache", which provider produced the cached row. */
   cachedFromProvider?: string | null;
+  /** Language that came back from the caption/ASR provider (i.e. what's
+   *  actually in the transcript text). Equivalent to spoken_language when
+   *  validated. Null when the provider didn't report it. */
   language?: string | null;
+  /** Spoken language the caller asked us to transcribe (echoed back). */
+  spokenLanguage?: string | null;
+  /** Same as language; explicit field so the UI can show
+   *  "Transcript language" without aliasing the provider response. */
+  transcriptLanguage?: string | null;
   cacheHit: boolean;
   quality: TranscriptQualityReport;
   providerTrace?: ProviderTrace;
