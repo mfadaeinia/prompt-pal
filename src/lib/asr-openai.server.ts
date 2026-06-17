@@ -26,6 +26,15 @@ export type OpenAiAsrTrace = {
   audioBytes: number | null;
   audioExtractStatus: number | null;
   audioExtractError: string | null;
+  // RapidAPI step diagnostics
+  rapidapi_host: string | null;
+  rapidapi_endpoint: string | null;
+  rapidapi_http_status: number | null;
+  rapidapi_response_status: string | null;
+  audio_url_found: boolean;
+  audio_url_field_used: "link" | "url" | null;
+  audio_download_status: number | null;
+  audio_size_mb: number | null;
   failureCode:
     | null
     | "audio_extract_no_key"
@@ -44,6 +53,7 @@ export type OpenAiAsrTrace = {
     | "unknown";
 };
 
+
 export type OpenAiAsrResult = {
   chunks: Array<{ text: string; offset: number; duration: number }>;
   language: string | null;
@@ -53,6 +63,9 @@ export type OpenAiAsrResult = {
 const OPENAI_AUDIO_LIMIT_BYTES = 25 * 1024 * 1024; // 25 MB
 const DEFAULT_MODEL = "whisper-1";
 const TOTAL_TIMEOUT_MS = 90_000;
+
+const RAPIDAPI_HOST_DEFAULT = "youtube-mp36.p.rapidapi.com";
+const RAPIDAPI_PATH = "/dl?id=";
 
 function makeTrace(): OpenAiAsrTrace {
   return {
@@ -68,6 +81,14 @@ function makeTrace(): OpenAiAsrTrace {
     audioBytes: null,
     audioExtractStatus: null,
     audioExtractError: null,
+    rapidapi_host: null,
+    rapidapi_endpoint: null,
+    rapidapi_http_status: null,
+    rapidapi_response_status: null,
+    audio_url_found: false,
+    audio_url_field_used: null,
+    audio_download_status: null,
+    audio_size_mb: null,
     failureCode: null,
   };
 }
@@ -78,19 +99,27 @@ async function extractAudioUrl(
   trace: OpenAiAsrTrace,
 ): Promise<string | null> {
   const key = process.env.RAPIDAPI_KEY;
+  const host = process.env.RAPIDAPI_AUDIO_HOST || RAPIDAPI_HOST_DEFAULT;
+  const endpoint = `https://${host}${RAPIDAPI_PATH}${encodeURIComponent(videoId)}`;
+  trace.rapidapi_host = host;
+  trace.rapidapi_endpoint = endpoint;
+
   if (!key) {
     trace.failureCode = "audio_extract_no_key";
     trace.audioExtractError = "RAPIDAPI_KEY not set";
     return null;
   }
-  const host = process.env.RAPIDAPI_AUDIO_HOST || "youtube-mp36.p.rapidapi.com";
-  const url = `https://${host}/dl?id=${encodeURIComponent(videoId)}`;
   try {
-    const res = await fetch(url, {
+    const res = await fetch(endpoint, {
       method: "GET",
-      headers: { "X-RapidAPI-Key": key, "X-RapidAPI-Host": host },
+      headers: {
+        "Content-Type": "application/json",
+        "x-rapidapi-host": host,
+        "x-rapidapi-key": key,
+      },
     });
     trace.audioExtractStatus = res.status;
+    trace.rapidapi_http_status = res.status;
     const text = await res.text().catch(() => "");
     if (!res.ok) {
       trace.failureCode = "audio_extract_http";
@@ -103,14 +132,20 @@ async function extractAudioUrl(
       trace.audioExtractError = "non-json audio service response";
       return null;
     }
-    const link = json?.link || json?.url || null;
+    trace.rapidapi_response_status = json?.status != null ? String(json.status) : null;
+    let link: string | null = null;
+    let field: "link" | "url" | null = null;
+    if (json?.link) { link = String(json.link); field = "link"; }
+    else if (json?.url) { link = String(json.url); field = "url"; }
     const status = String(json?.status ?? "").toLowerCase();
     if (!link || status === "processing" || status === "fail") {
       trace.failureCode = "audio_extract_empty";
       trace.audioExtractError = `status=${status || "no-link"}`;
       return null;
     }
-    return String(link);
+    trace.audio_url_found = true;
+    trace.audio_url_field_used = field;
+    return link;
   } catch (e) {
     trace.failureCode = "audio_extract_http";
     trace.audioExtractError = e instanceof Error ? e.message : String(e);
@@ -118,12 +153,15 @@ async function extractAudioUrl(
   }
 }
 
+
+
 async function downloadAudio(
   audioUrl: string,
   trace: OpenAiAsrTrace,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   try {
     const res = await fetch(audioUrl);
+    trace.audio_download_status = res.status;
     if (!res.ok) {
       trace.failureCode = "audio_download_failed";
       trace.audioExtractError = `audio download HTTP ${res.status}`;
@@ -133,14 +171,16 @@ async function downloadAudio(
     if (len && len > OPENAI_AUDIO_LIMIT_BYTES) {
       trace.failureCode = "audio_too_large";
       trace.audioBytes = len;
-      trace.audioExtractError = `audio ${(len / 1024 / 1024).toFixed(1)} MB exceeds 25 MB`;
+      trace.audio_size_mb = +(len / 1024 / 1024).toFixed(2);
+      trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
       return null;
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     trace.audioBytes = buf.byteLength;
+    trace.audio_size_mb = +(buf.byteLength / 1024 / 1024).toFixed(2);
     if (buf.byteLength > OPENAI_AUDIO_LIMIT_BYTES) {
       trace.failureCode = "audio_too_large";
-      trace.audioExtractError = `audio ${(buf.byteLength / 1024 / 1024).toFixed(1)} MB exceeds 25 MB`;
+      trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
       return null;
     }
     return { bytes: buf, contentType: res.headers.get("content-type") || "audio/mpeg" };
@@ -150,6 +190,7 @@ async function downloadAudio(
     return null;
   }
 }
+
 
 function classifyOpenAiStatus(status: number): OpenAiAsrTrace["failureCode"] {
   if (status === 401) return "openai_unauthorized";
