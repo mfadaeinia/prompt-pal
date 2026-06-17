@@ -510,6 +510,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let sentencePunctPct = 0;
     let transcriptText: string | null = null;
     let transcriptPreview: string | null = null;
+    let cacheRowId: string | null = null;
+    let cacheKey: string | null = null;
     let sentenceMedianGap: number | null = null;
     let sentencePreview: Array<{ text: string; start: number; end: number; words: number }> = [];
     let sentenceQualityRating: "high" | "medium" | "low" = "low";
@@ -581,6 +583,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_generated = true;
         transcript_source = tr.source;
         download_status = tr.source === "cache" ? "cache" : "Success";
+        cacheRowId = tr.provenance?.cacheRowId ?? null;
+        cacheKey = tr.provenance?.cacheKey ?? null;
+
 
         // ---- Sentence repair (deterministic → conditional AI repair) ----
         let sentences = tr.sentences ?? [];
@@ -840,6 +845,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         repair_diagnostics: repair_diagnostics as any,
         transcript_text: transcriptText,
         transcript_preview: transcriptPreview,
+        cache_row_id: cacheRowId,
+        cache_key: cacheKey,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
