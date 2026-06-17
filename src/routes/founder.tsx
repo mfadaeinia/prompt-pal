@@ -183,6 +183,8 @@ function TranscriptTruthSection() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   const metricsQ = useQuery({
     queryKey: ["transcript-accuracy"],
@@ -202,17 +204,34 @@ function TranscriptTruthSection() {
   const m = metricsQ.data;
   const sourcesFromMetrics = m?.bySource.map((s) => s.source) ?? [];
 
+  useEffect(() => {
+    if (openId && typeof document !== "undefined") {
+      const el = document.getElementById("transcript-review-detail-panel");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [openId]);
+
   async function submitLabel(label: TruthLabel) {
-    if (!openId) return;
+    if (!openId) {
+      setLabelError("No row selected. Click Review on a row first.");
+      return;
+    }
     setSaving(true);
+    setLabelError(null);
     try {
+      console.log("[transcript-review] saving label", { resultId: openId, label });
       await labelFn({ data: { resultId: openId, label, notes: notes || undefined } });
+      setLastSaved(`Saved "${label}" at ${new Date().toLocaleTimeString()}`);
       setNotes("");
       setOpenId(null);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["transcript-accuracy"] }),
         qc.invalidateQueries({ queryKey: ["transcript-review-queue"] }),
       ]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[transcript-review] save failed", err);
+      setLabelError(msg);
     } finally {
       setSaving(false);
     }
@@ -369,8 +388,14 @@ function TranscriptTruthSection() {
 
         {/* Detail panel */}
         {openId && (
-          <div className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-4">
-            {detailQ.isLoading && <p className="text-xs text-slate-500">Loading…</p>}
+          <div id="transcript-review-detail-panel" className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-4">
+            {detailQ.isLoading && <p className="text-xs text-slate-500">Loading transcript…</p>}
+            {detailQ.error && (
+              <p className="text-xs text-red-600">Failed to load detail: {(detailQ.error as Error).message}</p>
+            )}
+            {labelError && (
+              <p className="mb-2 rounded bg-red-50 px-2 py-1 text-xs text-red-700">Save failed: {labelError}</p>
+            )}
             {detailQ.data && <ReviewDetailPanel
               d={detailQ.data}
               notes={notes}
@@ -379,6 +404,9 @@ function TranscriptTruthSection() {
               onLabel={submitLabel}
             />}
           </div>
+        )}
+        {lastSaved && !openId && (
+          <p className="mt-2 text-xs text-green-700">{lastSaved}</p>
         )}
       </div>
     </section>
