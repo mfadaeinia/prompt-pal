@@ -80,7 +80,7 @@ export const getTranscriptReviewQueue = createServerFn({ method: "POST" })
     let q = supabaseAdmin
       .from("benchmark_video_results" as any)
       .select(
-        "id, run_id, created_at, category, transcript_source, transcript_preview, quality_rating, sentence_count, transcript_word_count, reviewed_by_founder, reviewed_at, transcript_truth_label, sampling_bucket, benchmark_video_id",
+        "id, run_id, created_at, category, transcript_source, transcript_preview, quality_rating, sentence_count, transcript_word_count, reviewed_by_founder, reviewed_at, transcript_truth_label, sampling_bucket, benchmark_video_id, cache_row_id, cache_key, cache_validation_status",
       )
       .order("sampling_bucket", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
@@ -107,8 +107,21 @@ export const getTranscriptReviewQueue = createServerFn({ method: "POST" })
       }
     }
 
+    const cacheRowIds = Array.from(new Set(list.map((r) => r.cache_row_id).filter(Boolean))) as string[];
+    const cacheMap = new Map<string, { provider: string | null; language: string | null; created_at: string | null; updated_at: string | null }>();
+    if (cacheRowIds.length) {
+      const { data: cacheRows } = await supabaseAdmin
+        .from("youtube_transcript_cache" as any)
+        .select("id, provider, language, created_at, updated_at")
+        .in("id", cacheRowIds);
+      for (const c of (cacheRows ?? []) as any[]) {
+        cacheMap.set(c.id, { provider: c.provider, language: c.language, created_at: c.created_at, updated_at: c.updated_at });
+      }
+    }
+
     return list.map((r) => {
       const v = titleMap.get(r.benchmark_video_id);
+      const c = r.cache_row_id ? cacheMap.get(r.cache_row_id) : null;
       return {
         id: r.id,
         run_id: r.run_id,
@@ -126,6 +139,13 @@ export const getTranscriptReviewQueue = createServerFn({ method: "POST" })
         reviewed_at: r.reviewed_at,
         transcript_truth_label: r.transcript_truth_label as TruthLabel,
         sampling_bucket: r.sampling_bucket,
+        cache_row_id: r.cache_row_id ?? null,
+        cache_key: r.cache_key ?? null,
+        cache_provider: c?.provider ?? null,
+        cache_language: c?.language ?? null,
+        cache_created_at: c?.created_at ?? null,
+        cache_updated_at: c?.updated_at ?? null,
+        cache_validation_status: (r.cache_validation_status ?? "unreviewed") as ReviewQueueItem["cache_validation_status"],
       };
     });
   });
@@ -149,6 +169,15 @@ export const getTranscriptReviewDetail = createServerFn({ method: "POST" })
       .eq("id", row.benchmark_video_id)
       .single();
     const vid = (v ?? {}) as any;
+    let cache: any = null;
+    if (row.cache_row_id) {
+      const { data: c } = await supabaseAdmin
+        .from("youtube_transcript_cache" as any)
+        .select("id, provider, language, created_at, updated_at")
+        .eq("id", row.cache_row_id)
+        .maybeSingle();
+      cache = c;
+    }
     return {
       id: row.id,
       run_id: row.run_id,
@@ -166,6 +195,13 @@ export const getTranscriptReviewDetail = createServerFn({ method: "POST" })
       reviewed_at: row.reviewed_at,
       transcript_truth_label: row.transcript_truth_label,
       sampling_bucket: row.sampling_bucket,
+      cache_row_id: row.cache_row_id ?? null,
+      cache_key: row.cache_key ?? null,
+      cache_provider: cache?.provider ?? null,
+      cache_language: cache?.language ?? null,
+      cache_created_at: cache?.created_at ?? null,
+      cache_updated_at: cache?.updated_at ?? null,
+      cache_validation_status: (row.cache_validation_status ?? "unreviewed") as ReviewDetail["cache_validation_status"],
       transcript_text: row.transcript_text,
       avg_sentence_length: Number(row.avg_sentence_length ?? 0),
       longest_sentence_words: row.longest_sentence_words ?? 0,
