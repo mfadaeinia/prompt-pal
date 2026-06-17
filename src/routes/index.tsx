@@ -771,6 +771,16 @@ function Index() {
     loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
   };
 
+  // Hard gate: never allow Learning Mode when transcript isn't usable.
+  useEffect(() => {
+    if (loadMutation.isSuccess && !hasUsableTranscript && studyMode) {
+      setStudyMode(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUsableTranscript, loadMutation.isSuccess]);
+
+
+
 
   const manualMutation = useMutation({
     mutationFn: async (vars: { url: string; text: string }) =>
