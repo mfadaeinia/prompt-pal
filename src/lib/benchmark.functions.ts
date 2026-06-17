@@ -504,6 +504,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     const { fetchTranscript } = await import("@/lib/transcript.functions");
     const { explainSentence } = await import("@/lib/explain.functions");
 
+    let pipelineMode: "current" | "openai_only" = data.pipelineMode ?? "current";
+    if (!data.pipelineMode) {
+      const { data: runRow } = await supabaseAdmin
+        .from("benchmark_runs" as any)
+        .select("pipeline_mode")
+        .eq("id", data.runId)
+        .maybeSingle();
+      const pm = (runRow as any)?.pipeline_mode;
+      if (pm === "openai_only" || pm === "current") pipelineMode = pm;
+    }
+
     const { data: vRow, error: vErr } = await supabaseAdmin
       .from("benchmark_videos" as any)
       .select("id, youtube_url, video_id, category")
