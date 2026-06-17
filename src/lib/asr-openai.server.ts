@@ -38,6 +38,27 @@ export type OpenAiAsrTrace = {
   audio_download_status: number | null;
   audio_size_mb: number | null;
 
+  // --- New: rich extractor diagnostics ---
+  /** Total time spent on audio extraction (poll loop), ms. */
+  extractor_latency_ms: number | null;
+  /** Raw response body from the extractor (last poll), truncated. */
+  extractor_response_body: string | null;
+  /** Resolved temporary audio URL when extraction succeeded. */
+  extractor_audio_url: string | null;
+  /** Classified extractor failure reason (provider-agnostic). */
+  extractor_failure_reason:
+    | null
+    | "video_unavailable"
+    | "age_restricted"
+    | "geo_restricted"
+    | "live_stream"
+    | "private_video"
+    | "extraction_failed"
+    | "provider_rate_limit"
+    | "provider_timeout"
+    | "provider_no_key"
+    | "provider_unknown";
+
   failureCode:
     | null
     | "audio_extract_no_key"
@@ -55,6 +76,7 @@ export type OpenAiAsrTrace = {
     | "asr_timeout"
     | "unknown";
 };
+
 
 
 export type OpenAiAsrResult = {
@@ -95,9 +117,43 @@ function makeTrace(): OpenAiAsrTrace {
     audio_url_field_used: null,
     audio_download_status: null,
     audio_size_mb: null,
+    extractor_latency_ms: null,
+    extractor_response_body: null,
+    extractor_audio_url: null,
+    extractor_failure_reason: null,
     failureCode: null,
   };
 }
+
+/** Classify an extractor failure based on HTTP status, response status, and any
+ *  human-readable message from the provider. Provider-agnostic — works for
+ *  youtube-mp36 today and any future extractor with similar semantics. */
+export function classifyExtractorFailure(args: {
+  httpStatus: number | null;
+  responseStatus: string | null;
+  message: string | null;
+  failureCode: OpenAiAsrTrace["failureCode"];
+}): OpenAiAsrTrace["extractor_failure_reason"] {
+  const { httpStatus, responseStatus, failureCode } = args;
+  if (failureCode === "audio_extract_no_key") return "provider_no_key";
+  if (failureCode === "audio_download_failed") return "extraction_failed";
+  if (failureCode === "asr_timeout") return "provider_timeout";
+  const msg = (args.message ?? "").toLowerCase();
+  if (httpStatus === 429) return "provider_rate_limit";
+  if (httpStatus && httpStatus >= 500) return "extraction_failed";
+  if (/age[- ]?restrict/.test(msg)) return "age_restricted";
+  if (/private/.test(msg)) return "private_video";
+  if (/\b(geo|country|region|not available in)\b/.test(msg)) return "geo_restricted";
+  if (/\blive\b|livestream|live stream|ongoing/.test(msg)) return "live_stream";
+  if (/unavailable|removed|deleted|not available|does not exist|404/.test(msg))
+    return "video_unavailable";
+  if (responseStatus === "fail") return "extraction_failed";
+  if (failureCode === "audio_extract_empty") return "provider_timeout";
+  if (failureCode === "audio_extract_http") return "extraction_failed";
+  if (failureCode) return "provider_unknown";
+  return null;
+}
+
 
 /**
  * Fetch a temporary audio URL for a YouTube video via RapidAPI youtube-mp36.
@@ -121,12 +177,14 @@ async function extractAudioUrl(
   if (!key) {
     trace.failureCode = "audio_extract_no_key";
     trace.audioExtractError = "RAPIDAPI_KEY not set";
+    trace.extractor_latency_ms = 0;
     return null;
   }
 
   const pollStart = Date.now();
   let lastJsonError: string | null = null;
-
+  let lastBody: string | null = null;
+  let lastProviderMsg: string | null = null;
 
   while (true) {
     trace.rapidapi_poll_attempts += 1;
@@ -142,10 +200,13 @@ async function extractAudioUrl(
       trace.audioExtractStatus = res.status;
       trace.rapidapi_http_status = res.status;
       const text = await res.text().catch(() => "");
+      lastBody = text;
+      trace.extractor_response_body = text.slice(0, 1000);
       if (!res.ok) {
         trace.failureCode = "audio_extract_http";
         trace.audioExtractError = text.slice(0, 300) || `HTTP ${res.status}`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
       let json: any = null;
@@ -155,7 +216,7 @@ async function extractAudioUrl(
       }
       const status = String(json?.status ?? "").toLowerCase();
       trace.rapidapi_response_status = status || null;
-
+      if (json?.msg) lastProviderMsg = String(json.msg);
 
       let link: string | null = null;
       let field: "link" | "url" | null = null;
@@ -166,7 +227,9 @@ async function extractAudioUrl(
       if (link && status !== "processing" && status !== "fail") {
         trace.audio_url_found = true;
         trace.audio_url_field_used = field;
+        trace.extractor_audio_url = link;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return link;
       }
 
@@ -175,6 +238,7 @@ async function extractAudioUrl(
         trace.failureCode = "audio_extract_empty";
         trace.audioExtractError = `status=fail${json?.msg ? `: ${json.msg}` : ""}`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
 
@@ -185,6 +249,7 @@ async function extractAudioUrl(
         trace.audioExtractError =
           lastJsonError ?? `status=${status || "no-link"} after ${trace.rapidapi_poll_attempts} polls`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
@@ -192,10 +257,17 @@ async function extractAudioUrl(
       trace.failureCode = "audio_extract_http";
       trace.audioExtractError = e instanceof Error ? e.message : String(e);
       trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+      trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
+      if (lastBody && !trace.extractor_response_body) {
+        trace.extractor_response_body = lastBody.slice(0, 1000);
+      }
       return null;
     }
   }
+  // unreachable
+  void lastProviderMsg;
 }
+
 
 
 
@@ -272,9 +344,16 @@ export async function transcribeWithOpenAi(params: {
   // 1. Audio URL
   const audioUrl = await extractAudioUrl(params.videoId, trace);
   if (!audioUrl) {
+    trace.extractor_failure_reason = classifyExtractorFailure({
+      httpStatus: trace.rapidapi_http_status,
+      responseStatus: trace.rapidapi_response_status,
+      message: trace.audioExtractError,
+      failureCode: trace.failureCode,
+    });
     trace.durationMs = Date.now() - tStart;
     return { result: null, trace };
   }
+
   if (remainingMs() <= 0) {
     trace.failureCode = "asr_timeout";
     trace.durationMs = Date.now() - tStart;

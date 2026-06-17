@@ -89,7 +89,20 @@ export type GenericAsrTrace = {
   durationMs: number | null;
   language: string | null;
   failureCode: string | null;
+  /** Audio-extractor (e.g. RapidAPI youtube-mp36) diagnostics — populated
+   *  for providers that go through an extractor step (currently OpenAI). */
+  extractor?: {
+    provider: string | null;        // e.g. "youtube-mp36.p.rapidapi.com"
+    httpStatus: number | null;
+    responseStatus: string | null;  // e.g. "ok" | "fail" | "processing"
+    responseBody: string | null;    // truncated to 1000 chars
+    audioUrlFound: boolean | null;
+    audioUrl: string | null;
+    latencyMs: number | null;
+    failureReason: string | null;   // classified bucket
+  } | null;
 };
+
 
 export type ProviderTrace = {
   transcribr: TranscribrTrace;
@@ -1236,6 +1249,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     const asrGeneric: GenericAsrTrace = {
       provider: null, model: null, httpStatus: null, errorBody: null,
       segmentsCount: null, durationMs: null, language: null, failureCode: null,
+      extractor: null,
     };
 
     if (asrProvider === "openai") {
@@ -1250,7 +1264,18 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       asrGeneric.durationMs = oa.trace.durationMs;
       asrGeneric.language = oa.trace.language;
       asrGeneric.failureCode = oa.trace.failureCode;
+      asrGeneric.extractor = {
+        provider: oa.trace.rapidapi_host,
+        httpStatus: oa.trace.rapidapi_http_status,
+        responseStatus: oa.trace.rapidapi_response_status,
+        responseBody: oa.trace.extractor_response_body,
+        audioUrlFound: oa.trace.audio_url_found,
+        audioUrl: oa.trace.extractor_audio_url,
+        latencyMs: oa.trace.extractor_latency_ms,
+        failureReason: oa.trace.extractor_failure_reason,
+      };
       if (oa.result && oa.result.chunks.length) {
+
         fb = { chunks: oa.result.chunks, language: oa.result.language };
         fbSource = "openai";
       }

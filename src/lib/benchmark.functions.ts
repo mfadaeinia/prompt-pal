@@ -124,6 +124,26 @@ export type BenchmarkResultRow = {
   transcribr_error: string | null;
   transcribr_segments_count: number | null;
   transcribr_duration_ms: number | null;
+  // Generic ASR diagnostics (provider-agnostic).
+  asr_provider: string | null;
+  asr_model: string | null;
+  asr_http_status: number | null;
+  asr_error_body: string | null;
+  asr_segments_count: number | null;
+  asr_duration_ms: number | null;
+  asr_language: string | null;
+  asr_failure_code: string | null;
+
+  // Audio extractor diagnostics (provider-agnostic).
+  extractor_provider: string | null;
+  extractor_http_status: number | null;
+  extractor_response_status: string | null;
+  extractor_response_body: string | null;
+  extractor_audio_url_found: boolean | null;
+  extractor_audio_url: string | null;
+  extractor_latency_ms: number | null;
+  extractor_failure_reason: string | null;
+  openai_invoked: boolean | null;
   // Pipeline trace
   video_url_status: string | null;
   http_status_code: number | null;
@@ -165,6 +185,7 @@ export type BenchmarkResultRow = {
   video_id_ext?: string;
   video_title?: string | null;
 };
+
 
 // ---------------- Deterministic quality classification ----------------
 
@@ -518,6 +539,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let asr_duration_ms: number | null = null;
     let asr_language: string | null = null;
     let asr_failure_code: string | null = null;
+    // Extractor (RapidAPI youtube-mp36 today, provider-agnostic schema).
+    let extractor_provider: string | null = null;
+    let extractor_http_status: number | null = null;
+    let extractor_response_status: string | null = null;
+    let extractor_response_body: string | null = null;
+    let extractor_audio_url_found: boolean | null = null;
+    let extractor_audio_url: string | null = null;
+    let extractor_latency_ms: number | null = null;
+    let extractor_failure_reason: string | null = null;
+    let openai_invoked: boolean | null = null;
+
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
@@ -631,8 +663,20 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             asr_duration_ms = ag.durationMs;
             asr_language = ag.language;
             asr_failure_code = ag.failureCode;
+            if (ag.provider === "openai") openai_invoked = (ag.segmentsCount ?? 0) > 0 || ag.httpStatus != null;
+            if (ag.extractor) {
+              extractor_provider = ag.extractor.provider;
+              extractor_http_status = ag.extractor.httpStatus;
+              extractor_response_status = ag.extractor.responseStatus;
+              extractor_response_body = ag.extractor.responseBody;
+              extractor_audio_url_found = ag.extractor.audioUrlFound;
+              extractor_audio_url = ag.extractor.audioUrl;
+              extractor_latency_ms = ag.extractor.latencyMs;
+              extractor_failure_reason = ag.extractor.failureReason;
+            }
           }
         }
+
 
 
 
@@ -859,6 +903,18 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             asr_duration_ms = ag.durationMs;
             asr_language = ag.language;
             asr_failure_code = ag.failureCode;
+            if (ag.provider === "openai") openai_invoked = ag.httpStatus != null;
+            if (ag.extractor) {
+              extractor_provider = ag.extractor.provider;
+              extractor_http_status = ag.extractor.httpStatus;
+              extractor_response_status = ag.extractor.responseStatus;
+              extractor_response_body = ag.extractor.responseBody;
+              extractor_audio_url_found = ag.extractor.audioUrlFound;
+              extractor_audio_url = ag.extractor.audioUrl;
+              extractor_latency_ms = ag.extractor.latencyMs;
+              extractor_failure_reason = ag.extractor.failureReason;
+            }
+
             log({
               step: `provider:asr_${ag.provider ?? "unknown"}`,
               ok: (ag.segmentsCount ?? 0) > 0 && !ag.failureCode,
@@ -918,6 +974,16 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         asr_duration_ms,
         asr_language,
         asr_failure_code,
+        extractor_provider,
+        extractor_http_status,
+        extractor_response_status,
+        extractor_response_body,
+        extractor_audio_url_found,
+        extractor_audio_url,
+        extractor_latency_ms,
+        extractor_failure_reason,
+        openai_invoked,
+
         video_url_status,
         http_status_code,
         download_status,

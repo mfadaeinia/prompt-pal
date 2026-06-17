@@ -336,7 +336,9 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       <QualityDistribution results={results} />
       <SourceAnalysis results={results} />
       <QualityThresholds />
+      <AudioExtractionPanel results={results} />
       <FailureBreakdown results={results} />
+
       <CategoryPerformance results={results} />
       <DatasetPanel dataset={dataset} />
       <ScoredResultsTable results={results} onOpen={setDrill} />
@@ -571,7 +573,124 @@ function Kpi({ label, value, target, count }: { label: string; value: number; ta
   );
 }
 
+function AudioExtractionPanel({ results }: { results: BenchmarkResultRow[] }) {
+  const m = useMemo(() => {
+    const openaiRows = results.filter(
+      (r) => r.openai_invoked || r.extractor_provider != null,
+    );
+
+    const attempts = openaiRows.length;
+    const success = openaiRows.filter((r) => r.extractor_audio_url_found).length;
+    const failures = openaiRows.filter(
+      (r) => r.extractor_audio_url_found === false || (!r.extractor_audio_url_found && r.extractor_failure_reason),
+    );
+    const reasonCounts: Record<string, number> = {};
+    for (const r of failures) {
+      const key = r.extractor_failure_reason ?? "provider_unknown";
+      reasonCounts[key] = (reasonCounts[key] ?? 0) + 1;
+    }
+    const latencies = openaiRows
+      .map((r) => r.extractor_latency_ms)
+      .filter((n): n is number => typeof n === "number" && n > 0);
+    const avgLatency = latencies.length
+      ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+      : null;
+    const openaiInvokedCount = openaiRows.filter((r) => r.openai_invoked).length;
+    const openaiSuccess = openaiRows.filter(
+      (r) => (r.transcript_source === "fallback" || r.transcript_source === "asr") && r.transcript_found,
+    ).length;
+    return {
+      attempts,
+      success,
+      successPct: attempts ? Number(((success / attempts) * 100).toFixed(1)) : 0,
+      failureCount: failures.length,
+      reasonCounts,
+      avgLatency,
+      openaiInvokedCount,
+      openaiSuccess,
+      openaiSuccessPct: openaiInvokedCount
+        ? Number(((openaiSuccess / openaiInvokedCount) * 100).toFixed(1))
+        : 0,
+    };
+  }, [results]);
+
+  if (m.attempts === 0) return null;
+
+  const ranked = Object.entries(m.reasonCounts).sort((a, b) => b[1] - a[1]);
+  const maxN = Math.max(1, ...Object.values(m.reasonCounts));
+
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Audio Extraction Reliability
+      </h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Extraction success</div>
+          <div className={`mt-1 text-3xl font-bold ${m.successPct >= 80 ? "text-green-600" : m.successPct >= 60 ? "text-amber-600" : "text-red-600"}`}>
+            {m.successPct}%
+          </div>
+          <div className="mt-1 text-xs text-slate-500">{m.success}/{m.attempts} audio URLs resolved</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Extraction failures</div>
+          <div className="mt-1 text-3xl font-bold text-red-600">{m.failureCount}</div>
+          <div className="mt-1 text-xs text-slate-500">videos blocked before OpenAI</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Avg extractor latency</div>
+          <div className="mt-1 text-3xl font-bold text-slate-900">
+            {m.avgLatency != null ? `${(m.avgLatency / 1000).toFixed(1)}s` : "—"}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">RapidAPI poll loop</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">OpenAI transcription</div>
+          <div className={`mt-1 text-3xl font-bold ${m.openaiSuccessPct >= 90 ? "text-green-600" : "text-amber-600"}`}>
+            {m.openaiSuccessPct}%
+          </div>
+          <div className="mt-1 text-xs text-slate-500">
+            {m.openaiSuccess}/{m.openaiInvokedCount} when audio reached OpenAI
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Failure reasons
+        </div>
+        {ranked.length === 0 ? (
+          <p className="text-xs text-slate-400">No extractor failures recorded.</p>
+        ) : (
+          <div className="space-y-1">
+            {ranked.map(([reason, n]) => {
+              const pct = m.failureCount ? Math.round((n / m.failureCount) * 100) : 0;
+              return (
+                <div key={reason} className="flex items-center gap-3 text-xs">
+                  <div className="w-44 truncate font-mono text-slate-700">{reason}</div>
+                  <div className="h-3 flex-1 overflow-hidden rounded bg-slate-100">
+                    <div className="h-full bg-red-400" style={{ width: `${(n / maxN) * 100}%` }} />
+                  </div>
+                  <div className="w-20 text-right tabular-nums text-slate-700">
+                    {n} ({pct}%)
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-slate-500">
+          Separates audio acquisition (extractor) from transcription (OpenAI). If extraction
+          succeeds but OpenAI fails, the bottleneck is transcription; if extraction fails, the
+          bottleneck is the extractor or the source video itself.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function FailureBreakdown({ results }: { results: BenchmarkResultRow[] }) {
+
   const counts: Record<FailureCode, number> = ALL_FAILURE_CODES.reduce(
     (acc, c) => ({ ...acc, [c]: 0 }),
     {} as Record<FailureCode, number>,
@@ -792,7 +911,46 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
           <dd>{row.quality_rating} — {row.quality_reason ?? ""}</dd>
         </dl>
 
+        {(row.extractor_provider || row.openai_invoked) && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              Audio Extractor + OpenAI
+            </h5>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+              <dt className="text-slate-500">Extractor provider</dt>
+              <dd className="font-mono">{row.extractor_provider ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor HTTP</dt>
+              <dd className="font-mono">{row.extractor_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">Response status</dt>
+              <dd className="font-mono">{row.extractor_response_status ?? "—"}</dd>
+              <dt className="text-slate-500">Audio URL found</dt>
+              <dd className="font-mono">{row.extractor_audio_url_found == null ? "—" : row.extractor_audio_url_found ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">Audio URL</dt>
+              <dd className="truncate font-mono">{row.extractor_audio_url ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor latency</dt>
+              <dd className="font-mono">{row.extractor_latency_ms != null ? `${row.extractor_latency_ms} ms` : "—"}</dd>
+              <dt className="text-slate-500">Failure reason</dt>
+              <dd className={"font-mono " + (row.extractor_failure_reason ? "text-red-700" : "text-slate-700")}>
+                {row.extractor_failure_reason ?? "—"}
+              </dd>
+              <dt className="text-slate-500">OpenAI invoked</dt>
+              <dd className="font-mono">{row.openai_invoked == null ? "—" : row.openai_invoked ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">OpenAI HTTP</dt>
+              <dd className="font-mono">{row.asr_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">OpenAI failure</dt>
+              <dd className="font-mono text-red-700">{row.asr_failure_code ?? "—"}</dd>
+            </dl>
+            {row.extractor_response_body && (
+              <details className="mt-2 rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+                <summary className="cursor-pointer text-slate-600">Raw extractor response body</summary>
+                <pre className="mt-1 whitespace-pre-wrap break-all text-slate-700">{row.extractor_response_body}</pre>
+              </details>
+            )}
+          </>
+        )}
+
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Quality Score Breakdown</h5>
+
         <ScoreBreakdownBlock row={row} />
 
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Sentence Segmentation Diagnostics</h5>
