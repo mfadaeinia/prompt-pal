@@ -12,7 +12,8 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const mode = (url.searchParams.get("mode") ?? "full") as "quick" | "full";
-        const version = url.searchParams.get("version") ?? `openai-${Date.now()}`;
+        const pipelineMode = (url.searchParams.get("pipeline") ?? "current") as "current" | "openai_only";
+        const version = url.searchParams.get("version") ?? `${pipelineMode}-${Date.now()}`;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
             release_version: version,
             total_videos: list.length,
             started_at: new Date().toISOString(),
+            pipeline_mode: pipelineMode,
           } as any)
           .select("id")
           .single();
@@ -53,7 +55,7 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
               const v = list[i];
               const t0 = Date.now();
               try {
-                await (processBenchmarkVideo as any)({ data: { runId, videoId: v.id } });
+                await (processBenchmarkVideo as any)({ data: { runId, videoId: v.id, pipelineMode } });
                 log(`[${i + 1}/${list.length}] ok ${v.id} ${Date.now() - t0}ms`);
               } catch (e) {
                 log(`[${i + 1}/${list.length}] ERR ${v.id} ${Date.now() - t0}ms ${e instanceof Error ? e.message : String(e)}`);

@@ -6,14 +6,14 @@ const Input = z.object({
   url: z.string().min(1).max(500),
   /**
    * The language SPOKEN in the video (ISO-639-1, e.g. "en", "nl").
-   * This is the only language we pass to caption / ASR providers.
-   * NEVER pass the learner's help/target language here — that would make
-   * us request an auto-translated caption track instead of the real one.
-   * Leave undefined to auto-detect (use the video's default/original track).
    */
   spokenLanguage: z.string().min(1).max(20).optional(),
-  /** Deprecated alias for spokenLanguage (kept for back-compat). */
+  /** Deprecated alias for spokenLanguage. */
   requestedLanguage: z.string().min(1).max(20).optional(),
+  /** Benchmark hooks — bypass cache / captions, force a provider. */
+  skipCache: z.boolean().optional(),
+  skipYoutube: z.boolean().optional(),
+  forceProvider: z.enum(["openai", "transcribr"]).optional(),
 });
 const ManualInput = z.object({
   url: z.string().min(1).max(500),
@@ -1063,7 +1063,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
     const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
     const requestedLanguage = spokenLanguage ?? "_any_";
-    const cached = await readCache(videoId, requestedLanguage);
+    const cached = data.skipCache ? null : await readCache(videoId, requestedLanguage);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
@@ -1142,16 +1142,17 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     let usedLang: string | null = null;
     let lastErr: unknown = null;
     let blocked = false;
-    const langCandidates: (string | undefined)[] = spokenLanguage
+    const langCandidates: (string | undefined)[] = data.skipYoutube
+      ? []
+      : spokenLanguage
       ? [
           spokenLanguage,
-          // common regional variants
           spokenLanguage === "en" ? "en-US" : null,
           spokenLanguage === "en" ? "en-GB" : null,
           spokenLanguage === "nl" ? "nl-NL" : null,
-          undefined, // last-resort: original track
+          undefined,
         ].filter((v): v is string | undefined => v !== null)
-      : [undefined]; // auto-detect: only the original track
+      : [undefined];
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1241,8 +1242,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
 
     // -------- Layer 3: ASR provider (Transcribr default, OpenAI behind flag) --------
     const { getAsrProvider, transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
-    const asrProvider = getAsrProvider();
-    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider);
+    const asrProvider = data.forceProvider ?? getAsrProvider();
+    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider, data.forceProvider ? "(forced)" : "");
 
     let fb: { chunks: RawChunk[]; language: string | null } | null = null;
     let fbSource: "fallback" | "openai" = "fallback";

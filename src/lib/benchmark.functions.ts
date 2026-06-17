@@ -340,6 +340,89 @@ export const getLatestBenchmark = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// ---------------- Pipeline comparison (current vs openai_only) ----------------
+
+export type PipelineModeStats = {
+  run: (BenchmarkRunRow & { pipeline_mode: string }) | null;
+  totalRows: number;
+  transcriptSuccess: number;
+  extractionSuccess: number;
+  openaiSuccess: number;
+  avgOpenaiLatencyMs: number | null;
+  avgExtractorLatencyMs: number | null;
+  quality: { high: number; medium: number; low: number };
+  failureReasons: Record<string, number>;
+};
+
+export type PipelineComparison = {
+  current: PipelineModeStats;
+  openai_only: PipelineModeStats;
+};
+
+async function loadModeStats(
+  supabaseAdmin: any,
+  pipelineMode: "current" | "openai_only",
+): Promise<PipelineModeStats> {
+  const { data: runs } = await supabaseAdmin
+    .from("benchmark_runs" as any)
+    .select("*")
+    .eq("pipeline_mode", pipelineMode)
+    .eq("status", "completed")
+    .order("run_date", { ascending: false })
+    .limit(1);
+  const run = ((runs ?? []) as any[])[0] ?? null;
+  const empty: PipelineModeStats = {
+    run, totalRows: 0, transcriptSuccess: 0, extractionSuccess: 0, openaiSuccess: 0,
+    avgOpenaiLatencyMs: null, avgExtractorLatencyMs: null,
+    quality: { high: 0, medium: 0, low: 0 }, failureReasons: {},
+  };
+  if (!run) return empty;
+  const { data: rows } = await supabaseAdmin
+    .from("benchmark_video_results" as any)
+    .select(
+      "transcript_found, quality_rating, failure_code, asr_failure_code, asr_provider, asr_segments_count, asr_duration_ms, extractor_audio_url_found, extractor_latency_ms, extractor_failure_reason",
+    )
+    .eq("run_id", run.id);
+  const list = (rows ?? []) as any[];
+  let transcriptSuccess = 0, extractionSuccess = 0, openaiSuccess = 0;
+  let oaLatSum = 0, oaLatN = 0, exLatSum = 0, exLatN = 0;
+  const quality = { high: 0, medium: 0, low: 0 };
+  const failureReasons: Record<string, number> = {};
+  for (const r of list) {
+    if (r.transcript_found) transcriptSuccess += 1;
+    if (r.extractor_audio_url_found) extractionSuccess += 1;
+    if ((r.asr_segments_count ?? 0) > 0 && !r.asr_failure_code) openaiSuccess += 1;
+    if (typeof r.asr_duration_ms === "number") { oaLatSum += r.asr_duration_ms; oaLatN += 1; }
+    if (typeof r.extractor_latency_ms === "number") { exLatSum += r.extractor_latency_ms; exLatN += 1; }
+    if (r.quality_rating && quality[r.quality_rating as "high"|"medium"|"low"] !== undefined) {
+      quality[r.quality_rating as "high"|"medium"|"low"] += 1;
+    }
+    const reason = r.extractor_failure_reason ?? r.asr_failure_code ?? r.failure_code;
+    if (reason && !r.transcript_found) {
+      failureReasons[reason] = (failureReasons[reason] ?? 0) + 1;
+    }
+  }
+  return {
+    run, totalRows: list.length,
+    transcriptSuccess, extractionSuccess, openaiSuccess,
+    avgOpenaiLatencyMs: oaLatN ? Math.round(oaLatSum / oaLatN) : null,
+    avgExtractorLatencyMs: exLatN ? Math.round(exLatSum / exLatN) : null,
+    quality, failureReasons,
+  };
+}
+
+export const getPipelineComparison = createServerFn({ method: "GET" }).handler(
+  async (): Promise<PipelineComparison> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [current, openai_only] = await Promise.all([
+      loadModeStats(supabaseAdmin, "current"),
+      loadModeStats(supabaseAdmin, "openai_only"),
+    ]);
+    return { current, openai_only };
+  },
+);
+
+
 // ---------------- Dataset Health probe ----------------
 
 /** Probe a YouTube URL via the public oembed endpoint. Cheap and CORS-friendly.
@@ -441,14 +524,18 @@ export const getDatasetHealth = createServerFn({ method: "GET" }).handler(
 
 // ---------------- Runner (per-video, client-driven) ----------------
 
+const PipelineModeEnum = z.enum(["current", "openai_only"]);
+
 const StartInput = z.object({
   mode: z.enum(["quick", "full"]),
   releaseVersion: z.string().max(80).optional(),
+  pipelineMode: PipelineModeEnum.optional(),
 });
 
 const ProcessInput = z.object({
   runId: z.string().uuid(),
   videoId: z.string().uuid(),
+  pipelineMode: PipelineModeEnum.optional(),
 });
 
 const FinalizeInput = z.object({ runId: z.string().uuid(), status: z.enum(["completed", "failed"]).optional() });
@@ -483,6 +570,7 @@ export const startBenchmarkRun = createServerFn({ method: "POST" })
         release_version: data.releaseVersion ?? null,
         total_videos: list.length,
         started_at: new Date().toISOString(),
+        pipeline_mode: data.pipelineMode ?? "current",
       } as any)
       .select("id")
       .single();
@@ -498,6 +586,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { fetchTranscript } = await import("@/lib/transcript.functions");
     const { explainSentence } = await import("@/lib/explain.functions");
+
+    let pipelineMode: "current" | "openai_only" = data.pipelineMode ?? "current";
+    if (!data.pipelineMode) {
+      const { data: runRow } = await supabaseAdmin
+        .from("benchmark_runs" as any)
+        .select("pipeline_mode")
+        .eq("id", data.runId)
+        .maybeSingle();
+      const pm = (runRow as any)?.pipeline_mode;
+      if (pm === "openai_only" || pm === "current") pipelineMode = pm;
+    }
 
     const { data: vRow, error: vErr } = await supabaseAdmin
       .from("benchmark_videos" as any)
@@ -631,7 +730,14 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     if (!failure_code) {
       try {
         const tFetch = Date.now();
-        const tr = await fetchTranscript({ data: { url: v.youtube_url } });
+        const tr = await fetchTranscript({
+          data: {
+            url: v.youtube_url,
+            skipCache: pipelineMode === "openai_only",
+            skipYoutube: pipelineMode === "openai_only",
+            forceProvider: pipelineMode === "openai_only" ? "openai" : undefined,
+          },
+        });
         log({ step: "transcript_fetch", ok: true, detail: `source=${tr.source}`, ms: Date.now() - tFetch });
 
         transcript_found = true;
@@ -1010,6 +1116,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcript_preview: transcriptPreview,
         cache_row_id: cacheRowId,
         cache_key: cacheKey,
+        pipeline_mode: pipelineMode,
       } as any);
     if (insErr) throw new Error(insErr.message);
 

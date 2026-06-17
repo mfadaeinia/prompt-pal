@@ -21,6 +21,7 @@ export type Database = {
           id: string
           mode: string
           notes: string | null
+          pipeline_mode: string
           pipeline_success_count: number
           pipeline_success_rate: number
           release_version: string | null
@@ -42,6 +43,7 @@ export type Database = {
           id?: string
           mode: string
           notes?: string | null
+          pipeline_mode?: string
           pipeline_success_count?: number
           pipeline_success_rate?: number
           release_version?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           id?: string
           mode?: string
           notes?: string | null
+          pipeline_mode?: string
           pipeline_success_count?: number
           pipeline_success_rate?: number
           release_version?: string | null
@@ -122,6 +125,7 @@ export type Database = {
           median_gap_seconds: number | null
           openai_invoked: boolean | null
           pipeline_logs: Json | null
+          pipeline_mode: string
           processing_time_ms: number
           provider_error: string | null
           punctuation_coverage_pct: number | null
@@ -197,6 +201,7 @@ export type Database = {
           median_gap_seconds?: number | null
           openai_invoked?: boolean | null
           pipeline_logs?: Json | null
+          pipeline_mode?: string
           processing_time_ms?: number
           provider_error?: string | null
           punctuation_coverage_pct?: number | null
@@ -272,6 +277,7 @@ export type Database = {
           median_gap_seconds?: number | null
           openai_invoked?: boolean | null
           pipeline_logs?: Json | null
+          pipeline_mode?: string
           processing_time_ms?: number
           provider_error?: string | null
           punctuation_coverage_pct?: number | null

@@ -10,6 +10,7 @@ import {
   finalizeBenchmarkRun,
   upsertBenchmarkVideos,
   exportBenchmarkVideos,
+  getPipelineComparison,
   FAILURE_LABELS,
   ALL_FAILURE_CODES,
   type FailureCode,
@@ -17,6 +18,7 @@ import {
   type BenchmarkResultRow,
   type DatasetHealth,
   type UpsertBenchmarkResult,
+  type PipelineComparison,
 } from "@/lib/benchmark.functions";
 import {
   computeScores,
@@ -48,8 +50,14 @@ export function BenchmarkSection() {
   const finalize = useServerFn(finalizeBenchmarkRun);
   const qc = useQueryClient();
   const [version, setVersion] = useState("");
-  const [progress, setProgress] = useState<{ mode: string; done: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{ mode: string; pipelineMode: "current" | "openai_only"; done: number; total: number } | null>(null);
   const cancelRef = useRef(false);
+  const compareFetcher = useServerFn(getPipelineComparison);
+  const compareQ = useQuery({
+    queryKey: ["benchmark-pipeline-comparison"],
+    queryFn: () => compareFetcher(),
+    refetchInterval: 20_000,
+  });
 
   const q = useQuery({
     queryKey: ["benchmark-latest"],
@@ -72,14 +80,14 @@ export function BenchmarkSection() {
   });
 
   const mut = useMutation({
-    mutationFn: async (mode: "quick" | "full") => {
+    mutationFn: async (opts: { mode: "quick" | "full"; pipelineMode?: "current" | "openai_only" }) => {
+      const { mode } = opts;
+      const pipelineMode = opts.pipelineMode ?? "current";
       cancelRef.current = false;
       const { runId, videos } = await starter({
-        data: { mode, releaseVersion: version || undefined },
+        data: { mode, releaseVersion: version || undefined, pipelineMode },
       });
-      setProgress({ mode, done: 0, total: videos.length });
-      // Throttle YouTube caption fetches: ~1s avg between videos with jitter,
-      // extra cooldown when the previous video tripped a rate-limit signal.
+      setProgress({ mode, pipelineMode, done: 0, total: videos.length });
       const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
       const baseDelayMs = 800;
       const jitterMs = 1200;
@@ -89,17 +97,19 @@ export function BenchmarkSection() {
         if (cancelRef.current) break;
         let rateLimited = false;
         try {
-          const res = await processOne({ data: { runId, videoId: videos[i].id } });
+          const res = await processOne({ data: { runId, videoId: videos[i].id, pipelineMode } });
           rateLimited = Boolean((res as { rateLimited?: boolean })?.rateLimited);
         } catch (e) {
           console.warn("[benchmark] video failed", videos[i].id, e);
         }
-        setProgress({ mode, done: i + 1, total: videos.length });
-        if ((i + 1) % 5 === 0) qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+        setProgress({ mode, pipelineMode, done: i + 1, total: videos.length });
+        if ((i + 1) % 5 === 0) {
+          qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+          qc.invalidateQueries({ queryKey: ["benchmark-pipeline-comparison"] });
+        }
         if (i < videos.length - 1 && !cancelRef.current) {
           if (rateLimited) {
             consecutiveRateLimited += 1;
-            // Exponential cooldown, capped at 30s, when YouTube is blocking us.
             const cooldown = Math.min(30000, rateLimitCooldownMs * consecutiveRateLimited);
             await sleep(cooldown + Math.random() * jitterMs);
           } else {
@@ -114,6 +124,7 @@ export function BenchmarkSection() {
     onSettled: () => {
       setProgress(null);
       qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+      qc.invalidateQueries({ queryKey: ["benchmark-pipeline-comparison"] });
     },
   });
 
@@ -151,21 +162,31 @@ export function BenchmarkSection() {
               <>
                 <button
                   disabled={running}
-                  onClick={() => mut.mutate("quick")}
+                  onClick={() => mut.mutate({ mode: "quick" })}
                   className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {running && progress?.mode === "quick"
+                  {running && progress?.mode === "quick" && progress.pipelineMode === "current"
                     ? `Quick ${progress.done}/${progress.total}`
                     : `Run Quick (${quickCount})`}
                 </button>
                 <button
                   disabled={running}
-                  onClick={() => mut.mutate("full")}
+                  onClick={() => mut.mutate({ mode: "full" })}
                   className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
                 >
-                  {running && progress?.mode === "full"
+                  {running && progress?.mode === "full" && progress.pipelineMode === "current"
                     ? `Full ${progress.done}/${progress.total}`
                     : `Run Full (${total})`}
+                </button>
+                <button
+                  disabled={running}
+                  onClick={() => mut.mutate({ mode: "full", pipelineMode: "openai_only" })}
+                  title="Ignores cache and YouTube captions. Forces ASR_PROVIDER=openai."
+                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {running && progress?.pipelineMode === "openai_only"
+                    ? `OpenAI-Only ${progress.done}/${progress.total}`
+                    : `Run OpenAI-Only (${total})`}
                 </button>
               </>
             );
@@ -189,8 +210,93 @@ export function BenchmarkSection() {
 
       {healthQ.data && <DatasetHealthPanel h={healthQ.data} />}
 
+      {compareQ.data && <PipelineComparisonPanel data={compareQ.data} />}
+
       {q.isLoading && <p className="text-sm text-slate-500">Loading benchmark…</p>}
       {q.data && <BenchmarkBody data={q.data} health={healthQ.data ?? null} />}
+    </div>
+  );
+}
+
+function PipelineComparisonPanel({ data }: { data: PipelineComparison }) {
+  const fmt = (n: number, total: number) =>
+    total > 0 ? `${((n / total) * 100).toFixed(1)}%` : "—";
+  const cards: Array<{ key: "current" | "openai_only"; label: string; sub: string }> = [
+    { key: "current", label: "Current Pipeline", sub: "cache → YouTube → ASR" },
+    { key: "openai_only", label: "OpenAI Only", sub: "audio → OpenAI Whisper" },
+  ];
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <header className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-slate-800">Pipeline comparison</h3>
+        <p className="text-xs text-slate-500">Latest completed run per pipeline</p>
+      </header>
+      <div className="grid gap-3 md:grid-cols-2">
+        {cards.map(({ key, label, sub }) => {
+          const s = data[key];
+          const total = s.totalRows || 0;
+          const failureList = Object.entries(s.failureReasons)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+          return (
+            <div key={key} className="rounded-md border border-slate-200 p-3 text-xs">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">{label}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">{sub}</div>
+                </div>
+                <div className="text-right text-[11px] text-slate-500">
+                  {s.run ? (
+                    <>
+                      <div>{new Date(s.run.run_date).toLocaleString()}</div>
+                      <div>{s.run.release_version ?? "—"}</div>
+                    </>
+                  ) : (
+                    <span>No completed run yet</span>
+                  )}
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                <Stat label="Transcript success" value={`${fmt(s.transcriptSuccess, total)} (${s.transcriptSuccess}/${total})`} />
+                <Stat label="Extraction success" value={`${fmt(s.extractionSuccess, total)} (${s.extractionSuccess}/${total})`} />
+                <Stat label="OpenAI success" value={`${fmt(s.openaiSuccess, total)} (${s.openaiSuccess}/${total})`} />
+                <Stat label="Avg OpenAI latency" value={s.avgOpenaiLatencyMs != null ? `${s.avgOpenaiLatencyMs} ms` : "—"} />
+                <Stat label="Avg extractor latency" value={s.avgExtractorLatencyMs != null ? `${s.avgExtractorLatencyMs} ms` : "—"} />
+                <Stat
+                  label="Quality (H/M/L)"
+                  value={`${s.quality.high} / ${s.quality.medium} / ${s.quality.low}`}
+                />
+              </dl>
+              <div className="mt-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Top failure reasons
+                </div>
+                {failureList.length === 0 ? (
+                  <div className="text-slate-400">None</div>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {failureList.map(([reason, count]) => (
+                      <li key={reason} className="flex justify-between">
+                        <span className="text-slate-700">{reason}</span>
+                        <span className="font-mono text-slate-500">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded bg-slate-50 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-xs font-semibold text-slate-800">{value}</div>
     </div>
   );
 }
