@@ -50,8 +50,14 @@ export function BenchmarkSection() {
   const finalize = useServerFn(finalizeBenchmarkRun);
   const qc = useQueryClient();
   const [version, setVersion] = useState("");
-  const [progress, setProgress] = useState<{ mode: string; done: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{ mode: string; pipelineMode: "current" | "openai_only"; done: number; total: number } | null>(null);
   const cancelRef = useRef(false);
+  const compareFetcher = useServerFn(getPipelineComparison);
+  const compareQ = useQuery({
+    queryKey: ["benchmark-pipeline-comparison"],
+    queryFn: () => compareFetcher(),
+    refetchInterval: 20_000,
+  });
 
   const q = useQuery({
     queryKey: ["benchmark-latest"],
