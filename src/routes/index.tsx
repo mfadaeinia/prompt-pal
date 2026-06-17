@@ -587,7 +587,11 @@ function Index() {
   const loadMutation = useMutation({
     mutationFn: async (vars: LoadVars) => {
       console.log("[transcript-debug][client] submitting URL:", vars.url, "seq:", vars.seq, "requestedVideoId:", vars.requestedVideoId);
-      const res = await fetchTx({ data: { url: vars.url } });
+      // IMPORTANT: pass the SPOKEN language (what's in the video). NEVER pass
+      // `targetLang` — that's the help/explanation language.
+      const res = await fetchTx({
+        data: { url: vars.url, spokenLanguage: spokenLang || undefined },
+      });
       const fullText = res.sentences.map((s) => s.text).join(" ");
       console.log("[transcript-debug][client] received transcript", {
         seq: vars.seq,
