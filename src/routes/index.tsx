@@ -113,6 +113,7 @@ function Index() {
   const [transcriptCacheRowId, setTranscriptCacheRowId] = useState<string | null>(null);
   const [transcriptCacheKey, setTranscriptCacheKey] = useState<string | null>(null);
   const [transcriptLoadedAt, setTranscriptLoadedAt] = useState<string | null>(null);
+  const [transcriptRawChunks, setTranscriptRawChunks] = useState<{ text: string; offset: number; duration: number }[]>([]);
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
@@ -625,6 +626,7 @@ function Index() {
       setVideoId(res.videoId);
       setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
+      setTranscriptRawChunks(res.rawChunks ?? []);
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
@@ -718,6 +720,7 @@ function Index() {
     setRequestedVideoId(requestedId);
     setTranscriptVideoId(null);
     setSentences([]);
+    setTranscriptRawChunks([]);
     setSelected(null);
     setTranscriptSource(null);
     setCachedFromProvider(null);
@@ -1517,12 +1520,30 @@ function Index() {
                       <span>transcript_video_id: <b>{transcriptVideoId ?? "—"}</b></span>
                       <span>source: {transcriptSource ?? "—"}</span>
                       <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>chunk_count: <b>{transcriptRawChunks.length}</b></span>
+                      <span>sentence_count: <b>{sentences.length}</b></span>
                       <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
                       <span>cache_key: {transcriptCacheKey ?? "—"}</span>
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
                     </div>
+                    {transcriptRawChunks.length > 0 && (
+                      <div className="mt-1 border-t border-border/40 pt-1">
+                        <div className="font-semibold">first_3_chunks:</div>
+                        {transcriptRawChunks.slice(0, 3).map((c, i) => (
+                          <div key={i} className="truncate">[{c.offset.toFixed(2)}s +{c.duration.toFixed(2)}] {c.text}</div>
+                        ))}
+                      </div>
+                    )}
+                    {sentences.length > 0 && (
+                      <div className="mt-1 border-t border-border/40 pt-1">
+                        <div className="font-semibold">first_3_sentences:</div>
+                        {sentences.slice(0, 3).map((s) => (
+                          <div key={s.id} className="truncate">#{s.id} [{s.offset.toFixed(2)}s] {s.text}</div>
+                        ))}
+                      </div>
+                    )}
                     {requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId && (
                       <div className="mt-1 font-bold">⚠ VIDEO ID MISMATCH — transcript does not belong to current video</div>
                     )}
@@ -1608,32 +1629,52 @@ function Index() {
                       </div>
                     </div>
 
-                    <ol ref={listRef} className="flex-1 overflow-y-auto">
-                      {sentences.map((s) => {
-                        const active = studyMode && selected?.id === s.id;
-                        const playing = playingId === s.id;
-                        return (
-                          <li key={s.id}>
+                    {loadMutation.isSuccess && sentences.length === 0 ? (
+                      <div className="flex-1 overflow-y-auto p-6 text-sm">
+                        <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-red-700 dark:text-red-300">
+                          <div className="font-semibold">Transcript generated but sentence parsing failed.</div>
+                          <div className="mt-1 text-xs opacity-80">
+                            The provider returned {transcriptRawChunks.length} raw chunk{transcriptRawChunks.length === 1 ? "" : "s"} but
+                            our segmenter produced 0 sentences. Try another video, or reload to retry.
+                          </div>
+                          {url && (
                             <button
-                              data-sid={s.id}
-                              onClick={() => jumpTo(s)}
-                              className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
-                                active
-                                  ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
-                                  : playing
-                                  ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                                  : "border-l-transparent text-foreground/85"
-                              }`}
+                              onClick={() => submitLoad(url)}
+                              className="mt-3 rounded-full border border-red-500/50 px-3 py-1 text-xs font-semibold hover:bg-red-500/20"
                             >
-                              <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
-                                {formatTime(s.offset)}
-                              </span>
-                              {s.text}
+                              Retry
                             </button>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <ol ref={listRef} className="flex-1 overflow-y-auto">
+                        {sentences.map((s) => {
+                          const active = studyMode && selected?.id === s.id;
+                          const playing = playingId === s.id;
+                          return (
+                            <li key={s.id}>
+                              <button
+                                data-sid={s.id}
+                                onClick={() => jumpTo(s)}
+                                className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                                  active
+                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                    : playing
+                                    ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
+                                    : "border-l-transparent text-foreground/85"
+                                }`}
+                              >
+                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                                  {formatTime(s.offset)}
+                                </span>
+                                {s.text}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
 
                     {activeOutOfView && playingId !== null && (
                       <button
