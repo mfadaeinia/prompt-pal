@@ -177,12 +177,14 @@ async function extractAudioUrl(
   if (!key) {
     trace.failureCode = "audio_extract_no_key";
     trace.audioExtractError = "RAPIDAPI_KEY not set";
+    trace.extractor_latency_ms = 0;
     return null;
   }
 
   const pollStart = Date.now();
   let lastJsonError: string | null = null;
-
+  let lastBody: string | null = null;
+  let lastProviderMsg: string | null = null;
 
   while (true) {
     trace.rapidapi_poll_attempts += 1;
@@ -198,10 +200,13 @@ async function extractAudioUrl(
       trace.audioExtractStatus = res.status;
       trace.rapidapi_http_status = res.status;
       const text = await res.text().catch(() => "");
+      lastBody = text;
+      trace.extractor_response_body = text.slice(0, 1000);
       if (!res.ok) {
         trace.failureCode = "audio_extract_http";
         trace.audioExtractError = text.slice(0, 300) || `HTTP ${res.status}`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
       let json: any = null;
@@ -211,7 +216,7 @@ async function extractAudioUrl(
       }
       const status = String(json?.status ?? "").toLowerCase();
       trace.rapidapi_response_status = status || null;
-
+      if (json?.msg) lastProviderMsg = String(json.msg);
 
       let link: string | null = null;
       let field: "link" | "url" | null = null;
@@ -222,7 +227,9 @@ async function extractAudioUrl(
       if (link && status !== "processing" && status !== "fail") {
         trace.audio_url_found = true;
         trace.audio_url_field_used = field;
+        trace.extractor_audio_url = link;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return link;
       }
 
@@ -231,6 +238,7 @@ async function extractAudioUrl(
         trace.failureCode = "audio_extract_empty";
         trace.audioExtractError = `status=fail${json?.msg ? `: ${json.msg}` : ""}`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
 
@@ -241,6 +249,7 @@ async function extractAudioUrl(
         trace.audioExtractError =
           lastJsonError ?? `status=${status || "no-link"} after ${trace.rapidapi_poll_attempts} polls`;
         trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+        trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
         return null;
       }
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
@@ -248,10 +257,17 @@ async function extractAudioUrl(
       trace.failureCode = "audio_extract_http";
       trace.audioExtractError = e instanceof Error ? e.message : String(e);
       trace.rapidapi_poll_total_ms = Date.now() - pollStart;
+      trace.extractor_latency_ms = trace.rapidapi_poll_total_ms;
+      if (lastBody && !trace.extractor_response_body) {
+        trace.extractor_response_body = lastBody.slice(0, 1000);
+      }
       return null;
     }
   }
+  // unreachable
+  void lastProviderMsg;
 }
+
 
 
 
