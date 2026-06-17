@@ -344,9 +344,16 @@ export async function transcribeWithOpenAi(params: {
   // 1. Audio URL
   const audioUrl = await extractAudioUrl(params.videoId, trace);
   if (!audioUrl) {
+    trace.extractor_failure_reason = classifyExtractorFailure({
+      httpStatus: trace.rapidapi_http_status,
+      responseStatus: trace.rapidapi_response_status,
+      message: trace.audioExtractError,
+      failureCode: trace.failureCode,
+    });
     trace.durationMs = Date.now() - tStart;
     return { result: null, trace };
   }
+
   if (remainingMs() <= 0) {
     trace.failureCode = "asr_timeout";
     trace.durationMs = Date.now() - tStart;
