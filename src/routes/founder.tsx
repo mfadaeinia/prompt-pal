@@ -337,6 +337,21 @@ function TranscriptTruthSection() {
           >
             {queueQ.isFetching ? "…" : "Refresh"}
           </button>
+          <button
+            onClick={async () => {
+              if (!confirm("Purge cached transcripts for ALL benchmark videos? Next run will refetch from source.")) return;
+              try {
+                const res = await purgeAllFn();
+                alert(`Purged ${res.removed} cache rows.`);
+                qc.invalidateQueries({ queryKey: ["transcript-review-queue"] });
+              } catch (e) {
+                alert("Purge failed: " + (e instanceof Error ? e.message : String(e)));
+              }
+            }}
+            className="rounded-md border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100"
+          >
+            Purge benchmark cache
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs">
