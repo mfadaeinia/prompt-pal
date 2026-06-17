@@ -1162,6 +1162,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
+        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
       };
     }
 
@@ -1219,6 +1220,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
+        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
       };
     }
 
