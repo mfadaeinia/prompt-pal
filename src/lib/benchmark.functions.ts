@@ -592,6 +592,22 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         cacheRowId = tr.provenance?.cacheRowId ?? null;
         cacheKey = tr.provenance?.cacheKey ?? null;
 
+        // Capture Transcribr trace on success path too (e.g. if Transcribr
+        // was attempted and failed before YouTube captions succeeded, or
+        // when source === "fallback" the trace shows what Transcribr returned).
+        {
+          const tr2 = tr.providerTrace?.transcribr;
+          if (tr2) {
+            transcribr_invoked = tr2.invoked;
+            transcribr_status = tr2.httpStatus;
+            transcribr_error = tr2.errorMessage;
+            transcribr_segments_count = tr2.rawSegments;
+            transcribr_duration_ms = tr2.durationMs;
+          }
+        }
+
+
+
 
         // ---- Sentence repair (deterministic → conditional AI repair) ----
         let sentences = tr.sentences ?? [];
