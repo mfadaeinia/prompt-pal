@@ -336,7 +336,9 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       <QualityDistribution results={results} />
       <SourceAnalysis results={results} />
       <QualityThresholds />
+      <AudioExtractionPanel results={results} />
       <FailureBreakdown results={results} />
+
       <CategoryPerformance results={results} />
       <DatasetPanel dataset={dataset} />
       <ScoredResultsTable results={results} onOpen={setDrill} />
