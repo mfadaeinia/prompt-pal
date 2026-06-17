@@ -103,6 +103,16 @@ function Index() {
   const [transcriptSource, setTranscriptSource] = useState<TranscriptSource | null>(null);
   const [cachedFromProvider, setCachedFromProvider] = useState<string | null>(null);
   const [transcriptQuality, setTranscriptQuality] = useState<TranscriptQualityReport | null>(null);
+  // Anti-stale-transcript guards. requestSeqRef monotonically increments per
+  // user-initiated load; only the latest seq is allowed to write to UI state.
+  // requestedVideoId tracks what the user just asked for so we can compare
+  // against the server response and refuse mismatches.
+  const requestSeqRef = useRef(0);
+  const [requestedVideoId, setRequestedVideoId] = useState<string | null>(null);
+  const [transcriptVideoId, setTranscriptVideoId] = useState<string | null>(null);
+  const [transcriptCacheRowId, setTranscriptCacheRowId] = useState<string | null>(null);
+  const [transcriptCacheKey, setTranscriptCacheKey] = useState<string | null>(null);
+  const [transcriptLoadedAt, setTranscriptLoadedAt] = useState<string | null>(null);
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
@@ -459,7 +469,7 @@ function Index() {
     if (mode !== "watch") setStudyMode(true);
     deepLinkSeekRef.current = isFinite(t) ? t : null;
     demoStartTimeRef.current = performance.now();
-    loadMutation.mutate(v);
+    submitLoad(v);
     // Clean the URL so refreshes don't re-seek.
     window.history.replaceState({}, "", window.location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -503,7 +513,7 @@ function Index() {
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
     if (videoId !== DEMO_VIDEO_ID) {
-      loadMutation.mutate(DEMO_VIDEO_URL);
+      submitLoad(DEMO_VIDEO_URL);
     }
     demoStartTimeRef.current = performance.now();
     // First-time onboarding
@@ -553,37 +563,74 @@ function Index() {
     }
   };
 
+  // Tiny URL → 11-char video ID extractor (mirrors the server-side regex).
+  function extractVideoIdClient(u: string): string | null {
+    try {
+      const m = u.match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+      return m ? m[1] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  type LoadVars = { url: string; seq: number; requestedVideoId: string | null };
+
   const loadMutation = useMutation({
-    mutationFn: async (u: string) => {
-      console.log("[transcript-debug][client] submitting URL:", u);
-      const res = await fetchTx({ data: { url: u } });
+    mutationFn: async (vars: LoadVars) => {
+      console.log("[transcript-debug][client] submitting URL:", vars.url, "seq:", vars.seq, "requestedVideoId:", vars.requestedVideoId);
+      const res = await fetchTx({ data: { url: vars.url } });
       const fullText = res.sentences.map((s) => s.text).join(" ");
       console.log("[transcript-debug][client] received transcript", {
-        videoId: res.videoId,
+        seq: vars.seq,
+        requestedVideoId: vars.requestedVideoId,
+        returnedVideoId: res.videoId,
         source: res.source,
+        cacheHit: res.cacheHit,
+        cacheRowId: res.provenance?.cacheRowId,
+        cacheKey: res.provenance?.cacheKey,
+        provider: res.cachedFromProvider ?? res.source,
         segments: res.sentences.length,
         total_chars: fullText.length,
-        total_words: fullText.trim() ? fullText.trim().split(/\s+/).length : 0,
-        cacheHit: res.cacheHit,
         language: res.language,
         first_segment: res.sentences[0]?.text?.slice(0, 100) ?? null,
-        last_segment: res.sentences.at(-1)?.text?.slice(0, 100) ?? null,
       });
       if (res.sentences.length <= 2) {
-        console.warn(
-          "[transcript-debug][client] ⚠️ ONLY",
-          res.sentences.length,
-          "SEGMENTS — likely the bug you're chasing"
-        );
+        console.warn("[transcript-debug][client] ⚠️ ONLY", res.sentences.length, "SEGMENTS");
       }
-      return res;
+      return { res, vars };
     },
-    onSuccess: (res, submittedUrl) => {
+    onSuccess: ({ res, vars }) => {
+      // Race-condition guard: discard any response that isn't the latest request.
+      if (vars.seq !== requestSeqRef.current) {
+        console.warn("[transcript-debug][client] discarding stale response", {
+          responseSeq: vars.seq,
+          latestSeq: requestSeqRef.current,
+          returnedVideoId: res.videoId,
+          requestedVideoId: vars.requestedVideoId,
+        });
+        return;
+      }
+      // Server-side mismatch guard: refuse to render a transcript whose
+      // returned video_id does not match what the user asked for.
+      if (vars.requestedVideoId && res.videoId !== vars.requestedVideoId) {
+        console.error("[transcript-debug][client] ❌ video_id mismatch — refusing to apply", {
+          requestedVideoId: vars.requestedVideoId,
+          returnedVideoId: res.videoId,
+          cacheRowId: res.provenance?.cacheRowId,
+          cacheKey: res.provenance?.cacheKey,
+        });
+        return;
+      }
+
       setVideoId(res.videoId);
+      setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
+      setTranscriptCacheRowId(res.provenance?.cacheRowId ?? null);
+      setTranscriptCacheKey(res.provenance?.cacheKey ?? null);
+      setTranscriptLoadedAt(new Date().toISOString());
       setTranscriptQuality(res.quality);
       setLimitedMode(res.quality.quality === "low");
       setQualityBannerDismissed(false);
@@ -595,7 +642,6 @@ function Index() {
         sentence_count: res.quality.metrics.sentenceCount,
         avg_words_per_sentence: res.quality.metrics.avgWordsPerSentence,
       });
-      // Fetch human-readable video title via YouTube oEmbed (best-effort).
       fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(
           `https://www.youtube.com/watch?v=${res.videoId}`
@@ -608,14 +654,10 @@ function Index() {
         .catch(() => {});
       setUserProperties({ selected_language: targetLang });
 
-
-      // Cache hit/miss telemetry (per-source events are emitted below).
       track(res.cacheHit ? "cache_hit" : "cache_miss", {
         video_id: res.videoId,
         source: res.source,
       });
-
-      // Per-layer success event.
       const evt =
         res.source === "cache"
           ? "transcript_loaded_from_cache"
@@ -625,47 +667,71 @@ function Index() {
           ? "transcript_loaded_from_fallback_provider"
           : "transcript_loaded_manually";
       track(evt, {
-        video_url: submittedUrl,
+        video_url: vars.url,
         video_id: res.videoId,
         selected_language: targetLang,
       });
       track("video_loaded", {
-        video_url: submittedUrl,
+        video_url: vars.url,
         video_id: res.videoId,
         selected_language: targetLang,
         source: res.source,
       });
-
-      // Custom-video funnel: anything that's not the bundled demo counts.
-      if (submittedUrl !== DEMO_VIDEO_URL) {
+      if (vars.url !== DEMO_VIDEO_URL) {
         track("custom_video_loaded", {
-          video_url: submittedUrl,
+          video_url: vars.url,
           video_id: res.videoId,
           source: res.source,
         });
       }
     },
-    onError: (err: any, submittedUrl) => {
+    onError: (err: any, vars) => {
       console.error("[transcript-debug][client] fetch failed", {
-        url: submittedUrl,
+        url: vars.url,
+        seq: vars.seq,
         errorType: err?.errorType,
         providerMessage: err?.providerMessage,
         message: err?.message,
       });
-      const isDemo = submittedUrl === DEMO_VIDEO_URL;
-      // Internal-only — never surfaced to the user.
+      const isDemo = vars.url === DEMO_VIDEO_URL;
       track("transcript_fetch_failed", {
-        video_url: submittedUrl,
+        video_url: vars.url,
         error_type: err?.errorType ?? "unknown",
       });
       if (!isDemo) {
         track("custom_video_failed", {
-          video_url: submittedUrl,
+          video_url: vars.url,
           error_type: err?.errorType ?? "unknown",
         });
       }
     },
   });
+
+  // Single entry point for kicking off a transcript load. Always go through
+  // this — it allocates the next request seq, resets transcript-bound UI
+  // state synchronously (so the previous video's transcript can never linger
+  // on screen), and submits the mutation with the seq attached.
+  const submitLoad = (u: string) => {
+    const requestedId = extractVideoIdClient(u);
+    requestSeqRef.current += 1;
+    const seq = requestSeqRef.current;
+    setRequestedVideoId(requestedId);
+    setTranscriptVideoId(null);
+    setSentences([]);
+    setSelected(null);
+    setTranscriptSource(null);
+    setCachedFromProvider(null);
+    setTranscriptCacheRowId(null);
+    setTranscriptCacheKey(null);
+    setTranscriptLoadedAt(null);
+    setTranscriptQuality(null);
+    setVideoTitle(null);
+    // Switch the player to the new video immediately. videoId drives the
+    // iframe src and the explanation-cache reset effect.
+    if (requestedId) setVideoId(requestedId);
+    loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
+  };
+
 
   const manualMutation = useMutation({
     mutationFn: async (vars: { url: string; text: string }) =>
@@ -1267,7 +1333,7 @@ function Index() {
               onSubmit={(u) => {
                 track("custom_video_attempted", { video_url: u });
                 setView("demo");
-                loadMutation.mutate(u);
+                submitLoad(u);
               }}
               onStartDemo={startDemo}
             />
@@ -1437,6 +1503,31 @@ function Index() {
             >
 
               <div className="space-y-4 min-w-0">
+                {isDevPanelEnabled() && (
+                  <div
+                    className={`rounded-md border px-3 py-2 text-[11px] font-mono leading-snug ${
+                      requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId
+                        ? "border-red-500 bg-red-500/10 text-red-700"
+                        : "border-border bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <span>current_video_id: <b>{videoId ?? "—"}</b></span>
+                      <span>requested_video_id: <b>{requestedVideoId ?? "—"}</b></span>
+                      <span>transcript_video_id: <b>{transcriptVideoId ?? "—"}</b></span>
+                      <span>source: {transcriptSource ?? "—"}</span>
+                      <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
+                      <span>cache_key: {transcriptCacheKey ?? "—"}</span>
+                      <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
+                      <span>req_seq: {requestSeqRef.current}</span>
+                      <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
+                    </div>
+                    {requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId && (
+                      <div className="mt-1 font-bold">⚠ VIDEO ID MISMATCH — transcript does not belong to current video</div>
+                    )}
+                  </div>
+                )}
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
@@ -1495,7 +1586,7 @@ function Index() {
                             video_id: videoId,
                             quality: transcriptQuality.quality,
                           });
-                          loadMutation.mutate(url);
+                          submitLoad(url);
                         }}
                         reprocessing={loadMutation.isPending}
                       />
