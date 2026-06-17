@@ -441,14 +441,18 @@ export const getDatasetHealth = createServerFn({ method: "GET" }).handler(
 
 // ---------------- Runner (per-video, client-driven) ----------------
 
+const PipelineModeEnum = z.enum(["current", "openai_only"]);
+
 const StartInput = z.object({
   mode: z.enum(["quick", "full"]),
   releaseVersion: z.string().max(80).optional(),
+  pipelineMode: PipelineModeEnum.optional(),
 });
 
 const ProcessInput = z.object({
   runId: z.string().uuid(),
   videoId: z.string().uuid(),
+  pipelineMode: PipelineModeEnum.optional(),
 });
 
 const FinalizeInput = z.object({ runId: z.string().uuid(), status: z.enum(["completed", "failed"]).optional() });
