@@ -1503,6 +1503,31 @@ function Index() {
             >
 
               <div className="space-y-4 min-w-0">
+                {isDevPanelEnabled() && (
+                  <div
+                    className={`rounded-md border px-3 py-2 text-[11px] font-mono leading-snug ${
+                      requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId
+                        ? "border-red-500 bg-red-500/10 text-red-700"
+                        : "border-border bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <span>current_video_id: <b>{videoId ?? "—"}</b></span>
+                      <span>requested_video_id: <b>{requestedVideoId ?? "—"}</b></span>
+                      <span>transcript_video_id: <b>{transcriptVideoId ?? "—"}</b></span>
+                      <span>source: {transcriptSource ?? "—"}</span>
+                      <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
+                      <span>cache_key: {transcriptCacheKey ?? "—"}</span>
+                      <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
+                      <span>req_seq: {requestSeqRef.current}</span>
+                      <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
+                    </div>
+                    {requestedVideoId && transcriptVideoId && requestedVideoId !== transcriptVideoId && (
+                      <div className="mt-1 font-bold">⚠ VIDEO ID MISMATCH — transcript does not belong to current video</div>
+                    )}
+                  </div>
+                )}
                 <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
