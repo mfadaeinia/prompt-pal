@@ -154,6 +154,18 @@ function Index() {
   );
   const devPanelEnabled = isDevPanelEnabled();
 
+  // Learning Mode usability gate. A transcript with fewer than 5 sentences
+  // produces an empty / broken Learning Mode UI, so we treat it as failed
+  // and show a dedicated error state instead.
+  const MIN_LEARNING_SENTENCES = 5;
+  const hasUsableTranscript = sentences.length >= MIN_LEARNING_SENTENCES;
+  const processingStatus: "success" | "partial_success" | "failed" =
+    sentences.length >= MIN_LEARNING_SENTENCES
+      ? "success"
+      : sentences.length > 0
+        ? "partial_success"
+        : "failed";
+
   useEffect(() => {
     setBrowserId(getBrowserId());
   }, []);
