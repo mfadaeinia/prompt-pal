@@ -484,6 +484,18 @@ function ReviewDetailPanel({
         <KV k="Translation" v={d.translation_success ? "✓" : "—"} />
         <KV k="Failure" v={d.failure_code ?? "—"} />
       </div>
+      <div className="rounded border border-slate-200 bg-white p-2 text-xs">
+        <div className="mb-1 text-[10px] font-semibold uppercase text-slate-500">Cache provenance</div>
+        <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+          <KV k="Cache row id" v={d.cache_row_id ?? "—"} />
+          <KV k="Cache key" v={d.cache_key ?? "—"} />
+          <KV k="Cache provider" v={d.cache_provider ?? "—"} />
+          <KV k="Cache language" v={d.cache_language ?? "—"} />
+          <KV k="Cache created" v={d.cache_created_at ? new Date(d.cache_created_at).toLocaleString() : "—"} />
+          <KV k="Cache updated" v={d.cache_updated_at ? new Date(d.cache_updated_at).toLocaleString() : "—"} />
+          <KV k="Validation status" v={d.cache_validation_status} />
+        </div>
+      </div>
       {d.transcript_preview && (
         <div>
           <div className="text-[10px] font-semibold uppercase text-slate-500">First 200 chars</div>
