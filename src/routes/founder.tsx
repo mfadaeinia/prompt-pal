@@ -388,8 +388,14 @@ function TranscriptTruthSection() {
 
         {/* Detail panel */}
         {openId && (
-          <div className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-4">
-            {detailQ.isLoading && <p className="text-xs text-slate-500">Loading…</p>}
+          <div id="transcript-review-detail-panel" className="mt-4 rounded-md border border-slate-300 bg-slate-50 p-4">
+            {detailQ.isLoading && <p className="text-xs text-slate-500">Loading transcript…</p>}
+            {detailQ.error && (
+              <p className="text-xs text-red-600">Failed to load detail: {(detailQ.error as Error).message}</p>
+            )}
+            {labelError && (
+              <p className="mb-2 rounded bg-red-50 px-2 py-1 text-xs text-red-700">Save failed: {labelError}</p>
+            )}
             {detailQ.data && <ReviewDetailPanel
               d={detailQ.data}
               notes={notes}
@@ -398,6 +404,9 @@ function TranscriptTruthSection() {
               onLabel={submitLabel}
             />}
           </div>
+        )}
+        {lastSaved && !openId && (
+          <p className="mt-2 text-xs text-green-700">{lastSaved}</p>
         )}
       </div>
     </section>
