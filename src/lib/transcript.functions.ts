@@ -1142,16 +1142,17 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     let usedLang: string | null = null;
     let lastErr: unknown = null;
     let blocked = false;
-    const langCandidates: (string | undefined)[] = spokenLanguage
+    const langCandidates: (string | undefined)[] = data.skipYoutube
+      ? []
+      : spokenLanguage
       ? [
           spokenLanguage,
-          // common regional variants
           spokenLanguage === "en" ? "en-US" : null,
           spokenLanguage === "en" ? "en-GB" : null,
           spokenLanguage === "nl" ? "nl-NL" : null,
-          undefined, // last-resort: original track
+          undefined,
         ].filter((v): v is string | undefined => v !== null)
-      : [undefined]; // auto-detect: only the original track
+      : [undefined];
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
