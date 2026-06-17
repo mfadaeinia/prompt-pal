@@ -647,7 +647,14 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     if (!failure_code) {
       try {
         const tFetch = Date.now();
-        const tr = await fetchTranscript({ data: { url: v.youtube_url } });
+        const tr = await fetchTranscript({
+          data: {
+            url: v.youtube_url,
+            skipCache: pipelineMode === "openai_only",
+            skipYoutube: pipelineMode === "openai_only",
+            forceProvider: pipelineMode === "openai_only" ? "openai" : undefined,
+          },
+        });
         log({ step: "transcript_fetch", ok: true, detail: `source=${tr.source}`, ms: Date.now() - tFetch });
 
         transcript_found = true;
