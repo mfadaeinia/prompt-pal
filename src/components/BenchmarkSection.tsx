@@ -210,8 +210,93 @@ export function BenchmarkSection() {
 
       {healthQ.data && <DatasetHealthPanel h={healthQ.data} />}
 
+      {compareQ.data && <PipelineComparisonPanel data={compareQ.data} />}
+
       {q.isLoading && <p className="text-sm text-slate-500">Loading benchmark…</p>}
       {q.data && <BenchmarkBody data={q.data} health={healthQ.data ?? null} />}
+    </div>
+  );
+}
+
+function PipelineComparisonPanel({ data }: { data: PipelineComparison }) {
+  const fmt = (n: number, total: number) =>
+    total > 0 ? `${((n / total) * 100).toFixed(1)}%` : "—";
+  const cards: Array<{ key: "current" | "openai_only"; label: string; sub: string }> = [
+    { key: "current", label: "Current Pipeline", sub: "cache → YouTube → ASR" },
+    { key: "openai_only", label: "OpenAI Only", sub: "audio → OpenAI Whisper" },
+  ];
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <header className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-slate-800">Pipeline comparison</h3>
+        <p className="text-xs text-slate-500">Latest completed run per pipeline</p>
+      </header>
+      <div className="grid gap-3 md:grid-cols-2">
+        {cards.map(({ key, label, sub }) => {
+          const s = data[key];
+          const total = s.totalRows || 0;
+          const failureList = Object.entries(s.failureReasons)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+          return (
+            <div key={key} className="rounded-md border border-slate-200 p-3 text-xs">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">{label}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500">{sub}</div>
+                </div>
+                <div className="text-right text-[11px] text-slate-500">
+                  {s.run ? (
+                    <>
+                      <div>{new Date(s.run.run_date).toLocaleString()}</div>
+                      <div>{s.run.release_version ?? "—"}</div>
+                    </>
+                  ) : (
+                    <span>No completed run yet</span>
+                  )}
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                <Stat label="Transcript success" value={`${fmt(s.transcriptSuccess, total)} (${s.transcriptSuccess}/${total})`} />
+                <Stat label="Extraction success" value={`${fmt(s.extractionSuccess, total)} (${s.extractionSuccess}/${total})`} />
+                <Stat label="OpenAI success" value={`${fmt(s.openaiSuccess, total)} (${s.openaiSuccess}/${total})`} />
+                <Stat label="Avg OpenAI latency" value={s.avgOpenaiLatencyMs != null ? `${s.avgOpenaiLatencyMs} ms` : "—"} />
+                <Stat label="Avg extractor latency" value={s.avgExtractorLatencyMs != null ? `${s.avgExtractorLatencyMs} ms` : "—"} />
+                <Stat
+                  label="Quality (H/M/L)"
+                  value={`${s.quality.high} / ${s.quality.medium} / ${s.quality.low}`}
+                />
+              </dl>
+              <div className="mt-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Top failure reasons
+                </div>
+                {failureList.length === 0 ? (
+                  <div className="text-slate-400">None</div>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {failureList.map(([reason, count]) => (
+                      <li key={reason} className="flex justify-between">
+                        <span className="text-slate-700">{reason}</span>
+                        <span className="font-mono text-slate-500">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded bg-slate-50 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-xs font-semibold text-slate-800">{value}</div>
     </div>
   );
 }
