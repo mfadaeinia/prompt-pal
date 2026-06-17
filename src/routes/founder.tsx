@@ -14,6 +14,16 @@ import {
   type TesterRow,
 } from "@/lib/tester-events.functions";
 import { clearTranscriptCacheForVideo } from "@/lib/transcript.functions";
+import {
+  getTranscriptReviewQueue,
+  getTranscriptReviewDetail,
+  setTranscriptTruthLabel,
+  getTranscriptAccuracyMetrics,
+  type ReviewQueueItem,
+  type ReviewDetail,
+  type AccuracyMetrics,
+  type TruthLabel,
+} from "@/lib/transcript-review.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
