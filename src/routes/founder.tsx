@@ -25,6 +25,7 @@ import {
   type TruthLabel,
 } from "@/lib/transcript-review.functions";
 import { clearBenchmarkTranscriptCache } from "@/lib/transcript.functions";
+import { traceTranscriptPipeline, type PipelineTrace } from "@/lib/transcript-trace.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
 
