@@ -469,7 +469,7 @@ function Index() {
     if (mode !== "watch") setStudyMode(true);
     deepLinkSeekRef.current = isFinite(t) ? t : null;
     demoStartTimeRef.current = performance.now();
-    loadMutation.mutate(v);
+    submitLoad(v);
     // Clean the URL so refreshes don't re-seek.
     window.history.replaceState({}, "", window.location.pathname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -513,7 +513,7 @@ function Index() {
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
     if (videoId !== DEMO_VIDEO_ID) {
-      loadMutation.mutate(DEMO_VIDEO_URL);
+      submitLoad(DEMO_VIDEO_URL);
     }
     demoStartTimeRef.current = performance.now();
     // First-time onboarding
@@ -1333,7 +1333,7 @@ function Index() {
               onSubmit={(u) => {
                 track("custom_video_attempted", { video_url: u });
                 setView("demo");
-                loadMutation.mutate(u);
+                submitLoad(u);
               }}
               onStartDemo={startDemo}
             />
@@ -1561,7 +1561,7 @@ function Index() {
                             video_id: videoId,
                             quality: transcriptQuality.quality,
                           });
-                          loadMutation.mutate(url);
+                          submitLoad(url);
                         }}
                         reprocessing={loadMutation.isPending}
                       />
