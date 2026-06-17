@@ -70,9 +70,23 @@ export type AsrTrace = {
   discardedReason: string | null;
 };
 
+/** Generic, provider-agnostic ASR diagnostics persisted to benchmark rows. */
+export type GenericAsrTrace = {
+  provider: "transcribr" | "openai" | null;
+  model: string | null;
+  httpStatus: number | null;
+  errorBody: string | null;
+  segmentsCount: number | null;
+  durationMs: number | null;
+  language: string | null;
+  failureCode: string | null;
+};
+
 export type ProviderTrace = {
   transcribr: TranscribrTrace;
   asr: AsrTrace;
+  /** Generic ASR diagnostics. Populated for whichever provider ASR_PROVIDER selected. */
+  asrGeneric?: GenericAsrTrace;
 };
 
 export type CacheProvenance = {
