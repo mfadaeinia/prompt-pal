@@ -845,6 +845,8 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         repair_diagnostics: repair_diagnostics as any,
         transcript_text: transcriptText,
         transcript_preview: transcriptPreview,
+        cache_row_id: cacheRowId,
+        cache_key: cacheKey,
       } as any);
     if (insErr) throw new Error(insErr.message);
 
