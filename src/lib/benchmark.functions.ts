@@ -753,6 +753,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         const errorType = (e as { errorType?: string } | null)?.errorType;
+        const providerMessage = (e as { providerMessage?: string } | null)?.providerMessage ?? null;
+        // Keep the raw provider error separate from the friendly user-facing message.
+        provider_error = providerMessage ?? msg;
         error_message = msg;
         const low = msg.toLowerCase();
         // Prefer the structured errorType attached by fetchTranscript when present.
@@ -786,6 +789,13 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         const pt = (e as { providerTrace?: import("@/lib/transcript.functions").ProviderTrace } | null)?.providerTrace;
         if (pt) {
           const tr = pt.transcribr;
+          // Persist Transcribr diagnostics directly to dedicated columns
+          // so failures can be aggregated without parsing the log array.
+          transcribr_invoked = tr.invoked;
+          transcribr_status = tr.httpStatus;
+          transcribr_error = tr.errorMessage;
+          transcribr_segments_count = tr.rawSegments;
+          transcribr_duration_ms = tr.durationMs;
           const trDiscarded = tr.rawSegments > 0 && tr.keptSegments === 0;
           log({
             step: "provider:transcribr",
