@@ -495,6 +495,12 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let translation_generated = false;
     let failure_code: FailureCode | null = null;
     let error_message: string | null = null;
+    let provider_error: string | null = null;
+    let transcribr_invoked: boolean | null = null;
+    let transcribr_status: number | null = null;
+    let transcribr_error: string | null = null;
+    let transcribr_segments_count: number | null = null;
+    let transcribr_duration_ms: number | null = null;
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
