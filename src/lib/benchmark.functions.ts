@@ -529,6 +529,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let asr_duration_ms: number | null = null;
     let asr_language: string | null = null;
     let asr_failure_code: string | null = null;
+    // Extractor (RapidAPI youtube-mp36 today, provider-agnostic schema).
+    let extractor_provider: string | null = null;
+    let extractor_http_status: number | null = null;
+    let extractor_response_status: string | null = null;
+    let extractor_response_body: string | null = null;
+    let extractor_audio_url_found: boolean | null = null;
+    let extractor_audio_url: string | null = null;
+    let extractor_latency_ms: number | null = null;
+    let extractor_failure_reason: string | null = null;
+    let openai_invoked: boolean | null = null;
+
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
