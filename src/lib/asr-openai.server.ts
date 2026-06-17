@@ -31,10 +31,13 @@ export type OpenAiAsrTrace = {
   rapidapi_endpoint: string | null;
   rapidapi_http_status: number | null;
   rapidapi_response_status: string | null;
+  rapidapi_poll_attempts: number;
+  rapidapi_poll_total_ms: number;
   audio_url_found: boolean;
   audio_url_field_used: "link" | "url" | null;
   audio_download_status: number | null;
   audio_size_mb: number | null;
+
   failureCode:
     | null
     | "audio_extract_no_key"
