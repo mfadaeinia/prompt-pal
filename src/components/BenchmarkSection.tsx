@@ -911,7 +911,46 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
           <dd>{row.quality_rating} — {row.quality_reason ?? ""}</dd>
         </dl>
 
+        {(row.extractor_provider || row.openai_invoked) && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              Audio Extractor + OpenAI
+            </h5>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+              <dt className="text-slate-500">Extractor provider</dt>
+              <dd className="font-mono">{row.extractor_provider ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor HTTP</dt>
+              <dd className="font-mono">{row.extractor_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">Response status</dt>
+              <dd className="font-mono">{row.extractor_response_status ?? "—"}</dd>
+              <dt className="text-slate-500">Audio URL found</dt>
+              <dd className="font-mono">{row.extractor_audio_url_found == null ? "—" : row.extractor_audio_url_found ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">Audio URL</dt>
+              <dd className="truncate font-mono">{row.extractor_audio_url ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor latency</dt>
+              <dd className="font-mono">{row.extractor_latency_ms != null ? `${row.extractor_latency_ms} ms` : "—"}</dd>
+              <dt className="text-slate-500">Failure reason</dt>
+              <dd className={"font-mono " + (row.extractor_failure_reason ? "text-red-700" : "text-slate-700")}>
+                {row.extractor_failure_reason ?? "—"}
+              </dd>
+              <dt className="text-slate-500">OpenAI invoked</dt>
+              <dd className="font-mono">{row.openai_invoked == null ? "—" : row.openai_invoked ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">OpenAI HTTP</dt>
+              <dd className="font-mono">{row.asr_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">OpenAI failure</dt>
+              <dd className="font-mono text-red-700">{row.asr_failure_code ?? "—"}</dd>
+            </dl>
+            {row.extractor_response_body && (
+              <details className="mt-2 rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+                <summary className="cursor-pointer text-slate-600">Raw extractor response body</summary>
+                <pre className="mt-1 whitespace-pre-wrap break-all text-slate-700">{row.extractor_response_body}</pre>
+              </details>
+            )}
+          </>
+        )}
+
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Quality Score Breakdown</h5>
+
         <ScoreBreakdownBlock row={row} />
 
         <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Sentence Segmentation Diagnostics</h5>
