@@ -12,7 +12,8 @@ export const Route = createFileRoute("/api/public/asr-benchmark-run")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const mode = (url.searchParams.get("mode") ?? "full") as "quick" | "full";
-        const version = url.searchParams.get("version") ?? `openai-${Date.now()}`;
+        const pipelineMode = (url.searchParams.get("pipeline") ?? "current") as "current" | "openai_only";
+        const version = url.searchParams.get("version") ?? `${pipelineMode}-${Date.now()}`;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
