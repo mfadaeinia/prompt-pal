@@ -487,6 +487,7 @@ export const startBenchmarkRun = createServerFn({ method: "POST" })
         release_version: data.releaseVersion ?? null,
         total_videos: list.length,
         started_at: new Date().toISOString(),
+        pipeline_mode: data.pipelineMode ?? "current",
       } as any)
       .select("id")
       .single();
