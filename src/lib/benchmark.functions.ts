@@ -621,6 +621,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             transcribr_segments_count = tr2.rawSegments;
             transcribr_duration_ms = tr2.durationMs;
           }
+          const ag = tr.providerTrace?.asrGeneric;
+          if (ag) {
+            asr_provider = ag.provider;
+            asr_model = ag.model;
+            asr_http_status = ag.httpStatus;
+            asr_error_body = ag.errorBody;
+            asr_segments_count = ag.segmentsCount;
+            asr_duration_ms = ag.durationMs;
+            asr_language = ag.language;
+            asr_failure_code = ag.failureCode;
+          }
         }
 
 
