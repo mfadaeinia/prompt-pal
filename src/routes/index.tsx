@@ -2596,13 +2596,43 @@ const HERO_LANGUAGES = [
   "Vietnamese","Thai","Greek","Czech",
 ];
 
+const SPOKEN_LANGUAGE_OPTIONS: Array<{ label: string; code: string }> = [
+  { label: "Auto-detect (original)", code: "" },
+  { label: "English", code: "en" },
+  { label: "Dutch", code: "nl" },
+  { label: "Spanish", code: "es" },
+  { label: "French", code: "fr" },
+  { label: "German", code: "de" },
+  { label: "Italian", code: "it" },
+  { label: "Portuguese", code: "pt" },
+  { label: "Polish", code: "pl" },
+  { label: "Russian", code: "ru" },
+  { label: "Turkish", code: "tr" },
+  { label: "Arabic", code: "ar" },
+  { label: "Japanese", code: "ja" },
+  { label: "Chinese", code: "zh" },
+  { label: "Korean", code: "ko" },
+  { label: "Swedish", code: "sv" },
+  { label: "Norwegian", code: "no" },
+  { label: "Danish", code: "da" },
+  { label: "Finnish", code: "fi" },
+  { label: "Greek", code: "el" },
+  { label: "Czech", code: "cs" },
+  { label: "Hindi", code: "hi" },
+  { label: "Indonesian", code: "id" },
+  { label: "Vietnamese", code: "vi" },
+  { label: "Thai", code: "th" },
+];
+
 function PrimaryHero({
-  url, setUrl, targetLang, setTargetLang, loading, onSubmit, onStartDemo,
+  url, setUrl, targetLang, setTargetLang, spokenLang, setSpokenLang, loading, onSubmit, onStartDemo,
 }: {
   url: string;
   setUrl: (v: string) => void;
   targetLang: string;
   setTargetLang: (v: string) => void;
+  spokenLang: string;
+  setSpokenLang: (v: string) => void;
   loading: boolean;
   onSubmit: (u: string) => void;
   onStartDemo: () => void;
@@ -2613,6 +2643,8 @@ function PrimaryHero({
       setUrl={setUrl}
       targetLang={targetLang}
       setTargetLang={setTargetLang}
+      spokenLang={spokenLang}
+      setSpokenLang={setSpokenLang}
       loading={loading}
       onSubmit={onSubmit}
       onStartDemo={onStartDemo}
@@ -2621,12 +2653,14 @@ function PrimaryHero({
 }
 
 function HeroWithPreview({
-  url, setUrl, targetLang, setTargetLang, loading, onSubmit, onStartDemo,
+  url, setUrl, targetLang, setTargetLang, spokenLang, setSpokenLang, loading, onSubmit, onStartDemo,
 }: {
   url: string;
   setUrl: (v: string) => void;
   targetLang: string;
   setTargetLang: (v: string) => void;
+  spokenLang: string;
+  setSpokenLang: (v: string) => void;
   loading: boolean;
   onSubmit: (u: string) => void;
   onStartDemo: () => void;
@@ -2663,7 +2697,7 @@ function HeroWithPreview({
               e.preventDefault();
               const u = url.trim();
               if (!u) return;
-              track("landing_cta_clicked", { has_url: true });
+              track("landing_cta_clicked", { has_url: true, spoken_language: spokenLang || "auto" });
               onSubmit(u);
             }}
             className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-lg shadow-primary/10 sm:p-5"
@@ -2696,6 +2730,29 @@ function HeroWithPreview({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="mt-3 space-y-1.5 min-w-0">
+              <label htmlFor="hero-spoken-lang" className="text-xs font-medium text-foreground">
+                Video language <span className="text-muted-foreground font-normal">(language spoken in the video)</span>
+              </label>
+              <Select
+                value={spokenLang === "" ? "__auto__" : spokenLang}
+                onValueChange={(v) => setSpokenLang(v === "__auto__" ? "" : v)}
+              >
+                <SelectTrigger id="hero-spoken-lang" className="h-11 w-full rounded-xl bg-background px-4">
+                  <SelectValue placeholder="Auto-detect (original)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPOKEN_LANGUAGE_OPTIONS.map((o) => (
+                    <SelectItem key={o.code || "__auto__"} value={o.code || "__auto__"}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Set this when auto-detect picks the wrong language (transcript comes back translated).
+              </p>
             </div>
             <Button
               type="submit"
