@@ -1042,7 +1042,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     // -------- Layer 1: Cache --------
-    const requestedLanguage = data.requestedLanguage?.trim() || "_any_";
+    // Resolve the SPOKEN language: prefer `spokenLanguage`, fall back to the
+    // legacy `requestedLanguage` field (treated as spoken language for
+    // back-compat). NEVER treat the learner's UI/help language as the spoken
+    // language — that would pull auto-translated caption tracks.
+    const spokenLanguageRaw =
+      (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
+    const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
+    const requestedLanguage = spokenLanguage ?? "_any_";
     const cached = await readCache(videoId, requestedLanguage);
     if (cached?.transcript_json?.length) {
       const sentences = buildSentencesFromChunks(cached.transcript_json);
