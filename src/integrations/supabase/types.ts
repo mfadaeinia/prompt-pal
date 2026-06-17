@@ -105,6 +105,14 @@ export type Database = {
           download_size_mb: number | null
           download_status: string | null
           error_message: string | null
+          extractor_audio_url: string | null
+          extractor_audio_url_found: boolean | null
+          extractor_failure_reason: string | null
+          extractor_http_status: number | null
+          extractor_latency_ms: number | null
+          extractor_provider: string | null
+          extractor_response_body: string | null
+          extractor_response_status: string | null
           failure_code: string | null
           final_sentence_quality: string | null
           giant_sentence_pct: number | null
@@ -112,6 +120,7 @@ export type Database = {
           id: string
           longest_sentence_words: number
           median_gap_seconds: number | null
+          openai_invoked: boolean | null
           pipeline_logs: Json | null
           processing_time_ms: number
           provider_error: string | null
@@ -171,6 +180,14 @@ export type Database = {
           download_size_mb?: number | null
           download_status?: string | null
           error_message?: string | null
+          extractor_audio_url?: string | null
+          extractor_audio_url_found?: boolean | null
+          extractor_failure_reason?: string | null
+          extractor_http_status?: number | null
+          extractor_latency_ms?: number | null
+          extractor_provider?: string | null
+          extractor_response_body?: string | null
+          extractor_response_status?: string | null
           failure_code?: string | null
           final_sentence_quality?: string | null
           giant_sentence_pct?: number | null
@@ -178,6 +195,7 @@ export type Database = {
           id?: string
           longest_sentence_words?: number
           median_gap_seconds?: number | null
+          openai_invoked?: boolean | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
           provider_error?: string | null
@@ -237,6 +255,14 @@ export type Database = {
           download_size_mb?: number | null
           download_status?: string | null
           error_message?: string | null
+          extractor_audio_url?: string | null
+          extractor_audio_url_found?: boolean | null
+          extractor_failure_reason?: string | null
+          extractor_http_status?: number | null
+          extractor_latency_ms?: number | null
+          extractor_provider?: string | null
+          extractor_response_body?: string | null
+          extractor_response_status?: string | null
           failure_code?: string | null
           final_sentence_quality?: string | null
           giant_sentence_pct?: number | null
@@ -244,6 +270,7 @@ export type Database = {
           id?: string
           longest_sentence_words?: number
           median_gap_seconds?: number | null
+          openai_invoked?: boolean | null
           pipeline_logs?: Json | null
           processing_time_ms?: number
           provider_error?: string | null
