@@ -720,6 +720,7 @@ function Index() {
     setRequestedVideoId(requestedId);
     setTranscriptVideoId(null);
     setSentences([]);
+    setTranscriptRawChunks([]);
     setSelected(null);
     setTranscriptSource(null);
     setCachedFromProvider(null);
