@@ -176,6 +176,8 @@ function TranscriptTruthSection() {
   const metricsFetcher = useServerFn(getTranscriptAccuracyMetrics);
   const detailFetcher = useServerFn(getTranscriptReviewDetail);
   const labelFn = useServerFn(setTranscriptTruthLabel);
+  const purgeOneFn = useServerFn(clearTranscriptCacheForVideo);
+  const purgeAllFn = useServerFn(clearBenchmarkTranscriptCache);
   const qc = useQueryClient();
 
   const [score, setScore] = useState<"all" | "high" | "medium" | "low">("all");
