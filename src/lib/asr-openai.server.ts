@@ -210,7 +210,11 @@ export async function transcribeWithOpenAi(params: {
   // 3. OpenAI transcription
   try {
     const form = new FormData();
-    form.append("file", new Blob([audio.bytes], { type: audio.contentType }), "audio.mp3");
+    const audioBuffer = audio.bytes.buffer.slice(
+      audio.bytes.byteOffset,
+      audio.bytes.byteOffset + audio.bytes.byteLength,
+    ) as ArrayBuffer;
+    form.append("file", new Blob([audioBuffer], { type: audio.contentType }), "audio.mp3");
     form.append("model", DEFAULT_MODEL);
     form.append("response_format", "verbose_json");
     if (params.expectedLanguage && params.expectedLanguage !== "_any_") {
