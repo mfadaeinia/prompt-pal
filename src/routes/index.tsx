@@ -1825,6 +1825,7 @@ function Index() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Supporting/marketing content lives BELOW the product. */}
             <section className="space-y-4 pt-8">
