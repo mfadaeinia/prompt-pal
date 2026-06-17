@@ -125,7 +125,7 @@ async function extractAudioUrl(
   }
 
   const pollStart = Date.now();
-  let lastStatus = "";
+  let lastJsonError: string | null = null;
   let lastJsonError: string | null = null;
 
   while (true) {
