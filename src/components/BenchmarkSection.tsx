@@ -80,14 +80,14 @@ export function BenchmarkSection() {
   });
 
   const mut = useMutation({
-    mutationFn: async (mode: "quick" | "full") => {
+    mutationFn: async (opts: { mode: "quick" | "full"; pipelineMode?: "current" | "openai_only" }) => {
+      const { mode } = opts;
+      const pipelineMode = opts.pipelineMode ?? "current";
       cancelRef.current = false;
       const { runId, videos } = await starter({
-        data: { mode, releaseVersion: version || undefined },
+        data: { mode, releaseVersion: version || undefined, pipelineMode },
       });
-      setProgress({ mode, done: 0, total: videos.length });
-      // Throttle YouTube caption fetches: ~1s avg between videos with jitter,
-      // extra cooldown when the previous video tripped a rate-limit signal.
+      setProgress({ mode, pipelineMode, done: 0, total: videos.length });
       const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
       const baseDelayMs = 800;
       const jitterMs = 1200;
@@ -97,17 +97,19 @@ export function BenchmarkSection() {
         if (cancelRef.current) break;
         let rateLimited = false;
         try {
-          const res = await processOne({ data: { runId, videoId: videos[i].id } });
+          const res = await processOne({ data: { runId, videoId: videos[i].id, pipelineMode } });
           rateLimited = Boolean((res as { rateLimited?: boolean })?.rateLimited);
         } catch (e) {
           console.warn("[benchmark] video failed", videos[i].id, e);
         }
-        setProgress({ mode, done: i + 1, total: videos.length });
-        if ((i + 1) % 5 === 0) qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+        setProgress({ mode, pipelineMode, done: i + 1, total: videos.length });
+        if ((i + 1) % 5 === 0) {
+          qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+          qc.invalidateQueries({ queryKey: ["benchmark-pipeline-comparison"] });
+        }
         if (i < videos.length - 1 && !cancelRef.current) {
           if (rateLimited) {
             consecutiveRateLimited += 1;
-            // Exponential cooldown, capped at 30s, when YouTube is blocking us.
             const cooldown = Math.min(30000, rateLimitCooldownMs * consecutiveRateLimited);
             await sleep(cooldown + Math.random() * jitterMs);
           } else {
@@ -122,6 +124,7 @@ export function BenchmarkSection() {
     onSettled: () => {
       setProgress(null);
       qc.invalidateQueries({ queryKey: ["benchmark-latest"] });
+      qc.invalidateQueries({ queryKey: ["benchmark-pipeline-comparison"] });
     },
   });
 
