@@ -508,6 +508,16 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
     let transcribr_error: string | null = null;
     let transcribr_segments_count: number | null = null;
     let transcribr_duration_ms: number | null = null;
+    // Generic ASR diagnostics (provider-agnostic; populated for whichever
+    // provider ASR_PROVIDER selected — currently "transcribr" or "openai").
+    let asr_provider: string | null = null;
+    let asr_model: string | null = null;
+    let asr_http_status: number | null = null;
+    let asr_error_body: string | null = null;
+    let asr_segments_count: number | null = null;
+    let asr_duration_ms: number | null = null;
+    let asr_language: string | null = null;
+    let asr_failure_code: string | null = null;
 
     // Pipeline trace fields
     let video_url_status: string = "unknown";
@@ -610,6 +620,17 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             transcribr_error = tr2.errorMessage;
             transcribr_segments_count = tr2.rawSegments;
             transcribr_duration_ms = tr2.durationMs;
+          }
+          const ag = tr.providerTrace?.asrGeneric;
+          if (ag) {
+            asr_provider = ag.provider;
+            asr_model = ag.model;
+            asr_http_status = ag.httpStatus;
+            asr_error_body = ag.errorBody;
+            asr_segments_count = ag.segmentsCount;
+            asr_duration_ms = ag.durationMs;
+            asr_language = ag.language;
+            asr_failure_code = ag.failureCode;
           }
         }
 
@@ -828,6 +849,29 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
               (arDiscarded ? ` discarded=${ar.discardedReason ?? "yes"}` : "") +
               (ar.errorMessage ? ` error=${ar.errorMessage.slice(0, 160)}` : ""),
           });
+          const ag = pt.asrGeneric;
+          if (ag) {
+            asr_provider = ag.provider;
+            asr_model = ag.model;
+            asr_http_status = ag.httpStatus;
+            asr_error_body = ag.errorBody;
+            asr_segments_count = ag.segmentsCount;
+            asr_duration_ms = ag.durationMs;
+            asr_language = ag.language;
+            asr_failure_code = ag.failureCode;
+            log({
+              step: `provider:asr_${ag.provider ?? "unknown"}`,
+              ok: (ag.segmentsCount ?? 0) > 0 && !ag.failureCode,
+              detail:
+                `provider=${ag.provider ?? "-"}` +
+                ` model=${ag.model ?? "-"}` +
+                ` http=${ag.httpStatus ?? "-"}` +
+                ` segments=${ag.segmentsCount ?? 0}` +
+                ` lang=${ag.language ?? "-"}` +
+                (ag.failureCode ? ` failure=${ag.failureCode}` : "") +
+                (ag.errorBody ? ` error=${ag.errorBody.slice(0, 160)}` : ""),
+            });
+          }
         }
       }
     }
@@ -866,6 +910,14 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         transcribr_error,
         transcribr_segments_count,
         transcribr_duration_ms,
+        asr_provider,
+        asr_model,
+        asr_http_status,
+        asr_error_body,
+        asr_segments_count,
+        asr_duration_ms,
+        asr_language,
+        asr_failure_code,
         video_url_status,
         http_status_code,
         download_status,

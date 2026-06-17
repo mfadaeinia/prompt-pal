@@ -70,9 +70,23 @@ export type AsrTrace = {
   discardedReason: string | null;
 };
 
+/** Generic, provider-agnostic ASR diagnostics persisted to benchmark rows. */
+export type GenericAsrTrace = {
+  provider: "transcribr" | "openai" | null;
+  model: string | null;
+  httpStatus: number | null;
+  errorBody: string | null;
+  segmentsCount: number | null;
+  durationMs: number | null;
+  language: string | null;
+  failureCode: string | null;
+};
+
 export type ProviderTrace = {
   transcribr: TranscribrTrace;
   asr: AsrTrace;
+  /** Generic ASR diagnostics. Populated for whichever provider ASR_PROVIDER selected. */
+  asrGeneric?: GenericAsrTrace;
 };
 
 export type CacheProvenance = {
@@ -754,10 +768,10 @@ async function writeCache(params: {
   videoUrl: string;
   chunks: RawChunk[];
   requestedLanguage: string;
-  provider: "youtube" | "manual" | "fallback";
+  provider: "youtube" | "manual" | "fallback" | "openai";
   providerResponseLanguage: string | null;
 }): Promise<{ ok: boolean; provenance?: CacheProvenance; validation: ValidationResult }> {
-  const allowed = new Set(["youtube", "manual", "fallback"]);
+  const allowed = new Set(["youtube", "manual", "fallback", "openai"]);
   if (!allowed.has(params.provider)) {
     return { ok: false, validation: { ok: false, reason: `invalid_provider:${params.provider}` } };
   }
@@ -1166,34 +1180,75 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       };
     }
 
-    // -------- Layer 3: Fallback provider --------
-    console.log("[transcript-debug] trying fallback provider (Transcribr)");
-    const fb = await fetchFromFallbackProvider({
-      videoId,
-      videoUrl: data.url,
-      trace: transcribrTrace,
-    });
-    console.log("[transcript-debug] fallback result", {
+    // -------- Layer 3: ASR provider (Transcribr default, OpenAI behind flag) --------
+    const { getAsrProvider, transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
+    const asrProvider = getAsrProvider();
+    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider);
+
+    let fb: { chunks: RawChunk[]; language: string | null } | null = null;
+    let fbSource: "fallback" | "openai" = "fallback";
+    const asrGeneric: GenericAsrTrace = {
+      provider: null, model: null, httpStatus: null, errorBody: null,
+      segmentsCount: null, durationMs: null, language: null, failureCode: null,
+    };
+
+    if (asrProvider === "openai") {
+      const expectedLang = requestedLanguage === "_any_" ? null : requestedLanguage;
+      const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: expectedLang });
+      asrGeneric.provider = "openai";
+      asrGeneric.model = oa.trace.model;
+      asrGeneric.httpStatus = oa.trace.httpStatus ?? oa.trace.audioExtractStatus;
+      asrGeneric.errorBody = oa.trace.errorBody ?? oa.trace.audioExtractError;
+      asrGeneric.segmentsCount = oa.trace.segmentsCount;
+      asrGeneric.durationMs = oa.trace.durationMs;
+      asrGeneric.language = oa.trace.language;
+      asrGeneric.failureCode = oa.trace.failureCode;
+      if (oa.result && oa.result.chunks.length) {
+        fb = { chunks: oa.result.chunks, language: oa.result.language };
+        fbSource = "openai";
+      }
+    } else {
+      console.log("[transcript-debug] trying fallback provider (Transcribr)");
+      fb = await fetchFromFallbackProvider({
+        videoId,
+        videoUrl: data.url,
+        trace: transcribrTrace,
+      });
+      asrGeneric.provider = "transcribr";
+      asrGeneric.model = "transcribr-v1";
+      asrGeneric.httpStatus = transcribrTrace.httpStatus;
+      asrGeneric.errorBody = transcribrTrace.errorMessage;
+      asrGeneric.segmentsCount = transcribrTrace.rawSegments;
+      asrGeneric.durationMs = transcribrTrace.durationMs;
+      asrGeneric.language = fb?.language ?? null;
+      asrGeneric.failureCode = transcribrTrace.errorMessage ? "transcribr_error" : null;
+    }
+
+    console.log("[transcript-debug] ASR result", {
+      provider: asrProvider,
       chunks: fb?.chunks.length ?? 0,
       language: fb?.language ?? null,
+      failureCode: asrGeneric.failureCode,
     });
+
     if (fb && fb.chunks.length) {
       const sentences = buildSentencesFromChunks(fb.chunks);
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
-      console.log("[transcript-debug] fallback SUCCESS", {
-        videoId,
-        raw_chunks: fb.chunks.length,
-        sentences: sentences.length,
-        total_chars: chars,
+      console.log("[transcript-debug] ASR SUCCESS", {
+        videoId, provider: asrProvider, raw_chunks: fb.chunks.length,
+        sentences: sentences.length, total_chars: chars,
       });
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
         chunks: fb.chunks,
         requestedLanguage,
-        provider: "fallback",
+        provider: fbSource,
         providerResponseLanguage: fb.language,
       });
+      // For trace consumers, expose source as "fallback" so existing benchmark
+      // logic that branches on "fallback" continues to work; the real provider
+      // is on `cachedFromProvider` / providerTrace.asrGeneric.
       logEvent({
         video_id: videoId,
         fetch_source: "fallback",
@@ -1209,33 +1264,26 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
       });
       if (!cacheWrite.ok) {
-        console.warn("[transcript-debug] fallback result not cached", cacheWrite.validation);
+        console.warn("[transcript-debug] ASR result not cached", cacheWrite.validation);
       }
       return {
         videoId,
         sentences,
         source: "fallback",
+        cachedFromProvider: fbSource,
         language: fb.language,
         cacheHit: false,
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
-        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
+        providerTrace: { transcribr: transcribrTrace, asr: asrTrace, asrGeneric },
       };
     }
 
-    // -------- Layer 4: ASR fallback DISABLED --------
-    // Previously we sent the YouTube URL to Gemini via the Lovable AI Gateway
-    // as `file_data` and asked it to transcribe. The gateway does NOT fetch
-    // and decode the video — the model only receives the URL as text and
-    // hallucinates a plausible-but-fake transcript unrelated to the actual
-    // audio. Those fake transcripts were also being cached, so reloads
-    // returned the same garbage. Until we wire a real ASR backend (audio
-    // download + Whisper / Gemini audio file upload), this layer is off.
-    const asr = { ok: false as const, reason: "asr_failed" as const, detail: "asr_disabled_hallucination_risk" };
+    // -------- Layer 4: Hallucination-prone LLM-ASR remains DISABLED --------
     asrTrace.invoked = false;
     asrTrace.errorMessage = "disabled: gateway file_uri to YouTube hallucinates";
-    const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace };
+    const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace, asrGeneric };
 
 
     // All layers failed — surface a single friendly message.
@@ -1247,8 +1295,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     console.error("[transcript-debug] ALL LAYERS FAILED", {
       videoId,
       errorType,
-      asrReason: asr.reason,
-      asrDetail: asr.detail ?? null,
+      asrProvider: asrGeneric.provider,
+      asrFailureCode: asrGeneric.failureCode,
       lastErrorMessage: lastErr instanceof Error ? lastErr.message : String(lastErr ?? ""),
     });
     logEvent({
@@ -1258,7 +1306,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       cache_hit: false,
       error_type: errorType,
       error_message:
-        asr.detail ?? (lastErr instanceof Error ? lastErr.message : String(lastErr ?? "")),
+        asrGeneric.failureCode ?? (lastErr instanceof Error ? lastErr.message : String(lastErr ?? "")),
     });
     const err = new Error(FRIENDLY_TRANSCRIPT_ERROR) as Error & {
       errorType?: TranscriptErrorType;

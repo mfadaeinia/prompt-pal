@@ -84,6 +84,14 @@ export type Database = {
         Row: {
           ai_repair_success: boolean | null
           ai_repair_used: boolean | null
+          asr_duration_ms: number | null
+          asr_error_body: string | null
+          asr_failure_code: string | null
+          asr_http_status: number | null
+          asr_language: string | null
+          asr_model: string | null
+          asr_provider: string | null
+          asr_segments_count: number | null
           avg_sentence_length: number
           benchmark_video_id: string
           cache_hit: boolean | null
@@ -142,6 +150,14 @@ export type Database = {
         Insert: {
           ai_repair_success?: boolean | null
           ai_repair_used?: boolean | null
+          asr_duration_ms?: number | null
+          asr_error_body?: string | null
+          asr_failure_code?: string | null
+          asr_http_status?: number | null
+          asr_language?: string | null
+          asr_model?: string | null
+          asr_provider?: string | null
+          asr_segments_count?: number | null
           avg_sentence_length?: number
           benchmark_video_id: string
           cache_hit?: boolean | null
@@ -200,6 +216,14 @@ export type Database = {
         Update: {
           ai_repair_success?: boolean | null
           ai_repair_used?: boolean | null
+          asr_duration_ms?: number | null
+          asr_error_body?: string | null
+          asr_failure_code?: string | null
+          asr_http_status?: number | null
+          asr_language?: string | null
+          asr_model?: string | null
+          asr_provider?: string | null
+          asr_segments_count?: number | null
           avg_sentence_length?: number
           benchmark_video_id?: string
           cache_hit?: boolean | null
