@@ -76,6 +76,7 @@ export type ProviderTrace = {
 };
 
 export type CacheProvenance = {
+  cacheRowId: string | null;
   cacheKey: string;
   videoId: string;
   requestedLanguage: string;
