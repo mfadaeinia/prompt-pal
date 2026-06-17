@@ -941,10 +941,36 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
           ))}
         </div>
 
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Transcribr Diagnostics</h5>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+          <dt className="text-slate-500">Bucket</dt>
+          <dd className="font-mono">
+            {TRANSCRIBR_BUCKET_LABEL[classifyTranscribrBucket(row)]}
+          </dd>
+          <dt className="text-slate-500">Invoked</dt>
+          <dd className="font-mono">{row.transcribr_invoked == null ? "—" : row.transcribr_invoked ? "yes" : "no"}</dd>
+          <dt className="text-slate-500">HTTP status</dt>
+          <dd className="font-mono">{row.transcribr_status ?? "—"}</dd>
+          <dt className="text-slate-500">Segments returned</dt>
+          <dd className="font-mono">{row.transcribr_segments_count ?? "—"}</dd>
+          <dt className="text-slate-500">Latency</dt>
+          <dd className="font-mono">{row.transcribr_duration_ms != null ? `${row.transcribr_duration_ms}ms` : "—"}</dd>
+          <dt className="text-slate-500">Error body</dt>
+          <dd className="font-mono break-all text-red-700">{row.transcribr_error ?? "—"}</dd>
+        </dl>
+
+        {row.provider_error && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Raw Provider Error</h5>
+            <pre className="overflow-x-auto rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800">
+              {row.provider_error}
+            </pre>
+          </>
+        )}
         {row.error_message && (
           <>
-            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Error Message</h5>
-            <pre className="overflow-x-auto rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800">
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">User-facing Error</h5>
+            <pre className="overflow-x-auto rounded border border-slate-200 bg-slate-50 p-2 text-[11px] text-slate-700">
               {row.error_message}
             </pre>
           </>
