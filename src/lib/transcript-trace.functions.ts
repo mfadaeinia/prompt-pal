@@ -387,6 +387,59 @@ async function step4Transcribr(videoId: string): Promise<PipelineTrace["step4_tr
     };
   }
 }
+async function step6OpenAiWhisper(
+  videoId: string,
+  expectedLanguage: string,
+): Promise<PipelineTrace["step6_openai_whisper"]> {
+  if (!process.env.OPENAI_API_KEY) {
+    return {
+      attempted: false, status: "skipped", skipReason: "OPENAI_API_KEY missing",
+      audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+      openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+      segmentsCount: 0, language: null, model: null,
+      failureReason: null, extractorFailureReason: null,
+    };
+  }
+  try {
+    const { transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
+    const lang = expectedLanguage === "_any_" ? null : expectedLanguage;
+    const { result, trace: t } = await transcribeWithOpenAi({
+      videoId,
+      expectedLanguage: lang,
+    });
+    const audioExtractionFailed = !t.audio_url_found;
+    const chars = (result?.chunks ?? []).reduce((n, c) => n + c.text.length, 0);
+    const ok = !!result && result.chunks.length > 0;
+    return {
+      attempted: true,
+      status: ok ? "ok" : "fail",
+      skipReason: null,
+      audioExtractorProvider: t.rapidapi_host,
+      audioUrlFound: t.audio_url_found,
+      audioExtractionFailed,
+      openaiInvoked: !audioExtractionFailed && t.httpStatus !== null,
+      openaiHttpStatus: t.httpStatus,
+      transcriptChars: chars,
+      segmentsCount: t.segmentsCount,
+      language: t.language ?? result?.language ?? null,
+      model: t.model,
+      failureReason: audioExtractionFailed
+        ? "audio_extraction_failed"
+        : t.failureCode,
+      extractorFailureReason: t.extractor_failure_reason,
+    };
+  } catch (e) {
+    return {
+      attempted: true, status: "fail", skipReason: null,
+      audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+      openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+      segmentsCount: 0, language: null, model: null,
+      failureReason: e instanceof Error ? e.message : String(e),
+      extractorFailureReason: null,
+    };
+  }
+}
+
 
 export const traceTranscriptPipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
