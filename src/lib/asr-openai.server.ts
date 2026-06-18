@@ -59,6 +59,17 @@ export type OpenAiAsrTrace = {
     | "provider_no_key"
     | "provider_unknown";
 
+  /** Stage timings (ms) for the OpenAI ASR path. */
+  audio_download_ms: number | null;
+  openai_request_ms: number | null;
+
+    | "private_video"
+    | "extraction_failed"
+    | "provider_rate_limit"
+    | "provider_timeout"
+    | "provider_no_key"
+    | "provider_unknown";
+
   failureCode:
     | null
     | "audio_extract_no_key"
