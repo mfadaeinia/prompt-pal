@@ -404,6 +404,7 @@ export async function transcribeWithOpenAi(params: {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), remainingMs());
     let res: Response;
+    const tOa = Date.now();
     try {
       res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
         method: "POST",
@@ -414,6 +415,7 @@ export async function transcribeWithOpenAi(params: {
     } finally {
       clearTimeout(timer);
     }
+    trace.openai_request_ms = Date.now() - tOa;
     trace.httpStatus = res.status;
     const bodyText = await res.text().catch(() => "");
     if (!res.ok) {
