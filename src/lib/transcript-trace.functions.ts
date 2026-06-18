@@ -143,7 +143,7 @@ export type PipelineTrace = {
 
   final: {
     transcriptGenerated: boolean;
-    finalSource: "cache" | "youtube" | "fallback" | "none";
+    finalSource: "cache" | "youtube" | "fallback" | "openai_whisper" | "none";
     failureCode: string | null;
     failureReason: string | null;
   };
