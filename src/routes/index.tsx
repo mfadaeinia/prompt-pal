@@ -159,17 +159,56 @@ function Index() {
   );
   const devPanelEnabled = isDevPanelEnabled();
 
-  // Learning Mode usability gate. A transcript with fewer than 5 sentences
-  // produces an empty / broken Learning Mode UI, so we treat it as failed
-  // and show a dedicated error state instead.
+  // ── Transcript loading state machine ───────────────────────────────────
+  // idle → checking_cache → looking_for_captions → generating_transcript
+  //      → building_sentences → (ready | partial | failed)
+  // The fast path resolves to ready directly when cache or YouTube captions
+  // hit. Only ASR fallbacks pass through "generating_transcript".
+  type TranscriptStatus =
+    | "idle"
+    | "checking_cache"
+    | "looking_for_captions"
+    | "generating_transcript"
+    | "building_sentences"
+    | "ready"
+    | "partial"
+    | "failed";
+  const [transcriptStatus, setTranscriptStatus] = useState<TranscriptStatus>("idle");
+  const [slowTimeoutLevel, setSlowTimeoutLevel] = useState<0 | 1 | 2>(0); // 0 normal, 1 "still working", 2 timed out
+  const loadStartedAtRef = useRef<number | null>(null);
+  const slowStartedAtRef = useRef<number | null>(null);
+  const [perfTimings, setPerfTimings] = useState<{
+    time_to_video_ready_ms: number | null;
+    time_to_first_sentence_ms: number | null;
+    time_to_full_transcript_ms: number | null;
+    provider_used: string | null;
+    cache_hit: boolean | null;
+  }>({
+    time_to_video_ready_ms: null,
+    time_to_first_sentence_ms: null,
+    time_to_full_transcript_ms: null,
+    provider_used: null,
+    cache_hit: null,
+  });
+
+  // Final-failure gate (unchanged): below this many sentences after the
+  // pipeline finishes, we show the dedicated failure card instead of
+  // Learning Mode.
   const MIN_LEARNING_SENTENCES = 5;
   const hasUsableTranscript = sentences.length >= MIN_LEARNING_SENTENCES;
+  // Early-unlock gate for partial readiness — Learning Mode becomes
+  // available as soon as we have a usable first batch, even if the full
+  // transcript is still being processed.
+  const lastEndTime = sentences.length ? sentences[sentences.length - 1].endTime : 0;
+  const learningModeUnlocked =
+    sentences.length >= 10 || (sentences.length > 0 && lastEndTime >= 60);
   const processingStatus: "success" | "partial_success" | "failed" =
     sentences.length >= MIN_LEARNING_SENTENCES
       ? "success"
       : sentences.length > 0
         ? "partial_success"
         : "failed";
+
 
   useEffect(() => {
     setBrowserId(getBrowserId());
