@@ -1242,7 +1242,7 @@ function AsrProbeSection() {
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-        ASR Probe Comparison
+        🧪 Progressive Transcript Experiment (ASR Probe)
       </h2>
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
         <p className="text-xs text-slate-500">
