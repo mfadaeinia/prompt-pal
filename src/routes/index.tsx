@@ -1673,7 +1673,7 @@ function Index() {
             </div>
 
 
-            {loadMutation.isSuccess && !hasUsableTranscript ? (
+            {transcriptStatus === "failed" ? (
               <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
                 <h2 className="text-lg font-semibold">
                   This video cannot be used in Learning Mode
