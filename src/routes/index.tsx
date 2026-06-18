@@ -737,10 +737,51 @@ function Index() {
       setSlowTimeoutLevel(0);
 
       // ── Performance timings ───────────────────────────────────────────
-      const now =
+      const reactStateStart =
         typeof performance !== "undefined" ? performance.now() : Date.now();
+      const now = reactStateStart;
       const startedAt = loadStartedAtRef.current ?? now;
       const elapsed = Math.round(now - startedAt);
+      const serverTimings = (res as any).stageTimings as
+        | {
+            total_server_ms: number | null;
+            cache_lookup_ms: number | null;
+            youtube_caption_attempt_ms: number | null;
+            audio_extract_ms: number | null;
+            audio_download_ms: number | null;
+            openai_transcription_ms: number | null;
+            chunk_mapping_ms: number | null;
+            sentence_build_ms: number | null;
+            cache_write_ms: number | null;
+            provider_used: string | null;
+            cache_hit: boolean | null;
+            audio_size_mb: number | null;
+            openai_segments_count: number | null;
+            sentence_count: number | null;
+            video_duration_seconds: number | null;
+          }
+        | undefined;
+      setStageTimings(serverTimings ?? null);
+      // Best-effort react state update window (microtask-resolution).
+      Promise.resolve().then(() => {
+        const after =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        setReactStateUpdateMs(Math.round(after - reactStateStart));
+      });
+      // Single structured console line for one real product load.
+      try {
+        console.log(
+          "[transcript-timing][client]",
+          JSON.stringify({
+            video_id: res.videoId,
+            time_to_video_ready_ms: elapsed,
+            time_to_first_clickable_sentence_ms: elapsed,
+            provider_used: res.cachedFromProvider ?? res.source,
+            cache_hit: !!res.cacheHit,
+            ...(serverTimings ?? {}),
+          }),
+        );
+      } catch {}
       setPerfTimings((prev) => ({
         ...prev,
         time_to_video_ready_ms: elapsed,
@@ -751,6 +792,7 @@ function Index() {
         provider_used: res.cachedFromProvider ?? res.source,
         cache_hit: !!res.cacheHit,
       }));
+
 
       setSelected(null);
       setTranscriptSource(res.source);
