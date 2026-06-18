@@ -1888,14 +1888,21 @@ function Index() {
                     <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                       <span>
                         Transcript
-                        {loadMutation.isPending
-                          ? " · loading…"
-                          : sentences.length > 0
-                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
-                            : loadMutation.isSuccess
-                              ? " · unavailable"
-                              : ""}
+                        {sentences.length > 0
+                          ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                          : transcriptStatus === "checking_cache"
+                            ? " · checking cache…"
+                            : transcriptStatus === "looking_for_captions"
+                              ? " · looking for captions…"
+                              : transcriptStatus === "generating_transcript"
+                                ? " · generating transcript…"
+                                : transcriptStatus === "building_sentences"
+                                  ? " · building sentences…"
+                                  : transcriptStatus === "failed"
+                                    ? " · unavailable"
+                                    : ""}
                       </span>
+
                       <div className="flex items-center gap-2">
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
