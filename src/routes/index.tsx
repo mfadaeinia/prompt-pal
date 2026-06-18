@@ -1895,6 +1895,22 @@ function Index() {
                       <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
                       <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
                       <span>cache_hit: <b>{perfTimings.cache_hit == null ? "—" : perfTimings.cache_hit ? "yes" : "no"}</b></span>
+                      <span className="mt-1 w-full border-t border-border/40 pt-1 font-semibold">— server stage timings —</span>
+                      <span>total_server_ms: <b>{stageTimings?.total_server_ms ?? "—"}</b></span>
+                      <span>cache_lookup_ms: <b>{stageTimings?.cache_lookup_ms ?? "—"}</b></span>
+                      <span>youtube_caption_attempt_ms: <b>{stageTimings?.youtube_caption_attempt_ms ?? "—"}</b></span>
+                      <span>audio_extract_ms: <b>{stageTimings?.audio_extract_ms ?? "—"}</b></span>
+                      <span>audio_download_ms: <b>{stageTimings?.audio_download_ms ?? "—"}</b></span>
+                      <span>openai_transcription_ms: <b>{stageTimings?.openai_transcription_ms ?? "—"}</b></span>
+                      <span>chunk_mapping_ms: <b>{stageTimings?.chunk_mapping_ms ?? "—"}</b></span>
+                      <span>sentence_build_ms: <b>{stageTimings?.sentence_build_ms ?? "—"}</b></span>
+                      <span>cache_write_ms: <b>{stageTimings?.cache_write_ms ?? "—"}</b></span>
+                      <span>react_state_update_ms: <b>{reactStateUpdateMs ?? "—"}</b></span>
+                      <span>audio_size_mb: <b>{stageTimings?.audio_size_mb ?? "—"}</b></span>
+                      <span>openai_segments_count: <b>{stageTimings?.openai_segments_count ?? "—"}</b></span>
+                      <span>video_duration_seconds: <b>{stageTimings?.video_duration_seconds ?? "—"}</b></span>
+
+
 
                     </div>
                     {transcriptRawChunks.length > 0 && (
