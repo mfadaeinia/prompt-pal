@@ -1449,6 +1449,7 @@ function AsrProbeSection() {
                 `[${String(e.tMs).padStart(6)}ms] ${e.event}  ${JSON.stringify(e.data)}`
               ).join("\n")}
             </pre>
+          </div>
         )}
       </div>
     </section>
