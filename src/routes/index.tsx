@@ -4,11 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
+  fetchTranscriptFast,
   saveManualTranscript,
   type TranscriptSentence,
   type TranscriptSource,
   type TranscriptQualityReport,
+  type FetchTranscriptFastResult,
 } from "@/lib/transcript.functions";
+
 
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
