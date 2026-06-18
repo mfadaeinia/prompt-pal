@@ -206,7 +206,6 @@ function Index() {
   // Early-unlock gate for partial readiness — Learning Mode becomes
   // available as soon as we have a usable first batch, even if the full
   // transcript is still being processed.
-  const lastEndTime = sentences.length ? sentences[sentences.length - 1].endTime : 0;
   // Unlock Learning Mode as soon as we have ANY sentence — AI enrichment is lazy.
   const learningModeUnlocked = sentences.length > 0;
   const processingStatus: "success" | "partial_success" | "failed" =
