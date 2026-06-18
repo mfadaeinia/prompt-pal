@@ -196,7 +196,26 @@ function Index() {
     provider_used: null,
     cache_hit: null,
   });
+  const [stageTimings, setStageTimings] = useState<{
+    total_server_ms: number | null;
+    cache_lookup_ms: number | null;
+    youtube_caption_attempt_ms: number | null;
+    audio_extract_ms: number | null;
+    audio_download_ms: number | null;
+    openai_transcription_ms: number | null;
+    chunk_mapping_ms: number | null;
+    sentence_build_ms: number | null;
+    cache_write_ms: number | null;
+    provider_used: string | null;
+    cache_hit: boolean | null;
+    audio_size_mb: number | null;
+    openai_segments_count: number | null;
+    sentence_count: number | null;
+    video_duration_seconds: number | null;
+  } | null>(null);
+  const [reactStateUpdateMs, setReactStateUpdateMs] = useState<number | null>(null);
   const firstExplanationClickAtRef = useRef<number | null>(null);
+
 
   // Final-failure gate (unchanged): below this many sentences after the
   // pipeline finishes, we show the dedicated failure card instead of
