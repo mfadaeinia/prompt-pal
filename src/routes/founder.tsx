@@ -159,6 +159,7 @@ function FounderPage() {
         </header>
 
         {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
+        <AsrProbeSection />
         <PipelineTraceSection />
         <TranscriptCacheTools />
         <TranscriptTruthSection />
@@ -1157,5 +1158,194 @@ function Row({ k, v }: { k: string; v: ReactNode }) {
       <div className="text-slate-500">{k}</div>
       <div className="text-slate-800 break-all">{v}</div>
     </div>
+  );
+}
+
+const CURATED_VIDEOS = [
+  {
+    label: "Lubach — De Avondshow (demo)",
+    url: "https://www.youtube.com/watch?v=ucsSnoeTPMc",
+    lang: "nl",
+  },
+  {
+    label: "TED — Simon Sinek (English)",
+    url: "https://www.youtube.com/watch?v=qp0HIF3SfI4",
+    lang: "en",
+  },
+  {
+    label: "TED — Tim Urban (English)",
+    url: "https://www.youtube.com/watch?v=7QTRptXgBfk",
+    lang: "en",
+  },
+  {
+    label: "VPRO Tegenlicht — AI & werk (Dutch)",
+    url: "https://www.youtube.com/watch?v=3S1jH71V3pA",
+    lang: "nl",
+  },
+  {
+    label: "Lubach — Kijkersvragen AI-editie (Dutch)",
+    url: "https://www.youtube.com/watch?v=0h0X8L15e1w",
+    lang: "nl",
+  },
+];
+
+function AsrProbeSection() {
+  const [selectedIdx, setSelectedIdx] = useState("");
+  const [customUrl, setCustomUrl] = useState("");
+  const [seconds, setSeconds] = useState(90);
+  const [runningFull, setRunningFull] = useState(false);
+  const [runningProgressive, setRunningProgressive] = useState(false);
+  const [fullResult, setFullResult] = useState<any>(null);
+  const [progressiveResult, setProgressiveResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const chosen = CURATED_VIDEOS[Number(selectedIdx)];
+  const url = chosen?.url || customUrl.trim();
+  const lang = chosen?.lang || "";
+
+  async function runFull() {
+    if (!url) return;
+    setRunningFull(true);
+    setError(null);
+    setFullResult(null);
+    try {
+      const res = await fetch(`/api/public/asr-probe?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(lang)}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      setFullResult(json);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRunningFull(false);
+    }
+  }
+
+  async function runProgressive() {
+    if (!url) return;
+    setRunningProgressive(true);
+    setError(null);
+    setProgressiveResult(null);
+    try {
+      const res = await fetch(
+        `/api/public/asr-probe-progressive?url=${encodeURIComponent(url)}&seconds=${seconds}&lang=${encodeURIComponent(lang)}`,
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      setProgressiveResult(json);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRunningProgressive(false);
+    }
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        ASR Probe Comparison
+      </h2>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <p className="text-xs text-slate-500">
+          Run the full-audio probe against the progressive (range-limited) probe
+          on the same video. Compare latency, segment count, and real timestamps.
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-xs text-slate-600">
+            <span>Curated test video</span>
+            <select
+              value={selectedIdx}
+              onChange={(e) => {
+                setSelectedIdx(e.target.value);
+                if (e.target.value) setCustomUrl("");
+              }}
+              className="rounded-md border border-slate-300 bg-white px-2 py-2 text-sm min-w-[260px]"
+            >
+              <option value="">— Select or use custom —</option>
+              {CURATED_VIDEOS.map((v, i) => (
+                <option key={i} value={String(i)}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="text-xs text-slate-400 pb-2">or</span>
+          <label className="flex flex-col gap-1 text-xs text-slate-600 flex-1 min-w-[200px]">
+            <span>Custom URL</span>
+            <input
+              value={customUrl}
+              onChange={(e) => {
+                setCustomUrl(e.target.value);
+                if (e.target.value) setSelectedIdx("");
+              }}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-600">
+            <span>Progressive seconds</span>
+            <input
+              type="number"
+              min={15}
+              max={300}
+              value={seconds}
+              onChange={(e) => setSeconds(Math.max(15, Math.min(300, Number(e.target.value))))}
+              className="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={runFull}
+            disabled={runningFull || !url}
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            {runningFull ? "Running full…" : "Run full probe"}
+          </button>
+          <button
+            onClick={runProgressive}
+            disabled={runningProgressive || !url}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {runningProgressive ? "Running progressive…" : "Run progressive probe"}
+          </button>
+          <button
+            onClick={async () => {
+              if (!url) return;
+              await runFull();
+              await runProgressive();
+            }}
+            disabled={runningFull || runningProgressive || !url}
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {runningFull || runningProgressive ? "Running both…" : "Run both"}
+          </button>
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {(fullResult || progressiveResult) && (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {fullResult && (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Full probe result
+                </div>
+                <pre className="overflow-x-auto text-[11px] text-slate-700 max-h-96">
+                  {JSON.stringify(fullResult, null, 2)}
+                </pre>
+              </div>
+            )}
+            {progressiveResult && (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Progressive probe result ({seconds}s)
+                </div>
+                <pre className="overflow-x-auto text-[11px] text-slate-700 max-h-96">
+                  {JSON.stringify(progressiveResult, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
