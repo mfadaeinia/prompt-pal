@@ -742,13 +742,16 @@ function Index() {
         typeof performance !== "undefined" ? performance.now() : Date.now();
       const startedAt = loadStartedAtRef.current ?? now;
       const elapsed = Math.round(now - startedAt);
-      setPerfTimings({
-        time_to_video_ready_ms: elapsed, // video iframe was set at submit
+      setPerfTimings((prev) => ({
+        ...prev,
+        time_to_video_ready_ms: elapsed,
         time_to_first_sentence_ms: elapsed,
         time_to_full_transcript_ms: elapsed,
+        time_to_transcript_ms: elapsed,
+        time_to_first_clickable_sentence_ms: elapsed,
         provider_used: res.cachedFromProvider ?? res.source,
         cache_hit: !!res.cacheHit,
-      });
+      }));
 
       setSelected(null);
       setTranscriptSource(res.source);
