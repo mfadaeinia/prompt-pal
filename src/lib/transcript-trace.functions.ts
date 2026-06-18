@@ -124,6 +124,23 @@ export type PipelineTrace = {
     status: "disabled";
     reason: string;
   };
+  step6_openai_whisper: {
+    attempted: boolean;
+    status: StepStatus;
+    skipReason: string | null;
+    audioExtractorProvider: string | null;
+    audioUrlFound: boolean;
+    audioExtractionFailed: boolean;
+    openaiInvoked: boolean;
+    openaiHttpStatus: number | null;
+    transcriptChars: number;
+    segmentsCount: number;
+    language: string | null;
+    model: string | null;
+    failureReason: string | null;
+    extractorFailureReason: string | null;
+  };
+
   final: {
     transcriptGenerated: boolean;
     finalSource: "cache" | "youtube" | "fallback" | "none";
