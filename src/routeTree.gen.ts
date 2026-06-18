@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
 import { Route as ApiPublicProductProbeRouteImport } from './routes/api/public/product-probe'
 import { Route as ApiPublicAsrProbeProgressiveRouteImport } from './routes/api/public/asr-probe-progressive'
 import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
@@ -38,6 +39,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTranscriptStreamRoute =
+  ApiPublicTranscriptStreamRouteImport.update({
+    id: '/api/public/transcript-stream',
+    path: '/api/public/transcript-stream',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicProductProbeRoute = ApiPublicProductProbeRouteImport.update({
   id: '/api/public/product-probe',
   path: '/api/public/product-probe',
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
+  '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -80,6 +88,7 @@ export interface FileRoutesByTo {
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
+  '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,6 +100,7 @@ export interface FileRoutesById {
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
+  '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
+    | '/api/public/transcript-stream'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
+    | '/api/public/transcript-stream'
   id:
     | '__root__'
     | '/'
@@ -123,6 +135,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
+    | '/api/public/transcript-stream'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -134,6 +147,7 @@ export interface RootRouteChildren {
   ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
   ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
   ApiPublicProductProbeRoute: typeof ApiPublicProductProbeRoute
+  ApiPublicTranscriptStreamRoute: typeof ApiPublicTranscriptStreamRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +178,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/transcript-stream': {
+      id: '/api/public/transcript-stream'
+      path: '/api/public/transcript-stream'
+      fullPath: '/api/public/transcript-stream'
+      preLoaderRoute: typeof ApiPublicTranscriptStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/product-probe': {
@@ -206,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
   ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
   ApiPublicProductProbeRoute: ApiPublicProductProbeRoute,
+  ApiPublicTranscriptStreamRoute: ApiPublicTranscriptStreamRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
