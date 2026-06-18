@@ -181,15 +181,22 @@ function Index() {
     time_to_video_ready_ms: number | null;
     time_to_first_sentence_ms: number | null;
     time_to_full_transcript_ms: number | null;
+    time_to_transcript_ms: number | null;
+    time_to_first_clickable_sentence_ms: number | null;
+    time_to_first_explanation_ms: number | null;
     provider_used: string | null;
     cache_hit: boolean | null;
   }>({
     time_to_video_ready_ms: null,
     time_to_first_sentence_ms: null,
     time_to_full_transcript_ms: null,
+    time_to_transcript_ms: null,
+    time_to_first_clickable_sentence_ms: null,
+    time_to_first_explanation_ms: null,
     provider_used: null,
     cache_hit: null,
   });
+  const firstExplanationClickAtRef = useRef<number | null>(null);
 
   // Final-failure gate (unchanged): below this many sentences after the
   // pipeline finishes, we show the dedicated failure card instead of
