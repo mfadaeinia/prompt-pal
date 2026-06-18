@@ -1349,6 +1349,12 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         latencyMs: oa.trace.extractor_latency_ms,
         failureReason: oa.trace.extractor_failure_reason,
       };
+      // Pull per-stage timings from the OpenAI trace
+      timings.audio_extract_ms = oa.trace.extractor_latency_ms;
+      timings.audio_download_ms = oa.trace.audio_download_ms;
+      timings.openai_transcription_ms = oa.trace.openai_request_ms;
+      timings.audio_size_mb = oa.trace.audio_size_mb;
+      timings.openai_segments_count = oa.trace.segmentsCount;
       if (oa.result && oa.result.chunks.length) {
         fb = { chunks: oa.result.chunks, language: oa.result.language };
         fbSource = "openai";
