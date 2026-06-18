@@ -124,9 +124,26 @@ export type PipelineTrace = {
     status: "disabled";
     reason: string;
   };
+  step6_openai_whisper: {
+    attempted: boolean;
+    status: StepStatus;
+    skipReason: string | null;
+    audioExtractorProvider: string | null;
+    audioUrlFound: boolean;
+    audioExtractionFailed: boolean;
+    openaiInvoked: boolean;
+    openaiHttpStatus: number | null;
+    transcriptChars: number;
+    segmentsCount: number;
+    language: string | null;
+    model: string | null;
+    failureReason: string | null;
+    extractorFailureReason: string | null;
+  };
+
   final: {
     transcriptGenerated: boolean;
-    finalSource: "cache" | "youtube" | "fallback" | "none";
+    finalSource: "cache" | "youtube" | "fallback" | "openai_whisper" | "none";
     failureCode: string | null;
     failureReason: string | null;
   };
@@ -370,6 +387,59 @@ async function step4Transcribr(videoId: string): Promise<PipelineTrace["step4_tr
     };
   }
 }
+async function step6OpenAiWhisper(
+  videoId: string,
+  expectedLanguage: string,
+): Promise<PipelineTrace["step6_openai_whisper"]> {
+  if (!process.env.OPENAI_API_KEY) {
+    return {
+      attempted: false, status: "skipped", skipReason: "OPENAI_API_KEY missing",
+      audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+      openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+      segmentsCount: 0, language: null, model: null,
+      failureReason: null, extractorFailureReason: null,
+    };
+  }
+  try {
+    const { transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
+    const lang = expectedLanguage === "_any_" ? null : expectedLanguage;
+    const { result, trace: t } = await transcribeWithOpenAi({
+      videoId,
+      expectedLanguage: lang,
+    });
+    const audioExtractionFailed = !t.audio_url_found;
+    const chars = (result?.chunks ?? []).reduce((n, c) => n + c.text.length, 0);
+    const ok = !!result && result.chunks.length > 0;
+    return {
+      attempted: true,
+      status: ok ? "ok" : "fail",
+      skipReason: null,
+      audioExtractorProvider: t.rapidapi_host,
+      audioUrlFound: t.audio_url_found,
+      audioExtractionFailed,
+      openaiInvoked: !audioExtractionFailed && t.httpStatus !== null,
+      openaiHttpStatus: t.httpStatus,
+      transcriptChars: chars,
+      segmentsCount: t.segmentsCount,
+      language: t.language ?? result?.language ?? null,
+      model: t.model,
+      failureReason: audioExtractionFailed
+        ? "audio_extraction_failed"
+        : t.failureCode,
+      extractorFailureReason: t.extractor_failure_reason,
+    };
+  } catch (e) {
+    return {
+      attempted: true, status: "fail", skipReason: null,
+      audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+      openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+      segmentsCount: 0, language: null, model: null,
+      failureReason: e instanceof Error ? e.message : String(e),
+      extractorFailureReason: null,
+    };
+  }
+}
+
 
 export const traceTranscriptPipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
@@ -407,6 +477,14 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
         status: "disabled",
         reason: "Layer 4 (Gemini file_uri ASR) is permanently disabled in transcript.functions.ts — the gateway does not fetch YouTube audio and the model hallucinates transcripts. No real ASR backend is wired yet.",
       },
+      step6_openai_whisper: {
+        attempted: false, status: "skipped", skipReason: null,
+        audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+        openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+        segmentsCount: 0, language: null, model: null,
+        failureReason: null, extractorFailureReason: null,
+      },
+
       final: {
         transcriptGenerated: false,
         finalSource: "none",
@@ -456,12 +534,25 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       return trace;
     }
 
+    trace.step6_openai_whisper = await step6OpenAiWhisper(videoId, expectedLanguage);
+    if (trace.step6_openai_whisper.status === "ok") {
+      trace.final = {
+        transcriptGenerated: true,
+        finalSource: "openai_whisper",
+        failureCode: null,
+        failureReason: null,
+      };
+      return trace;
+    }
+
     // All available layers failed (Gemini is disabled by code).
     const reasons: string[] = [];
     if (trace.step3_youtube.errorMessage) reasons.push(`youtube: ${trace.step3_youtube.errorMessage}`);
     if (trace.step4_transcribr.skipReason) reasons.push(`transcribr_skipped: ${trace.step4_transcribr.skipReason}`);
     else if (trace.step4_transcribr.errorMessage) reasons.push(`transcribr: ${trace.step4_transcribr.errorMessage}`);
     reasons.push("gemini_asr_disabled");
+    if (trace.step6_openai_whisper.skipReason) reasons.push(`openai_whisper_skipped: ${trace.step6_openai_whisper.skipReason}`);
+    else if (trace.step6_openai_whisper.failureReason) reasons.push(`openai_whisper: ${trace.step6_openai_whisper.failureReason}`);
     trace.final = {
       transcriptGenerated: false,
       finalSource: "none",
@@ -469,4 +560,5 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       failureReason: reasons.join(" | "),
     };
     return trace;
+
   });

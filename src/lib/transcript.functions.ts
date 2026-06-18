@@ -1253,8 +1253,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       extractor: null,
     };
 
-    if (asrProvider === "openai") {
-      // Pass the SPOKEN language (never the learner's help/target language).
+    const runOpenAi = async () => {
       const expectedLang = spokenLanguage;
       const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: expectedLang });
       asrGeneric.provider = "openai";
@@ -1276,10 +1275,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         failureReason: oa.trace.extractor_failure_reason,
       };
       if (oa.result && oa.result.chunks.length) {
-
         fb = { chunks: oa.result.chunks, language: oa.result.language };
         fbSource = "openai";
       }
+    };
+
+    if (asrProvider === "openai") {
+      await runOpenAi();
     } else {
       console.log("[transcript-debug] trying fallback provider (Transcribr)");
       fb = await fetchFromFallbackProvider({
@@ -1295,7 +1297,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       asrGeneric.durationMs = transcribrTrace.durationMs;
       asrGeneric.language = fb?.language ?? null;
       asrGeneric.failureCode = transcribrTrace.errorMessage ? "transcribr_error" : null;
+
+      // -------- Layer 4: OpenAI Whisper as final fallback --------
+      if (!fb || !fb.chunks.length) {
+        console.log("[transcript-debug] Transcribr empty — trying OpenAI Whisper fallback");
+        await runOpenAi();
+      }
     }
+
 
     console.log("[transcript-debug] ASR result", {
       provider: asrProvider,
