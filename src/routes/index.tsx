@@ -181,15 +181,22 @@ function Index() {
     time_to_video_ready_ms: number | null;
     time_to_first_sentence_ms: number | null;
     time_to_full_transcript_ms: number | null;
+    time_to_transcript_ms: number | null;
+    time_to_first_clickable_sentence_ms: number | null;
+    time_to_first_explanation_ms: number | null;
     provider_used: string | null;
     cache_hit: boolean | null;
   }>({
     time_to_video_ready_ms: null,
     time_to_first_sentence_ms: null,
     time_to_full_transcript_ms: null,
+    time_to_transcript_ms: null,
+    time_to_first_clickable_sentence_ms: null,
+    time_to_first_explanation_ms: null,
     provider_used: null,
     cache_hit: null,
   });
+  const firstExplanationClickAtRef = useRef<number | null>(null);
 
   // Final-failure gate (unchanged): below this many sentences after the
   // pipeline finishes, we show the dedicated failure card instead of
@@ -199,9 +206,8 @@ function Index() {
   // Early-unlock gate for partial readiness — Learning Mode becomes
   // available as soon as we have a usable first batch, even if the full
   // transcript is still being processed.
-  const lastEndTime = sentences.length ? sentences[sentences.length - 1].endTime : 0;
-  const learningModeUnlocked =
-    sentences.length >= 10 || (sentences.length > 0 && lastEndTime >= 60);
+  // Unlock Learning Mode as soon as we have ANY sentence — AI enrichment is lazy.
+  const learningModeUnlocked = sentences.length > 0;
   const processingStatus: "success" | "partial_success" | "failed" =
     sentences.length >= MIN_LEARNING_SENTENCES
       ? "success"
@@ -735,13 +741,16 @@ function Index() {
         typeof performance !== "undefined" ? performance.now() : Date.now();
       const startedAt = loadStartedAtRef.current ?? now;
       const elapsed = Math.round(now - startedAt);
-      setPerfTimings({
-        time_to_video_ready_ms: elapsed, // video iframe was set at submit
+      setPerfTimings((prev) => ({
+        ...prev,
+        time_to_video_ready_ms: elapsed,
         time_to_first_sentence_ms: elapsed,
         time_to_full_transcript_ms: elapsed,
+        time_to_transcript_ms: elapsed,
+        time_to_first_clickable_sentence_ms: elapsed,
         provider_used: res.cachedFromProvider ?? res.source,
         cache_hit: !!res.cacheHit,
-      });
+      }));
 
       setSelected(null);
       setTranscriptSource(res.source);
@@ -863,9 +872,13 @@ function Index() {
       time_to_video_ready_ms: null,
       time_to_first_sentence_ms: null,
       time_to_full_transcript_ms: null,
+      time_to_transcript_ms: null,
+      time_to_first_clickable_sentence_ms: null,
+      time_to_first_explanation_ms: null,
       provider_used: null,
       cache_hit: null,
     });
+    firstExplanationClickAtRef.current = null;
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
@@ -959,8 +972,24 @@ function Index() {
   >({});
   const inFlightRef = useRef<Set<number>>(new Set());
 
-  function ensureExplanation(s: TranscriptSentence, sList = sentences) {
-    if (explanationCache[s.id] || inFlightRef.current.has(s.id)) return;
+  function ensureExplanation(
+    s: TranscriptSentence,
+    sList = sentences,
+    opts: { isPrefetch?: boolean } = {},
+  ) {
+    if (explanationCache[s.id] || inFlightRef.current.has(s.id)) {
+      // Even if cached/loading, still kick off prefetch for N+1 on a real click.
+      if (!opts.isPrefetch) {
+        const idx = sList.findIndex((x) => x.id === s.id);
+        const next = idx >= 0 ? sList[idx + 1] : undefined;
+        if (next) ensureExplanation(next, sList, { isPrefetch: true });
+      }
+      return;
+    }
+    if (!opts.isPrefetch && firstExplanationClickAtRef.current == null) {
+      firstExplanationClickAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+    }
     inFlightRef.current.add(s.id);
     setExplanationCache((prev) => ({ ...prev, [s.id]: { status: "loading" } }));
     const idx = sList.findIndex((x) => x.id === s.id);
@@ -982,6 +1011,21 @@ function Index() {
             note: parsed.note,
           },
         }));
+        if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
+          const now =
+            typeof performance !== "undefined" ? performance.now() : Date.now();
+          const delta = Math.round(now - firstExplanationClickAtRef.current);
+          setPerfTimings((prev) =>
+            prev.time_to_first_explanation_ms == null
+              ? { ...prev, time_to_first_explanation_ms: delta }
+              : prev,
+          );
+        }
+        // Background prefetch of next sentence (only when this was a real click).
+        if (!opts.isPrefetch) {
+          const next = idx >= 0 ? sList[idx + 1] : undefined;
+          if (next) ensureExplanation(next, sList, { isPrefetch: true });
+        }
       })
       .catch((err: any) => {
         setExplanationCache((prev) => ({
@@ -1076,27 +1120,10 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
 
-  // Preload all explanations for the loaded transcript (especially the demo)
-  // so switching sentences during playback is instant. Concurrency-limited.
-  useEffect(() => {
-    if (!sentences.length) return;
-    let cancelled = false;
-    let cursor = 0;
-    const concurrency = 4;
-    const worker = async () => {
-      while (!cancelled && cursor < sentences.length) {
-        const s = sentences[cursor++];
-        ensureExplanation(s, sentences);
-        // Small gap to avoid hammering the gateway in one tick.
-        await new Promise((r) => setTimeout(r, 60));
-      }
-    };
-    for (let i = 0; i < concurrency; i++) void worker();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sentences]);
+  // Explanations are generated lazily on click (plus a single N+1 prefetch
+  // inside ensureExplanation). We intentionally do NOT bulk-preload all
+  // sentences here — that delayed time-to-first-learning and burned credits
+  // for sentences the user may never visit.
 
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -1800,6 +1827,9 @@ function Index() {
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
                       <span>transcript_status: <b>{transcriptStatus}</b></span>
+                      <span>time_to_transcript_ms: <b>{perfTimings.time_to_transcript_ms ?? "—"}</b></span>
+                      <span>time_to_first_clickable_sentence_ms: <b>{perfTimings.time_to_first_clickable_sentence_ms ?? "—"}</b></span>
+                      <span>time_to_first_explanation_ms: <b>{perfTimings.time_to_first_explanation_ms ?? "—"}</b></span>
                       <span>time_to_first_sentence_ms: <b>{perfTimings.time_to_first_sentence_ms ?? "—"}</b></span>
                       <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
                       <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
