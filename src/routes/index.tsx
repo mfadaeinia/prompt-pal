@@ -643,31 +643,49 @@ function Index() {
   const loadMutation = useMutation({
     mutationFn: async (vars: LoadVars) => {
       console.log("[transcript-debug][client] submitting URL:", vars.url, "seq:", vars.seq, "requestedVideoId:", vars.requestedVideoId);
-      // IMPORTANT: pass the SPOKEN language (what's in the video). NEVER pass
-      // `targetLang` — that's the help/explanation language.
-      const res = await fetchTx({
+      loadStartedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      slowStartedAtRef.current = null;
+      setSlowTimeoutLevel(0);
+      setTranscriptStatus("checking_cache");
+
+      // ── Fast path: cache + YouTube captions only ────────────────────────
+      const fast: FetchTranscriptFastResult = await fetchTxFast({
         data: { url: vars.url, spokenLanguage: spokenLang || undefined },
       });
+
+      if (fast.status === "ready") {
+        return { res: fast.result, vars, viaSlowPath: false };
+      }
+
+      // ── Slow path: ASR fallbacks only ───────────────────────────────────
+      if (vars.seq !== requestSeqRef.current) {
+        // User submitted another URL while fast path was running — bail.
+        return { res: null, vars, viaSlowPath: false, aborted: true } as const;
+      }
+      setTranscriptStatus("generating_transcript");
+      slowStartedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      const res = await fetchTx({
+        data: {
+          url: vars.url,
+          spokenLanguage: spokenLang || undefined,
+          skipCache: true,
+          skipYoutube: true,
+        },
+      });
       const fullText = res.sentences.map((s) => s.text).join(" ");
-      console.log("[transcript-debug][client] received transcript", {
+      console.log("[transcript-debug][client] slow-path transcript", {
         seq: vars.seq,
-        requestedVideoId: vars.requestedVideoId,
-        returnedVideoId: res.videoId,
         source: res.source,
-        cacheHit: res.cacheHit,
-        cacheRowId: res.provenance?.cacheRowId,
-        cacheKey: res.provenance?.cacheKey,
-        provider: res.cachedFromProvider ?? res.source,
         segments: res.sentences.length,
         total_chars: fullText.length,
         language: res.language,
-        first_segment: res.sentences[0]?.text?.slice(0, 100) ?? null,
       });
-      if (res.sentences.length <= 2) {
-        console.warn("[transcript-debug][client] ⚠️ ONLY", res.sentences.length, "SEGMENTS");
-      }
-      return { res, vars };
+      return { res, vars, viaSlowPath: true };
     },
+
     onSuccess: ({ res, vars }) => {
       // Race-condition guard: discard any response that isn't the latest request.
       if (vars.seq !== requestSeqRef.current) {
