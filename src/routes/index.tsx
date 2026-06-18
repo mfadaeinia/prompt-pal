@@ -1828,6 +1828,9 @@ function Index() {
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
                       <span>transcript_status: <b>{transcriptStatus}</b></span>
+                      <span>time_to_transcript_ms: <b>{perfTimings.time_to_transcript_ms ?? "—"}</b></span>
+                      <span>time_to_first_clickable_sentence_ms: <b>{perfTimings.time_to_first_clickable_sentence_ms ?? "—"}</b></span>
+                      <span>time_to_first_explanation_ms: <b>{perfTimings.time_to_first_explanation_ms ?? "—"}</b></span>
                       <span>time_to_first_sentence_ms: <b>{perfTimings.time_to_first_sentence_ms ?? "—"}</b></span>
                       <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
                       <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
