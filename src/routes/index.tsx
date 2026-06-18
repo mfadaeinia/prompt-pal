@@ -686,7 +686,10 @@ function Index() {
       return { res, vars, viaSlowPath: true };
     },
 
-    onSuccess: ({ res, vars }) => {
+    onSuccess: (payload) => {
+      const { res, vars } = payload;
+      // Aborted mid-flight by a newer submission.
+      if (!res || (payload as any).aborted) return;
       // Race-condition guard: discard any response that isn't the latest request.
       if (vars.seq !== requestSeqRef.current) {
         console.warn("[transcript-debug][client] discarding stale response", {
@@ -721,7 +724,25 @@ function Index() {
           transcriptSource: res.source,
           processingStage: "post_segmentation",
         });
+        setTranscriptStatus("failed");
+      } else {
+        setTranscriptStatus("ready");
       }
+      setSlowTimeoutLevel(0);
+
+      // ── Performance timings ───────────────────────────────────────────
+      const now =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      const startedAt = loadStartedAtRef.current ?? now;
+      const elapsed = Math.round(now - startedAt);
+      setPerfTimings({
+        time_to_video_ready_ms: elapsed, // video iframe was set at submit
+        time_to_first_sentence_ms: elapsed,
+        time_to_full_transcript_ms: elapsed,
+        provider_used: res.cachedFromProvider ?? res.source,
+        cache_hit: !!res.cacheHit,
+      });
+
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
@@ -741,6 +762,13 @@ function Index() {
         reasons: res.quality.reasons.join(","),
         sentence_count: res.quality.metrics.sentenceCount,
         avg_words_per_sentence: res.quality.metrics.avgWordsPerSentence,
+      });
+      track("transcript_first_sentence", {
+        video_id: res.videoId,
+        provider_used: res.cachedFromProvider ?? res.source,
+        cache_hit: !!res.cacheHit,
+        elapsed_ms: elapsed,
+        via_slow_path: (payload as any).viaSlowPath ?? false,
       });
       fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(
@@ -793,6 +821,7 @@ function Index() {
         providerMessage: err?.providerMessage,
         message: err?.message,
       });
+      if (vars.seq === requestSeqRef.current) setTranscriptStatus("failed");
       const isDemo = vars.url === DEMO_VIDEO_URL;
       track("transcript_fetch_failed", {
         video_url: vars.url,
@@ -806,6 +835,7 @@ function Index() {
       }
     },
   });
+
 
   // Single entry point for kicking off a transcript load. Always go through
   // this — it allocates the next request seq, resets transcript-bound UI
