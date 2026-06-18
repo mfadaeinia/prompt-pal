@@ -1395,12 +1395,19 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     });
 
     if (fb && fb.chunks.length) {
-      const sentences = buildSentencesFromChunks(fb.chunks);
+      const tMap = Date.now();
+      // Chunks already mapped by ASR provider — measure normalization cost only.
+      const normalizedChunks = fb.chunks;
+      timings.chunk_mapping_ms = Date.now() - tMap;
+      const tBuild = Date.now();
+      const sentences = buildSentencesFromChunks(normalizedChunks);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       console.log("[transcript-debug] ASR SUCCESS", {
         videoId, provider: asrProvider, raw_chunks: fb.chunks.length,
         sentences: sentences.length, total_chars: chars,
       });
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1409,9 +1416,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provider: fbSource,
         providerResponseLanguage: fb.language,
       });
-      // For trace consumers, expose source as "fallback" so existing benchmark
-      // logic that branches on "fallback" continues to work; the real provider
-      // is on `cachedFromProvider` / providerTrace.asrGeneric.
+      timings.cache_write_ms = Date.now() - tWrite;
       logEvent({
         video_id: videoId,
         fetch_source: "fallback",
@@ -1429,6 +1434,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       if (!cacheWrite.ok) {
         console.warn("[transcript-debug] ASR result not cached", cacheWrite.validation);
       }
+      timings.provider_used = fbSource;
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:asr", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1442,6 +1452,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
         providerTrace: { transcribr: transcribrTrace, asr: asrTrace, asrGeneric },
+        stageTimings: timings,
       };
     }
 
