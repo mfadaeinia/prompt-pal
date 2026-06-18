@@ -207,8 +207,8 @@ function Index() {
   // available as soon as we have a usable first batch, even if the full
   // transcript is still being processed.
   const lastEndTime = sentences.length ? sentences[sentences.length - 1].endTime : 0;
-  const learningModeUnlocked =
-    sentences.length >= 10 || (sentences.length > 0 && lastEndTime >= 60);
+  // Unlock Learning Mode as soon as we have ANY sentence — AI enrichment is lazy.
+  const learningModeUnlocked = sentences.length > 0;
   const processingStatus: "success" | "partial_success" | "failed" =
     sentences.length >= MIN_LEARNING_SENTENCES
       ? "success"
