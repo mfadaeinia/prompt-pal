@@ -158,8 +158,8 @@ function FounderPage() {
           </button>
         </header>
 
-        {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         <AsrProbeSection />
+        {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         <PipelineTraceSection />
         <TranscriptCacheTools />
         <TranscriptTruthSection />
