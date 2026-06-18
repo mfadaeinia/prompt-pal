@@ -14,6 +14,7 @@ import { Route as SavedRouteImport } from './routes/saved'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicProductProbeRouteImport } from './routes/api/public/product-probe'
+import { Route as ApiPublicAsrProbeProgressiveRouteImport } from './routes/api/public/asr-probe-progressive'
 import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
 import { Route as ApiPublicAsrBenchmarkRunRouteImport } from './routes/api/public/asr-benchmark-run'
 
@@ -42,6 +43,12 @@ const ApiPublicProductProbeRoute = ApiPublicProductProbeRouteImport.update({
   path: '/api/public/product-probe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAsrProbeProgressiveRoute =
+  ApiPublicAsrProbeProgressiveRouteImport.update({
+    id: '/api/public/asr-probe-progressive',
+    path: '/api/public/asr-probe-progressive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAsrProbeRoute = ApiPublicAsrProbeRouteImport.update({
   id: '/api/public/asr-probe',
   path: '/api/public/asr-probe',
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
+  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
 }
 export interface FileRoutesByTo {
@@ -70,6 +78,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
+  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
 }
 export interface FileRoutesById {
@@ -80,6 +89,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
+  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
 }
 export interface FileRouteTypes {
@@ -91,6 +101,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
+    | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -100,6 +111,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
+    | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
   id:
     | '__root__'
@@ -109,6 +121,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
+    | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
   fileRoutesById: FileRoutesById
 }
@@ -119,6 +132,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicAsrBenchmarkRunRoute: typeof ApiPublicAsrBenchmarkRunRoute
   ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
+  ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
   ApiPublicProductProbeRoute: typeof ApiPublicProductProbeRoute
 }
 
@@ -159,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProductProbeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/asr-probe-progressive': {
+      id: '/api/public/asr-probe-progressive'
+      path: '/api/public/asr-probe-progressive'
+      fullPath: '/api/public/asr-probe-progressive'
+      preLoaderRoute: typeof ApiPublicAsrProbeProgressiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/asr-probe': {
       id: '/api/public/asr-probe'
       path: '/api/public/asr-probe'
@@ -183,18 +204,9 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicAsrBenchmarkRunRoute: ApiPublicAsrBenchmarkRunRoute,
   ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
+  ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
   ApiPublicProductProbeRoute: ApiPublicProductProbeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
