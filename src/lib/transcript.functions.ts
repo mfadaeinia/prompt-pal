@@ -1256,7 +1256,9 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     }
 
     if (raw && raw.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       console.log("[transcript-debug] youtube SUCCESS", {
         videoId,
@@ -1265,6 +1267,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         total_chars: chars,
         language: usedLang,
       });
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1273,6 +1276,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provider: "youtube",
         providerResponseLanguage: usedLang,
       });
+      timings.cache_write_ms = Date.now() - tWrite;
       logEvent({
         video_id: videoId,
         fetch_source: "youtube",
@@ -1290,6 +1294,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       if (!cacheWrite.ok) {
         console.warn("[transcript-debug] youtube result not cached", cacheWrite.validation);
       }
+      timings.provider_used = "youtube";
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:youtube", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1302,6 +1311,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
         providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
+        stageTimings: timings,
       };
     }
 
