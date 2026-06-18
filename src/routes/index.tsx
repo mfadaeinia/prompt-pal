@@ -973,8 +973,24 @@ function Index() {
   >({});
   const inFlightRef = useRef<Set<number>>(new Set());
 
-  function ensureExplanation(s: TranscriptSentence, sList = sentences) {
-    if (explanationCache[s.id] || inFlightRef.current.has(s.id)) return;
+  function ensureExplanation(
+    s: TranscriptSentence,
+    sList = sentences,
+    opts: { isPrefetch?: boolean } = {},
+  ) {
+    if (explanationCache[s.id] || inFlightRef.current.has(s.id)) {
+      // Even if cached/loading, still kick off prefetch for N+1 on a real click.
+      if (!opts.isPrefetch) {
+        const idx = sList.findIndex((x) => x.id === s.id);
+        const next = idx >= 0 ? sList[idx + 1] : undefined;
+        if (next) ensureExplanation(next, sList, { isPrefetch: true });
+      }
+      return;
+    }
+    if (!opts.isPrefetch && firstExplanationClickAtRef.current == null) {
+      firstExplanationClickAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+    }
     inFlightRef.current.add(s.id);
     setExplanationCache((prev) => ({ ...prev, [s.id]: { status: "loading" } }));
     const idx = sList.findIndex((x) => x.id === s.id);
@@ -996,6 +1012,21 @@ function Index() {
             note: parsed.note,
           },
         }));
+        if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
+          const now =
+            typeof performance !== "undefined" ? performance.now() : Date.now();
+          const delta = Math.round(now - firstExplanationClickAtRef.current);
+          setPerfTimings((prev) =>
+            prev.time_to_first_explanation_ms == null
+              ? { ...prev, time_to_first_explanation_ms: delta }
+              : prev,
+          );
+        }
+        // Background prefetch of next sentence (only when this was a real click).
+        if (!opts.isPrefetch) {
+          const next = idx >= 0 ? sList[idx + 1] : undefined;
+          if (next) ensureExplanation(next, sList, { isPrefetch: true });
+        }
       })
       .catch((err: any) => {
         setExplanationCache((prev) => ({
