@@ -1596,6 +1596,8 @@ export type FetchTranscriptFastResult =
 export const fetchTranscriptFast = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptFastResult> => {
+    const tStart = Date.now();
+    const timings = makeEmptyTimings();
     const videoId = extractVideoId(data.url);
     if (!videoId) {
       return { status: "miss", videoId: null, reason: "invalid_url", youtubeError: null };
@@ -1607,11 +1609,20 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
 
     // ---- Layer 1: cache ----
     if (!data.skipCache) {
+      const tCache = Date.now();
       const cached = await readCache(videoId, requestedLanguage);
+      timings.cache_lookup_ms = Date.now() - tCache;
       if (cached?.transcript_json?.length) {
+        const tBuild = Date.now();
         const sentences = buildSentencesFromChunks(cached.transcript_json);
+        timings.sentence_build_ms = Date.now() - tBuild;
         const provenance = rowToProvenance(cached);
         const quality = assessQuality(cached.transcript_json, sentences);
+        timings.provider_used = provenance.provider;
+        timings.cache_hit = true;
+        timings.sentence_count = sentences.length;
+        timings.total_server_ms = Date.now() - tStart;
+        logTimings("fast:cache-hit", videoId, timings);
         return {
           status: "ready",
           result: {
@@ -1626,6 +1637,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
             quality,
             provenance,
             rawChunks: cached.transcript_json,
+            stageTimings: timings,
           },
         };
       }
@@ -1633,6 +1645,8 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
 
     // ---- Layer 2: YouTube captions ----
     if (data.skipYoutube) {
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("fast:youtube-skipped", videoId, timings);
       return { status: "miss", videoId, reason: "youtube_skipped", youtubeError: null };
     }
     const langCandidates: (string | undefined)[] = spokenLanguage
@@ -1649,6 +1663,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
     let usedLang: string | null = null;
     let lastErr: string | null = null;
     let blocked = false;
+    const tYt = Date.now();
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1656,11 +1671,13 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
           lang ? { lang } : undefined,
         );
         if (r && r.length) {
+          const tMap = Date.now();
           raw = r.map((x) => ({
             text: x.text,
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
+          timings.chunk_mapping_ms = Date.now() - tMap;
           usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
@@ -1672,10 +1689,14 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         }
       }
     }
+    timings.youtube_caption_attempt_ms = Date.now() - tYt;
 
     if (raw && raw.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const quality = assessQuality(raw, sentences);
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1684,6 +1705,12 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         provider: "youtube",
         providerResponseLanguage: usedLang,
       });
+      timings.cache_write_ms = Date.now() - tWrite;
+      timings.provider_used = "youtube";
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("fast:youtube", videoId, timings);
       return {
         status: "ready",
         result: {
@@ -1697,10 +1724,13 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
           quality,
           provenance: cacheWrite.provenance ?? null,
           rawChunks: raw,
+          stageTimings: timings,
         },
       };
     }
 
+    timings.total_server_ms = Date.now() - tStart;
+    logTimings("fast:miss", videoId, timings);
     return {
       status: "miss",
       videoId,
@@ -1708,3 +1738,4 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
       youtubeError: lastErr,
     };
   });
+
