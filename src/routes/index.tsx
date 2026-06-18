@@ -1121,27 +1121,10 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
 
-  // Preload all explanations for the loaded transcript (especially the demo)
-  // so switching sentences during playback is instant. Concurrency-limited.
-  useEffect(() => {
-    if (!sentences.length) return;
-    let cancelled = false;
-    let cursor = 0;
-    const concurrency = 4;
-    const worker = async () => {
-      while (!cancelled && cursor < sentences.length) {
-        const s = sentences[cursor++];
-        ensureExplanation(s, sentences);
-        // Small gap to avoid hammering the gateway in one tick.
-        await new Promise((r) => setTimeout(r, 60));
-      }
-    };
-    for (let i = 0; i < concurrency; i++) void worker();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sentences]);
+  // Explanations are generated lazily on click (plus a single N+1 prefetch
+  // inside ensureExplanation). We intentionally do NOT bulk-preload all
+  // sentences here — that delayed time-to-first-learning and burned credits
+  // for sentences the user may never visit.
 
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
