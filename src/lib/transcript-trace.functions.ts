@@ -534,12 +534,25 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       return trace;
     }
 
+    trace.step6_openai_whisper = await step6OpenAiWhisper(videoId, expectedLanguage);
+    if (trace.step6_openai_whisper.status === "ok") {
+      trace.final = {
+        transcriptGenerated: true,
+        finalSource: "openai_whisper",
+        failureCode: null,
+        failureReason: null,
+      };
+      return trace;
+    }
+
     // All available layers failed (Gemini is disabled by code).
     const reasons: string[] = [];
     if (trace.step3_youtube.errorMessage) reasons.push(`youtube: ${trace.step3_youtube.errorMessage}`);
     if (trace.step4_transcribr.skipReason) reasons.push(`transcribr_skipped: ${trace.step4_transcribr.skipReason}`);
     else if (trace.step4_transcribr.errorMessage) reasons.push(`transcribr: ${trace.step4_transcribr.errorMessage}`);
     reasons.push("gemini_asr_disabled");
+    if (trace.step6_openai_whisper.skipReason) reasons.push(`openai_whisper_skipped: ${trace.step6_openai_whisper.skipReason}`);
+    else if (trace.step6_openai_whisper.failureReason) reasons.push(`openai_whisper: ${trace.step6_openai_whisper.failureReason}`);
     trace.final = {
       transcriptGenerated: false,
       finalSource: "none",
@@ -547,4 +560,5 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       failureReason: reasons.join(" | "),
     };
     return trace;
+
   });
