@@ -1113,9 +1113,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
     const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
     const requestedLanguage = spokenLanguage ?? "_any_";
+    const tCache = Date.now();
     const cached = data.skipCache ? null : await readCache(videoId, requestedLanguage);
+    timings.cache_lookup_ms = Date.now() - tCache;
     if (cached?.transcript_json?.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(cached.transcript_json);
+      timings.sentence_build_ms = Date.now() - tBuild;
+
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       const provenance = rowToProvenance(cached);
       console.log("[transcript-debug] cache HIT", {
