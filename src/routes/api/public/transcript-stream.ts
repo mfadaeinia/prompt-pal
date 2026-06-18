@@ -146,6 +146,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               let totalChunks: number | null = null;
               let prevSentencesLen = 0;
               let chunkIndex = 0;
+              let lastDetectedLanguage: string | null = null;
 
               while (true) {
                 const tChunk = Date.now();
@@ -197,6 +198,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 const json: any = await res.json();
                 const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
                 const detectedLanguage: string | null = json?.language ?? null;
+                if (detectedLanguage) lastDetectedLanguage = detectedLanguage;
                 const whisperReportedDuration: number = Number(json?.duration ?? 0);
 
                 // Refine bitrate from chunk 0 so subsequent offsets are exact.
@@ -292,9 +294,44 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 })
                 .eq("id", jobId);
 
+              // Write to youtube_transcript_cache so subsequent loads hit
+              // the fast path instead of re-running progressive Whisper.
+              try {
+                const requestedLanguage = lang && lang !== "_any_" ? lang : "_any_";
+                const provider = "openai";
+                const sourceVersion = 2;
+                const totalChars = allRawChunks.reduce(
+                  (n, c) => n + (c.text?.length ?? 0),
+                  0,
+                );
+                const cacheKey = `${videoId}::${requestedLanguage}::${provider}::v${sourceVersion}`;
+                await supabaseAdmin
+                  .from("youtube_transcript_cache" as any)
+                  .upsert(
+                    {
+                      video_id: videoId,
+                      video_url: url,
+                      transcript_json: allRawChunks,
+                      language: lastDetectedLanguage,
+                      source: provider,
+                      provider,
+                      requested_language: requestedLanguage,
+                      provider_response_language: lastDetectedLanguage,
+                      source_version: sourceVersion,
+                      cache_key: cacheKey,
+                      transcript_length_chars: totalChars,
+                      updated_at: new Date().toISOString(),
+                    },
+                    { onConflict: "video_id,requested_language,provider,source_version" },
+                  );
+              } catch (cacheErr) {
+                console.warn("[transcript-stream] cache write failed", cacheErr);
+              }
+
               send("complete", {
                 totalSentences: prevSentencesLen,
                 time_to_full_transcript_ms: totalMs,
+                detectedLanguage: lastDetectedLanguage,
               });
               controller.close();
             } catch (e) {
