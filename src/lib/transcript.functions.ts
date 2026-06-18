@@ -124,6 +124,25 @@ export type CacheProvenance = {
   updatedAt: string | null;
 };
 
+export type TranscriptStageTimings = {
+  total_server_ms: number | null;
+  cache_lookup_ms: number | null;
+  youtube_caption_attempt_ms: number | null;
+  audio_extract_ms: number | null;
+  audio_download_ms: number | null;
+  openai_transcription_ms: number | null;
+  chunk_mapping_ms: number | null;
+  sentence_build_ms: number | null;
+  cache_write_ms: number | null;
+  // Diagnostic context
+  provider_used: string | null;
+  cache_hit: boolean | null;
+  audio_size_mb: number | null;
+  openai_segments_count: number | null;
+  sentence_count: number | null;
+  video_duration_seconds: number | null;
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
@@ -148,6 +167,8 @@ export type FetchTranscriptResult = {
    *  all success paths so downstream consumers (benchmark, repair) can
    *  re-segment without a second fetch. */
   rawChunks?: RawChunk[];
+  /** Per-stage timings for founder diagnostics. */
+  stageTimings?: TranscriptStageTimings;
 };
 
 export type TranscriptErrorType =
