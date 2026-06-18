@@ -10,6 +10,7 @@ import {
   type TranscriptSource,
   type TranscriptQualityReport,
   type FetchTranscriptFastResult,
+  type FetchTranscriptResult,
 } from "@/lib/transcript.functions";
 
 
