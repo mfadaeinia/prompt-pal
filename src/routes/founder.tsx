@@ -1195,8 +1195,8 @@ function AsrProbeSection() {
   const [seconds, setSeconds] = useState(90);
   const [runningFull, setRunningFull] = useState(false);
   const [runningProgressive, setRunningProgressive] = useState(false);
-  const [fullResult, setFullResult] = useState<unknown>(null);
-  const [progressiveResult, setProgressiveResult] = useState<unknown>(null);
+  const [fullResult, setFullResult] = useState<any>(null);
+  const [progressiveResult, setProgressiveResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const chosen = CURATED_VIDEOS[Number(selectedIdx)];
