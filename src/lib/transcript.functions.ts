@@ -1145,6 +1145,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: cached.language,
         quality,
       });
+      timings.provider_used = provenance.provider;
+      timings.cache_hit = true;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:cache-hit", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1157,6 +1162,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance,
         rawChunks: cached.transcript_json,
+        stageTimings: timings,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
