@@ -1635,8 +1635,10 @@ function Index() {
                       <span>translation_language: <b>{targetLang}</b></span>
                       <span>source: {transcriptSource ?? "—"}</span>
                       <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>transcript_chars: <b>{sentences.reduce((n, s) => n + s.text.length, 0) || transcriptRawChunks.reduce((n, c) => n + c.text.length, 0)}</b></span>
                       <span>chunk_count: <b>{transcriptRawChunks.length}</b></span>
                       <span>sentence_count: <b>{sentences.length}</b></span>
+                      <span>rendered_count: <b>{sentences.length}</b></span>
                       <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
                       <span>cache_key: {transcriptCacheKey ?? "—"}</span>
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
