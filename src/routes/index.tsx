@@ -38,6 +38,7 @@ import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
+import { MarketingLanding } from "@/components/MarketingLanding";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
