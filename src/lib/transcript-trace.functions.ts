@@ -424,6 +424,14 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
         status: "disabled",
         reason: "Layer 4 (Gemini file_uri ASR) is permanently disabled in transcript.functions.ts — the gateway does not fetch YouTube audio and the model hallucinates transcripts. No real ASR backend is wired yet.",
       },
+      step6_openai_whisper: {
+        attempted: false, status: "skipped", skipReason: null,
+        audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
+        openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
+        segmentsCount: 0, language: null, model: null,
+        failureReason: null, extractorFailureReason: null,
+      },
+
       final: {
         transcriptGenerated: false,
         finalSource: "none",
