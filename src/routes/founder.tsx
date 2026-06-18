@@ -159,6 +159,7 @@ function FounderPage() {
         </header>
 
         {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
+        <AsrProbeSection />
         <PipelineTraceSection />
         <TranscriptCacheTools />
         <TranscriptTruthSection />
