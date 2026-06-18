@@ -1214,6 +1214,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           undefined,
         ].filter((v): v is string | undefined => v !== null)
       : [undefined];
+    const tYt = Date.now();
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1225,11 +1226,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           chunks: r?.length ?? 0,
         });
         if (r && r.length) {
+          const tMap = Date.now();
           raw = r.map((x) => ({
             text: x.text,
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
+          timings.chunk_mapping_ms = Date.now() - tMap;
           usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
@@ -1247,6 +1250,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         }
       }
     }
+    timings.youtube_caption_attempt_ms = Date.now() - tYt;
     if (blocked) {
       console.warn("[transcript-debug] youtube blocked — skipping remaining langs, going to fallback");
     }
