@@ -913,7 +913,9 @@ function Index() {
       setLimitedMode(res.quality.quality === "low");
       setQualityBannerDismissed(false);
       setManualText("");
+      setTranscriptStatus("ready");
       loadMutation.reset();
+
       setUserProperties({ selected_language: targetLang });
       track("transcript_loaded_manually", {
         video_url: url,
