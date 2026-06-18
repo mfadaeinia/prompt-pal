@@ -1455,3 +1455,14 @@ function AsrProbeSection() {
     </section>
   );
 }
+
+function Metric({ label, v, unit }: { label: string; v: number | undefined; unit: string }) {
+  return (
+    <div className="rounded border border-indigo-200 bg-white px-2 py-1">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="font-mono text-slate-900">
+        {v == null ? "—" : v.toLocaleString()}{unit ? ` ${unit}` : ""}
+      </div>
+    </div>
+  );
+}
