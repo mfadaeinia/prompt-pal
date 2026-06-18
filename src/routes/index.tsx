@@ -857,11 +857,36 @@ function Index() {
     setTranscriptLoadedAt(null);
     setTranscriptQuality(null);
     setVideoTitle(null);
+    setTranscriptStatus("checking_cache");
+    setSlowTimeoutLevel(0);
+    setPerfTimings({
+      time_to_video_ready_ms: null,
+      time_to_first_sentence_ms: null,
+      time_to_full_transcript_ms: null,
+      provider_used: null,
+      cache_hit: null,
+    });
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
     loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
   };
+
+  // 15s / 45s slow-path messaging. Only ticks while the ASR fallback is
+  // genuinely in flight (status === "generating_transcript").
+  useEffect(() => {
+    if (transcriptStatus !== "generating_transcript") {
+      setSlowTimeoutLevel(0);
+      return;
+    }
+    const t15 = window.setTimeout(() => setSlowTimeoutLevel(1), 15000);
+    const t45 = window.setTimeout(() => setSlowTimeoutLevel(2), 45000);
+    return () => {
+      window.clearTimeout(t15);
+      window.clearTimeout(t45);
+    };
+  }, [transcriptStatus]);
+
 
   // Hard gate: never allow Learning Mode when transcript isn't usable.
   useEffect(() => {
