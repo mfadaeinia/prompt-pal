@@ -1586,9 +1586,10 @@ function Index() {
       </header>
 
 
-      <main className="mx-auto max-w-6xl px-6">
-        {view === "landing" && (
-          <>
+      {view === "landing" && (
+        <MarketingLanding
+          onStartDemo={startDemo}
+          conversionSlot={
             <PrimaryHero
               url={url}
               setUrl={setUrl}
@@ -1604,12 +1605,14 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
-            <CompactHowItWorks />
-            <BeforeAfterSection />
-            <LanguageSupportSection />
-            <EarlyAccessSection />
-          </>
-        )}
+          }
+        />
+      )}
+
+      <main className="mx-auto max-w-6xl px-6">
+        {view === "landing" && <EarlyAccessSection />}
+
+
 
 
         {view === "demo" && loadMutation.isPending && !videoId && (
