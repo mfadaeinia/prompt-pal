@@ -196,7 +196,26 @@ function Index() {
     provider_used: null,
     cache_hit: null,
   });
+  const [stageTimings, setStageTimings] = useState<{
+    total_server_ms: number | null;
+    cache_lookup_ms: number | null;
+    youtube_caption_attempt_ms: number | null;
+    audio_extract_ms: number | null;
+    audio_download_ms: number | null;
+    openai_transcription_ms: number | null;
+    chunk_mapping_ms: number | null;
+    sentence_build_ms: number | null;
+    cache_write_ms: number | null;
+    provider_used: string | null;
+    cache_hit: boolean | null;
+    audio_size_mb: number | null;
+    openai_segments_count: number | null;
+    sentence_count: number | null;
+    video_duration_seconds: number | null;
+  } | null>(null);
+  const [reactStateUpdateMs, setReactStateUpdateMs] = useState<number | null>(null);
   const firstExplanationClickAtRef = useRef<number | null>(null);
+
 
   // Final-failure gate (unchanged): below this many sentences after the
   // pipeline finishes, we show the dedicated failure card instead of
@@ -737,10 +756,51 @@ function Index() {
       setSlowTimeoutLevel(0);
 
       // ── Performance timings ───────────────────────────────────────────
-      const now =
+      const reactStateStart =
         typeof performance !== "undefined" ? performance.now() : Date.now();
+      const now = reactStateStart;
       const startedAt = loadStartedAtRef.current ?? now;
       const elapsed = Math.round(now - startedAt);
+      const serverTimings = (res as any).stageTimings as
+        | {
+            total_server_ms: number | null;
+            cache_lookup_ms: number | null;
+            youtube_caption_attempt_ms: number | null;
+            audio_extract_ms: number | null;
+            audio_download_ms: number | null;
+            openai_transcription_ms: number | null;
+            chunk_mapping_ms: number | null;
+            sentence_build_ms: number | null;
+            cache_write_ms: number | null;
+            provider_used: string | null;
+            cache_hit: boolean | null;
+            audio_size_mb: number | null;
+            openai_segments_count: number | null;
+            sentence_count: number | null;
+            video_duration_seconds: number | null;
+          }
+        | undefined;
+      setStageTimings(serverTimings ?? null);
+      // Best-effort react state update window (microtask-resolution).
+      Promise.resolve().then(() => {
+        const after =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        setReactStateUpdateMs(Math.round(after - reactStateStart));
+      });
+      // Single structured console line for one real product load.
+      try {
+        console.log(
+          "[transcript-timing][client]",
+          JSON.stringify({
+            video_id: res.videoId,
+            time_to_video_ready_ms: elapsed,
+            time_to_first_clickable_sentence_ms: elapsed,
+            provider_used: res.cachedFromProvider ?? res.source,
+            cache_hit: !!res.cacheHit,
+            ...(serverTimings ?? {}),
+          }),
+        );
+      } catch {}
       setPerfTimings((prev) => ({
         ...prev,
         time_to_video_ready_ms: elapsed,
@@ -751,6 +811,7 @@ function Index() {
         provider_used: res.cachedFromProvider ?? res.source,
         cache_hit: !!res.cacheHit,
       }));
+
 
       setSelected(null);
       setTranscriptSource(res.source);
@@ -1834,6 +1895,22 @@ function Index() {
                       <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
                       <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
                       <span>cache_hit: <b>{perfTimings.cache_hit == null ? "—" : perfTimings.cache_hit ? "yes" : "no"}</b></span>
+                      <span className="mt-1 w-full border-t border-border/40 pt-1 font-semibold">— server stage timings —</span>
+                      <span>total_server_ms: <b>{stageTimings?.total_server_ms ?? "—"}</b></span>
+                      <span>cache_lookup_ms: <b>{stageTimings?.cache_lookup_ms ?? "—"}</b></span>
+                      <span>youtube_caption_attempt_ms: <b>{stageTimings?.youtube_caption_attempt_ms ?? "—"}</b></span>
+                      <span>audio_extract_ms: <b>{stageTimings?.audio_extract_ms ?? "—"}</b></span>
+                      <span>audio_download_ms: <b>{stageTimings?.audio_download_ms ?? "—"}</b></span>
+                      <span>openai_transcription_ms: <b>{stageTimings?.openai_transcription_ms ?? "—"}</b></span>
+                      <span>chunk_mapping_ms: <b>{stageTimings?.chunk_mapping_ms ?? "—"}</b></span>
+                      <span>sentence_build_ms: <b>{stageTimings?.sentence_build_ms ?? "—"}</b></span>
+                      <span>cache_write_ms: <b>{stageTimings?.cache_write_ms ?? "—"}</b></span>
+                      <span>react_state_update_ms: <b>{reactStateUpdateMs ?? "—"}</b></span>
+                      <span>audio_size_mb: <b>{stageTimings?.audio_size_mb ?? "—"}</b></span>
+                      <span>openai_segments_count: <b>{stageTimings?.openai_segments_count ?? "—"}</b></span>
+                      <span>video_duration_seconds: <b>{stageTimings?.video_duration_seconds ?? "—"}</b></span>
+
+
 
                     </div>
                     {transcriptRawChunks.length > 0 && (

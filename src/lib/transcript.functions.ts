@@ -124,6 +124,25 @@ export type CacheProvenance = {
   updatedAt: string | null;
 };
 
+export type TranscriptStageTimings = {
+  total_server_ms: number | null;
+  cache_lookup_ms: number | null;
+  youtube_caption_attempt_ms: number | null;
+  audio_extract_ms: number | null;
+  audio_download_ms: number | null;
+  openai_transcription_ms: number | null;
+  chunk_mapping_ms: number | null;
+  sentence_build_ms: number | null;
+  cache_write_ms: number | null;
+  // Diagnostic context
+  provider_used: string | null;
+  cache_hit: boolean | null;
+  audio_size_mb: number | null;
+  openai_segments_count: number | null;
+  sentence_count: number | null;
+  video_duration_seconds: number | null;
+};
+
 export type FetchTranscriptResult = {
   videoId: string;
   sentences: TranscriptSentence[];
@@ -148,6 +167,8 @@ export type FetchTranscriptResult = {
    *  all success paths so downstream consumers (benchmark, repair) can
    *  re-segment without a second fetch. */
   rawChunks?: RawChunk[];
+  /** Per-stage timings for founder diagnostics. */
+  stageTimings?: TranscriptStageTimings;
 };
 
 export type TranscriptErrorType =
@@ -1037,11 +1058,40 @@ async function fetchFromFallbackProvider(params: {
 
 
 
+function makeEmptyTimings(): TranscriptStageTimings {
+  return {
+    total_server_ms: null,
+    cache_lookup_ms: null,
+    youtube_caption_attempt_ms: null,
+    audio_extract_ms: null,
+    audio_download_ms: null,
+    openai_transcription_ms: null,
+    chunk_mapping_ms: null,
+    sentence_build_ms: null,
+    cache_write_ms: null,
+    provider_used: null,
+    cache_hit: null,
+    audio_size_mb: null,
+    openai_segments_count: null,
+    sentence_count: null,
+    video_duration_seconds: null,
+  };
+}
+
+function logTimings(label: string, videoId: string | null, t: TranscriptStageTimings) {
+  try {
+    console.log(`[transcript-timing] ${label}`, JSON.stringify({ videoId, ...t }));
+  } catch {}
+}
+
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
+    const tStart = Date.now();
+    const timings = makeEmptyTimings();
     console.log("[transcript-debug] URL received:", data.url);
     const videoId = extractVideoId(data.url);
+
     console.log("[transcript-debug] extracted videoId:", videoId);
     if (!videoId) {
       logEvent({
@@ -1063,9 +1113,14 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
     const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
     const requestedLanguage = spokenLanguage ?? "_any_";
+    const tCache = Date.now();
     const cached = data.skipCache ? null : await readCache(videoId, requestedLanguage);
+    timings.cache_lookup_ms = Date.now() - tCache;
     if (cached?.transcript_json?.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(cached.transcript_json);
+      timings.sentence_build_ms = Date.now() - tBuild;
+
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       const provenance = rowToProvenance(cached);
       console.log("[transcript-debug] cache HIT", {
@@ -1090,6 +1145,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         language: cached.language,
         quality,
       });
+      timings.provider_used = provenance.provider;
+      timings.cache_hit = true;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:cache-hit", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1102,6 +1162,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance,
         rawChunks: cached.transcript_json,
+        stageTimings: timings,
       };
     }
     console.log("[transcript-debug] cache MISS for", videoId);
@@ -1153,6 +1214,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           undefined,
         ].filter((v): v is string | undefined => v !== null)
       : [undefined];
+    const tYt = Date.now();
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1164,11 +1226,13 @@ export const fetchTranscript = createServerFn({ method: "POST" })
           chunks: r?.length ?? 0,
         });
         if (r && r.length) {
+          const tMap = Date.now();
           raw = r.map((x) => ({
             text: x.text,
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
+          timings.chunk_mapping_ms = Date.now() - tMap;
           usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
@@ -1186,12 +1250,15 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         }
       }
     }
+    timings.youtube_caption_attempt_ms = Date.now() - tYt;
     if (blocked) {
       console.warn("[transcript-debug] youtube blocked — skipping remaining langs, going to fallback");
     }
 
     if (raw && raw.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       console.log("[transcript-debug] youtube SUCCESS", {
         videoId,
@@ -1200,6 +1267,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         total_chars: chars,
         language: usedLang,
       });
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1208,6 +1276,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provider: "youtube",
         providerResponseLanguage: usedLang,
       });
+      timings.cache_write_ms = Date.now() - tWrite;
       logEvent({
         video_id: videoId,
         fetch_source: "youtube",
@@ -1225,6 +1294,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       if (!cacheWrite.ok) {
         console.warn("[transcript-debug] youtube result not cached", cacheWrite.validation);
       }
+      timings.provider_used = "youtube";
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:youtube", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1237,6 +1311,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
         providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
+        stageTimings: timings,
       };
     }
 
@@ -1274,6 +1349,12 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         latencyMs: oa.trace.extractor_latency_ms,
         failureReason: oa.trace.extractor_failure_reason,
       };
+      // Pull per-stage timings from the OpenAI trace
+      timings.audio_extract_ms = oa.trace.extractor_latency_ms;
+      timings.audio_download_ms = oa.trace.audio_download_ms;
+      timings.openai_transcription_ms = oa.trace.openai_request_ms;
+      timings.audio_size_mb = oa.trace.audio_size_mb;
+      timings.openai_segments_count = oa.trace.segmentsCount;
       if (oa.result && oa.result.chunks.length) {
         fb = { chunks: oa.result.chunks, language: oa.result.language };
         fbSource = "openai";
@@ -1314,12 +1395,19 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     });
 
     if (fb && fb.chunks.length) {
-      const sentences = buildSentencesFromChunks(fb.chunks);
+      const tMap = Date.now();
+      // Chunks already mapped by ASR provider — measure normalization cost only.
+      const normalizedChunks = fb.chunks;
+      timings.chunk_mapping_ms = Date.now() - tMap;
+      const tBuild = Date.now();
+      const sentences = buildSentencesFromChunks(normalizedChunks);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       console.log("[transcript-debug] ASR SUCCESS", {
         videoId, provider: asrProvider, raw_chunks: fb.chunks.length,
         sentences: sentences.length, total_chars: chars,
       });
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1328,9 +1416,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provider: fbSource,
         providerResponseLanguage: fb.language,
       });
-      // For trace consumers, expose source as "fallback" so existing benchmark
-      // logic that branches on "fallback" continues to work; the real provider
-      // is on `cachedFromProvider` / providerTrace.asrGeneric.
+      timings.cache_write_ms = Date.now() - tWrite;
       logEvent({
         video_id: videoId,
         fetch_source: "fallback",
@@ -1348,6 +1434,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       if (!cacheWrite.ok) {
         console.warn("[transcript-debug] ASR result not cached", cacheWrite.validation);
       }
+      timings.provider_used = fbSource;
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("slow:asr", videoId, timings);
       return {
         videoId,
         sentences,
@@ -1361,6 +1452,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
         providerTrace: { transcribr: transcribrTrace, asr: asrTrace, asrGeneric },
+        stageTimings: timings,
       };
     }
 
@@ -1504,6 +1596,8 @@ export type FetchTranscriptFastResult =
 export const fetchTranscriptFast = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptFastResult> => {
+    const tStart = Date.now();
+    const timings = makeEmptyTimings();
     const videoId = extractVideoId(data.url);
     if (!videoId) {
       return { status: "miss", videoId: null, reason: "invalid_url", youtubeError: null };
@@ -1515,11 +1609,20 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
 
     // ---- Layer 1: cache ----
     if (!data.skipCache) {
+      const tCache = Date.now();
       const cached = await readCache(videoId, requestedLanguage);
+      timings.cache_lookup_ms = Date.now() - tCache;
       if (cached?.transcript_json?.length) {
+        const tBuild = Date.now();
         const sentences = buildSentencesFromChunks(cached.transcript_json);
+        timings.sentence_build_ms = Date.now() - tBuild;
         const provenance = rowToProvenance(cached);
         const quality = assessQuality(cached.transcript_json, sentences);
+        timings.provider_used = provenance.provider;
+        timings.cache_hit = true;
+        timings.sentence_count = sentences.length;
+        timings.total_server_ms = Date.now() - tStart;
+        logTimings("fast:cache-hit", videoId, timings);
         return {
           status: "ready",
           result: {
@@ -1534,6 +1637,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
             quality,
             provenance,
             rawChunks: cached.transcript_json,
+            stageTimings: timings,
           },
         };
       }
@@ -1541,6 +1645,8 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
 
     // ---- Layer 2: YouTube captions ----
     if (data.skipYoutube) {
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("fast:youtube-skipped", videoId, timings);
       return { status: "miss", videoId, reason: "youtube_skipped", youtubeError: null };
     }
     const langCandidates: (string | undefined)[] = spokenLanguage
@@ -1557,6 +1663,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
     let usedLang: string | null = null;
     let lastErr: string | null = null;
     let blocked = false;
+    const tYt = Date.now();
     for (const lang of langCandidates) {
       try {
         const r = await YoutubeTranscript.fetchTranscript(
@@ -1564,11 +1671,13 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
           lang ? { lang } : undefined,
         );
         if (r && r.length) {
+          const tMap = Date.now();
           raw = r.map((x) => ({
             text: x.text,
             offset: x.offset / 1000,
             duration: x.duration / 1000,
           }));
+          timings.chunk_mapping_ms = Date.now() - tMap;
           usedLang = lang ?? spokenLanguage ?? null;
           break;
         }
@@ -1580,10 +1689,14 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         }
       }
     }
+    timings.youtube_caption_attempt_ms = Date.now() - tYt;
 
     if (raw && raw.length) {
+      const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
+      timings.sentence_build_ms = Date.now() - tBuild;
       const quality = assessQuality(raw, sentences);
+      const tWrite = Date.now();
       const cacheWrite = await writeCache({
         videoId,
         videoUrl: data.url,
@@ -1592,6 +1705,12 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         provider: "youtube",
         providerResponseLanguage: usedLang,
       });
+      timings.cache_write_ms = Date.now() - tWrite;
+      timings.provider_used = "youtube";
+      timings.cache_hit = false;
+      timings.sentence_count = sentences.length;
+      timings.total_server_ms = Date.now() - tStart;
+      logTimings("fast:youtube", videoId, timings);
       return {
         status: "ready",
         result: {
@@ -1605,10 +1724,13 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
           quality,
           provenance: cacheWrite.provenance ?? null,
           rawChunks: raw,
+          stageTimings: timings,
         },
       };
     }
 
+    timings.total_server_ms = Date.now() - tStart;
+    logTimings("fast:miss", videoId, timings);
     return {
       status: "miss",
       videoId,
@@ -1616,3 +1738,4 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
       youtubeError: lastErr,
     };
   });
+
