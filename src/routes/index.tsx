@@ -38,6 +38,7 @@ import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
+import { MarketingLanding } from "@/components/MarketingLanding";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
@@ -1586,9 +1587,10 @@ function Index() {
       </header>
 
 
-      <main className="mx-auto max-w-6xl px-6">
-        {view === "landing" && (
-          <>
+      {view === "landing" && (
+        <MarketingLanding
+          onStartDemo={startDemo}
+          conversionSlot={
             <PrimaryHero
               url={url}
               setUrl={setUrl}
@@ -1604,12 +1606,14 @@ function Index() {
               }}
               onStartDemo={startDemo}
             />
-            <CompactHowItWorks />
-            <BeforeAfterSection />
-            <LanguageSupportSection />
-            <EarlyAccessSection />
-          </>
-        )}
+          }
+        />
+      )}
+
+      <main className="mx-auto max-w-6xl px-6">
+        {view === "landing" && <EarlyAccessSection />}
+
+
 
 
         {view === "demo" && loadMutation.isPending && !videoId && (
