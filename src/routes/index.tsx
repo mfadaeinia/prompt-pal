@@ -873,9 +873,13 @@ function Index() {
       time_to_video_ready_ms: null,
       time_to_first_sentence_ms: null,
       time_to_full_transcript_ms: null,
+      time_to_transcript_ms: null,
+      time_to_first_clickable_sentence_ms: null,
+      time_to_first_explanation_ms: null,
       provider_used: null,
       cache_hit: null,
     });
+    firstExplanationClickAtRef.current = null;
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
