@@ -1597,9 +1597,41 @@ function Index() {
           <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
             {!isDemo && <ReadinessBadges videoId={videoId} />}
 
+            {transcriptStatus !== "ready" &&
+              transcriptStatus !== "failed" &&
+              transcriptStatus !== "idle" && (
+                <div
+                  role="status"
+                  className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground shadow-sm"
+                >
+                  <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
+                  <div className="min-w-0 leading-snug">
+                    <div className="font-medium">
+                      {transcriptStatus === "checking_cache" &&
+                        "Checking cache…"}
+                      {transcriptStatus === "looking_for_captions" &&
+                        "Looking for captions…"}
+                      {transcriptStatus === "generating_transcript" &&
+                        (slowTimeoutLevel >= 1
+                          ? "Still generating transcript…"
+                          : "Generating transcript…")}
+                      {transcriptStatus === "building_sentences" &&
+                        "Building learning sentences…"}
+                      {transcriptStatus === "partial" &&
+                        "Processing remaining transcript…"}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {slowTimeoutLevel >= 1
+                        ? "This can take longer for videos without captions. You can keep watching — Learning Mode will unlock as soon as sentences are ready."
+                        : "Transcript is being prepared. You can watch now — Learning Mode will unlock shortly."}
+                    </div>
+                  </div>
+                </div>
+              )}
 
             {/* Prominent Watch / Learning mode toggle, near the video. */}
             <div className="flex items-center justify-between gap-3">
+
               <div
                 role="tablist"
                 aria-label="Viewing mode"
