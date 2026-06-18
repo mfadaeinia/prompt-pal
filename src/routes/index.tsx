@@ -1797,6 +1797,12 @@ function Index() {
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
+                      <span>transcript_status: <b>{transcriptStatus}</b></span>
+                      <span>time_to_first_sentence_ms: <b>{perfTimings.time_to_first_sentence_ms ?? "—"}</b></span>
+                      <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
+                      <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
+                      <span>cache_hit: <b>{perfTimings.cache_hit == null ? "—" : perfTimings.cache_hit ? "yes" : "no"}</b></span>
+
                     </div>
                     {transcriptRawChunks.length > 0 && (
                       <div className="mt-1 border-t border-border/40 pt-1">
