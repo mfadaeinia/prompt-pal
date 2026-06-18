@@ -216,6 +216,9 @@ function Index() {
   } | null>(null);
   const [reactStateUpdateMs, setReactStateUpdateMs] = useState<number | null>(null);
   const firstExplanationClickAtRef = useRef<number | null>(null);
+  // Open SSE connection for in-flight progressive transcription. We hold a
+  // ref so submitLoad() can close any prior stream before starting a new one.
+  const streamRef = useRef<EventSource | null>(null);
 
 
   // Final-failure gate (unchanged): below this many sentences after the
@@ -684,32 +687,133 @@ function Index() {
         return { res: fast.result, vars, viaSlowPath: false };
       }
 
-      // ── Slow path: ASR fallbacks only ───────────────────────────────────
+      // ── Slow path: progressive Whisper via SSE ──────────────────────────
       if (vars.seq !== requestSeqRef.current) {
-        // User submitted another URL while fast path was running — bail.
         return { res: null, vars, viaSlowPath: false, aborted: true } as const;
       }
       setTranscriptStatus("generating_transcript");
       slowStartedAtRef.current =
         typeof performance !== "undefined" ? performance.now() : Date.now();
 
-      const res = await fetchTx({
-        data: {
-          url: vars.url,
-          spokenLanguage: spokenLang || undefined,
-          skipCache: true,
-          skipYoutube: true,
-        },
+      // Close any prior stream defensively.
+      if (streamRef.current) {
+        try { streamRef.current.close(); } catch {}
+        streamRef.current = null;
+      }
+
+      const langParam = (spokenLang || "").trim() || "nl";
+      const streamUrl =
+        `/api/public/transcript-stream` +
+        `?url=${encodeURIComponent(vars.url)}` +
+        `&lang=${encodeURIComponent(langParam)}`;
+
+      const firstChunkPromise = new Promise<{
+        res: FetchTranscriptResult;
+        vars: LoadVars;
+        viaSlowPath: true;
+        streaming: true;
+      }>((resolve, reject) => {
+        const es = new EventSource(streamUrl);
+        streamRef.current = es;
+        const mySeq = vars.seq;
+        let resolved = false;
+        let lastVideoId = fast.videoId ?? vars.requestedVideoId ?? null;
+        let detected: string | null = null;
+
+        const closeStream = () => {
+          try { es.close(); } catch {}
+          if (streamRef.current === es) streamRef.current = null;
+        };
+
+        es.addEventListener("job", (ev) => {
+          try {
+            const d = JSON.parse((ev as MessageEvent).data);
+            if (d?.videoId) lastVideoId = d.videoId;
+          } catch {}
+        });
+
+        es.addEventListener("chunk", (ev) => {
+          if (mySeq !== requestSeqRef.current) {
+            closeStream();
+            return;
+          }
+          let d: any = null;
+          try { d = JSON.parse((ev as MessageEvent).data); } catch { return; }
+          const sentences: TranscriptSentence[] = Array.isArray(d?.sentences) ? d.sentences : [];
+          if (d?.detectedLanguage) detected = d.detectedLanguage;
+
+          if (!resolved) {
+            resolved = true;
+            const synthetic: FetchTranscriptResult = {
+              videoId: String(lastVideoId ?? ""),
+              sentences,
+              source: "asr",
+              cachedFromProvider: null,
+              language: detected,
+              spokenLanguage: spokenLang || null,
+              transcriptLanguage: detected,
+              cacheHit: false,
+              quality: {
+                quality: "high",
+                reasons: [],
+                metrics: {
+                  sentenceCount: sentences.length,
+                  avgWordsPerSentence: 0,
+                  shortFragmentRatio: 0,
+                  hasPunctuationInRaw: true,
+                },
+              },
+              rawChunks: [],
+              stageTimings: undefined,
+            };
+            resolve({ res: synthetic, vars, viaSlowPath: true, streaming: true });
+          } else {
+            // Subsequent chunks — append in place. Server sends the full
+            // running list each time, so just replace.
+            setSentences(sentences);
+            setTranscriptStatus("partial");
+            if (detected) setTranscriptLanguage(detected);
+          }
+        });
+
+        es.addEventListener("complete", (ev) => {
+          if (mySeq !== requestSeqRef.current) {
+            closeStream();
+            return;
+          }
+          let d: any = null;
+          try { d = JSON.parse((ev as MessageEvent).data); } catch {}
+          const fullMs = Number(d?.time_to_full_transcript_ms ?? 0);
+          setTranscriptStatus("ready");
+          setPerfTimings((prev) => ({
+            ...prev,
+            time_to_full_transcript_ms: fullMs || prev.time_to_full_transcript_ms,
+          }));
+          track("transcript_full_ready", {
+            video_id: lastVideoId,
+            time_to_full_transcript_ms: fullMs,
+          });
+          closeStream();
+        });
+
+        es.addEventListener("error", (ev) => {
+          // SSE 'error' fires for both server-sent error events and transport
+          // failures. If we already resolved, keep what we have; otherwise reject.
+          let payload: any = null;
+          try { payload = JSON.parse((ev as MessageEvent).data ?? ""); } catch {}
+          const msg = payload?.message || "transcript stream failed";
+          if (resolved) {
+            // Partial transcript already showing — promote to "ready" so the
+            // UI stops the spinner; user has something to learn from.
+            setTranscriptStatus("ready");
+          } else {
+            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+          }
+          closeStream();
+        });
       });
-      const fullText = res.sentences.map((s) => s.text).join(" ");
-      console.log("[transcript-debug][client] slow-path transcript", {
-        seq: vars.seq,
-        source: res.source,
-        segments: res.sentences.length,
-        total_chars: fullText.length,
-        language: res.language,
-      });
-      return { res, vars, viaSlowPath: true };
+
+      return await firstChunkPromise;
     },
 
     onSuccess: (payload) => {
