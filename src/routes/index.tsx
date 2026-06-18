@@ -856,6 +856,9 @@ function Index() {
           processingStage: "post_segmentation",
         });
         setTranscriptStatus("failed");
+      } else if ((payload as any).streaming) {
+        // First chunk arrived; transcription continues in background.
+        setTranscriptStatus("partial");
       } else {
         setTranscriptStatus("ready");
       }
