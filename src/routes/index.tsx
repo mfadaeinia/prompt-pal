@@ -1627,15 +1627,17 @@ function Index() {
                 <button
                   role="tab"
                   aria-selected={studyMode}
-                  disabled={loadMutation.isSuccess && !hasUsableTranscript}
+                  disabled={transcriptStatus === "failed" || sentences.length === 0}
                   title={
-                    loadMutation.isSuccess && !hasUsableTranscript
-                      ? "Learning Mode unavailable: transcript has too few sentences"
-                      : undefined
+                    transcriptStatus === "failed"
+                      ? "Learning Mode unavailable: transcript could not be generated"
+                      : sentences.length === 0
+                        ? "Transcript is still being prepared — Learning Mode will unlock shortly"
+                        : undefined
                   }
                   onClick={() => {
                     if (studyMode) return;
-                    if (loadMutation.isSuccess && !hasUsableTranscript) return;
+                    if (transcriptStatus === "failed" || sentences.length === 0) return;
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
@@ -1643,11 +1645,12 @@ function Index() {
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  } ${loadMutation.isSuccess && !hasUsableTranscript ? "cursor-not-allowed opacity-50" : ""}`}
+                  } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
                 >
                   <BookOpen className="h-4 w-4" />
                   Learning Mode
                 </button>
+
               </div>
               <label
                 className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
