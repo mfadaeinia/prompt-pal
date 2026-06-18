@@ -1898,9 +1898,8 @@ function Index() {
                                 ? " · generating transcript…"
                                 : transcriptStatus === "building_sentences"
                                   ? " · building sentences…"
-                                  : transcriptStatus === "failed"
-                                    ? " · unavailable"
-                                    : ""}
+                                  : ""}
+
                       </span>
 
                       <div className="flex items-center gap-2">
