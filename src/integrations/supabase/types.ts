@@ -542,6 +542,78 @@ export type Database = {
         }
         Relationships: []
       }
+      transcript_jobs: {
+        Row: {
+          assumed_kbps: number
+          audio_url: string | null
+          audio_url_fetched_at: string | null
+          chunk_seconds: number
+          chunks: Json
+          completed_at: string | null
+          completed_chunks: number
+          created_at: string
+          detected_language: string | null
+          error: string | null
+          expected_language: string | null
+          first_chunk_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+          time_to_first_clickable_sentence_ms: number | null
+          time_to_full_transcript_ms: number | null
+          total_chunks: number | null
+          updated_at: string
+          video_id: string
+          whisper_reported_duration_s: number | null
+        }
+        Insert: {
+          assumed_kbps?: number
+          audio_url?: string | null
+          audio_url_fetched_at?: string | null
+          chunk_seconds?: number
+          chunks?: Json
+          completed_at?: string | null
+          completed_chunks?: number
+          created_at?: string
+          detected_language?: string | null
+          error?: string | null
+          expected_language?: string | null
+          first_chunk_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          time_to_first_clickable_sentence_ms?: number | null
+          time_to_full_transcript_ms?: number | null
+          total_chunks?: number | null
+          updated_at?: string
+          video_id: string
+          whisper_reported_duration_s?: number | null
+        }
+        Update: {
+          assumed_kbps?: number
+          audio_url?: string | null
+          audio_url_fetched_at?: string | null
+          chunk_seconds?: number
+          chunks?: Json
+          completed_at?: string | null
+          completed_chunks?: number
+          created_at?: string
+          detected_language?: string | null
+          error?: string | null
+          expected_language?: string | null
+          first_chunk_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          time_to_first_clickable_sentence_ms?: number | null
+          time_to_full_transcript_ms?: number | null
+          total_chunks?: number | null
+          updated_at?: string
+          video_id?: string
+          whisper_reported_duration_s?: number | null
+        }
+        Relationships: []
+      }
       user_feedback: {
         Row: {
           comprehension_helpful: string | null

@@ -1195,9 +1195,86 @@ function AsrProbeSection() {
   const [seconds, setSeconds] = useState(90);
   const [runningFull, setRunningFull] = useState(false);
   const [runningProgressive, setRunningProgressive] = useState(false);
+  const [runningStream, setRunningStream] = useState(false);
   const [fullResult, setFullResult] = useState<any>(null);
   const [progressiveResult, setProgressiveResult] = useState<any>(null);
+  const [streamEvents, setStreamEvents] = useState<Array<{ event: string; data: any; tMs: number }>>([]);
+  const [streamMetrics, setStreamMetrics] = useState<{
+    time_to_first_clickable_sentence_ms?: number;
+    time_to_full_transcript_ms?: number;
+    partial_transcript_ready_ms?: number;
+    full_transcript_ready_ms?: number;
+    completedChunks?: number;
+    totalChunks?: number;
+    totalSentences?: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function runStream() {
+    if (!url) return;
+    setRunningStream(true);
+    setError(null);
+    setStreamEvents([]);
+    setStreamMetrics({});
+    const t0 = performance.now();
+    try {
+      const res = await fetch(
+        `/api/public/transcript-stream?url=${encodeURIComponent(url)}&lang=${encodeURIComponent(lang || "nl")}&chunk=90`,
+      );
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+        for (const block of events) {
+          const evLine = block.split("\n").find((l) => l.startsWith("event:"));
+          const dataLine = block.split("\n").find((l) => l.startsWith("data:"));
+          if (!evLine || !dataLine) continue;
+          const ev = evLine.slice(6).trim();
+          let data: any = null;
+          try { data = JSON.parse(dataLine.slice(5).trim()); } catch { /* ignore */ }
+          const tMs = Math.round(performance.now() - t0);
+          setStreamEvents((prev) => [...prev, {
+            event: ev,
+            tMs,
+            data: ev === "chunk" ? { ...data, sentences: `[${data?.sentences?.length ?? 0} sentences]` } : data,
+          }]);
+          if (ev === "chunk") {
+            setStreamMetrics((m) => ({
+              ...(m ?? {}),
+              completedChunks: data?.completedChunks,
+              totalChunks: data?.totalChunks,
+              totalSentences: data?.sentences?.length,
+              ...(data?.time_to_first_clickable_sentence_ms != null
+                ? {
+                    time_to_first_clickable_sentence_ms: data.time_to_first_clickable_sentence_ms,
+                    partial_transcript_ready_ms: tMs,
+                  }
+                : {}),
+            }));
+          } else if (ev === "complete") {
+            setStreamMetrics((m) => ({
+              ...(m ?? {}),
+              time_to_full_transcript_ms: data?.time_to_full_transcript_ms,
+              full_transcript_ready_ms: tMs,
+              totalSentences: data?.totalSentences,
+            }));
+          } else if (ev === "error") {
+            setError(data?.message || "stream error");
+          }
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRunningStream(false);
+    }
+  }
 
   const chosen = CURATED_VIDEOS[Number(selectedIdx)];
   const url = chosen?.url || customUrl.trim();
@@ -1314,10 +1391,17 @@ function AsrProbeSection() {
               await runFull();
               await runProgressive();
             }}
-            disabled={runningFull || runningProgressive || !url}
+            disabled={runningFull || runningProgressive || runningStream || !url}
             className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
             {runningFull || runningProgressive ? "Running both…" : "Run both"}
+          </button>
+          <button
+            onClick={runStream}
+            disabled={runningStream || !url}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {runningStream ? "Streaming…" : "▶ Run progressive STREAM (SSE)"}
           </button>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1345,7 +1429,40 @@ function AsrProbeSection() {
             )}
           </div>
         )}
+        {(streamEvents.length > 0 || streamMetrics) && (
+          <div className="rounded-md border border-indigo-200 bg-indigo-50/40 p-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              Progressive STREAM (SSE) — live
+            </div>
+            {streamMetrics && (
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 text-[11px]">
+                <Metric label="time_to_first_clickable_sentence" v={streamMetrics.time_to_first_clickable_sentence_ms} unit="ms" />
+                <Metric label="partial_transcript_ready" v={streamMetrics.partial_transcript_ready_ms} unit="ms" />
+                <Metric label="time_to_full_transcript" v={streamMetrics.time_to_full_transcript_ms} unit="ms" />
+                <Metric label="full_transcript_ready" v={streamMetrics.full_transcript_ready_ms} unit="ms" />
+                <Metric label="chunks" v={streamMetrics.completedChunks} unit={streamMetrics.totalChunks ? `/ ${streamMetrics.totalChunks}` : ""} />
+                <Metric label="sentences" v={streamMetrics.totalSentences} unit="" />
+              </div>
+            )}
+            <pre className="overflow-auto text-[11px] text-slate-700 max-h-80 bg-white rounded p-2 border border-slate-200">
+              {streamEvents.map((e, i) =>
+                `[${String(e.tMs).padStart(6)}ms] ${e.event}  ${JSON.stringify(e.data)}`
+              ).join("\n")}
+            </pre>
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function Metric({ label, v, unit }: { label: string; v: number | undefined; unit: string }) {
+  return (
+    <div className="rounded border border-indigo-200 bg-white px-2 py-1">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="font-mono text-slate-900">
+        {v == null ? "—" : v.toLocaleString()}{unit ? ` ${unit}` : ""}
+      </div>
+    </div>
   );
 }
