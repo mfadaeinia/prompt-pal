@@ -88,12 +88,14 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
+  const fetchTxFast = useServerFn(fetchTranscriptFast);
   const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
   const saveExpressionFx = useServerFn(saveExpression);
   const listSavedFx = useServerFn(listSavedExpressions);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
+
 
 
 
