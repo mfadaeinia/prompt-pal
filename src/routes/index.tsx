@@ -1635,8 +1635,10 @@ function Index() {
                       <span>translation_language: <b>{targetLang}</b></span>
                       <span>source: {transcriptSource ?? "—"}</span>
                       <span>provider: {cachedFromProvider ?? "—"}</span>
+                      <span>transcript_chars: <b>{sentences.reduce((n, s) => n + s.text.length, 0) || transcriptRawChunks.reduce((n, c) => n + c.text.length, 0)}</b></span>
                       <span>chunk_count: <b>{transcriptRawChunks.length}</b></span>
                       <span>sentence_count: <b>{sentences.length}</b></span>
+                      <span>rendered_count: <b>{sentences.length}</b></span>
                       <span>cache_row_id: {transcriptCacheRowId ?? "—"}</span>
                       <span>cache_key: {transcriptCacheKey ?? "—"}</span>
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
@@ -1732,10 +1734,53 @@ function Index() {
                     )}
                     <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                       <span>
-                        Transcript · {sentences.length}{" "}
-                        {limitedMode ? "phrases" : "sentences"}
+                        Transcript
+                        {loadMutation.isPending
+                          ? " · loading…"
+                          : sentences.length > 0
+                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                            : loadMutation.isSuccess
+                              ? " · unavailable"
+                              : ""}
                       </span>
                       <div className="flex items-center gap-2">
+                        {devPanelEnabled && sentences.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const snapshot = {
+                                videoId,
+                                transcriptSource,
+                                cachedFromProvider,
+                                transcriptLanguage,
+                                transcriptCacheRowId,
+                                transcriptCacheKey,
+                                transcriptLoadedAt,
+                                totalChars: sentences.reduce((n, s) => n + s.text.length, 0),
+                                chunkCount: transcriptRawChunks.length,
+                                sentenceCount: sentences.length,
+                                renderedCount: sentences.length,
+                                firstChunks: transcriptRawChunks.slice(0, 10),
+                                firstSentences: sentences.slice(0, 10),
+                              };
+                              // eslint-disable-next-line no-console
+                              console.log("[inspect-transcript]", snapshot);
+                              try {
+                                const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `transcript-${videoId ?? "snapshot"}.json`;
+                                a.click();
+                                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                              } catch {}
+                            }}
+                            className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider hover:bg-muted"
+                            title="Founder-only: download a JSON snapshot of the current transcript"
+                          >
+                            Inspect
+                          </button>
+                        )}
                         {limitedMode && (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
                             Basic Transcript Mode
