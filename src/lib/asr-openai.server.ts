@@ -283,12 +283,14 @@ async function downloadAudio(
   audioUrl: string,
   trace: OpenAiAsrTrace,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  const tDl = Date.now();
   try {
     const res = await fetch(audioUrl);
     trace.audio_download_status = res.status;
     if (!res.ok) {
       trace.failureCode = "audio_download_failed";
       trace.audioExtractError = `audio download HTTP ${res.status}`;
+      trace.audio_download_ms = Date.now() - tDl;
       return null;
     }
     const len = Number(res.headers.get("content-length") || "0");
@@ -297,11 +299,13 @@ async function downloadAudio(
       trace.audioBytes = len;
       trace.audio_size_mb = +(len / 1024 / 1024).toFixed(2);
       trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
+      trace.audio_download_ms = Date.now() - tDl;
       return null;
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     trace.audioBytes = buf.byteLength;
     trace.audio_size_mb = +(buf.byteLength / 1024 / 1024).toFixed(2);
+    trace.audio_download_ms = Date.now() - tDl;
     if (buf.byteLength > OPENAI_AUDIO_LIMIT_BYTES) {
       trace.failureCode = "audio_too_large";
       trace.audioExtractError = `audio ${trace.audio_size_mb} MB exceeds 25 MB`;
@@ -311,9 +315,11 @@ async function downloadAudio(
   } catch (e) {
     trace.failureCode = "audio_download_failed";
     trace.audioExtractError = e instanceof Error ? e.message : String(e);
+    trace.audio_download_ms = Date.now() - tDl;
     return null;
   }
 }
+
 
 
 function classifyOpenAiStatus(status: number): OpenAiAsrTrace["failureCode"] {
