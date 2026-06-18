@@ -1058,11 +1058,40 @@ async function fetchFromFallbackProvider(params: {
 
 
 
+function makeEmptyTimings(): TranscriptStageTimings {
+  return {
+    total_server_ms: null,
+    cache_lookup_ms: null,
+    youtube_caption_attempt_ms: null,
+    audio_extract_ms: null,
+    audio_download_ms: null,
+    openai_transcription_ms: null,
+    chunk_mapping_ms: null,
+    sentence_build_ms: null,
+    cache_write_ms: null,
+    provider_used: null,
+    cache_hit: null,
+    audio_size_mb: null,
+    openai_segments_count: null,
+    sentence_count: null,
+    video_duration_seconds: null,
+  };
+}
+
+function logTimings(label: string, videoId: string | null, t: TranscriptStageTimings) {
+  try {
+    console.log(`[transcript-timing] ${label}`, JSON.stringify({ videoId, ...t }));
+  } catch {}
+}
+
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
+    const tStart = Date.now();
+    const timings = makeEmptyTimings();
     console.log("[transcript-debug] URL received:", data.url);
     const videoId = extractVideoId(data.url);
+
     console.log("[transcript-debug] extracted videoId:", videoId);
     if (!videoId) {
       logEvent({
