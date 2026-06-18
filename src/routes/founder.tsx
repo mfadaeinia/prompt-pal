@@ -1429,6 +1429,27 @@ function AsrProbeSection() {
             )}
           </div>
         )}
+        {(streamEvents.length > 0 || streamMetrics) && (
+          <div className="rounded-md border border-indigo-200 bg-indigo-50/40 p-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              Progressive STREAM (SSE) — live
+            </div>
+            {streamMetrics && (
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 text-[11px]">
+                <Metric label="time_to_first_clickable_sentence" v={streamMetrics.time_to_first_clickable_sentence_ms} unit="ms" />
+                <Metric label="partial_transcript_ready" v={streamMetrics.partial_transcript_ready_ms} unit="ms" />
+                <Metric label="time_to_full_transcript" v={streamMetrics.time_to_full_transcript_ms} unit="ms" />
+                <Metric label="full_transcript_ready" v={streamMetrics.full_transcript_ready_ms} unit="ms" />
+                <Metric label="chunks" v={streamMetrics.completedChunks} unit={streamMetrics.totalChunks ? `/ ${streamMetrics.totalChunks}` : ""} />
+                <Metric label="sentences" v={streamMetrics.totalSentences} unit="" />
+              </div>
+            )}
+            <pre className="overflow-auto text-[11px] text-slate-700 max-h-80 bg-white rounded p-2 border border-slate-200">
+              {streamEvents.map((e, i) =>
+                `[${String(e.tMs).padStart(6)}ms] ${e.event}  ${JSON.stringify(e.data)}`
+              ).join("\n")}
+            </pre>
+        )}
       </div>
     </section>
   );
