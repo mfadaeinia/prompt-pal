@@ -1024,6 +1024,11 @@ function Index() {
     const requestedId = extractVideoIdClient(u);
     requestSeqRef.current += 1;
     const seq = requestSeqRef.current;
+    // Tear down any in-flight progressive stream from a previous URL.
+    if (streamRef.current) {
+      try { streamRef.current.close(); } catch {}
+      streamRef.current = null;
+    }
     setRequestedVideoId(requestedId);
     setTranscriptVideoId(null);
     setSentences([]);
