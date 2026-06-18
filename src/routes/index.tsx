@@ -890,11 +890,12 @@ function Index() {
 
   // Hard gate: never allow Learning Mode when transcript isn't usable.
   useEffect(() => {
-    if (loadMutation.isSuccess && !hasUsableTranscript && studyMode) {
+    if (transcriptStatus === "failed" && studyMode) {
       setStudyMode(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasUsableTranscript, loadMutation.isSuccess]);
+  }, [transcriptStatus]);
+
 
 
 
