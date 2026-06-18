@@ -126,6 +126,8 @@ function makeTrace(): OpenAiAsrTrace {
     extractor_response_body: null,
     extractor_audio_url: null,
     extractor_failure_reason: null,
+    audio_download_ms: null,
+    openai_request_ms: null,
     failureCode: null,
   };
 }
