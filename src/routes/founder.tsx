@@ -1106,6 +1106,23 @@ function TraceResult({ trace }: { trace: PipelineTrace }) {
         <Row k="reason" v={trace.step5_gemini.reason} />
       </TraceBlock>
 
+      <TraceBlock title="Step 6 — OpenAI Whisper fallback" status={trace.step6_openai_whisper.status}>
+        <Row k="attempted" v={String(trace.step6_openai_whisper.attempted)} />
+        <Row k="skip_reason" v={trace.step6_openai_whisper.skipReason ?? "—"} />
+        <Row k="audio_extractor_provider" v={trace.step6_openai_whisper.audioExtractorProvider ?? "—"} />
+        <Row k="audio_url_found" v={String(trace.step6_openai_whisper.audioUrlFound)} />
+        <Row k="audio_extraction_failed" v={String(trace.step6_openai_whisper.audioExtractionFailed)} />
+        <Row k="openai_invoked" v={String(trace.step6_openai_whisper.openaiInvoked)} />
+        <Row k="openai_http_status" v={trace.step6_openai_whisper.openaiHttpStatus ?? "—"} />
+        <Row k="transcript_chars" v={trace.step6_openai_whisper.transcriptChars} />
+        <Row k="segments_count" v={trace.step6_openai_whisper.segmentsCount} />
+        <Row k="language" v={trace.step6_openai_whisper.language ?? "—"} />
+        <Row k="model" v={trace.step6_openai_whisper.model ?? "—"} />
+        <Row k="failure_reason" v={trace.step6_openai_whisper.failureReason ?? "—"} />
+        <Row k="extractor_failure_reason" v={trace.step6_openai_whisper.extractorFailureReason ?? "—"} />
+      </TraceBlock>
+
+
       <TraceBlock title="Final result" status={trace.final.transcriptGenerated ? "ok" : "fail"}>
         <Row k="transcript_generated" v={String(trace.final.transcriptGenerated)} />
         <Row k="final_source" v={trace.final.finalSource} />
