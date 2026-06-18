@@ -4,11 +4,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchTranscript,
+  fetchTranscriptFast,
   saveManualTranscript,
   type TranscriptSentence,
   type TranscriptSource,
   type TranscriptQualityReport,
+  type FetchTranscriptFastResult,
 } from "@/lib/transcript.functions";
+
 
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
@@ -85,12 +88,14 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fetchTx = useServerFn(fetchTranscript);
+  const fetchTxFast = useServerFn(fetchTranscriptFast);
   const saveManualTx = useServerFn(saveManualTranscript);
   const explainFx = useServerFn(explainSentence);
   const saveExpressionFx = useServerFn(saveExpression);
   const listSavedFx = useServerFn(listSavedExpressions);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
+
 
 
 
@@ -154,17 +159,56 @@ function Index() {
   );
   const devPanelEnabled = isDevPanelEnabled();
 
-  // Learning Mode usability gate. A transcript with fewer than 5 sentences
-  // produces an empty / broken Learning Mode UI, so we treat it as failed
-  // and show a dedicated error state instead.
+  // ── Transcript loading state machine ───────────────────────────────────
+  // idle → checking_cache → looking_for_captions → generating_transcript
+  //      → building_sentences → (ready | partial | failed)
+  // The fast path resolves to ready directly when cache or YouTube captions
+  // hit. Only ASR fallbacks pass through "generating_transcript".
+  type TranscriptStatus =
+    | "idle"
+    | "checking_cache"
+    | "looking_for_captions"
+    | "generating_transcript"
+    | "building_sentences"
+    | "ready"
+    | "partial"
+    | "failed";
+  const [transcriptStatus, setTranscriptStatus] = useState<TranscriptStatus>("idle");
+  const [slowTimeoutLevel, setSlowTimeoutLevel] = useState<0 | 1 | 2>(0); // 0 normal, 1 "still working", 2 timed out
+  const loadStartedAtRef = useRef<number | null>(null);
+  const slowStartedAtRef = useRef<number | null>(null);
+  const [perfTimings, setPerfTimings] = useState<{
+    time_to_video_ready_ms: number | null;
+    time_to_first_sentence_ms: number | null;
+    time_to_full_transcript_ms: number | null;
+    provider_used: string | null;
+    cache_hit: boolean | null;
+  }>({
+    time_to_video_ready_ms: null,
+    time_to_first_sentence_ms: null,
+    time_to_full_transcript_ms: null,
+    provider_used: null,
+    cache_hit: null,
+  });
+
+  // Final-failure gate (unchanged): below this many sentences after the
+  // pipeline finishes, we show the dedicated failure card instead of
+  // Learning Mode.
   const MIN_LEARNING_SENTENCES = 5;
   const hasUsableTranscript = sentences.length >= MIN_LEARNING_SENTENCES;
+  // Early-unlock gate for partial readiness — Learning Mode becomes
+  // available as soon as we have a usable first batch, even if the full
+  // transcript is still being processed.
+  const lastEndTime = sentences.length ? sentences[sentences.length - 1].endTime : 0;
+  const learningModeUnlocked =
+    sentences.length >= 10 || (sentences.length > 0 && lastEndTime >= 60);
   const processingStatus: "success" | "partial_success" | "failed" =
     sentences.length >= MIN_LEARNING_SENTENCES
       ? "success"
       : sentences.length > 0
         ? "partial_success"
         : "failed";
+
 
   useEffect(() => {
     setBrowserId(getBrowserId());
@@ -599,32 +643,53 @@ function Index() {
   const loadMutation = useMutation({
     mutationFn: async (vars: LoadVars) => {
       console.log("[transcript-debug][client] submitting URL:", vars.url, "seq:", vars.seq, "requestedVideoId:", vars.requestedVideoId);
-      // IMPORTANT: pass the SPOKEN language (what's in the video). NEVER pass
-      // `targetLang` — that's the help/explanation language.
-      const res = await fetchTx({
+      loadStartedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      slowStartedAtRef.current = null;
+      setSlowTimeoutLevel(0);
+      setTranscriptStatus("checking_cache");
+
+      // ── Fast path: cache + YouTube captions only ────────────────────────
+      const fast: FetchTranscriptFastResult = await fetchTxFast({
         data: { url: vars.url, spokenLanguage: spokenLang || undefined },
       });
+
+      if (fast.status === "ready") {
+        return { res: fast.result, vars, viaSlowPath: false };
+      }
+
+      // ── Slow path: ASR fallbacks only ───────────────────────────────────
+      if (vars.seq !== requestSeqRef.current) {
+        // User submitted another URL while fast path was running — bail.
+        return { res: null, vars, viaSlowPath: false, aborted: true } as const;
+      }
+      setTranscriptStatus("generating_transcript");
+      slowStartedAtRef.current =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+
+      const res = await fetchTx({
+        data: {
+          url: vars.url,
+          spokenLanguage: spokenLang || undefined,
+          skipCache: true,
+          skipYoutube: true,
+        },
+      });
       const fullText = res.sentences.map((s) => s.text).join(" ");
-      console.log("[transcript-debug][client] received transcript", {
+      console.log("[transcript-debug][client] slow-path transcript", {
         seq: vars.seq,
-        requestedVideoId: vars.requestedVideoId,
-        returnedVideoId: res.videoId,
         source: res.source,
-        cacheHit: res.cacheHit,
-        cacheRowId: res.provenance?.cacheRowId,
-        cacheKey: res.provenance?.cacheKey,
-        provider: res.cachedFromProvider ?? res.source,
         segments: res.sentences.length,
         total_chars: fullText.length,
         language: res.language,
-        first_segment: res.sentences[0]?.text?.slice(0, 100) ?? null,
       });
-      if (res.sentences.length <= 2) {
-        console.warn("[transcript-debug][client] ⚠️ ONLY", res.sentences.length, "SEGMENTS");
-      }
-      return { res, vars };
+      return { res, vars, viaSlowPath: true };
     },
-    onSuccess: ({ res, vars }) => {
+
+    onSuccess: (payload) => {
+      const { res, vars } = payload;
+      // Aborted mid-flight by a newer submission.
+      if (!res || (payload as any).aborted) return;
       // Race-condition guard: discard any response that isn't the latest request.
       if (vars.seq !== requestSeqRef.current) {
         console.warn("[transcript-debug][client] discarding stale response", {
@@ -659,7 +724,25 @@ function Index() {
           transcriptSource: res.source,
           processingStage: "post_segmentation",
         });
+        setTranscriptStatus("failed");
+      } else {
+        setTranscriptStatus("ready");
       }
+      setSlowTimeoutLevel(0);
+
+      // ── Performance timings ───────────────────────────────────────────
+      const now =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      const startedAt = loadStartedAtRef.current ?? now;
+      const elapsed = Math.round(now - startedAt);
+      setPerfTimings({
+        time_to_video_ready_ms: elapsed, // video iframe was set at submit
+        time_to_first_sentence_ms: elapsed,
+        time_to_full_transcript_ms: elapsed,
+        provider_used: res.cachedFromProvider ?? res.source,
+        cache_hit: !!res.cacheHit,
+      });
+
       setSelected(null);
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
@@ -679,6 +762,13 @@ function Index() {
         reasons: res.quality.reasons.join(","),
         sentence_count: res.quality.metrics.sentenceCount,
         avg_words_per_sentence: res.quality.metrics.avgWordsPerSentence,
+      });
+      track("transcript_first_sentence", {
+        video_id: res.videoId,
+        provider_used: res.cachedFromProvider ?? res.source,
+        cache_hit: !!res.cacheHit,
+        elapsed_ms: elapsed,
+        via_slow_path: (payload as any).viaSlowPath ?? false,
       });
       fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(
@@ -731,6 +821,7 @@ function Index() {
         providerMessage: err?.providerMessage,
         message: err?.message,
       });
+      if (vars.seq === requestSeqRef.current) setTranscriptStatus("failed");
       const isDemo = vars.url === DEMO_VIDEO_URL;
       track("transcript_fetch_failed", {
         video_url: vars.url,
@@ -744,6 +835,7 @@ function Index() {
       }
     },
   });
+
 
   // Single entry point for kicking off a transcript load. Always go through
   // this — it allocates the next request seq, resets transcript-bound UI
@@ -765,19 +857,45 @@ function Index() {
     setTranscriptLoadedAt(null);
     setTranscriptQuality(null);
     setVideoTitle(null);
+    setTranscriptStatus("checking_cache");
+    setSlowTimeoutLevel(0);
+    setPerfTimings({
+      time_to_video_ready_ms: null,
+      time_to_first_sentence_ms: null,
+      time_to_full_transcript_ms: null,
+      provider_used: null,
+      cache_hit: null,
+    });
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
     loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
   };
 
+  // 15s / 45s slow-path messaging. Only ticks while the ASR fallback is
+  // genuinely in flight (status === "generating_transcript").
+  useEffect(() => {
+    if (transcriptStatus !== "generating_transcript") {
+      setSlowTimeoutLevel(0);
+      return;
+    }
+    const t15 = window.setTimeout(() => setSlowTimeoutLevel(1), 15000);
+    const t45 = window.setTimeout(() => setSlowTimeoutLevel(2), 45000);
+    return () => {
+      window.clearTimeout(t15);
+      window.clearTimeout(t45);
+    };
+  }, [transcriptStatus]);
+
+
   // Hard gate: never allow Learning Mode when transcript isn't usable.
   useEffect(() => {
-    if (loadMutation.isSuccess && !hasUsableTranscript && studyMode) {
+    if (transcriptStatus === "failed" && studyMode) {
       setStudyMode(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasUsableTranscript, loadMutation.isSuccess]);
+  }, [transcriptStatus]);
+
 
 
 
@@ -795,7 +913,9 @@ function Index() {
       setLimitedMode(res.quality.quality === "low");
       setQualityBannerDismissed(false);
       setManualText("");
+      setTranscriptStatus("ready");
       loadMutation.reset();
+
       setUserProperties({ selected_language: targetLang });
       track("transcript_loaded_manually", {
         video_url: url,
@@ -1479,9 +1599,41 @@ function Index() {
           <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
             {!isDemo && <ReadinessBadges videoId={videoId} />}
 
+            {transcriptStatus !== "ready" &&
+              transcriptStatus !== "failed" &&
+              transcriptStatus !== "idle" && (
+                <div
+                  role="status"
+                  className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground shadow-sm"
+                >
+                  <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
+                  <div className="min-w-0 leading-snug">
+                    <div className="font-medium">
+                      {transcriptStatus === "checking_cache" &&
+                        "Checking cache…"}
+                      {transcriptStatus === "looking_for_captions" &&
+                        "Looking for captions…"}
+                      {transcriptStatus === "generating_transcript" &&
+                        (slowTimeoutLevel >= 1
+                          ? "Still generating transcript…"
+                          : "Generating transcript…")}
+                      {transcriptStatus === "building_sentences" &&
+                        "Building learning sentences…"}
+                      {transcriptStatus === "partial" &&
+                        "Processing remaining transcript…"}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {slowTimeoutLevel >= 1
+                        ? "This can take longer for videos without captions. You can keep watching — Learning Mode will unlock as soon as sentences are ready."
+                        : "Transcript is being prepared. You can watch now — Learning Mode will unlock shortly."}
+                    </div>
+                  </div>
+                </div>
+              )}
 
             {/* Prominent Watch / Learning mode toggle, near the video. */}
             <div className="flex items-center justify-between gap-3">
+
               <div
                 role="tablist"
                 aria-label="Viewing mode"
@@ -1509,15 +1661,17 @@ function Index() {
                 <button
                   role="tab"
                   aria-selected={studyMode}
-                  disabled={loadMutation.isSuccess && !hasUsableTranscript}
+                  disabled={transcriptStatus === "failed" || sentences.length === 0}
                   title={
-                    loadMutation.isSuccess && !hasUsableTranscript
-                      ? "Learning Mode unavailable: transcript has too few sentences"
-                      : undefined
+                    transcriptStatus === "failed"
+                      ? "Learning Mode unavailable: transcript could not be generated"
+                      : sentences.length === 0
+                        ? "Transcript is still being prepared — Learning Mode will unlock shortly"
+                        : undefined
                   }
                   onClick={() => {
                     if (studyMode) return;
-                    if (loadMutation.isSuccess && !hasUsableTranscript) return;
+                    if (transcriptStatus === "failed" || sentences.length === 0) return;
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
@@ -1525,11 +1679,12 @@ function Index() {
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  } ${loadMutation.isSuccess && !hasUsableTranscript ? "cursor-not-allowed opacity-50" : ""}`}
+                  } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
                 >
                   <BookOpen className="h-4 w-4" />
                   Learning Mode
                 </button>
+
               </div>
               <label
                 className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
@@ -1552,7 +1707,7 @@ function Index() {
             </div>
 
 
-            {loadMutation.isSuccess && !hasUsableTranscript ? (
+            {transcriptStatus === "failed" ? (
               <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
                 <h2 className="text-lg font-semibold">
                   This video cannot be used in Learning Mode
@@ -1644,6 +1799,12 @@ function Index() {
                       <span>loaded_at: {transcriptLoadedAt ?? "—"}</span>
                       <span>req_seq: {requestSeqRef.current}</span>
                       <span>loading: {loadMutation.isPending ? "yes" : "no"}</span>
+                      <span>transcript_status: <b>{transcriptStatus}</b></span>
+                      <span>time_to_first_sentence_ms: <b>{perfTimings.time_to_first_sentence_ms ?? "—"}</b></span>
+                      <span>time_to_full_transcript_ms: <b>{perfTimings.time_to_full_transcript_ms ?? "—"}</b></span>
+                      <span>provider_used: <b>{perfTimings.provider_used ?? "—"}</b></span>
+                      <span>cache_hit: <b>{perfTimings.cache_hit == null ? "—" : perfTimings.cache_hit ? "yes" : "no"}</b></span>
+
                     </div>
                     {transcriptRawChunks.length > 0 && (
                       <div className="mt-1 border-t border-border/40 pt-1">
@@ -1735,14 +1896,20 @@ function Index() {
                     <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                       <span>
                         Transcript
-                        {loadMutation.isPending
-                          ? " · loading…"
-                          : sentences.length > 0
-                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
-                            : loadMutation.isSuccess
-                              ? " · unavailable"
-                              : ""}
+                        {sentences.length > 0
+                          ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                          : transcriptStatus === "checking_cache"
+                            ? " · checking cache…"
+                            : transcriptStatus === "looking_for_captions"
+                              ? " · looking for captions…"
+                              : transcriptStatus === "generating_transcript"
+                                ? " · generating transcript…"
+                                : transcriptStatus === "building_sentences"
+                                  ? " · building sentences…"
+                                  : ""}
+
                       </span>
+
                       <div className="flex items-center gap-2">
                         {devPanelEnabled && sentences.length > 0 && (
                           <button

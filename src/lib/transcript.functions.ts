@@ -1489,3 +1489,130 @@ export const saveDemoTranscript = createServerFn({ method: "POST" })
     logEvent({ video_id: data.videoId, fetch_source: "manual", success: true });
     return { ok: true, videoId: data.videoId, count: data.sentences.length };
   });
+
+/* ------------------------------------------------------------------ */
+/* Fast-path transcript fetch (cache + youtube only).                 */
+/* The client calls this first to render sentences quickly. On a      */
+/* "miss" it falls back to fetchTranscript (with skipCache=true +     */
+/* skipYoutube=true) which only runs the slower ASR layers.           */
+/* ------------------------------------------------------------------ */
+
+export type FetchTranscriptFastResult =
+  | { status: "ready"; result: FetchTranscriptResult }
+  | { status: "miss"; videoId: string | null; reason: string; youtubeError: string | null };
+
+export const fetchTranscriptFast = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => Input.parse(d))
+  .handler(async ({ data }): Promise<FetchTranscriptFastResult> => {
+    const videoId = extractVideoId(data.url);
+    if (!videoId) {
+      return { status: "miss", videoId: null, reason: "invalid_url", youtubeError: null };
+    }
+    const spokenLanguageRaw =
+      (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
+    const spokenLanguage = spokenLanguageRaw || null;
+    const requestedLanguage = spokenLanguage ?? "_any_";
+
+    // ---- Layer 1: cache ----
+    if (!data.skipCache) {
+      const cached = await readCache(videoId, requestedLanguage);
+      if (cached?.transcript_json?.length) {
+        const sentences = buildSentencesFromChunks(cached.transcript_json);
+        const provenance = rowToProvenance(cached);
+        const quality = assessQuality(cached.transcript_json, sentences);
+        return {
+          status: "ready",
+          result: {
+            videoId,
+            sentences,
+            source: "cache",
+            cachedFromProvider: provenance.provider,
+            language: cached.language,
+            spokenLanguage,
+            transcriptLanguage: cached.language,
+            cacheHit: true,
+            quality,
+            provenance,
+            rawChunks: cached.transcript_json,
+          },
+        };
+      }
+    }
+
+    // ---- Layer 2: YouTube captions ----
+    if (data.skipYoutube) {
+      return { status: "miss", videoId, reason: "youtube_skipped", youtubeError: null };
+    }
+    const langCandidates: (string | undefined)[] = spokenLanguage
+      ? [
+          spokenLanguage,
+          spokenLanguage === "en" ? "en-US" : null,
+          spokenLanguage === "en" ? "en-GB" : null,
+          spokenLanguage === "nl" ? "nl-NL" : null,
+          undefined,
+        ].filter((v): v is string | undefined => v !== null)
+      : [undefined];
+
+    let raw: RawChunk[] | null = null;
+    let usedLang: string | null = null;
+    let lastErr: string | null = null;
+    let blocked = false;
+    for (const lang of langCandidates) {
+      try {
+        const r = await YoutubeTranscript.fetchTranscript(
+          videoId,
+          lang ? { lang } : undefined,
+        );
+        if (r && r.length) {
+          raw = r.map((x) => ({
+            text: x.text,
+            offset: x.offset / 1000,
+            duration: x.duration / 1000,
+          }));
+          usedLang = lang ?? spokenLanguage ?? null;
+          break;
+        }
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e);
+        if (classifyError(e) === "rate_limited") {
+          blocked = true;
+          break;
+        }
+      }
+    }
+
+    if (raw && raw.length) {
+      const sentences = buildSentencesFromChunks(raw);
+      const quality = assessQuality(raw, sentences);
+      const cacheWrite = await writeCache({
+        videoId,
+        videoUrl: data.url,
+        chunks: raw,
+        requestedLanguage,
+        provider: "youtube",
+        providerResponseLanguage: usedLang,
+      });
+      return {
+        status: "ready",
+        result: {
+          videoId,
+          sentences,
+          source: "youtube",
+          language: usedLang,
+          spokenLanguage,
+          transcriptLanguage: usedLang,
+          cacheHit: false,
+          quality,
+          provenance: cacheWrite.provenance ?? null,
+          rawChunks: raw,
+        },
+      };
+    }
+
+    return {
+      status: "miss",
+      videoId,
+      reason: blocked ? "youtube_blocked" : "no_captions",
+      youtubeError: lastErr,
+    };
+  });
