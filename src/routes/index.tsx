@@ -3431,7 +3431,7 @@ const HERO_LANGUAGES = [
   "English","Dutch","Spanish","French","German","Italian","Portuguese",
   "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
   "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
-  "Vietnamese","Thai","Greek","Czech",
+  "Vietnamese","Thai","Greek","Czech","Persian",
 ];
 
 const SPOKEN_LANGUAGE_OPTIONS: Array<{ label: string; code: string }> = [
@@ -3460,6 +3460,7 @@ const SPOKEN_LANGUAGE_OPTIONS: Array<{ label: string; code: string }> = [
   { label: "Indonesian", code: "id" },
   { label: "Vietnamese", code: "vi" },
   { label: "Thai", code: "th" },
+  { label: "Persian", code: "fa" },
 ];
 
 function PrimaryHero({
@@ -3849,7 +3850,7 @@ function BeforeAfterSection() {
 }
 
 function LanguageSupportSection() {
-  const languages = ["Dutch", "English", "Spanish", "French", "German", "Italian", "Portuguese"];
+  const languages = ["Dutch", "English", "Spanish", "French", "German", "Italian", "Portuguese", "Persian"];
   return (
     <section className="pb-6 sm:pb-10">
       <div className="mx-auto max-w-3xl">
