@@ -2259,9 +2259,9 @@ function Index() {
                   </aside>
               </div>
 
-              {/* Explanation panel — right column on desktop, stacks below transcript on mobile */}
+              {/* Explanation panel — right column on desktop; mobile uses inline expansion under each sentence */}
               {studyMode && (
-                <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
+                <div className="hidden lg:block min-w-0 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
