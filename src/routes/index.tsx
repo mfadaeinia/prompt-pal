@@ -264,6 +264,23 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
+  // Auto-load a video when arriving from a saved-library link (e.g. /?url=...)
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get("url");
+    if (u && /youtu/.test(u)) {
+      autoLoadedRef.current = true;
+      setUrl(u);
+      setView("demo");
+      submitLoad(u);
+      // clean the URL so refreshes don't reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   // List of saved expressions for this user — used to mark sentences as already-saved.
   const savedQuery = useQuery({
     queryKey: ["saved-expressions", isAuthenticated],
