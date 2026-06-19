@@ -20,9 +20,14 @@ import { recordVideoSession } from "@/lib/video-sessions.functions";
 import {
   saveExpression,
   listSavedExpressions,
+  claimAnonymousSaves,
 } from "@/lib/saved-expressions.functions";
+import { saveVideo, listSavedVideos } from "@/lib/saved-videos.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
+import { useAuth } from "@/hooks/use-auth";
+import { AuthDialog } from "@/components/AuthDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
