@@ -508,6 +508,10 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       step2_cache: {
         attempted: false, status: "skipped", hit: false, rowsForVideo: 0,
         cacheRowId: null, cacheKey: null, provider: null, language: null,
+        requestedLanguage: null, providerResponseLanguage: null,
+        acceptedViaAnyShortcut: false,
+        textDetectedLanguage: null, textDetectionConfidence: null,
+        languageMismatchDetected: false, finalLanguageUsed: null,
         validationStatus: null, transcriptLengthChars: null, updatedAt: null, missReason: null,
       },
       step3_youtube: {
