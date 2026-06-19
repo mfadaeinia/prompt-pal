@@ -3925,3 +3925,14 @@ function TranscriptQualityBanner({
     </div>
   );
 }
+
+function languageLabel(code: string | null | undefined): string {
+  if (!code) return "";
+  const base = code.toLowerCase().split(/[-_]/)[0];
+  try {
+    const dn = new Intl.DisplayNames(["en"], { type: "language" });
+    return dn.of(base) || base.toUpperCase();
+  } catch {
+    return base.toUpperCase();
+  }
+}
