@@ -123,10 +123,10 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             and cultural context, without leaving the video.
           </p>
 
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <button
               onClick={onPrimary}
-              className="group inline-flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 active:scale-[0.98]"
+              className="group inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-500 active:scale-[0.98] sm:px-7 sm:py-4"
               style={heading}
             >
               Try NativeFlow Free
@@ -134,7 +134,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </button>
             <button
               onClick={onSecondary}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-7 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 sm:px-7 sm:py-4"
               style={heading}
             >
               <Play className="h-4 w-4" />
@@ -142,7 +142,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </button>
           </div>
 
-          <ul className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-400">
+          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400 sm:text-sm sm:gap-x-6 sm:mt-7">
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-400" /> No account required
             </li>
@@ -498,7 +498,7 @@ function ProductDemo() {
                 <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-blue-400" style={heading}>
                   0:42 · selected
                 </div>
-                <p className="text-lg font-medium text-white">Dat slaat nergens op.</p>
+                <p className="text-base font-medium text-white sm:text-lg">Dat slaat nergens op.</p>
               </div>
               <TranscriptLine time="1:08" muted>
                 Ik heb er geen zin in.
@@ -515,8 +515,8 @@ function ProductDemo() {
               </span>
             </div>
             <div className="space-y-5">
-              <Field label="Translation">
-                <p className="text-lg italic text-white">That makes no sense at all.</p>
+            <Field label="Translation">
+                <p className="text-base italic text-white sm:text-lg">That makes no sense at all.</p>
               </Field>
               <Field label="Meaning">
                 <p className="text-sm leading-relaxed text-slate-300">
