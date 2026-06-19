@@ -1350,6 +1350,16 @@ function Index() {
       playerRef.current = new YT.Player(iframeRef.current, {
         events: {
           onReady: () => {
+            // YouTube remembers the last playback position per video via
+            // cookies and auto-resumes from the middle on the next load.
+            // For Learning Mode we always want to start at the beginning
+            // unless an explicit deep-link timestamp is provided.
+            try {
+              if (deepLinkSeekRef.current == null) {
+                playerRef.current?.seekTo?.(0, true);
+                setCurrentTime(0);
+              }
+            } catch {}
             pollId = window.setInterval(() => {
               const p = playerRef.current;
               if (p && typeof p.getCurrentTime === "function") {
