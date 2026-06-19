@@ -1979,7 +1979,7 @@ function Index() {
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
