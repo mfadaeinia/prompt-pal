@@ -57,7 +57,7 @@ Do not lecture. Be assistive, not teaching.`;
       if (isCredits) {
         return {
           explanation:
-            "Meaning: AI usage limit reached for now.\nTranslation: —\nNote: —",
+            "Translation: —\nMeaning: AI usage limit reached for now.\nVocabulary: —\nNote: —",
           error: "credits_exhausted" as const,
         };
       }
