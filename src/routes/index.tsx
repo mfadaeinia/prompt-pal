@@ -3008,6 +3008,97 @@ function FallbackHint() {
   );
 }
 
+function PreviewSection({ label, sample, mono = false }: { label: string; sample: string; mono?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/60 px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-primary/80">{label}</p>
+      <p className={`mt-0.5 text-xs leading-relaxed text-muted-foreground/90 ${mono ? "font-mono" : ""}`}>
+        {sample}
+      </p>
+    </div>
+  );
+}
+
+function InlineExplanation({
+  entry,
+  limitedMode,
+}: {
+  entry: ExplanationPanelEntry | undefined;
+  limitedMode: boolean;
+}) {
+  if (limitedMode) {
+    return (
+      <p className="text-xs text-amber-800 dark:text-amber-200">
+        Sentence explanations are not available for this video.
+      </p>
+    );
+  }
+  if (!entry || entry.status === "loading") {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation, meaning &amp; vocabulary…
+      </p>
+    );
+  }
+  if (entry.status === "error") {
+    return <p className="text-xs text-destructive">{entry.error}</p>;
+  }
+  const { translation, meaning, vocabulary, note } = entry;
+  if (!translation && !meaning && !vocabulary && !note) {
+    return <FallbackHint />;
+  }
+  return (
+    <div className="space-y-3">
+      {translation && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Translation</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+        </div>
+      )}
+      {meaning && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{meaning}</p>
+        </div>
+      )}
+      {vocabulary && vocabulary !== "—" && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
+          <ul className="mt-0.5 space-y-0.5">
+            {vocabulary
+              .split(/\s*(?:·|•|;|\|)\s*/)
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .map((item, i) => {
+                const [head, ...rest] = item.split(/\s*=\s*/);
+                const tail = rest.join(" = ");
+                return (
+                  <li key={i} className="text-sm">
+                    <span className="font-semibold text-foreground">{head}</span>
+                    {tail && (
+                      <>
+                        <span className="text-muted-foreground"> — </span>
+                        <span className="text-foreground/85">{tail}</span>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      )}
+      {note && note !== "—" && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Expression Notes</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 
 function HowItWorksStrip() {
   const steps = [
