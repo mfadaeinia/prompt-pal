@@ -2530,6 +2530,13 @@ function Index() {
           </button>
         </div>
       )}
+      <AuthDialog
+        open={authOpen}
+        onOpenChange={(v) => {
+          setAuthOpen(v);
+          if (!v) pendingActionRef.current = null;
+        }}
+      />
     </div>
   );
 }
