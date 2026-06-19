@@ -2808,34 +2808,43 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-6 shadow-md ring-1 ring-primary/10">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-4 shadow-md ring-1 ring-primary/10 sm:p-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.10),transparent_70%)]"
         />
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
             <Sparkles className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Explanation</p>
             <p className="text-base font-semibold leading-tight text-foreground">Tap any sentence to understand it</p>
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence in the transcript unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
+          Every sentence unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
         </p>
-        <div className="mt-5 space-y-3">
+        {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
+        <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
+          {["Translation", "Meaning", "Vocabulary", "Notes"].map((l) => (
+            <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
+              ✓ {l}
+            </span>
+          ))}
+        </div>
+        <div className="mt-5 hidden space-y-3 sm:block">
           <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
           <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
           <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
           <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
         </div>
-        <p className="mt-5 text-center text-xs font-medium text-primary">
-          ✨ Click a sentence on the left to see the real thing →
+        <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
+          👆 Tap a sentence below to see the real thing
         </p>
       </div>
     );
+
   }
 
   const ready = entry && entry.status === "ready" ? entry : null;
