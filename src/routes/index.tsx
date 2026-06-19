@@ -365,20 +365,46 @@ function Index() {
       }).catch(() => {});
       setJustSavedId(vars.sentence.id);
       window.setTimeout(() => setJustSavedId(null), 1800);
-      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+      qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+    },
+  });
+
+  const saveVideoMutation = useMutation({
+    mutationFn: () => {
+      if (!videoId) throw new Error("No video loaded");
+      return saveVideoFx({
+        data: {
+          videoId,
+          videoUrl: url || `https://www.youtube.com/watch?v=${videoId}`,
+          videoTitle: videoTitle || null,
+          thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          targetLanguage: targetLang || null,
+          sessionId: browserId || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      track("video_saved", { video_id: videoId });
+      qc.invalidateQueries({ queryKey: ["saved-videos"] });
     },
   });
 
   function handleSaveExpression(s: TranscriptSentence | null) {
-    if (!s || !browserId) return;
+    if (!s) return;
     const entry = explanationCache[s.id];
     const ready = entry && entry.status === "ready" ? entry : null;
-    saveExpressionMutation.mutate({
+    const payload = {
       sentence: s,
       translation: ready?.translation || null,
       meaning: ready?.meaning || null,
       note: ready?.note && ready.note !== "—" ? ready.note : null,
-    });
+    };
+    requireAuth(() => saveExpressionMutation.mutate(payload));
+  }
+
+  function handleSaveVideo() {
+    if (!videoId) return;
+    requireAuth(() => saveVideoMutation.mutate());
   }
 
   // ── Selection-based "Save expression" floating menu ──────────────────────
