@@ -92,6 +92,17 @@ export type PipelineTrace = {
     cacheKey: string | null;
     provider: string | null;
     language: string | null;
+    requestedLanguage: string | null;
+    providerResponseLanguage: string | null;
+    /** Was this row accepted only because the lookup was "_any_"? */
+    acceptedViaAnyShortcut: boolean;
+    /** Language detected from transcript text (first ~800 chars). */
+    textDetectedLanguage: string | null;
+    textDetectionConfidence: number | null;
+    /** True when stored language disagrees with text-detected language. */
+    languageMismatchDetected: boolean;
+    /** Language we will hand to the explanation pipeline. */
+    finalLanguageUsed: string | null;
     validationStatus: string | null;
     transcriptLengthChars: number | null;
     updatedAt: string | null;
@@ -185,6 +196,29 @@ async function step1Validate(videoId: string): Promise<PipelineTrace["step1_vali
 }
 
 async function step2Cache(videoId: string, expectedLanguage: string): Promise<PipelineTrace["step2_cache"]> {
+  const empty = (overrides: Partial<PipelineTrace["step2_cache"]>): PipelineTrace["step2_cache"] => ({
+    attempted: true,
+    status: "ok",
+    hit: false,
+    rowsForVideo: 0,
+    cacheRowId: null,
+    cacheKey: null,
+    provider: null,
+    language: null,
+    requestedLanguage: null,
+    providerResponseLanguage: null,
+    acceptedViaAnyShortcut: false,
+    textDetectedLanguage: null,
+    textDetectionConfidence: null,
+    languageMismatchDetected: false,
+    finalLanguageUsed: null,
+    validationStatus: null,
+    transcriptLengthChars: null,
+    updatedAt: null,
+    missReason: null,
+    ...overrides,
+  });
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
@@ -194,42 +228,18 @@ async function step2Cache(videoId: string, expectedLanguage: string): Promise<Pi
     .eq("video_id", videoId)
     .order("updated_at", { ascending: false });
   if (error) {
-    return {
-      attempted: true,
-      status: "fail",
-      hit: false,
-      rowsForVideo: 0,
-      cacheRowId: null,
-      cacheKey: null,
-      provider: null,
-      language: null,
-      validationStatus: null,
-      transcriptLengthChars: null,
-      updatedAt: null,
-      missReason: `db_error: ${error.message}`,
-    };
+    return empty({ status: "fail", missReason: `db_error: ${error.message}` });
   }
   const rows = (data ?? []) as any[];
   if (!rows.length) {
-    return {
-      attempted: true,
-      status: "ok",
-      hit: false,
-      rowsForVideo: 0,
-      cacheRowId: null,
-      cacheKey: null,
-      provider: null,
-      language: null,
-      validationStatus: null,
-      transcriptLengthChars: null,
-      updatedAt: null,
-      missReason: "no_rows_for_video_id",
-    };
+    return empty({ missReason: "no_rows_for_video_id" });
   }
   let picked: any | null = null;
   let missReason: string | null = null;
+  let acceptedViaAnyShortcut = false;
   if (expectedLanguage === "_any_") {
     picked = rows[0];
+    acceptedViaAnyShortcut = true;
   } else {
     picked =
       rows.find(
@@ -243,20 +253,57 @@ async function step2Cache(videoId: string, expectedLanguage: string): Promise<Pi
     missReason = "row_present_but_transcript_json_empty";
     picked = null;
   }
-  return {
-    attempted: true,
-    status: "ok",
+
+  // Lightweight text-based language validation for diagnostics.
+  let textDetectedLanguage: string | null = null;
+  let textDetectionConfidence: number | null = null;
+  let languageMismatchDetected = false;
+  let finalLanguageUsed: string | null = picked?.language ?? null;
+  if (picked) {
+    try {
+      const { detectLanguage, sameBaseLanguage } = await import("@/lib/lang-detect.server");
+      const text = (picked.transcript_json ?? [])
+        .slice(0, 80)
+        .map((c: any) => c?.text ?? "")
+        .join(" ");
+      if (text.length >= 80) {
+        const det = detectLanguage(text);
+        textDetectedLanguage = det.language;
+        textDetectionConfidence = det.confidence;
+        const claimed = picked.language ?? picked.provider_response_language ?? null;
+        if (
+          det.language &&
+          det.confidence >= 0.4 &&
+          claimed &&
+          !sameBaseLanguage(det.language, claimed)
+        ) {
+          languageMismatchDetected = true;
+          finalLanguageUsed = det.language;
+        }
+      }
+    } catch (e) {
+      console.warn("[trace] language detection failed", e);
+    }
+  }
+
+  return empty({
     hit: !!picked,
     rowsForVideo: rows.length,
     cacheRowId: picked?.id ?? null,
     cacheKey: picked?.cache_key ?? null,
     provider: picked?.provider ?? null,
     language: picked?.language ?? null,
-    validationStatus: null,
+    requestedLanguage: picked?.requested_language ?? null,
+    providerResponseLanguage: picked?.provider_response_language ?? null,
+    acceptedViaAnyShortcut,
+    textDetectedLanguage,
+    textDetectionConfidence,
+    languageMismatchDetected,
+    finalLanguageUsed,
     transcriptLengthChars: picked?.transcript_length_chars ?? null,
     updatedAt: picked?.updated_at ?? null,
     missReason,
-  };
+  });
 }
 
 async function step3Youtube(videoId: string): Promise<PipelineTrace["step3_youtube"]> {
@@ -461,6 +508,10 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       step2_cache: {
         attempted: false, status: "skipped", hit: false, rowsForVideo: 0,
         cacheRowId: null, cacheKey: null, provider: null, language: null,
+        requestedLanguage: null, providerResponseLanguage: null,
+        acceptedViaAnyShortcut: false,
+        textDetectedLanguage: null, textDetectionConfidence: null,
+        languageMismatchDetected: false, finalLanguageUsed: null,
         validationStatus: null, transcriptLengthChars: null, updatedAt: null, missReason: null,
       },
       step3_youtube: {

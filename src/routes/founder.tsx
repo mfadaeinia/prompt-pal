@@ -1049,7 +1049,14 @@ function TraceResult({ trace }: { trace: PipelineTrace }) {
         <Row k="cache_row_id" v={trace.step2_cache.cacheRowId ?? "—"} />
         <Row k="cache_key" v={trace.step2_cache.cacheKey ?? "—"} />
         <Row k="provider" v={trace.step2_cache.provider ?? "—"} />
-        <Row k="language" v={trace.step2_cache.language ?? "—"} />
+        <Row k="requested_language" v={trace.step2_cache.requestedLanguage ?? "—"} />
+        <Row k="provider_response_language" v={trace.step2_cache.providerResponseLanguage ?? "—"} />
+        <Row k="stored_language" v={trace.step2_cache.language ?? "—"} />
+        <Row k="text_detected_language" v={trace.step2_cache.textDetectedLanguage ?? "—"} />
+        <Row k="text_detection_confidence" v={trace.step2_cache.textDetectionConfidence ?? "—"} />
+        <Row k="language_mismatch_detected" v={String(trace.step2_cache.languageMismatchDetected)} />
+        <Row k="accepted_via_any_shortcut" v={String(trace.step2_cache.acceptedViaAnyShortcut)} />
+        <Row k="final_language_used" v={trace.step2_cache.finalLanguageUsed ?? "—"} />
         <Row k="length_chars" v={trace.step2_cache.transcriptLengthChars ?? "—"} />
         <Row k="updated_at" v={trace.step2_cache.updatedAt ?? "—"} />
         {!trace.step2_cache.hit && <Row k="miss_reason" v={trace.step2_cache.missReason ?? "—"} />}

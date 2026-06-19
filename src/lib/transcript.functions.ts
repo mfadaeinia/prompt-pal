@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
+import { detectLanguage, sameBaseLanguage } from "@/lib/lang-detect.server";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
@@ -723,12 +724,21 @@ function rowToProvenance(r: CacheRow): CacheProvenance {
 
 /**
  * Look up a cached transcript. Matches by (video_id, requested_language).
- *   - If requestedLanguage is "_any_", we accept any language and prefer the
- *     most recently updated row.
+ *
+ *   - If requestedLanguage is "_any_", we accept any language and prefer
+ *     the most recently updated row — but we *validate* the picked row's
+ *     language against the actual transcript text when it was written by
+ *     the fallback ASR provider (Transcribr), which has historically
+ *     mislabeled videos. A row whose stored language contradicts a
+ *     high-confidence text detection is treated as poisoned and skipped.
+ *
  *   - Otherwise we require requested_language === requestedLanguage OR
- *     provider_response_language === requestedLanguage.
- *   - We never silently return a row whose language disagrees with what was
- *     asked for.
+ *     provider_response_language === requestedLanguage OR the stored
+ *     language matches the request, AND, for fallback rows, that the
+ *     stored language doesn't contradict text detection.
+ *
+ *   - We never silently return a row whose language disagrees with what
+ *     was asked for.
  */
 async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -743,12 +753,47 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
   }
   const rows = (data ?? []) as unknown as CacheRow[];
   if (!rows.length) return null;
-  if (requestedLanguage === "_any_") return rows[0];
-  const match = rows.find(
-    (r) =>
+
+  const isPoisoned = (r: CacheRow): boolean => {
+    // Only re-validate rows whose provider's language claim is historically
+    // unreliable ("fallback" = Transcribr). YouTube captions and Whisper
+    // carry their own language tag we trust.
+    const provider = (r.provider ?? r.source ?? "").toLowerCase();
+    if (provider !== "fallback") return false;
+    const claimed = r.language ?? r.provider_response_language ?? null;
+    if (!claimed) return false;
+    const text = (r.transcript_json ?? [])
+      .slice(0, 80)
+      .map((c) => c?.text ?? "")
+      .join(" ");
+    if (text.length < 80) return false;
+    const detected = detectLanguage(text);
+    if (!detected.language || detected.confidence < 0.4) return false;
+    if (sameBaseLanguage(detected.language, claimed)) return false;
+    console.warn("[transcript] poisoned cache row detected — skipping", {
+      videoId,
+      cacheRowId: r.id,
+      provider,
+      claimedLanguage: claimed,
+      detectedLanguage: detected.language,
+      confidence: detected.confidence,
+      scores: detected.scores,
+    });
+    return true;
+  };
+
+  if (requestedLanguage === "_any_") {
+    const picked = rows.find((r) => !isPoisoned(r));
+    return picked ?? null;
+  }
+  const match = rows.find((r) => {
+    const langMatch =
       (r.requested_language && r.requested_language === requestedLanguage) ||
-      (r.provider_response_language && r.provider_response_language === requestedLanguage),
-  );
+      (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
+      (r.language && sameBaseLanguage(r.language, requestedLanguage));
+    if (!langMatch) return false;
+    return !isPoisoned(r);
+  });
   return match ?? null;
 }
 
@@ -836,6 +881,60 @@ async function writeCache(params: {
     return { ok: false, validation };
   }
 
+  // Decide the authoritative `language` field.
+  //
+  //   - youtube / openai / manual:  trust the provider/caller as-is.
+  //   - fallback (Transcribr):      historically lies. Run text detection
+  //     over the first ~800 chars and either confirm, correct, or null it.
+  //
+  // `provider_response_language` ALWAYS stores the raw provider claim for
+  // diagnostics, so we never lose what Transcribr originally said.
+  let authoritativeLanguage: string | null = params.providerResponseLanguage;
+  let textDetected: ReturnType<typeof detectLanguage> | null = null;
+  if (params.provider === "fallback") {
+    const text = params.chunks.slice(0, 80).map((c) => c.text).join(" ");
+    textDetected = detectLanguage(text);
+    const specificRequest =
+      params.requestedLanguage && params.requestedLanguage !== "_any_"
+        ? params.requestedLanguage
+        : null;
+    const providerLang = params.providerResponseLanguage;
+    const detected = textDetected.language;
+    const confident = textDetected.confidence >= 0.4;
+
+    if (specificRequest) {
+      // Caller declared a language. Accept it as authoritative only if
+      // detection agrees (or confidence is too low to disagree).
+      if (!detected || !confident || sameBaseLanguage(detected, specificRequest)) {
+        authoritativeLanguage = specificRequest;
+      } else {
+        authoritativeLanguage = detected;
+        console.warn("[transcript] fallback text contradicts requested language", {
+          videoId: params.videoId,
+          requested: specificRequest,
+          providerSaid: providerLang,
+          textDetected: detected,
+          confidence: textDetected.confidence,
+        });
+      }
+    } else if (confident && detected) {
+      // No caller hint. Trust text detection over the provider's claim.
+      if (providerLang && !sameBaseLanguage(detected, providerLang)) {
+        console.warn("[transcript] fallback provider language disagrees with text", {
+          videoId: params.videoId,
+          providerSaid: providerLang,
+          textDetected: detected,
+          confidence: textDetected.confidence,
+        });
+      }
+      authoritativeLanguage = detected;
+    } else {
+      // Low confidence + no caller hint → don't poison future "_any_"
+      // reads with an unvalidated language tag.
+      authoritativeLanguage = null;
+    }
+  }
+
   const totalChars = params.chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
   const cacheKey = makeCacheKey(params.videoId, params.requestedLanguage, params.provider);
   const now = new Date().toISOString();
@@ -843,7 +942,7 @@ async function writeCache(params: {
     video_id: params.videoId,
     video_url: params.videoUrl,
     transcript_json: params.chunks,
-    language: params.providerResponseLanguage,
+    language: authoritativeLanguage,
     source: params.provider,
     provider: params.provider,
     requested_language: params.requestedLanguage,
@@ -863,6 +962,16 @@ async function writeCache(params: {
   if (error) {
     console.warn("[transcript] cache write error", error.message);
     return { ok: false, validation: { ok: false, reason: `db_error:${error.message}` } };
+  }
+  if (textDetected) {
+    console.log("[transcript] fallback cache write", {
+      videoId: params.videoId,
+      requestedLanguage: params.requestedLanguage,
+      providerResponseLanguage: params.providerResponseLanguage,
+      textDetectedLanguage: textDetected.language,
+      textDetectedConfidence: textDetected.confidence,
+      authoritativeLanguage,
+    });
   }
   return { ok: true, validation, provenance: data ? rowToProvenance(data as unknown as CacheRow) : undefined };
 }
