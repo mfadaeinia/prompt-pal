@@ -71,12 +71,12 @@ export function MarketingLanding({
               <Sparkles className="h-3 w-3 text-primary" /> Paste a link to begin
             </span>
             <h2
-              className="mt-4 text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
+              className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-5xl"
               style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
             >
               Try it on any video — free
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
+            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
               Paste a YouTube link and start understanding every sentence in seconds. No account required.
             </p>
           </div>
@@ -109,7 +109,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </span>
 
           <h1
-            className="text-5xl font-bold leading-[1.05] tracking-tight text-white lg:text-7xl"
+            className="text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl lg:text-7xl"
             style={heading}
           >
             Turn Any YouTube Video Into a{" "}
@@ -118,7 +118,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-400 sm:text-xl">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg sm:mt-6">
             Understand every sentence instantly — translations, explanations, vocabulary notes,
             and cultural context, without leaving the video.
           </p>
@@ -301,7 +301,7 @@ function SocialProof() {
           ].map(([n, l]) => (
             <div key={l} className="text-center">
               <div
-                className="bg-gradient-to-b from-white to-slate-400 bg-clip-text text-5xl font-bold text-transparent lg:text-6xl"
+                className="bg-gradient-to-b from-white to-slate-400 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl lg:text-6xl"
                 style={heading}
               >
                 {n}
@@ -372,11 +372,11 @@ function HowItWorks() {
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-32">
-      <div className="mx-auto mb-20 max-w-2xl text-center">
-        <h2 className="text-4xl font-bold text-white sm:text-5xl" style={heading}>
+      <div className="mx-auto mb-14 max-w-2xl text-center sm:mb-20">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
           From paste to fluency in three steps
         </h2>
-        <p className="mt-4 text-lg text-slate-400">
+        <p className="mt-3 text-base text-slate-400 sm:text-lg">
           No textbook can match the context of native content.
         </p>
       </div>
@@ -458,15 +458,15 @@ function IllLearn() {
 
 function ProductDemo() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-32">
-      <div className="mx-auto mb-16 max-w-2xl text-center">
+    <section className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
+      <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
         <span className="mb-4 inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300" style={heading}>
           See it in action
         </span>
-        <h2 className="text-4xl font-bold text-white sm:text-5xl" style={heading}>
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
           See NativeFlow explain real language
         </h2>
-        <p className="mt-4 text-lg text-slate-400">
+        <p className="mt-3 text-base text-slate-400 sm:text-lg">
           One click. Full context. The way you'd actually want to learn.
         </p>
       </div>
@@ -600,13 +600,13 @@ function Benefits() {
     },
   ];
   return (
-    <section className="mx-auto max-w-7xl px-6 py-32">
-      <div className="grid gap-16 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+    <section className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-16">
         <div className="lg:sticky lg:top-24">
-          <h2 className="text-4xl font-bold leading-tight text-white sm:text-5xl" style={heading}>
+          <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-5xl" style={heading}>
             Stop switching between tabs.
           </h2>
-          <p className="mt-4 max-w-md text-lg text-slate-400">
+          <p className="mt-3 max-w-md text-base text-slate-400 sm:text-lg sm:mt-4">
             NativeFlow folds dictionary, translator, grammar guide, and notebook into the video itself.
           </p>
         </div>
@@ -660,9 +660,9 @@ const TESTIMONIALS = [
 
 function Testimonials() {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-32">
-      <div className="mx-auto mb-16 max-w-2xl text-center">
-        <h2 className="text-4xl font-bold text-white sm:text-5xl" style={heading}>
+    <section className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
+      <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
           Learners. Languages. Lightbulbs.
         </h2>
       </div>
@@ -704,20 +704,20 @@ function Testimonials() {
 
 function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
-    <section className="mx-auto max-w-5xl px-6 pb-32">
-      <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 p-12 text-center lg:p-20">
+    <section className="mx-auto max-w-5xl px-6 pb-20 sm:pb-32">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 p-8 text-center sm:rounded-[2.5rem] sm:p-12 lg:p-20">
         <div aria-hidden className="absolute inset-0 bg-blue-600/10 backdrop-blur-md" />
         <div aria-hidden className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-500/30 blur-[100px]" />
         <div aria-hidden className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-[100px]" />
 
         <div className="relative z-10">
           <h2
-            className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
+            className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-5xl xl:text-6xl"
             style={heading}
           >
             Start learning from any video today
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-slate-300">
+          <p className="mx-auto mt-4 max-w-xl text-base text-slate-300 sm:text-lg sm:mt-5">
             Paste a YouTube link and start understanding every sentence in seconds.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
