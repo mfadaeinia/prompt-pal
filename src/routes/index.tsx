@@ -1140,7 +1140,7 @@ function Index() {
   // Explanation cache: sentenceId -> parsed explanation (or loading/error).
   type ExplanationEntry =
     | { status: "loading" }
-    | { status: "ready"; translation: string; meaning: string; note: string }
+    | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
     | { status: "error"; error: string };
   const [explanationCache, setExplanationCache] = useState<
     Record<number, ExplanationEntry>
