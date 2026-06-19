@@ -35,6 +35,7 @@ export const recordTesterEvent = createServerFn({ method: "POST" })
 
 export type TesterRow = {
   tester_id: string;
+  email: string | null;
   first_seen_at: string;
   last_seen_at: string;
   total_sessions: number;
@@ -83,6 +84,86 @@ export const getTesterCohort = createServerFn({ method: "GET" }).handler(
       byTester.set(r.tester_id, list);
     }
 
+    // Build session_id -> tester_id index for email lookup
+    const sessionToTester = new Map<string, string>();
+    for (const [testerId, events] of byTester) {
+      for (const e of events) {
+        if (e.session_id && !sessionToTester.has(e.session_id)) {
+          sessionToTester.set(e.session_id, testerId);
+        }
+      }
+    }
+    const allSessionIds = Array.from(sessionToTester.keys());
+
+    // Lookup user_ids from saved tables by session_id, then resolve emails via auth admin
+    const testerToEmail = new Map<string, string>();
+    if (allSessionIds.length > 0) {
+      const [se, sv, ufb] = await Promise.all([
+        supabaseAdmin
+          .from("saved_expressions" as any)
+          .select("session_id,user_id")
+          .in("session_id", allSessionIds)
+          .not("user_id", "is", null),
+        supabaseAdmin
+          .from("saved_videos" as any)
+          .select("session_id,user_id")
+          .in("session_id", allSessionIds)
+          .not("user_id", "is", null),
+        supabaseAdmin
+          .from("user_feedback" as any)
+          .select("session_id,email")
+          .in("session_id", allSessionIds)
+          .not("email", "is", null),
+      ]);
+
+      const userIdToTester = new Map<string, string>();
+      const collectUserIds = (
+        rows: Array<{ session_id: string | null; user_id: string | null }> | null,
+      ) => {
+        for (const r of rows ?? []) {
+          if (!r.session_id || !r.user_id) continue;
+          const tid = sessionToTester.get(r.session_id);
+          if (tid && !userIdToTester.has(r.user_id)) userIdToTester.set(r.user_id, tid);
+        }
+      };
+      collectUserIds(((se.data ?? []) as unknown) as any);
+      collectUserIds(((sv.data ?? []) as unknown) as any);
+
+      // Fallback: feedback emails directly tied to session
+      for (const r of (((ufb.data ?? []) as unknown) as Array<{
+        session_id: string | null;
+        email: string | null;
+      }>)) {
+        if (!r.session_id || !r.email) continue;
+        const tid = sessionToTester.get(r.session_id);
+        if (tid && !testerToEmail.has(tid)) testerToEmail.set(tid, r.email);
+      }
+
+      // Resolve auth emails by paging through auth.admin.listUsers
+      if (userIdToTester.size > 0) {
+        const needed = new Set(userIdToTester.keys());
+        let page = 1;
+        const perPage = 1000;
+        // Cap pagination for safety
+        for (let i = 0; i < 20 && needed.size > 0; i++) {
+          const { data: list, error: lerr } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage,
+          });
+          if (lerr || !list?.users?.length) break;
+          for (const u of list.users) {
+            if (needed.has(u.id)) {
+              const tid = userIdToTester.get(u.id)!;
+              if (u.email) testerToEmail.set(tid, u.email);
+              needed.delete(u.id);
+            }
+          }
+          if (list.users.length < perPage) break;
+          page++;
+        }
+      }
+    }
+
     const testers: TesterRow[] = [];
     for (const [testerId, events] of byTester) {
       const firstSeen = events[0]!.created_at;
@@ -111,6 +192,7 @@ export const getTesterCohort = createServerFn({ method: "GET" }).handler(
       const activated = videosLoaded >= 1 && sentenceClicks >= 3;
       testers.push({
         tester_id: testerId,
+        email: testerToEmail.get(testerId) ?? null,
         first_seen_at: firstSeen,
         last_seen_at: lastSeen,
         total_sessions: sessions.size,

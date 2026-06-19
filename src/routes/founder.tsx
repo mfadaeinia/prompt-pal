@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
 import {
@@ -653,10 +653,66 @@ function TranscriptCacheTools() {
   );
 }
 
+type SortKey =
+  | "tester_id"
+  | "email"
+  | "first_seen_at"
+  | "last_seen_at"
+  | "total_sessions"
+  | "videos_loaded"
+  | "sentence_clicks"
+  | "expressions_saved"
+  | "feedback_submitted_count"
+  | "activated"
+  | "returned_7d";
+
 function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("first_seen_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const base = q
+      ? m.testers.filter(
+          (t) =>
+            (t.email ?? "").toLowerCase().includes(q) ||
+            t.tester_id.toLowerCase().includes(q),
+        )
+      : m.testers.slice();
+    const dir = sortDir === "asc" ? 1 : -1;
+    base.sort((a, b) => {
+      const av = (a as any)[sortKey];
+      const bv = (b as any)[sortKey];
+      // Nulls last
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      if (typeof av === "boolean" && typeof bv === "boolean")
+        return (Number(av) - Number(bv)) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return base;
+  }, [m.testers, search, sortKey, sortDir]);
+
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(k);
+      setSortDir("asc");
+    }
+  }
+
+  function sortIndicator(k: SortKey) {
+    if (sortKey !== k) return "";
+    return sortDir === "asc" ? " ▲" : " ▼";
+  }
+
   function downloadCsv() {
     const headers = [
       "tester_id",
+      "email",
       "first_seen_at",
       "last_seen_at",
       "total_sessions",
@@ -667,15 +723,16 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
       "activated",
       "returned_7d",
     ];
-    const escape = (v: string | number | boolean) => {
-      const s = String(v);
+    const escape = (v: string | number | boolean | null) => {
+      const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const lines = [
       headers.join(","),
-      ...m.testers.map((t) =>
+      ...filtered.map((t: TesterRow) =>
         [
           t.tester_id,
+          t.email,
           t.first_seen_at,
           t.last_seen_at,
           t.total_sessions,
@@ -701,19 +758,39 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
     URL.revokeObjectURL(url);
   }
 
+  const headerBtn = (label: string, k: SortKey) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(k)}
+      className="font-medium text-slate-500 hover:text-slate-900"
+    >
+      {label}
+      {sortIndicator(k)}
+    </button>
+  );
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           User Test Cohort
         </h2>
-        <button
-          onClick={downloadCsv}
-          disabled={m.testers.length === 0}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-        >
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search email or tester…"
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+          />
+          <button
+            onClick={downloadCsv}
+            disabled={filtered.length === 0}
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Testers invited" value={m.invited} />
@@ -730,22 +807,35 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
         <table className="min-w-full text-xs">
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
-              <th className="px-2 py-2">Tester</th>
-              <th className="px-2 py-2">First seen</th>
-              <th className="px-2 py-2">Last seen</th>
-              <th className="px-2 py-2">Sessions</th>
-              <th className="px-2 py-2">Videos</th>
-              <th className="px-2 py-2">Clicks</th>
-              <th className="px-2 py-2">Saved</th>
-              <th className="px-2 py-2">Feedback</th>
-              <th className="px-2 py-2">Activated</th>
-              <th className="px-2 py-2">Returned&nbsp;7d</th>
+              <th className="px-2 py-2">{headerBtn("Tester", "tester_id")}</th>
+              <th className="px-2 py-2">{headerBtn("Email", "email")}</th>
+              <th className="px-2 py-2">{headerBtn("First seen", "first_seen_at")}</th>
+              <th className="px-2 py-2">{headerBtn("Last seen", "last_seen_at")}</th>
+              <th className="px-2 py-2">{headerBtn("Sessions", "total_sessions")}</th>
+              <th className="px-2 py-2">{headerBtn("Videos", "videos_loaded")}</th>
+              <th className="px-2 py-2">{headerBtn("Clicks", "sentence_clicks")}</th>
+              <th className="px-2 py-2">{headerBtn("Saved", "expressions_saved")}</th>
+              <th className="px-2 py-2">{headerBtn("Feedback", "feedback_submitted_count")}</th>
+              <th className="px-2 py-2">{headerBtn("Activated", "activated")}</th>
+              <th className="px-2 py-2">{headerBtn("Returned 7d", "returned_7d")}</th>
             </tr>
           </thead>
           <tbody>
-            {m.testers.map((t: TesterRow) => (
+            {filtered.map((t: TesterRow) => (
               <tr key={t.tester_id} className="border-t border-slate-100">
                 <td className="px-2 py-1 font-mono">{t.tester_id}</td>
+                <td className="px-2 py-1">
+                  {t.email ? (
+                    <a
+                      href={`mailto:${t.email}`}
+                      className="text-slate-700 hover:underline"
+                    >
+                      {t.email}
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">No email</span>
+                  )}
+                </td>
                 <td className="px-2 py-1 text-slate-500">
                   {new Date(t.first_seen_at).toLocaleString()}
                 </td>
@@ -761,11 +851,17 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
                 <td className="px-2 py-1">{t.returned_7d ? "✓" : "—"}</td>
               </tr>
             ))}
-            {m.testers.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
-                <td className="px-2 py-3 text-slate-400" colSpan={10}>
-                  No tester activity yet. Share links like{" "}
-                  <code>/?ref=tester_001</code> to start tracking.
+                <td className="px-2 py-3 text-slate-400" colSpan={11}>
+                  {m.testers.length === 0 ? (
+                    <>
+                      No tester activity yet. Share links like{" "}
+                      <code>/?ref=tester_001</code> to start tracking.
+                    </>
+                  ) : (
+                    <>No testers match your search.</>
+                  )}
                 </td>
               </tr>
             )}
