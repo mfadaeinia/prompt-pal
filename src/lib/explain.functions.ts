@@ -50,7 +50,7 @@ Do not lecture. Be assistive, not teaching.`;
       if (isRateLimit) {
         return {
           explanation:
-            "Meaning: We're getting a lot of requests right now — please try again in a moment.\nTranslation: —\nNote: —",
+            "Translation: —\nMeaning: We're getting a lot of requests right now — please try again in a moment.\nVocabulary: —\nNote: —",
           error: "rate_limited" as const,
         };
       }
