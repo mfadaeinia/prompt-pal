@@ -2063,7 +2063,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:sticky lg:top-[68px]">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -2075,9 +2075,11 @@ function Index() {
                     />
                   )}
                 </div>
+              </div>
 
-                {/* Transcript — visible in both modes; passive in Watch Mode. */}
-                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[55vh]">
+              {/* Transcript — visible in both modes; passive in Watch Mode. */}
+              <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
+                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
