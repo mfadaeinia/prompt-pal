@@ -1183,6 +1183,7 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             meaning: parsed.meaning,
+            vocabulary: parsed.vocabulary,
             note: parsed.note,
           },
         }));
