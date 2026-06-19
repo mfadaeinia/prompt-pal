@@ -100,8 +100,23 @@ function Index() {
   const explainFx = useServerFn(explainSentence);
   const saveExpressionFx = useServerFn(saveExpression);
   const listSavedFx = useServerFn(listSavedExpressions);
+  const saveVideoFx = useServerFn(saveVideo);
+  const listSavedVideosFx = useServerFn(listSavedVideos);
+  const claimAnonFx = useServerFn(claimAnonymousSaves);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
+  const { isAuthenticated } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const pendingActionRef = useRef<null | (() => void)>(null);
+
+  function requireAuth(action: () => void) {
+    if (isAuthenticated) {
+      action();
+    } else {
+      pendingActionRef.current = action;
+      setAuthOpen(true);
+    }
+  }
 
 
 
