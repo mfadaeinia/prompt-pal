@@ -2797,6 +2797,8 @@ function ExplanationPanel({
   justSaved,
   saving,
   limitedMode = false,
+  sourceLangLabel,
+  targetLangLabel,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -2807,6 +2809,8 @@ function ExplanationPanel({
   justSaved: boolean;
   saving: boolean;
   limitedMode?: boolean;
+  sourceLangLabel?: string;
+  targetLangLabel?: string;
 }) {
   if (!sentence) {
     return (
@@ -2853,27 +2857,45 @@ function ExplanationPanel({
   const isLoading = !entry || entry.status === "loading";
   const error = entry && entry.status === "error" ? entry.error : null;
   const saveDisabled = saving || isSaved || !ready;
+  const srcLabel = sourceLangLabel || "Original";
+  const tgtLabel = targetLangLabel || "English";
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-md ring-1 ring-primary/5">
-      <div className="px-6 pt-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-              Now playing
-            </p>
-            <p className="mt-2 text-lg font-semibold leading-snug text-foreground sm:text-xl">
-              {sentence.text}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {!limitedMode && (
+      {/* Sentence-first header. The original sentence is the largest, full-width element. Utility actions are demoted to a small row below. */}
+      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+            Original{srcLabel ? ` · ${srcLabel}` : ""}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="mt-2 text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl" lang={sourceLangLabel ? undefined : undefined}>
+          {sentence.text}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReplay}
+            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Repeat className="h-3.5 w-3.5" /> Replay
+          </Button>
+          {!limitedMode && (
             <Button
-              variant={isSaved || justSaved ? "secondary" : "outline"}
+              variant="ghost"
               size="sm"
               onClick={onSave}
               disabled={saveDisabled}
-              className="h-8 gap-1 px-2 text-xs"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
               title={
                 isSaved
                   ? "Already in My Library"
@@ -2883,38 +2905,14 @@ function ExplanationPanel({
               }
             >
               {justSaved ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Saved to Library
-                </>
+                <><Check className="h-3.5 w-3.5" /> Saved</>
               ) : isSaved ? (
-                <>
-                  <BookmarkCheck className="h-3.5 w-3.5" /> In Library
-                </>
+                <><BookmarkCheck className="h-3.5 w-3.5" /> In Library</>
               ) : (
-                <>
-                  <Bookmark className="h-3.5 w-3.5" /> Save to My Library
-                </>
+                <><Bookmark className="h-3.5 w-3.5" /> Save</>
               )}
             </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onReplay}
-              className="h-8 gap-1 px-2 text-xs"
-            >
-              <Repeat className="h-3.5 w-3.5" /> Replay
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 px-2 text-xs"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          )}
         </div>
       </div>
 
@@ -2925,7 +2923,7 @@ function ExplanationPanel({
       )}
 
 
-      <div className="mt-5 border-t border-border px-6 pb-6 pt-5">
+      <div className="mt-5 border-t border-border px-5 pb-6 pt-5 sm:px-6">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
@@ -2935,7 +2933,7 @@ function ExplanationPanel({
             {ready.translation && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Translation
+                  Translation · {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
@@ -2945,13 +2943,14 @@ function ExplanationPanel({
             {ready.meaning && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Meaning
+                  Meaning · {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.meaning}
                 </p>
               </div>
             )}
+
             {ready.vocabulary && ready.vocabulary !== "—" && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
