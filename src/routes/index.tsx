@@ -264,12 +264,23 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
-  // List of saved expressions for this browser — used to mark sentences as already-saved.
+  // List of saved expressions for this user — used to mark sentences as already-saved.
   const savedQuery = useQuery({
-    queryKey: ["saved-expressions", browserId],
-    queryFn: () => listSavedFx({ data: { sessionId: browserId } }),
-    enabled: !!browserId,
+    queryKey: ["saved-expressions", isAuthenticated],
+    queryFn: () => listSavedFx(),
+    enabled: isAuthenticated,
   });
+  const savedVideosQuery = useQuery({
+    queryKey: ["saved-videos", isAuthenticated],
+    queryFn: () => listSavedVideosFx(),
+    enabled: isAuthenticated,
+  });
+  const isVideoSaved = useMemo(() => {
+    const ids = new Set<string>(
+      ((savedVideosQuery.data?.items ?? []) as any[]).map((v) => v.video_id),
+    );
+    return videoId ? ids.has(videoId) : false;
+  }, [savedVideosQuery.data, videoId]);
   const savedSentenceKeys = useMemo(() => {
     const set = new Set<string>();
     for (const it of (savedQuery.data?.items ?? []) as any[]) {
@@ -291,6 +302,25 @@ function Index() {
       return () => clearTimeout(t);
     }
   }, [browserId, savedQuery.data]);
+
+  // On sign-in: claim any anonymous saves from this browser, then run any
+  // pending save action the user was about to perform, and refresh lists.
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN") return;
+      const sid = browserId || getBrowserId();
+      if (sid) {
+        void claimAnonFx({ data: { sessionId: sid } }).catch(() => {});
+      }
+      qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+      qc.invalidateQueries({ queryKey: ["saved-videos"] });
+      setAuthOpen(false);
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action) setTimeout(action, 50);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [browserId, claimAnonFx, qc]);
 
   function isSentenceSaved(s: TranscriptSentence | null) {
     if (!s) return false;
