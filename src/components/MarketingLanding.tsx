@@ -301,7 +301,7 @@ function SocialProof() {
           ].map(([n, l]) => (
             <div key={l} className="text-center">
               <div
-                className="bg-gradient-to-b from-white to-slate-400 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl lg:text-6xl"
+                className="bg-gradient-to-b from-white to-slate-400 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl lg:text-5xl"
                 style={heading}
               >
                 {n}
@@ -373,7 +373,7 @@ function HowItWorks() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-32">
       <div className="mx-auto mb-14 max-w-2xl text-center sm:mb-20">
-        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl" style={heading}>
           From paste to fluency in three steps
         </h2>
         <p className="mt-3 text-base text-slate-400 sm:text-lg">
@@ -463,7 +463,7 @@ function ProductDemo() {
         <span className="mb-4 inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300" style={heading}>
           See it in action
         </span>
-        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl" style={heading}>
           See NativeFlow explain real language
         </h2>
         <p className="mt-3 text-base text-slate-400 sm:text-lg">
@@ -603,7 +603,7 @@ function Benefits() {
     <section className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-16">
         <div className="lg:sticky lg:top-24">
-          <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-5xl" style={heading}>
+          <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-4xl" style={heading}>
             Stop switching between tabs.
           </h2>
           <p className="mt-3 max-w-md text-base text-slate-400 sm:text-lg sm:mt-4">
@@ -662,7 +662,7 @@ function Testimonials() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-20 sm:py-32">
       <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
-        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-5xl" style={heading}>
+        <h2 className="text-2xl font-bold text-white sm:text-3xl lg:text-4xl" style={heading}>
           Learners. Languages. Lightbulbs.
         </h2>
       </div>
@@ -712,7 +712,7 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
 
         <div className="relative z-10">
           <h2
-            className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-5xl xl:text-6xl"
+            className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl xl:text-5xl"
             style={heading}
           >
             Start learning from any video today
