@@ -881,6 +881,60 @@ async function writeCache(params: {
     return { ok: false, validation };
   }
 
+  // Decide the authoritative `language` field.
+  //
+  //   - youtube / openai / manual:  trust the provider/caller as-is.
+  //   - fallback (Transcribr):      historically lies. Run text detection
+  //     over the first ~800 chars and either confirm, correct, or null it.
+  //
+  // `provider_response_language` ALWAYS stores the raw provider claim for
+  // diagnostics, so we never lose what Transcribr originally said.
+  let authoritativeLanguage: string | null = params.providerResponseLanguage;
+  let textDetected: ReturnType<typeof detectLanguage> | null = null;
+  if (params.provider === "fallback") {
+    const text = params.chunks.slice(0, 80).map((c) => c.text).join(" ");
+    textDetected = detectLanguage(text);
+    const specificRequest =
+      params.requestedLanguage && params.requestedLanguage !== "_any_"
+        ? params.requestedLanguage
+        : null;
+    const providerLang = params.providerResponseLanguage;
+    const detected = textDetected.language;
+    const confident = textDetected.confidence >= 0.4;
+
+    if (specificRequest) {
+      // Caller declared a language. Accept it as authoritative only if
+      // detection agrees (or confidence is too low to disagree).
+      if (!detected || !confident || sameBaseLanguage(detected, specificRequest)) {
+        authoritativeLanguage = specificRequest;
+      } else {
+        authoritativeLanguage = detected;
+        console.warn("[transcript] fallback text contradicts requested language", {
+          videoId: params.videoId,
+          requested: specificRequest,
+          providerSaid: providerLang,
+          textDetected: detected,
+          confidence: textDetected.confidence,
+        });
+      }
+    } else if (confident && detected) {
+      // No caller hint. Trust text detection over the provider's claim.
+      if (providerLang && !sameBaseLanguage(detected, providerLang)) {
+        console.warn("[transcript] fallback provider language disagrees with text", {
+          videoId: params.videoId,
+          providerSaid: providerLang,
+          textDetected: detected,
+          confidence: textDetected.confidence,
+        });
+      }
+      authoritativeLanguage = detected;
+    } else {
+      // Low confidence + no caller hint → don't poison future "_any_"
+      // reads with an unvalidated language tag.
+      authoritativeLanguage = null;
+    }
+  }
+
   const totalChars = params.chunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
   const cacheKey = makeCacheKey(params.videoId, params.requestedLanguage, params.provider);
   const now = new Date().toISOString();
@@ -888,7 +942,7 @@ async function writeCache(params: {
     video_id: params.videoId,
     video_url: params.videoUrl,
     transcript_json: params.chunks,
-    language: params.providerResponseLanguage,
+    language: authoritativeLanguage,
     source: params.provider,
     provider: params.provider,
     requested_language: params.requestedLanguage,
@@ -908,6 +962,16 @@ async function writeCache(params: {
   if (error) {
     console.warn("[transcript] cache write error", error.message);
     return { ok: false, validation: { ok: false, reason: `db_error:${error.message}` } };
+  }
+  if (textDetected) {
+    console.log("[transcript] fallback cache write", {
+      videoId: params.videoId,
+      requestedLanguage: params.requestedLanguage,
+      providerResponseLanguage: params.providerResponseLanguage,
+      textDetectedLanguage: textDetected.language,
+      textDetectedConfidence: textDetected.confidence,
+      authoritativeLanguage,
+    });
   }
   return { ok: true, validation, provenance: data ? rowToProvenance(data as unknown as CacheRow) : undefined };
 }
