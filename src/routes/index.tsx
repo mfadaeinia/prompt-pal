@@ -1744,7 +1744,7 @@ function Index() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`min-h-screen text-foreground ${view === "demo" ? "dark bg-[#020617]" : "bg-background"}`}>
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-2">
