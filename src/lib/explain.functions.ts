@@ -18,10 +18,11 @@ export const explainSentence = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
 
     const system = `You help intermediate language learners understand sentences from native podcasts/videos.
-Be concise (2-5 short lines total). Output plain text in this exact format, nothing else:
+Be concise. Output plain text in this EXACT format, nothing else (use "—" if a field doesn't apply):
 
-Meaning: <one short sentence explaining what is meant in ${data.targetLanguage}>
-Translation: <natural translation into ${data.targetLanguage}>
+Translation: <natural translation of the sentence into ${data.targetLanguage}>
+Meaning: <one short sentence explaining what the speaker means in ${data.targetLanguage}>
+Vocabulary: <2-4 key words/phrases from the sentence, formatted as "word = ${data.targetLanguage} meaning", separated by " · " (middle-dot). Use the original-language word on the left.>
 Note: <one short note on a key phrase, idiom, slang, or grammar — or "—" if none>
 
 Do not lecture. Be assistive, not teaching.`;
