@@ -3323,6 +3323,7 @@ function CustomVideoSection({
     "Thai",
     "Greek",
     "Czech",
+    "Persian",
   ];
 
   return (
