@@ -468,48 +468,52 @@ function Index() {
   }, [studyMode, sentences]);
 
   async function saveSelectedExpression() {
-    if (!selectionPopover || !browserId) return;
-    const { text, sentence } = selectionPopover;
-    setSelSaving(true);
-    try {
-      await saveExpressionFx({
-        data: {
-          sessionId: browserId,
-          sentenceText: text,
-          translation: null,
-          meaning: null,
-          expressionNotes: `Selected from: "${sentence.text}"`,
-          videoTitle: videoTitle,
-          videoUrl: url || null,
-          videoId: videoId,
-          timestampSeconds: Math.max(0, Math.round(sentence.offset)),
-          targetLanguage: targetLang || null,
-        },
-      });
-      track("expression_saved", {
-        video_id: videoId,
-        source: "text_selection",
-        timestamp_seconds: Math.round(sentence.offset),
-        selected_length: text.length,
-      });
-      void logLibraryEventFx({
-        data: {
-          eventName: "expression_saved",
-          sessionId: browserId,
-          videoId: videoId ?? null,
-          metadata: { source: "text_selection", selected_length: text.length },
-        },
-      }).catch(() => {});
-      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
-      setSelJustSaved(true);
-      window.setTimeout(() => setSelJustSaved(false), 1400);
-      window.setTimeout(() => setSelectionPopover(null), 600);
-      window.getSelection()?.removeAllRanges();
-    } catch {
-      // best-effort
-    } finally {
-      setSelSaving(false);
-    }
+    if (!selectionPopover) return;
+    const popover = selectionPopover;
+    const doSave = async () => {
+      const { text, sentence } = popover;
+      setSelSaving(true);
+      try {
+        await saveExpressionFx({
+          data: {
+            sessionId: browserId,
+            sentenceText: text,
+            translation: null,
+            meaning: null,
+            expressionNotes: `Selected from: "${sentence.text}"`,
+            videoTitle: videoTitle,
+            videoUrl: url || null,
+            videoId: videoId,
+            timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+            targetLanguage: targetLang || null,
+          },
+        });
+        track("expression_saved", {
+          video_id: videoId,
+          source: "text_selection",
+          timestamp_seconds: Math.round(sentence.offset),
+          selected_length: text.length,
+        });
+        void logLibraryEventFx({
+          data: {
+            eventName: "expression_saved",
+            sessionId: browserId,
+            videoId: videoId ?? null,
+            metadata: { source: "text_selection", selected_length: text.length },
+          },
+        }).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        setSelJustSaved(true);
+        window.setTimeout(() => setSelJustSaved(false), 1400);
+        window.setTimeout(() => setSelectionPopover(null), 600);
+        window.getSelection()?.removeAllRanges();
+      } catch {
+        // best-effort
+      } finally {
+        setSelSaving(false);
+      }
+    };
+    requireAuth(() => void doSave());
   }
 
 
