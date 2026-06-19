@@ -277,7 +277,7 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </a>
                     <div className="flex items-start justify-between gap-2 p-3">
                       <div className="min-w-0">
                         <p className="line-clamp-2 text-sm font-medium text-foreground">
