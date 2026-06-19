@@ -2934,6 +2934,34 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
+            {ready.vocabulary && ready.vocabulary !== "—" && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Vocabulary
+                </h4>
+                <ul className="mt-1.5 space-y-1.5">
+                  {ready.vocabulary
+                    .split(/\s*(?:·|•|;|\|)\s*/)
+                    .map((v) => v.trim())
+                    .filter(Boolean)
+                    .map((item, i) => {
+                      const [head, ...rest] = item.split(/\s*=\s*/);
+                      const tail = rest.join(" = ");
+                      return (
+                        <li key={i} className="flex items-baseline gap-2 text-sm">
+                          <span className="font-semibold text-foreground">{head}</span>
+                          {tail && (
+                            <>
+                              <span className="text-muted-foreground">—</span>
+                              <span className="text-foreground/85">{tail}</span>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+            )}
             {ready.note && ready.note !== "—" && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -2944,7 +2972,7 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.note && (
+            {!ready.translation && !ready.meaning && !ready.vocabulary && !ready.note && (
               <FallbackHint />
             )}
           </div>
