@@ -71,7 +71,7 @@ export function MarketingLanding({
               <Sparkles className="h-3 w-3 text-primary" /> Paste a link to begin
             </span>
             <h2
-              className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-5xl"
+              className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl"
               style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
             >
               Try it on any video — free
