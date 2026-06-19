@@ -1790,6 +1790,24 @@ function Index() {
                 </div>
               )}
             </div>
+            {videoId && view !== "landing" && (
+              <Button
+                size="sm"
+                variant={isVideoSaved ? "outline" : "default"}
+                onClick={handleSaveVideo}
+                disabled={saveVideoMutation.isPending || isVideoSaved}
+                className="h-9 rounded-full px-3 text-xs"
+                title={isVideoSaved ? "Saved to your library" : "Save this video"}
+              >
+                {isVideoSaved ? (
+                  <><BookmarkCheck className="mr-1.5 h-3.5 w-3.5" /> Saved</>
+                ) : saveVideoMutation.isPending ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving…</>
+                ) : (
+                  <><Bookmark className="mr-1.5 h-3.5 w-3.5" /> Save video</>
+                )}
+              </Button>
+            )}
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-3 text-xs sm:px-4">
                 <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
