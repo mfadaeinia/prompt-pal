@@ -63,7 +63,7 @@ Do not lecture. Be assistive, not teaching.`;
       }
       return {
         explanation:
-          "Meaning: Couldn't load an explanation for this sentence. Try another one.\nTranslation: —\nNote: —",
+          "Translation: —\nMeaning: Couldn't load an explanation for this sentence. Try another one.\nVocabulary: —\nNote: —",
         error: "unavailable" as const,
       };
     }
