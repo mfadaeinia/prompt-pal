@@ -260,9 +260,8 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredVideos.map((v: any) => (
                   <li key={v.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                    <Link
-                      to="/"
-                      search={{ url: v.video_url } as any}
+                    <a
+                      href={`/?url=${encodeURIComponent(v.video_url)}`}
                       className="block"
                     >
                       <div className="relative aspect-video w-full overflow-hidden bg-muted">
