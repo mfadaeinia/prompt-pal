@@ -2217,6 +2217,7 @@ function Index() {
                         {sentences.map((s) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
+                          const inlineEntry = active ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
                               <button
@@ -2224,7 +2225,7 @@ function Index() {
                                 onClick={() => jumpTo(s)}
                                 className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
                                   active
-                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground ring-1 ring-inset ring-primary/20"
                                     : playing
                                     ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
                                     : "border-l-transparent text-foreground/85"
@@ -2235,6 +2236,11 @@ function Index() {
                                 </span>
                                 {s.text}
                               </button>
+                              {active && studyMode && (
+                                <div className="lg:hidden border-b border-border/60 bg-primary/5 px-4 py-3 animate-fade-in">
+                                  <InlineExplanation entry={inlineEntry} limitedMode={limitedMode} />
+                                </div>
+                              )}
                             </li>
                           );
                         })}
