@@ -2801,19 +2801,31 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-nativeflow-pulse">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-6 shadow-md ring-1 ring-primary/10">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.10),transparent_70%)]"
         />
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-          <MousePointerClick className="h-7 w-7" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Explanation</p>
+            <p className="text-base font-semibold leading-tight text-foreground">Tap any sentence to understand it</p>
+          </div>
         </div>
-        <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-          ▶︎ Press play — the explanation follows the video.
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Every sentence in the transcript unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Or click any transcript sentence to jump to it. Translation, meaning, and expression notes appear right here.
+        <div className="mt-5 space-y-3">
+          <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
+          <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
+          <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
+          <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
+        </div>
+        <p className="mt-5 text-center text-xs font-medium text-primary">
+          ✨ Click a sentence on the left to see the real thing →
         </p>
       </div>
     );
