@@ -35,6 +35,7 @@ export const recordTesterEvent = createServerFn({ method: "POST" })
 
 export type TesterRow = {
   tester_id: string;
+  email: string | null;
   first_seen_at: string;
   last_seen_at: string;
   total_sessions: number;
