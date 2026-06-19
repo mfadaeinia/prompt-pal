@@ -1984,7 +1984,7 @@ function Index() {
               }`}
             >
 
-              <div className="space-y-4 min-w-0">
+              <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
                   <div
                     className={`rounded-md border px-3 py-2 text-[11px] font-mono leading-snug ${
@@ -2077,9 +2077,10 @@ function Index() {
                 </div>
               </div>
 
-              {/* Transcript — visible in both modes; passive in Watch Mode. */}
-              <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
-                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
+              {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
+              <div className="min-w-0 order-3 lg:order-2 lg:sticky lg:top-[68px] lg:self-start">
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
+
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
@@ -2236,11 +2237,13 @@ function Index() {
                                 </span>
                                 {s.text}
                               </button>
-                              {active && studyMode && (
-                                <div className="lg:hidden border-b border-border/60 bg-primary/5 px-4 py-3 animate-fade-in">
+                              {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
+                              {false && active && studyMode && inlineEntry && (
+                                <div className="hidden">
                                   <InlineExplanation entry={inlineEntry} limitedMode={limitedMode} />
                                 </div>
                               )}
+
                             </li>
                           );
                         })}
@@ -2259,9 +2262,9 @@ function Index() {
                   </aside>
               </div>
 
-              {/* Explanation panel — right column on desktop; mobile uses inline expansion under each sentence */}
+              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column (order-3). */}
               {studyMode && (
-                <div className="hidden lg:block min-w-0 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+                <div className="min-w-0 order-2 lg:order-3 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
@@ -2277,6 +2280,7 @@ function Index() {
                   />
                 </div>
               )}
+
             </div>
             )}
 
