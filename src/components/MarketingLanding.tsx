@@ -109,7 +109,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </span>
 
           <h1
-            className="text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl lg:text-7xl"
+            className="text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl lg:text-6xl"
             style={heading}
           >
             Turn Any YouTube Video Into a{" "}
