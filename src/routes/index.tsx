@@ -1984,7 +1984,7 @@ function Index() {
               }`}
             >
 
-              <div className="space-y-4 min-w-0">
+              <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
                   <div
                     className={`rounded-md border px-3 py-2 text-[11px] font-mono leading-snug ${
@@ -2077,9 +2077,10 @@ function Index() {
                 </div>
               </div>
 
-              {/* Transcript — visible in both modes; passive in Watch Mode. */}
-              <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
-                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
+              {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
+              <div className="min-w-0 order-3 lg:order-2 lg:sticky lg:top-[68px] lg:self-start">
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
+
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
@@ -2131,21 +2132,22 @@ function Index() {
                     <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
                       <span>
                         Transcript
-                        {sentences.length > 0
-                          ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
-                          : transcriptStatus === "checking_cache"
-                            ? " · checking cache…"
-                            : transcriptStatus === "looking_for_captions"
-                              ? " · looking for captions…"
-                              : transcriptStatus === "generating_transcript"
-                                ? " · generating transcript…"
-                                : transcriptStatus === "building_sentences"
-                                  ? " · building sentences…"
-                                  : ""}
-
+                        <span className="hidden sm:inline">
+                          {sentences.length > 0
+                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                            : transcriptStatus === "checking_cache"
+                              ? " · checking cache…"
+                              : transcriptStatus === "looking_for_captions"
+                                ? " · looking for captions…"
+                                : transcriptStatus === "generating_transcript"
+                                  ? " · generating transcript…"
+                                  : transcriptStatus === "building_sentences"
+                                    ? " · building sentences…"
+                                    : ""}
+                        </span>
                       </span>
 
-                      <div className="flex items-center gap-2">
+                      <div className="hidden sm:flex items-center gap-2">
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
                             type="button"
@@ -2194,6 +2196,7 @@ function Index() {
                       </div>
                     </div>
 
+
                     {loadMutation.isSuccess && sentences.length === 0 ? (
                       <div className="flex-1 overflow-y-auto p-6 text-sm">
                         <div className="rounded-md border border-red-500/50 bg-red-500/10 p-4 text-red-700 dark:text-red-300">
@@ -2236,11 +2239,13 @@ function Index() {
                                 </span>
                                 {s.text}
                               </button>
-                              {active && studyMode && (
-                                <div className="lg:hidden border-b border-border/60 bg-primary/5 px-4 py-3 animate-fade-in">
+                              {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
+                              {false && active && studyMode && inlineEntry && (
+                                <div className="hidden">
                                   <InlineExplanation entry={inlineEntry} limitedMode={limitedMode} />
                                 </div>
                               )}
+
                             </li>
                           );
                         })}
@@ -2250,18 +2255,19 @@ function Index() {
                     {activeOutOfView && playingId !== null && (
                       <button
                         onClick={jumpToCurrentSentence}
-                        className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90"
+                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-md ring-1 ring-border backdrop-blur hover:bg-background"
                       >
-                        <ArrowDownToLine className="h-3.5 w-3.5" />
-                        Jump to current sentence
+                        <ArrowDownToLine className="h-3 w-3" />
+                        Current
                       </button>
                     )}
+
                   </aside>
               </div>
 
-              {/* Explanation panel — right column on desktop; mobile uses inline expansion under each sentence */}
+              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column (order-3). */}
               {studyMode && (
-                <div className="hidden lg:block min-w-0 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+                <div className="min-w-0 order-2 lg:order-3 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
@@ -2277,6 +2283,7 @@ function Index() {
                   />
                 </div>
               )}
+
             </div>
             )}
 
@@ -2801,34 +2808,43 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-6 shadow-md ring-1 ring-primary/10">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-4 shadow-md ring-1 ring-primary/10 sm:p-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.10),transparent_70%)]"
         />
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
             <Sparkles className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Explanation</p>
             <p className="text-base font-semibold leading-tight text-foreground">Tap any sentence to understand it</p>
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence in the transcript unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
+          Every sentence unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
         </p>
-        <div className="mt-5 space-y-3">
+        {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
+        <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
+          {["Translation", "Meaning", "Vocabulary", "Notes"].map((l) => (
+            <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
+              ✓ {l}
+            </span>
+          ))}
+        </div>
+        <div className="mt-5 hidden space-y-3 sm:block">
           <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
           <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
           <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
           <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
         </div>
-        <p className="mt-5 text-center text-xs font-medium text-primary">
-          ✨ Click a sentence on the left to see the real thing →
+        <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
+          👆 Tap a sentence below to see the real thing
         </p>
       </div>
     );
+
   }
 
   const ready = entry && entry.status === "ready" ? entry : null;
@@ -3891,9 +3907,9 @@ function TranscriptQualityBanner({
         </>
       ) : (
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs leading-relaxed">
-            This transcript has limited structure. Some sentences may be
-            imperfect.
+          <p className="inline-flex items-center gap-1.5 text-[11px] leading-relaxed opacity-90">
+            <span aria-hidden>ⓘ</span>
+            <span>Subtitle quality varies for this video.</span>
           </p>
           <button
             onClick={onContinue}
@@ -3903,6 +3919,7 @@ function TranscriptQualityBanner({
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
+
       )}
     </div>
   );
