@@ -1,0 +1,1 @@
+DELETE FROM public.youtube_transcript_cache WHERE video_id = 'ucsSnoeTPMc';

@@ -680,8 +680,17 @@ function Index() {
       setTranscriptStatus("checking_cache");
 
       // ── Fast path: cache + YouTube captions only ────────────────────────
+      // For the demo video we skip YouTube captions entirely — their
+      // auto-generated timestamps drift out of sync with the audio. ASR
+      // (Whisper) produces tight word-level timings, so we force that path
+      // and then cache the result for subsequent loads.
+      const isDemoUrl = vars.url === DEMO_VIDEO_URL;
       const fast: FetchTranscriptFastResult = await fetchTxFast({
-        data: { url: vars.url, spokenLanguage: spokenLang || undefined },
+        data: {
+          url: vars.url,
+          spokenLanguage: spokenLang || undefined,
+          skipYoutube: isDemoUrl || undefined,
+        },
       });
 
       if (fast.status === "ready") {
