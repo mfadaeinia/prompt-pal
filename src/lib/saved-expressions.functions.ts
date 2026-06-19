@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SaveInput = z.object({
   sessionId: z.string().min(1).max(128),
@@ -15,12 +16,14 @@ const SaveInput = z.object({
 });
 
 export const saveExpression = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SaveInput.parse(d))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
       .from("saved_expressions")
       .insert({
+        user_id: userId,
         session_id: data.sessionId,
         sentence_text: data.sentenceText,
         translation: data.translation ?? null,
@@ -38,38 +41,46 @@ export const saveExpression = createServerFn({ method: "POST" })
     return { item: row };
   });
 
-const ListInput = z.object({
-  sessionId: z.string().min(1).max(128),
-});
-
 export const listSavedExpressions = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ListInput.parse(d))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
       .from("saved_expressions")
       .select("*")
-      .eq("session_id", data.sessionId)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);
     return { items: rows ?? [] };
   });
 
-const DeleteInput = z.object({
-  sessionId: z.string().min(1).max(128),
-  id: z.string().uuid(),
-});
+const DeleteInput = z.object({ id: z.string().uuid() });
 
 export const deleteSavedExpression = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DeleteInput.parse(d))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
       .from("saved_expressions")
       .delete()
       .eq("id", data.id)
-      .eq("session_id", data.sessionId);
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+const ClaimInput = z.object({ sessionId: z.string().min(1).max(128) });
+
+export const claimAnonymousSaves = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ClaimInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: claimed, error } = await supabase.rpc("claim_anonymous_saves", {
+      _session_id: data.sessionId,
+    });
+    if (error) throw new Error(error.message);
+    return { claimed: claimed ?? 0 };
   });
