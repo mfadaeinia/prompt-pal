@@ -2750,7 +2750,7 @@ function CompactHowItWorks() {
 
 
 function parseExplanation(text: string | null) {
-  if (!text) return { translation: "", meaning: "", note: "" };
+  if (!text) return { translation: "", meaning: "", vocabulary: "", note: "" };
   const get = (label: string) => {
     const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
     const m = text.match(re);
@@ -2759,13 +2759,14 @@ function parseExplanation(text: string | null) {
   return {
     translation: get("Translation"),
     meaning: get("Meaning"),
+    vocabulary: get("Vocabulary") || get("Vocab"),
     note: get("Note") || get("Notes") || get("Expression Notes"),
   };
 }
 
 type ExplanationPanelEntry =
   | { status: "loading" }
-  | { status: "ready"; translation: string; meaning: string; note: string }
+  | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
   | { status: "error"; error: string };
 
 function ExplanationPanel({
