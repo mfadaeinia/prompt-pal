@@ -2280,6 +2280,8 @@ function Index() {
                     justSaved={!!selected && justSavedId === selected.id}
                     saving={saveExpressionMutation.isPending}
                     limitedMode={limitedMode}
+                    sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
+                    targetLangLabel={targetLang}
                   />
                 </div>
               )}
