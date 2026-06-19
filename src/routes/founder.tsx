@@ -729,7 +729,7 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
     };
     const lines = [
       headers.join(","),
-      ...filtered.map((t) =>
+      ...filtered.map((t: TesterRow) =>
         [
           t.tester_id,
           t.email,
