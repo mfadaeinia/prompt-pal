@@ -20,9 +20,14 @@ import { recordVideoSession } from "@/lib/video-sessions.functions";
 import {
   saveExpression,
   listSavedExpressions,
+  claimAnonymousSaves,
 } from "@/lib/saved-expressions.functions";
+import { saveVideo, listSavedVideos } from "@/lib/saved-videos.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
+import { useAuth } from "@/hooks/use-auth";
+import { AuthDialog } from "@/components/AuthDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,8 +100,23 @@ function Index() {
   const explainFx = useServerFn(explainSentence);
   const saveExpressionFx = useServerFn(saveExpression);
   const listSavedFx = useServerFn(listSavedExpressions);
+  const saveVideoFx = useServerFn(saveVideo);
+  const listSavedVideosFx = useServerFn(listSavedVideos);
+  const claimAnonFx = useServerFn(claimAnonymousSaves);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
+  const { isAuthenticated } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const pendingActionRef = useRef<null | (() => void)>(null);
+
+  function requireAuth(action: () => void) {
+    if (isAuthenticated) {
+      action();
+    } else {
+      pendingActionRef.current = action;
+      setAuthOpen(true);
+    }
+  }
 
 
 
@@ -244,12 +264,40 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
-  // List of saved expressions for this browser — used to mark sentences as already-saved.
+  // Auto-load a video when arriving from a saved-library link (e.g. /?url=...)
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const u = params.get("url");
+    if (u && /youtu/.test(u)) {
+      autoLoadedRef.current = true;
+      setUrl(u);
+      setView("demo");
+      submitLoad(u);
+      // clean the URL so refreshes don't reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // List of saved expressions for this user — used to mark sentences as already-saved.
   const savedQuery = useQuery({
-    queryKey: ["saved-expressions", browserId],
-    queryFn: () => listSavedFx({ data: { sessionId: browserId } }),
-    enabled: !!browserId,
+    queryKey: ["saved-expressions", isAuthenticated],
+    queryFn: () => listSavedFx(),
+    enabled: isAuthenticated,
   });
+  const savedVideosQuery = useQuery({
+    queryKey: ["saved-videos", isAuthenticated],
+    queryFn: () => listSavedVideosFx(),
+    enabled: isAuthenticated,
+  });
+  const isVideoSaved = useMemo(() => {
+    const ids = new Set<string>(
+      ((savedVideosQuery.data?.items ?? []) as any[]).map((v) => v.video_id),
+    );
+    return videoId ? ids.has(videoId) : false;
+  }, [savedVideosQuery.data, videoId]);
   const savedSentenceKeys = useMemo(() => {
     const set = new Set<string>();
     for (const it of (savedQuery.data?.items ?? []) as any[]) {
@@ -271,6 +319,25 @@ function Index() {
       return () => clearTimeout(t);
     }
   }, [browserId, savedQuery.data]);
+
+  // On sign-in: claim any anonymous saves from this browser, then run any
+  // pending save action the user was about to perform, and refresh lists.
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN") return;
+      const sid = browserId || getBrowserId();
+      if (sid) {
+        void claimAnonFx({ data: { sessionId: sid } }).catch(() => {});
+      }
+      qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+      qc.invalidateQueries({ queryKey: ["saved-videos"] });
+      setAuthOpen(false);
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      if (action) setTimeout(action, 50);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [browserId, claimAnonFx, qc]);
 
   function isSentenceSaved(s: TranscriptSentence | null) {
     if (!s) return false;
@@ -315,20 +382,46 @@ function Index() {
       }).catch(() => {});
       setJustSavedId(vars.sentence.id);
       window.setTimeout(() => setJustSavedId(null), 1800);
-      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
+      qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+    },
+  });
+
+  const saveVideoMutation = useMutation({
+    mutationFn: () => {
+      if (!videoId) throw new Error("No video loaded");
+      return saveVideoFx({
+        data: {
+          videoId,
+          videoUrl: url || `https://www.youtube.com/watch?v=${videoId}`,
+          videoTitle: videoTitle || null,
+          thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          targetLanguage: targetLang || null,
+          sessionId: browserId || null,
+        },
+      });
+    },
+    onSuccess: () => {
+      track("video_saved", { video_id: videoId });
+      qc.invalidateQueries({ queryKey: ["saved-videos"] });
     },
   });
 
   function handleSaveExpression(s: TranscriptSentence | null) {
-    if (!s || !browserId) return;
+    if (!s) return;
     const entry = explanationCache[s.id];
     const ready = entry && entry.status === "ready" ? entry : null;
-    saveExpressionMutation.mutate({
+    const payload = {
       sentence: s,
       translation: ready?.translation || null,
       meaning: ready?.meaning || null,
       note: ready?.note && ready.note !== "—" ? ready.note : null,
-    });
+    };
+    requireAuth(() => saveExpressionMutation.mutate(payload));
+  }
+
+  function handleSaveVideo() {
+    if (!videoId) return;
+    requireAuth(() => saveVideoMutation.mutate());
   }
 
   // ── Selection-based "Save expression" floating menu ──────────────────────
@@ -392,48 +485,52 @@ function Index() {
   }, [studyMode, sentences]);
 
   async function saveSelectedExpression() {
-    if (!selectionPopover || !browserId) return;
-    const { text, sentence } = selectionPopover;
-    setSelSaving(true);
-    try {
-      await saveExpressionFx({
-        data: {
-          sessionId: browserId,
-          sentenceText: text,
-          translation: null,
-          meaning: null,
-          expressionNotes: `Selected from: "${sentence.text}"`,
-          videoTitle: videoTitle,
-          videoUrl: url || null,
-          videoId: videoId,
-          timestampSeconds: Math.max(0, Math.round(sentence.offset)),
-          targetLanguage: targetLang || null,
-        },
-      });
-      track("expression_saved", {
-        video_id: videoId,
-        source: "text_selection",
-        timestamp_seconds: Math.round(sentence.offset),
-        selected_length: text.length,
-      });
-      void logLibraryEventFx({
-        data: {
-          eventName: "expression_saved",
-          sessionId: browserId,
-          videoId: videoId ?? null,
-          metadata: { source: "text_selection", selected_length: text.length },
-        },
-      }).catch(() => {});
-      qc.invalidateQueries({ queryKey: ["saved-expressions", browserId] });
-      setSelJustSaved(true);
-      window.setTimeout(() => setSelJustSaved(false), 1400);
-      window.setTimeout(() => setSelectionPopover(null), 600);
-      window.getSelection()?.removeAllRanges();
-    } catch {
-      // best-effort
-    } finally {
-      setSelSaving(false);
-    }
+    if (!selectionPopover) return;
+    const popover = selectionPopover;
+    const doSave = async () => {
+      const { text, sentence } = popover;
+      setSelSaving(true);
+      try {
+        await saveExpressionFx({
+          data: {
+            sessionId: browserId,
+            sentenceText: text,
+            translation: null,
+            meaning: null,
+            expressionNotes: `Selected from: "${sentence.text}"`,
+            videoTitle: videoTitle,
+            videoUrl: url || null,
+            videoId: videoId,
+            timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+            targetLanguage: targetLang || null,
+          },
+        });
+        track("expression_saved", {
+          video_id: videoId,
+          source: "text_selection",
+          timestamp_seconds: Math.round(sentence.offset),
+          selected_length: text.length,
+        });
+        void logLibraryEventFx({
+          data: {
+            eventName: "expression_saved",
+            sessionId: browserId,
+            videoId: videoId ?? null,
+            metadata: { source: "text_selection", selected_length: text.length },
+          },
+        }).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        setSelJustSaved(true);
+        window.setTimeout(() => setSelJustSaved(false), 1400);
+        window.setTimeout(() => setSelectionPopover(null), 600);
+        window.getSelection()?.removeAllRanges();
+      } catch {
+        // best-effort
+      } finally {
+        setSelSaving(false);
+      }
+    };
+    requireAuth(() => void doSave());
   }
 
 
@@ -1710,6 +1807,24 @@ function Index() {
                 </div>
               )}
             </div>
+            {videoId && view !== "landing" && (
+              <Button
+                size="sm"
+                variant={isVideoSaved ? "outline" : "default"}
+                onClick={handleSaveVideo}
+                disabled={saveVideoMutation.isPending || isVideoSaved}
+                className="h-9 rounded-full px-3 text-xs"
+                title={isVideoSaved ? "Saved to your library" : "Save this video"}
+              >
+                {isVideoSaved ? (
+                  <><BookmarkCheck className="mr-1.5 h-3.5 w-3.5" /> Saved</>
+                ) : saveVideoMutation.isPending ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving…</>
+                ) : (
+                  <><Bookmark className="mr-1.5 h-3.5 w-3.5" /> Save video</>
+                )}
+              </Button>
+            )}
             {view === "landing" && (
               <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-3 text-xs sm:px-4">
                 <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
@@ -2432,6 +2547,13 @@ function Index() {
           </button>
         </div>
       )}
+      <AuthDialog
+        open={authOpen}
+        onOpenChange={(v) => {
+          setAuthOpen(v);
+          if (!v) pendingActionRef.current = null;
+        }}
+      />
     </div>
   );
 }

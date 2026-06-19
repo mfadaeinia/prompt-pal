@@ -478,6 +478,7 @@ export type Database = {
           target_language: string | null
           timestamp_seconds: number
           translation: string | null
+          user_id: string | null
           video_id: string | null
           video_title: string | null
           video_url: string | null
@@ -492,6 +493,7 @@ export type Database = {
           target_language?: string | null
           timestamp_seconds?: number
           translation?: string | null
+          user_id?: string | null
           video_id?: string | null
           video_title?: string | null
           video_url?: string | null
@@ -506,9 +508,46 @@ export type Database = {
           target_language?: string | null
           timestamp_seconds?: number
           translation?: string | null
+          user_id?: string | null
           video_id?: string | null
           video_title?: string | null
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      saved_videos: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string | null
+          target_language: string | null
+          thumbnail_url: string | null
+          user_id: string
+          video_id: string
+          video_title: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          target_language?: string | null
+          thumbnail_url?: string | null
+          user_id: string
+          video_id: string
+          video_title?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          target_language?: string | null
+          thumbnail_url?: string | null
+          user_id?: string
+          video_id?: string
+          video_title?: string | null
+          video_url?: string
         }
         Relationships: []
       }
@@ -847,7 +886,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_anonymous_saves: { Args: { _session_id: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
