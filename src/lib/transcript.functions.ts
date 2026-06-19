@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
+import { detectLanguage, sameBaseLanguage } from "@/lib/lang-detect.server";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
