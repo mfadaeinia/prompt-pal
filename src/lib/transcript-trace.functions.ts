@@ -92,6 +92,17 @@ export type PipelineTrace = {
     cacheKey: string | null;
     provider: string | null;
     language: string | null;
+    requestedLanguage: string | null;
+    providerResponseLanguage: string | null;
+    /** Was this row accepted only because the lookup was "_any_"? */
+    acceptedViaAnyShortcut: boolean;
+    /** Language detected from transcript text (first ~800 chars). */
+    textDetectedLanguage: string | null;
+    textDetectionConfidence: number | null;
+    /** True when stored language disagrees with text-detected language. */
+    languageMismatchDetected: boolean;
+    /** Language we will hand to the explanation pipeline. */
+    finalLanguageUsed: string | null;
     validationStatus: string | null;
     transcriptLengthChars: number | null;
     updatedAt: string | null;
