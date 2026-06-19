@@ -1140,7 +1140,7 @@ function Index() {
   // Explanation cache: sentenceId -> parsed explanation (or loading/error).
   type ExplanationEntry =
     | { status: "loading" }
-    | { status: "ready"; translation: string; meaning: string; note: string }
+    | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
     | { status: "error"; error: string };
   const [explanationCache, setExplanationCache] = useState<
     Record<number, ExplanationEntry>
@@ -1183,6 +1183,7 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             meaning: parsed.meaning,
+            vocabulary: parsed.vocabulary,
             note: parsed.note,
           },
         }));
@@ -1978,7 +1979,7 @@ function Index() {
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
@@ -2062,7 +2063,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:sticky lg:top-[68px]">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -2074,9 +2075,11 @@ function Index() {
                     />
                   )}
                 </div>
+              </div>
 
-                {/* Transcript — visible in both modes; passive in Watch Mode. */}
-                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[55vh]">
+              {/* Transcript — visible in both modes; passive in Watch Mode. */}
+              <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
+                <aside className="relative flex max-h-[50vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
@@ -2214,6 +2217,7 @@ function Index() {
                         {sentences.map((s) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
+                          const inlineEntry = active ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
                               <button
@@ -2221,7 +2225,7 @@ function Index() {
                                 onClick={() => jumpTo(s)}
                                 className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
                                   active
-                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--color-primary)]/10"
+                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground ring-1 ring-inset ring-primary/20"
                                     : playing
                                     ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
                                     : "border-l-transparent text-foreground/85"
@@ -2232,6 +2236,11 @@ function Index() {
                                 </span>
                                 {s.text}
                               </button>
+                              {active && studyMode && (
+                                <div className="lg:hidden border-b border-border/60 bg-primary/5 px-4 py-3 animate-fade-in">
+                                  <InlineExplanation entry={inlineEntry} limitedMode={limitedMode} />
+                                </div>
+                              )}
                             </li>
                           );
                         })}
@@ -2250,9 +2259,9 @@ function Index() {
                   </aside>
               </div>
 
-              {/* Explanation panel — right column on desktop, stacks below transcript on mobile */}
+              {/* Explanation panel — right column on desktop; mobile uses inline expansion under each sentence */}
               {studyMode && (
-                <div className="min-w-0 lg:sticky lg:top-[68px] lg:self-start">
+                <div className="hidden lg:block min-w-0 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
@@ -2750,7 +2759,7 @@ function CompactHowItWorks() {
 
 
 function parseExplanation(text: string | null) {
-  if (!text) return { translation: "", meaning: "", note: "" };
+  if (!text) return { translation: "", meaning: "", vocabulary: "", note: "" };
   const get = (label: string) => {
     const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
     const m = text.match(re);
@@ -2759,13 +2768,14 @@ function parseExplanation(text: string | null) {
   return {
     translation: get("Translation"),
     meaning: get("Meaning"),
+    vocabulary: get("Vocabulary") || get("Vocab"),
     note: get("Note") || get("Notes") || get("Expression Notes"),
   };
 }
 
 type ExplanationPanelEntry =
   | { status: "loading" }
-  | { status: "ready"; translation: string; meaning: string; note: string }
+  | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
   | { status: "error"; error: string };
 
 function ExplanationPanel({
@@ -2791,19 +2801,31 @@ function ExplanationPanel({
 }) {
   if (!sentence) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-primary/40 bg-gradient-to-br from-primary/10 via-card to-card p-8 text-center shadow-md ring-1 ring-primary/10 animate-nativeflow-pulse">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-6 shadow-md ring-1 ring-primary/10">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.10),transparent_70%)]"
         />
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-          <MousePointerClick className="h-7 w-7" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Explanation</p>
+            <p className="text-base font-semibold leading-tight text-foreground">Tap any sentence to understand it</p>
+          </div>
         </div>
-        <p className="mt-5 text-lg font-semibold tracking-tight text-foreground">
-          ▶︎ Press play — the explanation follows the video.
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Every sentence in the transcript unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Or click any transcript sentence to jump to it. Translation, meaning, and expression notes appear right here.
+        <div className="mt-5 space-y-3">
+          <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
+          <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
+          <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
+          <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
+        </div>
+        <p className="mt-5 text-center text-xs font-medium text-primary">
+          ✨ Click a sentence on the left to see the real thing →
         </p>
       </div>
     );
@@ -2912,6 +2934,34 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
+            {ready.vocabulary && ready.vocabulary !== "—" && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Vocabulary
+                </h4>
+                <ul className="mt-1.5 space-y-1.5">
+                  {ready.vocabulary
+                    .split(/\s*(?:·|•|;|\|)\s*/)
+                    .map((v) => v.trim())
+                    .filter(Boolean)
+                    .map((item, i) => {
+                      const [head, ...rest] = item.split(/\s*=\s*/);
+                      const tail = rest.join(" = ");
+                      return (
+                        <li key={i} className="flex items-baseline gap-2 text-sm">
+                          <span className="font-semibold text-foreground">{head}</span>
+                          {tail && (
+                            <>
+                              <span className="text-muted-foreground">—</span>
+                              <span className="text-foreground/85">{tail}</span>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+            )}
             {ready.note && ready.note !== "—" && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -2922,7 +2972,7 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.note && (
+            {!ready.translation && !ready.meaning && !ready.vocabulary && !ready.note && (
               <FallbackHint />
             )}
           </div>
@@ -2957,6 +3007,97 @@ function FallbackHint() {
     </p>
   );
 }
+
+function PreviewSection({ label, sample, mono = false }: { label: string; sample: string; mono?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/60 px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-primary/80">{label}</p>
+      <p className={`mt-0.5 text-xs leading-relaxed text-muted-foreground/90 ${mono ? "font-mono" : ""}`}>
+        {sample}
+      </p>
+    </div>
+  );
+}
+
+function InlineExplanation({
+  entry,
+  limitedMode,
+}: {
+  entry: ExplanationPanelEntry | undefined;
+  limitedMode: boolean;
+}) {
+  if (limitedMode) {
+    return (
+      <p className="text-xs text-amber-800 dark:text-amber-200">
+        Sentence explanations are not available for this video.
+      </p>
+    );
+  }
+  if (!entry || entry.status === "loading") {
+    return (
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation, meaning &amp; vocabulary…
+      </p>
+    );
+  }
+  if (entry.status === "error") {
+    return <p className="text-xs text-destructive">{entry.error}</p>;
+  }
+  const { translation, meaning, vocabulary, note } = entry;
+  if (!translation && !meaning && !vocabulary && !note) {
+    return <FallbackHint />;
+  }
+  return (
+    <div className="space-y-3">
+      {translation && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Translation</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+        </div>
+      )}
+      {meaning && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{meaning}</p>
+        </div>
+      )}
+      {vocabulary && vocabulary !== "—" && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
+          <ul className="mt-0.5 space-y-0.5">
+            {vocabulary
+              .split(/\s*(?:·|•|;|\|)\s*/)
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .map((item, i) => {
+                const [head, ...rest] = item.split(/\s*=\s*/);
+                const tail = rest.join(" = ");
+                return (
+                  <li key={i} className="text-sm">
+                    <span className="font-semibold text-foreground">{head}</span>
+                    {tail && (
+                      <>
+                        <span className="text-muted-foreground"> — </span>
+                        <span className="text-foreground/85">{tail}</span>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      )}
+      {note && note !== "—" && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Expression Notes</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 
 function HowItWorksStrip() {
