@@ -724,12 +724,21 @@ function rowToProvenance(r: CacheRow): CacheProvenance {
 
 /**
  * Look up a cached transcript. Matches by (video_id, requested_language).
- *   - If requestedLanguage is "_any_", we accept any language and prefer the
- *     most recently updated row.
+ *
+ *   - If requestedLanguage is "_any_", we accept any language and prefer
+ *     the most recently updated row — but we *validate* the picked row's
+ *     language against the actual transcript text when it was written by
+ *     the fallback ASR provider (Transcribr), which has historically
+ *     mislabeled videos. A row whose stored language contradicts a
+ *     high-confidence text detection is treated as poisoned and skipped.
+ *
  *   - Otherwise we require requested_language === requestedLanguage OR
- *     provider_response_language === requestedLanguage.
- *   - We never silently return a row whose language disagrees with what was
- *     asked for.
+ *     provider_response_language === requestedLanguage OR the stored
+ *     language matches the request, AND, for fallback rows, that the
+ *     stored language doesn't contradict text detection.
+ *
+ *   - We never silently return a row whose language disagrees with what
+ *     was asked for.
  */
 async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -744,12 +753,47 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
   }
   const rows = (data ?? []) as unknown as CacheRow[];
   if (!rows.length) return null;
-  if (requestedLanguage === "_any_") return rows[0];
-  const match = rows.find(
-    (r) =>
+
+  const isPoisoned = (r: CacheRow): boolean => {
+    // Only re-validate rows whose provider's language claim is historically
+    // unreliable ("fallback" = Transcribr). YouTube captions and Whisper
+    // carry their own language tag we trust.
+    const provider = (r.provider ?? r.source ?? "").toLowerCase();
+    if (provider !== "fallback") return false;
+    const claimed = r.language ?? r.provider_response_language ?? null;
+    if (!claimed) return false;
+    const text = (r.transcript_json ?? [])
+      .slice(0, 80)
+      .map((c) => c?.text ?? "")
+      .join(" ");
+    if (text.length < 80) return false;
+    const detected = detectLanguage(text);
+    if (!detected.language || detected.confidence < 0.4) return false;
+    if (sameBaseLanguage(detected.language, claimed)) return false;
+    console.warn("[transcript] poisoned cache row detected — skipping", {
+      videoId,
+      cacheRowId: r.id,
+      provider,
+      claimedLanguage: claimed,
+      detectedLanguage: detected.language,
+      confidence: detected.confidence,
+      scores: detected.scores,
+    });
+    return true;
+  };
+
+  if (requestedLanguage === "_any_") {
+    const picked = rows.find((r) => !isPoisoned(r));
+    return picked ?? null;
+  }
+  const match = rows.find((r) => {
+    const langMatch =
       (r.requested_language && r.requested_language === requestedLanguage) ||
-      (r.provider_response_language && r.provider_response_language === requestedLanguage),
-  );
+      (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
+      (r.language && sameBaseLanguage(r.language, requestedLanguage));
+    if (!langMatch) return false;
+    return !isPoisoned(r);
+  });
   return match ?? null;
 }
 
