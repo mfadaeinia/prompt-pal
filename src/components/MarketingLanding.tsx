@@ -268,64 +268,112 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 function ProductMock() {
+  const transcript = [
+    { t: "0:38", text: "Ik begrijp het niet helemaal.", active: false },
+    { t: "0:42", text: "Dat slaat nergens op.", active: true },
+    { t: "0:45", text: "Kun je het nog eens uitleggen?", active: false },
+    { t: "0:48", text: "Ja, natuurlijk.", active: false },
+  ];
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_30px_80px_-25px_rgba(15,23,42,0.25)]">
-
-        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-          </div>
-          <div
-            className="mx-auto text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
-            style={heading}
-          >
-            nativeflow.life · Dutch
-          </div>
-        </div>
-
-        <div className="relative aspect-video bg-slate-900">
-          <img
-            src="https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=900&q=80"
-            alt="Amsterdam canal scene from a Dutch YouTube video"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-lg backdrop-blur">
-              <Play className="ml-0.5 h-6 w-6 fill-slate-900 text-slate-900" />
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
+      <div className="grid grid-cols-1 sm:grid-cols-[1.35fr_1fr]">
+        {/* LEFT: video + transcript */}
+        <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
+          {/* video */}
+          <div className="relative aspect-video bg-slate-900">
+            <img
+              src="https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=900&q=80"
+              alt="Dutch canal scene"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+            <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow">
+              <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-red-600">
+                <Play className="h-2 w-2 fill-white text-white" />
+              </span>
+              YouTube
             </div>
-          </div>
-          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
-            <Youtube className="h-3 w-3" /> YouTube
-          </div>
-          <div className="absolute bottom-3 left-3 right-3 h-1 rounded-full bg-white/30">
-            <div className="h-full w-1/3 rounded-full bg-blue-500" />
-          </div>
-        </div>
-
-        <div className="space-y-4 p-5">
-          <div className="rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2.5">
-            <div
-              className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700"
-              style={heading}
-            >
-              0:42 · Dutch
-            </div>
-            <p className="text-base font-semibold text-slate-900">Dat slaat nergens op.</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Translation">
-              <p className="text-sm text-slate-800">That makes no sense at all.</p>
-            </Field>
-            <Field label="Meaning">
-              <p className="text-sm text-slate-600">
-                Used when something feels illogical or absurd.
+            <div className="absolute inset-x-4 bottom-10 text-center">
+              <p
+                className="text-lg font-semibold text-white drop-shadow-lg sm:text-xl"
+                style={heading}
+              >
+                Dat slaat nergens op.
               </p>
-            </Field>
+            </div>
+            {/* player controls */}
+            <div className="absolute inset-x-0 bottom-0 px-3 pb-2">
+              <div className="mb-1.5 h-1 rounded-full bg-white/30">
+                <div className="h-full w-[35%] rounded-full bg-red-500" />
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-medium text-white/90">
+                <div className="flex items-center gap-2">
+                  <Play className="h-3 w-3 fill-white" />
+                  <span>🔊</span>
+                  <span>0:42 / 12:45</span>
+                </div>
+                <div className="flex items-center gap-2 opacity-80">
+                  <span>⚙</span>
+                  <span>⛶</span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* transcript */}
+          <ul className="divide-y divide-slate-100">
+            {transcript.map((s) => (
+              <li
+                key={s.t}
+                className={`flex items-start gap-3 px-4 py-2.5 text-sm ${
+                  s.active ? "bg-blue-50/70" : ""
+                }`}
+              >
+                <span
+                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
+                    s.active ? "text-blue-600" : "text-slate-400"
+                  }`}
+                  style={heading}
+                >
+                  {s.t}
+                </span>
+                <span
+                  className={`leading-snug ${
+                    s.active ? "font-semibold text-slate-900" : "text-slate-600"
+                  }`}
+                >
+                  {s.text}
+                </span>
+                {s.active && (
+                  <MousePointerClick className="ml-auto h-4 w-4 shrink-0 text-blue-500" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* RIGHT: translation / meaning / vocab panel */}
+        <div className="space-y-4 p-5">
+          <Field label="Dutch">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[15px] font-semibold text-slate-900">Dat slaat nergens op.</p>
+              <button className="text-slate-400 hover:text-slate-600">🔊</button>
+            </div>
+          </Field>
+
+          <Field label="Translation">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-slate-800">That makes no sense at all.</p>
+              <button className="text-slate-400 hover:text-slate-600">📋</button>
+            </div>
+          </Field>
+
+          <Field label="Meaning">
+            <p className="text-sm leading-relaxed text-slate-600">
+              Used when something feels illogical or absurd.
+            </p>
+          </Field>
 
           <Field label="Vocabulary">
             <div className="flex flex-wrap gap-1.5">
@@ -344,8 +392,15 @@ function ProductMock() {
               ))}
             </div>
           </Field>
+
+          <Field label="Expression note">
+            <p className="text-sm leading-relaxed text-slate-600">
+              Very common Dutch expression.
+            </p>
+          </Field>
         </div>
       </div>
+    </div>
   );
 }
 
