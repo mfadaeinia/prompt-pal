@@ -17,8 +17,8 @@ type Props = {
 export function AuthDialog({
   open,
   onOpenChange,
-  title = "Sign in to save",
-  description = "Save sentences and videos to your personal library. No password required.",
+  title = "Create your free account",
+  description = "Save your vocabulary, videos, and learning progress so you can return anytime.",
 }: Props) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -26,9 +26,14 @@ export function AuthDialog({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (open) track("auth_dialog_opened", {});
+  }, [open]);
+
   async function handleGoogle() {
     setError(null);
     setGoogleLoading(true);
+    track("google_login_started", {});
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.href,
