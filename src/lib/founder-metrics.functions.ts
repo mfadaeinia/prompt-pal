@@ -17,6 +17,12 @@ export type FounderMetrics = {
     positive: number;
     negative: number;
     wouldUseAgain: { definitely: number; maybe: number; probably_not: number };
+    recent: Array<{
+      created_at: string;
+      feedback_type: string;
+      feedback_text: string | null;
+      would_use_again: string | null;
+    }>;
   };
   waitlist: {
     total: number;
