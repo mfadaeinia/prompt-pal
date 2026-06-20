@@ -49,11 +49,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
     const feedback = ((fb.data ?? []) as unknown) as Array<{
+      created_at: string;
       feedback_type: string;
       would_use_again: string | null;
       total_sentence_clicks: number | null;
       demo_started: boolean | null;
       session_id: string | null;
+      feedback_text: string | null;
     }>;
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
 
