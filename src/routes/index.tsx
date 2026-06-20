@@ -1745,15 +1745,8 @@ function Index() {
 
 
   return (
-    <div className={`relative min-h-screen text-foreground ${view === "demo" ? "bg-[#020617]" : "bg-background"}`}>
-      {view === "demo" && (
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -left-[10%] -top-[20%] h-[70%] w-[70%] rounded-full bg-blue-600/10 blur-[120px]" />
-          <div className="absolute -right-[10%] top-[10%] h-[50%] w-[50%] rounded-full bg-violet-600/12 blur-[120px]" />
-          <div className="absolute bottom-0 left-[20%] h-[40%] w-[60%] rounded-full bg-emerald-500/[0.06] blur-[120px]" />
-        </div>
-      )}
-      <header className={`sticky top-0 z-30 border-b backdrop-blur-xl ${view === "demo" ? "border-slate-800/60 bg-[#020617]/80 text-slate-200" : "border-border/60 bg-background/80"}`}>
+    <div className="relative min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-2">
             {view === "demo" && (
@@ -1791,22 +1784,22 @@ function Index() {
             <div className="relative">
               {isAuthenticated ? (
                 <span
-                  className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-medium ${view === "demo" ? "text-emerald-400" : "text-emerald-600"}`}
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600"
                   title="You are signed in"
                 >
                   <span className="relative flex h-2 w-2">
-                    <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${view === "demo" ? "bg-emerald-400" : "bg-emerald-500"}`} />
-                    <span className={`relative inline-flex h-2 w-2 rounded-full ${view === "demo" ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
                   Signed In
                 </span>
               ) : (
                 <button
                   onClick={() => setAuthOpen(true)}
-                  className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${view === "demo" ? "text-slate-400 hover:text-slate-200" : "text-muted-foreground hover:text-foreground"}`}
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   title="Sign in to save your progress"
                 >
-                  <span className={`h-2 w-2 rounded-full ${view === "demo" ? "bg-slate-500" : "bg-slate-400/60"}`} />
+                  <span className="h-2 w-2 rounded-full bg-slate-400/60" />
                   Sign In
                 </button>
               )}
@@ -1910,7 +1903,7 @@ function Index() {
         />
       )}
 
-      <main className={`relative mx-auto max-w-6xl px-6 ${view === "demo" ? "dark" : ""}`}>
+      <main className="relative mx-auto max-w-6xl px-6">
         {view === "landing" && <EarlyAccessSection />}
 
 
