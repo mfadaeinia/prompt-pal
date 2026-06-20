@@ -58,17 +58,17 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NativeFlow — Learn languages from YouTube" },
+      { title: "NativeFlow — Understand any video, sentence by sentence" },
       {
         name: "description",
         content:
-          "Turn any YouTube video into an interactive language lesson. Get sentence-by-sentence explanations, translations, and expression notes while you watch.",
+          "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly.",
       },
-      { property: "og:title", content: "NativeFlow — Learn languages from YouTube" },
-      { property: "og:description", content: "Turn any YouTube video into an interactive language lesson." },
+      { property: "og:title", content: "NativeFlow — Understand any video, sentence by sentence" },
+      { property: "og:description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
       { property: "og:url", content: "https://native-lens.lovable.app/" },
-      { name: "twitter:title", content: "NativeFlow — Learn languages from YouTube" },
-      { name: "twitter:description", content: "Turn any YouTube video into an interactive language lesson." },
+      { name: "twitter:title", content: "NativeFlow — Understand any video, sentence by sentence" },
+      { name: "twitter:description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
     ],
     links: [
       { rel: "canonical", href: "https://native-lens.lovable.app/" },
@@ -84,7 +84,7 @@ export const Route = createFileRoute("/")({
           operatingSystem: "Web",
           url: "https://native-lens.lovable.app/",
           description:
-            "Turn any YouTube video into an interactive language lesson with sentence-level translations and explanations.",
+            "Understand real YouTube videos sentence by sentence. Click any line to get translations, explanations, vocabulary, and context — instantly.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },
