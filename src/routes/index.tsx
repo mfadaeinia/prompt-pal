@@ -3013,17 +3013,33 @@ function CompactHowItWorks() {
 
 
 function parseExplanation(text: string | null) {
-  if (!text) return { translation: "", meaning: "", vocabulary: "", note: "" };
-  const get = (label: string) => {
-    const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
-    const m = text.match(re);
-    return m ? m[1].trim() : "";
+  const empty = {
+    translation: "",
+    meaning: "",
+    keyExpression: "",
+    whyThisWay: "",
+    vocabulary: "",
+    note: "",
+    grammar: "",
   };
+  if (!text) return empty;
+  const get = (...labels: string[]) => {
+    for (const label of labels) {
+      const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
+      const m = text.match(re);
+      if (m) return m[1].trim();
+    }
+    return "";
+  };
+  const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
-    translation: get("Translation"),
-    meaning: get("Meaning"),
-    vocabulary: get("Vocabulary") || get("Vocab"),
-    note: get("Note") || get("Notes") || get("Expression Notes"),
+    translation: clean(get("Natural Translation", "Translation")),
+    meaning: clean(get("Whats Happening", "What's Happening", "Whats happening", "Meaning")),
+    keyExpression: clean(get("Key Expression", "Expression")),
+    whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
+    vocabulary: clean(get("Vocabulary", "Vocab")),
+    note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
+    grammar: clean(get("Grammar Insight", "Grammar")),
   };
 }
 
