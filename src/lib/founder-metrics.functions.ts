@@ -39,7 +39,8 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
       supabaseAdmin
         .from("user_feedback" as any)
-        .select("feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id"),
+        .select("created_at,feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id,feedback_text")
+        .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("early_access_signups" as any)
         .select("email,created_at")
