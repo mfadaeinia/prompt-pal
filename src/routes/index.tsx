@@ -1789,6 +1789,29 @@ function Index() {
               </Link>
             )}
             <div className="relative">
+              {isAuthenticated ? (
+                <span
+                  className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-medium ${view === "demo" ? "text-emerald-400" : "text-emerald-600"}`}
+                  title="You are signed in"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${view === "demo" ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                    <span className={`relative inline-flex h-2 w-2 rounded-full ${view === "demo" ? "bg-emerald-400" : "bg-emerald-500"}`} />
+                  </span>
+                  Signed In
+                </span>
+              ) : (
+                <button
+                  onClick={() => setAuthOpen(true)}
+                  className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${view === "demo" ? "text-slate-400 hover:text-slate-200" : "text-muted-foreground hover:text-foreground"}`}
+                  title="Sign in to save your progress"
+                >
+                  <span className={`h-2 w-2 rounded-full ${view === "demo" ? "bg-slate-500" : "bg-slate-400/60"}`} />
+                  Sign In
+                </button>
+              )}
+            </div>
+            <div className="relative">
               <Link
                 to="/saved"
                 className="relative inline-flex items-center gap-1.5 rounded-full border border-border bg-card p-2 text-xs font-medium text-foreground hover:bg-accent sm:px-3 sm:py-1.5"
