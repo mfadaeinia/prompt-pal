@@ -325,6 +325,7 @@ function Index() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN") return;
+      track("google_login_completed", {});
       const sid = browserId || getBrowserId();
       if (sid) {
         void claimAnonFx({ data: { sessionId: sid } }).catch(() => {});
