@@ -21,9 +21,11 @@ import { track } from "@/lib/analytics";
  */
 export function MarketingLanding({
   onStartDemo,
+  onSignUp,
   conversionSlot,
 }: {
   onStartDemo: () => void;
+  onSignUp: () => void;
   /** The existing PrimaryHero (URL input + form). Rendered in the "Try it" section. */
   conversionSlot: ReactNode;
 }) {
@@ -31,10 +33,9 @@ export function MarketingLanding({
     track("marketing_landing_seen", {});
   }, []);
 
-  const scrollToTry = () => {
-    track("marketing_cta_clicked", { target: "try" });
-    const el = document.getElementById("try");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handleSignUp = () => {
+    track("try_for_free_clicked", { source: "marketing_landing" });
+    onSignUp();
   };
   const handleDemo = () => {
     track("marketing_cta_clicked", { target: "demo" });
@@ -54,13 +55,13 @@ export function MarketingLanding({
       </div>
 
       <div className="relative z-10">
-        <Hero onPrimary={scrollToTry} onSecondary={handleDemo} />
+        <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
         <SocialProof />
         <HowItWorks />
         <ProductDemo />
         <Benefits />
         <Testimonials />
-        <FinalCta onPrimary={scrollToTry} onSecondary={handleDemo} />
+        <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
 
       {/* Conversion section — light, contains existing URL input form */}
@@ -74,10 +75,10 @@ export function MarketingLanding({
               className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl"
               style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
             >
-              Try it on any video — free
+              Paste a video to start your first lesson
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              Paste a YouTube link and start understanding every sentence in seconds. No account required.
+              Free account. Save words, track progress, and return anytime.
             </p>
           </div>
           {conversionSlot}
