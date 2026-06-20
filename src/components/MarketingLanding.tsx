@@ -21,9 +21,11 @@ import { track } from "@/lib/analytics";
  */
 export function MarketingLanding({
   onStartDemo,
+  onSignUp,
   conversionSlot,
 }: {
   onStartDemo: () => void;
+  onSignUp: () => void;
   /** The existing PrimaryHero (URL input + form). Rendered in the "Try it" section. */
   conversionSlot: ReactNode;
 }) {
@@ -31,10 +33,9 @@ export function MarketingLanding({
     track("marketing_landing_seen", {});
   }, []);
 
-  const scrollToTry = () => {
-    track("marketing_cta_clicked", { target: "try" });
-    const el = document.getElementById("try");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handleSignUp = () => {
+    track("try_for_free_clicked", { source: "marketing_landing" });
+    onSignUp();
   };
   const handleDemo = () => {
     track("marketing_cta_clicked", { target: "demo" });
@@ -54,13 +55,13 @@ export function MarketingLanding({
       </div>
 
       <div className="relative z-10">
-        <Hero onPrimary={scrollToTry} onSecondary={handleDemo} />
+        <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
         <SocialProof />
         <HowItWorks />
         <ProductDemo />
         <Benefits />
         <Testimonials />
-        <FinalCta onPrimary={scrollToTry} onSecondary={handleDemo} />
+        <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
 
       {/* Conversion section — light, contains existing URL input form */}
@@ -74,10 +75,10 @@ export function MarketingLanding({
               className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl"
               style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
             >
-              Try it on any video — free
+              Paste a video to start your first lesson
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              Paste a YouTube link and start understanding every sentence in seconds. No account required.
+              Free account. Save words, track progress, and return anytime.
             </p>
           </div>
           {conversionSlot}
@@ -144,7 +145,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
           <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400 sm:text-sm sm:gap-x-6 sm:mt-7">
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-400" /> No account required
+              <Check className="h-4 w-4 text-emerald-400" /> Free account — save your progress
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-400" /> Works with 50+ languages
