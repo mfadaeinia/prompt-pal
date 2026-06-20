@@ -3113,23 +3113,23 @@ function ExplanationPanel({
 
 
       {justSaved && (
-        <p className="mt-2 px-6 text-xs font-medium text-primary">
+        <p className="mt-2 text-xs font-medium text-primary">
           Saved to My Expressions ✓
         </p>
       )}
 
 
-      <div className="mt-5 border-t border-border px-5 pb-6 pt-5 sm:px-6">
+      <div className="mt-6 pt-6 border-t border-border/60">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {ready.translation && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Translation · {tgtLabel}
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
@@ -3138,8 +3138,8 @@ function ExplanationPanel({
             )}
             {ready.meaning && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Meaning · {tgtLabel}
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Meaning
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.meaning}
@@ -3149,10 +3149,10 @@ function ExplanationPanel({
 
             {ready.vocabulary && ready.vocabulary !== "—" && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
                 </h4>
-                <ul className="mt-1.5 space-y-1.5">
+                <ul className="mt-2 space-y-1.5">
                   {ready.vocabulary
                     .split(/\s*(?:·|•|;|\|)\s*/)
                     .map((v) => v.trim())
@@ -3162,11 +3162,11 @@ function ExplanationPanel({
                       const tail = rest.join(" = ");
                       return (
                         <li key={i} className="flex items-baseline gap-2 text-sm">
-                          <span className="font-semibold text-foreground">{head}</span>
+                          <span className="font-medium text-foreground">{head}</span>
                           {tail && (
                             <>
                               <span className="text-muted-foreground">—</span>
-                              <span className="text-foreground/85">{tail}</span>
+                              <span className="text-foreground/80">{tail}</span>
                             </>
                           )}
                         </li>
@@ -3177,8 +3177,8 @@ function ExplanationPanel({
             )}
             {ready.note && ready.note !== "—" && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Expression Notes
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Notes
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
@@ -3189,6 +3189,7 @@ function ExplanationPanel({
               <FallbackHint />
             )}
           </div>
+
         ) : error ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive">{error}</p>
