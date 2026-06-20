@@ -338,91 +338,63 @@ function HowItWorks() {
   );
 }
 
-/* ============================== PRODUCT DEMO ============================== */
+/* ============================== YOUTUBE FOCUS ============================== */
 
 function ProductDemo() {
+  const examples = [
+    { title: "Interviews & talk shows", duration: "12 min" },
+    { title: "News & documentaries", duration: "8 min" },
+    { title: "Podcasts & conversations", duration: "24 min" },
+    { title: "Lectures & educational", duration: "15 min" },
+  ];
+
   return (
     <section className="border-y border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
-            See exactly how it works
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
+            <Youtube className="h-3.5 w-3.5" />
+            YouTube-first
+          </span>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
+            Paste any YouTube link
           </h2>
           <p className="mt-3 text-base text-slate-600 sm:text-lg">
-            One click on a sentence gives you everything you need to understand it.
+            Podcasts, interviews, news, lectures — if it is on YouTube, it works.
           </p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-          {/* The sentence in context */}
-          <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500" style={heading}>
-                Transcript
-              </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                Dutch
+        <div className="mx-auto max-w-3xl">
+          {/* URL input mock */}
+          <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-sm sm:p-8">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <Youtube className="h-5 w-5 shrink-0 text-red-600" />
+              <span className="text-sm text-slate-400">youtube.com/watch?v=...</span>
+              <span className="ml-auto rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">
+                Understand
               </span>
             </div>
-            <div className="space-y-3 text-base leading-relaxed">
-              <TranscriptLine time="0:14" muted>
-                Wacht even, ik moet nog parkeren.
-              </TranscriptLine>
-              <TranscriptLine time="0:17" muted>
-                Rij eens door, man.
-              </TranscriptLine>
-              <TranscriptLine time="0:25" muted>
-                Kom op, we hebben haast.
-              </TranscriptLine>
-              <div className="rounded-xl border border-blue-200 bg-white px-4 py-3 shadow-sm">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-blue-700" style={heading}>
-                  0:42 · selected
+
+            {/* Supported types */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {examples.map((ex) => (
+                <div
+                  key={ex.title}
+                  className="rounded-xl border border-slate-200 bg-white p-4 text-center transition-all hover:border-slate-300 hover:shadow-sm"
+                >
+                  <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                    <Youtube className="h-4 w-4" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-900">{ex.title}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{ex.duration}</p>
                 </div>
-                <p className="text-base font-semibold text-slate-900 sm:text-lg">
-                  Dat slaat nergens op.
-                </p>
-              </div>
-              <TranscriptLine time="1:08" muted>
-                Ik heb er geen zin in.
-              </TranscriptLine>
+              ))}
             </div>
           </div>
 
-          {/* What you get */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="space-y-5">
-              <Field label="Translation">
-                <p className="text-lg font-medium text-slate-900">That makes no sense at all.</p>
-              </Field>
-              <div className="h-px bg-slate-100" />
-              <Field label="Meaning">
-                <p className="text-sm leading-relaxed text-slate-700">
-                  Used when something feels illogical or absurd.
-                </p>
-              </Field>
-              <div className="h-px bg-slate-100" />
-              <Field label="Vocabulary">
-                <div className="space-y-1.5 text-sm">
-                  {[
-                    ["slaat", "hits / strikes"],
-                    ["nergens", "nowhere"],
-                    ["op", "on / makes sense in context"],
-                  ].map(([w, m]) => (
-                    <div key={w} className="flex items-baseline gap-2">
-                      <span className="w-20 font-semibold text-slate-900">{w}</span>
-                      <span className="text-slate-500">{m}</span>
-                    </div>
-                  ))}
-                </div>
-              </Field>
-              <div className="h-px bg-slate-100" />
-              <Field label="Expression note">
-                <p className="text-sm leading-relaxed text-slate-600">
-                  Very common Dutch expression in everyday conversation.
-                </p>
-              </Field>
-            </div>
-          </div>
+          <p className="mt-6 text-center text-xs text-slate-500">
+            No downloads. No extensions. Just paste a link and click a sentence.
+          </p>
         </div>
       </div>
     </section>
