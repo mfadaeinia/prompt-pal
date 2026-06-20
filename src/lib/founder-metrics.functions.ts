@@ -66,6 +66,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       feedback_text: string | null;
     }>;
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
+    const savedRows = ((sx.data ?? []) as unknown) as Array<{ session_id: string | null }>;
 
     const durations = sessions.map((s) => s.duration_seconds ?? 0);
     const totalSessions = sessions.length;
