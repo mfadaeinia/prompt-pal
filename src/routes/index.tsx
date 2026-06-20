@@ -3291,7 +3291,7 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+            {!ready.translation && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
