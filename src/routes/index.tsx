@@ -2170,6 +2170,8 @@ function Index() {
               }`}
             >
 
+              <div className="contents lg:flex lg:flex-col lg:gap-6">
+
               <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
                   <div
