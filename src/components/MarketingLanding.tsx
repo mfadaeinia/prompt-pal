@@ -183,8 +183,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
       </div>
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
+      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
           <div className="max-w-xl">
             <span
               className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
@@ -255,7 +255,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
             <ProductMock />
           </div>
         </div>
