@@ -29,6 +29,13 @@ export type FounderMetrics = {
     mostRecentAt: string | null;
     mostRecentEmail: string | null;
   };
+  funnel: {
+    cohortLabel: string;
+    visitors: number;
+    startedLearning: number;
+    clickedSentence: number;
+    savedWord: number;
+  };
 };
 
 export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
