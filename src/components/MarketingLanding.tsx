@@ -274,9 +274,9 @@ function ProductMock() {
           </Field>
         </div>
       </div>
-    </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
