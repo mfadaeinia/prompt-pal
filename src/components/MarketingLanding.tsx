@@ -64,24 +64,28 @@ export function MarketingLanding({
         <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
 
-      {/* Conversion section — light, contains existing URL input form */}
-      <section id="try" className="relative bg-background text-foreground">
-        <div className="mx-auto max-w-6xl px-6 pt-16 pb-6 sm:pt-24">
+      {/* Conversion section — dark, matches the rest of the landing */}
+      <section id="try" className="relative bg-[#020617] text-slate-200">
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-[10%] top-[10%] h-[60%] w-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
+          <div className="absolute -right-[10%] bottom-[0%] h-[50%] w-[50%] rounded-full bg-emerald-500/[0.06] blur-[120px]" />
+        </div>
+        <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-6 sm:pt-24">
           <div className="mb-10 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground shadow-sm">
-              <Sparkles className="h-3 w-3 text-primary" /> Paste a link to begin
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-300">
+              <Sparkles className="h-3 w-3 text-blue-400" /> Paste a link to begin
             </span>
             <h2
-              className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl"
+              className="mt-4 text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl"
               style={{ fontFamily: "'Sora', system-ui, sans-serif" }}
             >
               Paste a video to start your first lesson
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm text-slate-400 sm:text-base">
               Free account. Save words, track progress, and return anytime.
             </p>
           </div>
-          {conversionSlot}
+          <div className="dark">{conversionSlot}</div>
         </div>
       </section>
     </div>
