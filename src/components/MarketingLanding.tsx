@@ -281,45 +281,12 @@ function ProductMock() {
         {/* LEFT: video + transcript */}
         <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
           {/* video */}
-          <div className="relative aspect-video bg-slate-900">
-            <img
-              src="https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=900&q=80"
-              alt="Dutch canal scene"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-            <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow">
-              <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-red-600">
-                <Play className="h-2 w-2 fill-white text-white" />
-              </span>
-              YouTube
-            </div>
-            <div className="absolute inset-x-4 bottom-10 text-center">
-              <p
-                className="text-lg font-semibold text-white drop-shadow-lg sm:text-xl"
-                style={heading}
-              >
-                Dat slaat nergens op.
-              </p>
-            </div>
-            {/* player controls */}
-            <div className="absolute inset-x-0 bottom-0 px-3 pb-2">
-              <div className="mb-1.5 h-1 rounded-full bg-white/30">
-                <div className="h-full w-[35%] rounded-full bg-red-500" />
-              </div>
-              <div className="flex items-center justify-between text-[10px] font-medium text-white/90">
-                <div className="flex items-center gap-2">
-                  <Play className="h-3 w-3 fill-white" />
-                  <span>🔊</span>
-                  <span>0:42 / 12:45</span>
-                </div>
-                <div className="flex items-center gap-2 opacity-80">
-                  <span>⚙</span>
-                  <span>⛶</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <img
+            src={youtubePlayer.url}
+            alt="YouTube video — Dat slaat nergens op."
+            className="block w-full"
+          />
+
 
           {/* transcript */}
           <ul className="divide-y divide-slate-100">
