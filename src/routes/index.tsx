@@ -2251,7 +2251,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:sticky lg:top-[68px]">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
