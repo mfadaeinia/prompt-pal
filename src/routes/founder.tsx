@@ -259,8 +259,6 @@ function OverviewSection({
 
 function FunnelSection({
   m,
-  lib,
-  tx,
   cohort,
 }: {
   m: FounderMetrics;
@@ -268,64 +266,99 @@ function FunnelSection({
   tx?: TranscriptQualityMetrics;
   cohort?: TesterCohortMetrics;
 }) {
-  const visitors = m.visitors || 0;
-  const startedLearning = m.video.totalSessions || 0;
-  const loadedVideo = tx?.totalVideos ?? 0;
-  const clickedSentence = m.transcriptClicks > 0 ? m.transcriptClicks : 0;
-  const savedWord = lib?.totalSaves ?? 0;
-  const returnedUser = cohort?.totals.returned7d ?? 0;
-
-  const stages = [
-    { label: "Visitors", value: visitors },
-    { label: "Started Learning", value: startedLearning },
-    { label: "Loaded Video", value: loadedVideo },
-    { label: "Clicked Sentence", value: clickedSentence },
-    { label: "Saved Word", value: savedWord },
-    { label: "Returned User", value: returnedUser },
+  const f = m.funnel;
+  const sessionStages = [
+    { label: "Visitors", value: f.visitors, kind: "session" as const },
+    { label: "Started Learning", value: f.startedLearning, kind: "session" as const },
+    { label: "Clicked Sentence", value: f.clickedSentence, kind: "session" as const },
+    { label: "Saved Word", value: f.savedWord, kind: "session" as const },
   ];
+  const returnedUsers = cohort?.totals.returned7d ?? 0;
 
-  const drops = stages.slice(1).map((s, i) => {
-    const prev = stages[i].value;
-    const dropPct = prev > 0 ? Math.round(((prev - s.value) / prev) * 100) : 0;
-    return { ...s, dropPct };
+  const drops = sessionStages.slice(1).map((s, i) => {
+    const prev = sessionStages[i].value;
+    const invalid = s.value > prev;
+    const continuePct = prev > 0 && !invalid ? Math.round((s.value / prev) * 100) : null;
+    const dropPct = continuePct === null ? null : 100 - continuePct;
+    return { ...s, continuePct, dropPct, invalid };
   });
-  const worstIdx = drops.reduce(
-    (worst, s, i) => (s.dropPct > drops[worst].dropPct ? i : worst),
-    0,
-  );
+  const validDrops = drops.filter((d) => d.dropPct !== null);
+  const worstIdx = validDrops.length
+    ? drops.indexOf(
+        validDrops.reduce((w, d) => ((d.dropPct ?? 0) > (w.dropPct ?? 0) ? d : w)),
+      )
+    : -1;
 
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
         Activation Funnel
       </h2>
+      <p className="text-xs text-slate-500">
+        User funnel only. Internal validation runs, benchmarks, and transcript probes are
+        excluded. Cohort:{" "}
+        <span className="font-medium text-slate-700">{f.cohortLabel}</span>.
+      </p>
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-2">
-          <FunnelRow label={stages[0].label} value={stages[0].value} pct={100} />
+          <FunnelRow
+            label={`${sessionStages[0].label} (unique sessions)`}
+            value={sessionStages[0].value}
+            pct={100}
+          />
           {drops.map((s, i) => {
-            const prev = stages[i].value;
-            const conv = prev > 0 ? Math.round((s.value / prev) * 100) : 0;
-            const isWorst = i === worstIdx && s.dropPct > 0;
+            const isWorst = i === worstIdx && (s.dropPct ?? 0) > 0;
             return (
               <div key={s.label}>
                 <div
                   className={
                     "ml-4 text-xs " +
-                    (isWorst ? "text-red-600 font-semibold" : "text-slate-400")
+                    (s.invalid
+                      ? "text-amber-600 font-semibold"
+                      : isWorst
+                        ? "text-red-600 font-semibold"
+                        : "text-slate-400")
                   }
                 >
-                  ↓ {conv}% continue ({s.dropPct}% drop-off)
-                  {isWorst && " ← biggest drop-off"}
+                  {s.invalid ? (
+                    <>↓ data error — step exceeds previous step</>
+                  ) : (
+                    <>
+                      ↓ {s.continuePct}% continue ({s.dropPct}% drop-off)
+                      {isWorst && " ← biggest drop-off"}
+                    </>
+                  )}
                 </div>
-                <FunnelRow label={s.label} value={s.value} pct={conv} highlight={isWorst} />
+                <FunnelRow
+                  label={`${s.label} (unique sessions)`}
+                  value={s.value}
+                  pct={s.continuePct ?? 0}
+                  highlight={isWorst}
+                />
               </div>
             );
           })}
         </div>
       </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+          Retention (separate cohort — unique users)
+        </div>
+        <FunnelRow
+          label="Returned User (unique users)"
+          value={returnedUsers}
+          pct={100}
+        />
+        <p className="mt-2 text-xs text-slate-500">
+          Users who returned 6–10 days after first seen. Tracked per-user, not per-session,
+          so it isn't comparable to the session funnel above.
+        </p>
+      </div>
     </div>
   );
 }
+
 
 function FunnelRow({
   label,
