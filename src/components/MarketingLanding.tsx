@@ -20,8 +20,10 @@ import {
   MousePointerClick,
 } from "lucide-react";
 import { track } from "@/lib/analytics";
+import heroCollage from "@/assets/hero-collage.png.asset.json";
 
 /**
+
  * Light, product-first landing — premium "understanding layer" for real content.
  * Inspired by Linear, Notion, Stripe, Readwise.
  */
@@ -88,112 +90,97 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 
 /* ============================== HERO ============================== */
 
-// Real-content collage imagery — news, podcasts, talks, interviews, canals.
-const COLLAGE = [
-  { src: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=600&q=70", alt: "News broadcast" },
-  { src: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=70", alt: "Podcast microphone" },
-  { src: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600&q=70", alt: "TED-style stage" },
-  { src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=70", alt: "Interview" },
-  { src: "https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=600&q=70", alt: "Amsterdam canal" },
-  { src: "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&q=70", alt: "YouTube creator" },
-  { src: "https://images.unsplash.com/photo-1551817958-d9d86fb29431?w=600&q=70", alt: "Documentary" },
-  { src: "https://images.unsplash.com/photo-1521133573892-e44906baee46?w=600&q=70", alt: "Educational presenter" },
-];
-
-function ContentCollage() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute -inset-8 grid grid-cols-4 gap-4 opacity-[0.14] blur-[6px] sm:opacity-[0.18] sm:blur-[5px]">
-        {COLLAGE.map((img) => (
-          <div
-            key={img.src}
-            className="overflow-hidden rounded-2xl bg-slate-200"
-            style={{ aspectRatio: "16/10" }}
-          >
-            <img src={img.src} alt="" loading="lazy" className="h-full w-full object-cover" />
-          </div>
-        ))}
-      </div>
-      {/* Soft top/bottom fade only — keep collage visible across the middle */}
-      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#F8FAFC] to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
-    </div>
-  );
-}
-
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
-    <section className="relative">
-      <ContentCollage />
-      <div className="relative mx-auto max-w-5xl px-6 pt-16 pb-20 text-center sm:pt-24 sm:pb-24">
-        <span
-          className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
-          style={heading}
-        >
-          <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-          For the content you already watch
-        </span>
+    <section className="relative overflow-hidden">
+      {/* Background collage — right-weighted, fades left for copy legibility */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <img
+          src={heroCollage.url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-right"
+        />
+        {/* Left-side soft white gradient — keeps text readable, content visible */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/85 to-transparent lg:from-[#F8FAFC] lg:via-[#F8FAFC]/70 lg:via-40% lg:to-transparent" />
+        {/* Subtle bottom fade into next section */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+      </div>
 
-        <h1
-          className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
-          style={heading}
-        >
-          Understand Any Video.
-          <br />
-          <span className="text-blue-600">Without Leaving It.</span>
-        </h1>
-
-        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
-          Click any sentence to get translations, explanations, vocabulary, and context — instantly.
-          No tabs. No dictionaries. No broken focus.
-        </p>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <button
-            onClick={onPrimary}
-            className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8">
+        {/* LEFT — copy */}
+        <div className="relative">
+          <span
+            className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
             style={heading}
           >
-            Try NativeFlow Free
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
-          <button
-            onClick={onSecondary}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+            <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+            For the content you already watch
+          </span>
+
+          <h1
+            className="max-w-xl text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
             style={heading}
           >
-            <Play className="h-4 w-4" />
-            Watch Demo
-          </button>
+            Understand Any Video.
+            <br />
+            <span className="text-blue-600">Without Leaving It.</span>
+          </h1>
+
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-700 sm:text-lg sm:mt-6">
+            Click any sentence to get translations, explanations, vocabulary, and context — instantly.
+            No tabs. No dictionaries. No broken focus.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              onClick={onPrimary}
+              className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+              style={heading}
+            >
+              Try NativeFlow Free
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+            <button
+              onClick={onSecondary}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+              style={heading}
+            >
+              <Play className="h-4 w-4" />
+              Watch Demo
+            </button>
+          </div>
+
+          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6">
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
+            </li>
+            <li className="inline-flex items-center gap-1.5">
+              <Check className="h-4 w-4 text-emerald-600" /> No credit card required
+            </li>
+          </ul>
+
+          <p
+            className="mt-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500"
+            style={heading}
+          >
+            YouTube · TED Talks · News · Podcasts · Interviews
+          </p>
         </div>
 
-        <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6">
-          <li className="inline-flex items-center gap-1.5">
-            <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
-          </li>
-          <li className="inline-flex items-center gap-1.5">
-            <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
-          </li>
-          <li className="inline-flex items-center gap-1.5">
-            <Check className="h-4 w-4 text-emerald-600" /> No credit card required
-          </li>
-        </ul>
-
-        {/* Product screenshot — supporting evidence, ~70% width, centered */}
-        <div className="relative mx-auto mt-14 w-full max-w-2xl">
-          <ProductMock />
+        {/* RIGHT — product screenshot overlapping the collage */}
+        <div className="relative lg:pl-4">
+          <div className="relative mx-auto w-full max-w-xl lg:ml-auto lg:mr-0">
+            <ProductMock />
+          </div>
         </div>
-
-        <p
-          className="mt-10 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500"
-          style={heading}
-        >
-          Built for real content · YouTube · TED · News · Podcasts · Interviews
-        </p>
       </div>
     </section>
   );
 }
+
 
 function ProductMock() {
   return (
