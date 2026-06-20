@@ -3306,7 +3306,7 @@ function ExplanationPanel({
           // Graceful fallback while the explanation is preloading — no spinner blocking the UI.
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Preparing translation, meaning, and notes for this sentence…
+              Preparing translation and notes for this sentence…
             </p>
             {isLoading && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -3357,7 +3357,7 @@ function InlineExplanation({
   if (!entry || entry.status === "loading") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation, meaning &amp; vocabulary…
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation &amp; vocabulary…
       </p>
     );
   }
@@ -3720,7 +3720,7 @@ function HeroWithPreview({
             </span>
           </h1>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Never leave the video to figure out what was just said. Get translation, meaning and expression notes in one tap.
+            Never leave the video to figure out what was just said. Get translation and expression notes in one tap.
           </p>
 
           <form
@@ -3838,7 +3838,6 @@ type PreviewMoment = {
   t: string;
   sentence: string;
   translation: string;
-  meaning: string;
   note: string;
 };
 
@@ -3968,10 +3967,6 @@ function ProductPreview() {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Translation</p>
               <p className="mt-0.5 text-sm text-foreground">{moment.translation}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Meaning</p>
-              <p className="mt-0.5 text-sm text-foreground">{moment.meaning}</p>
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Expression note</p>
@@ -4137,7 +4132,7 @@ function LoadingProgress() {
 function ValueCards() {
   const cards = [
     { emoji: "🎬", title: "Watch real content", desc: "Any YouTube video, in your target language." },
-    { emoji: "💡", title: "Understand difficult sentences instantly", desc: "Translations and meaning appear as you watch." },
+    { emoji: "💡", title: "Understand difficult sentences instantly", desc: "Translations appear as you watch." },
     { emoji: "🧠", title: "Learn expressions in context", desc: "Idioms, slang, and grammar explained where they appear." },
   ];
   return (
