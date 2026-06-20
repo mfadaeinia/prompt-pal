@@ -3364,8 +3364,8 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, meaning, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !meaning && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
+  if (!translation && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
     return <FallbackHint />;
   }
   return (
@@ -3374,12 +3374,6 @@ function InlineExplanation({
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
-        </div>
-      )}
-      {meaning && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{meaning}</p>
         </div>
       )}
       {keyExpression && (
