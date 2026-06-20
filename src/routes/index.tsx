@@ -374,7 +374,6 @@ function Index() {
     mutationFn: (vars: {
       sentence: TranscriptSentence;
       translation: string | null;
-      meaning: string | null;
       note: string | null;
     }) =>
       saveExpressionFx({
@@ -382,7 +381,6 @@ function Index() {
           sessionId: browserId,
           sentenceText: vars.sentence.text,
           translation: vars.translation,
-          meaning: vars.meaning,
           expressionNotes: vars.note,
           videoTitle: videoTitle,
           videoUrl: url || null,
