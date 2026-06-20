@@ -22,9 +22,8 @@ import {
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
 
-import { track } from "@/lib/analytics";
-
 /**
+
  * Light, product-first landing — premium "understanding layer" for real content.
  * Inspired by Linear, Notion, Stripe, Readwise.
  */
