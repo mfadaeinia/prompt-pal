@@ -2403,7 +2403,7 @@ function Index() {
                         </div>
                       </div>
                     ) : (
-                      <ol ref={listRef} className="flex-1 overflow-y-auto">
+                      <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
                         {sentences.map((s) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
@@ -2413,15 +2413,15 @@ function Index() {
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
-                                className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                                className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
                                   active
-                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground ring-1 ring-inset ring-primary/20"
+                                    ? "bg-primary/10 font-medium text-foreground"
                                     : playing
-                                    ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                                    : "border-l-transparent text-foreground/85"
+                                    ? "bg-accent/50 text-foreground"
+                                    : "text-foreground/85"
                                 }`}
                               >
-                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
                                 {s.text}
