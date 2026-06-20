@@ -1745,8 +1745,15 @@ function Index() {
 
 
   return (
-    <div className={`min-h-screen text-foreground ${view === "demo" ? "dark bg-[#020617]" : "bg-background"}`}>
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <div className={`relative min-h-screen text-foreground ${view === "demo" ? "bg-[#020617]" : "bg-background"}`}>
+      {view === "demo" && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-[10%] -top-[20%] h-[70%] w-[70%] rounded-full bg-blue-600/10 blur-[120px]" />
+          <div className="absolute -right-[10%] top-[10%] h-[50%] w-[50%] rounded-full bg-violet-600/12 blur-[120px]" />
+          <div className="absolute bottom-0 left-[20%] h-[40%] w-[60%] rounded-full bg-emerald-500/[0.06] blur-[120px]" />
+        </div>
+      )}
+      <header className={`sticky top-0 z-30 border-b backdrop-blur-xl ${view === "demo" ? "border-slate-800/60 bg-[#020617]/80 text-slate-200" : "border-border/60 bg-background/80"}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-2">
             {view === "demo" && (
