@@ -2031,13 +2031,12 @@ function Index() {
                 </div>
               )}
 
-            {/* Prominent Watch / Learning mode toggle, near the video. */}
+            {/* Watch / Learning toggle — flat segmented control, sits directly below the video. */}
             <div className="flex items-center justify-between gap-3">
-
               <div
                 role="tablist"
                 aria-label="Viewing mode"
-                className="inline-flex items-center rounded-full border border-border bg-muted/50 p-1 shadow-sm"
+                className="inline-flex items-center rounded-lg bg-muted/60 p-0.5"
               >
                 <button
                   role="tab"
@@ -2049,14 +2048,14 @@ function Index() {
                     track("study_mode_closed", { video_id: videoId });
                     track("watch_mode_opened", { video_id: videoId });
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
                     !studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Tv className="h-4 w-4" />
-                  Watch Mode
+                  <Tv className="h-3.5 w-3.5" />
+                  Watch
                 </button>
                 <button
                   role="tab"
@@ -2075,20 +2074,19 @@ function Index() {
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
                 >
-                  <BookOpen className="h-4 w-4" />
-                  Learning Mode
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Learning
                 </button>
-
               </div>
               <label
                 className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
-                title="Focus Mode keeps the active sentence in view automatically. Transcript Mode lets you scroll freely."
+                title="Keep the active sentence in view automatically."
               >
                 <input
                   type="checkbox"
@@ -2102,9 +2100,10 @@ function Index() {
                   }}
                   className="h-3.5 w-3.5 cursor-pointer accent-primary"
                 />
-                Focus Mode
+                Auto-follow
               </label>
             </div>
+
 
 
             {transcriptStatus === "failed" ? (
