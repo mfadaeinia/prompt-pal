@@ -191,23 +191,23 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               style={heading}
             >
               <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Understand real content, sentence by sentence
+              For everyone who keeps pausing the video
             </span>
 
             <h1
-              className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
+              className="text-[2.2rem] font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.6rem]"
               style={heading}
             >
-              Understand
+              Finally.
               <br />
-              Any Video.
+              <span className="text-blue-600">Understand</span> what
               <br />
-              <span className="text-blue-600">Without Leaving It.</span>
+              they're actually saying.
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Stop pausing videos, opening dictionaries, and switching tabs.
-              Click any sentence to get translations, explanations, vocabulary, and context instantly.
+              No more pausing, rewinding, or jumping to a translator. Tap any
+              sentence — the meaning is right there, the moment you needed it.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
@@ -216,7 +216,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
-                Try NativeFlow Free
+                Start Understanding — Free
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               <button
@@ -225,13 +225,13 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 style={heading}
               >
                 <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
-                Watch Demo
+                See it in 20 seconds
               </button>
             </div>
 
             <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
               <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+                <Check className="h-4 w-4 text-emerald-600" /> Works on real YouTube videos
               </li>
               <li className="inline-flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
@@ -243,7 +243,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
             <div className="mt-8">
               <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
-                Learn from content you already love:
+                The videos you already watch:
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
                 <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
@@ -255,8 +255,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
-            <ProductMock />
+          <div className="relative lg:max-w-[94%] lg:-ml-4 xl:-ml-6">
+            <UnderstandingMoment />
           </div>
         </div>
       </div>
@@ -267,7 +267,93 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 
+function UnderstandingMoment() {
+  return (
+    <div className="relative">
+      {/* tiny "video" strip — grounds the card as a real moment, but doesn't dominate */}
+      <div className="relative mx-auto w-[94%] overflow-hidden rounded-t-2xl border border-b-0 border-slate-200 bg-slate-900 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.5)]">
+        <img
+          src={youtubePlayer.url}
+          alt="Real YouTube video"
+          className="block h-28 w-full object-cover opacity-95 sm:h-32"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent" />
+        <div className="absolute bottom-2 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur">
+          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          Playing · Dutch interview
+        </div>
+        <div className="absolute right-3 bottom-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-700 shadow">
+          <Pause className="h-3 w-3" /> 0:42
+        </div>
+      </div>
+
+      {/* the understanding card — the actual hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
+        {/* tap indicator */}
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-5 py-2.5 text-[11px] font-semibold text-slate-500" style={heading}>
+          <span className="inline-flex items-center gap-1.5">
+            <MousePointerClick className="h-3.5 w-3.5 text-blue-500" />
+            You tapped this sentence
+          </span>
+          <span className="tabular-nums text-slate-400">0:42</span>
+        </div>
+
+        <div className="space-y-4 p-5 sm:p-6">
+          {/* ORIGINAL */}
+          <div>
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400" style={heading}>
+              What they said
+            </div>
+            <p className="text-xl font-semibold leading-snug text-slate-900 sm:text-[1.4rem]">
+              "Dat slaat nergens op."
+            </p>
+          </div>
+
+          {/* arrow */}
+          <div className="flex items-center gap-2 text-slate-300">
+            <div className="h-px flex-1 bg-slate-200" />
+            <ArrowRight className="h-3.5 w-3.5 rotate-90 text-blue-500" />
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+
+          {/* TRANSLATION */}
+          <div>
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400" style={heading}>
+              Translation
+            </div>
+            <p className="text-base font-medium text-slate-800 sm:text-lg">
+              "That makes no sense at all."
+            </p>
+          </div>
+
+          {/* MEANING — the emotional payoff */}
+          <div className="rounded-xl bg-blue-50/70 p-4 ring-1 ring-blue-100">
+            <div className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700" style={heading}>
+              <BookOpen className="h-3 w-3" />
+              What it really means
+            </div>
+            <p className="text-[15px] leading-relaxed text-slate-700">
+              A common Dutch reaction when something feels illogical or absurd — closer to
+              <span className="font-semibold text-slate-900"> "that's nonsense" </span>
+              than a literal translation.
+            </p>
+          </div>
+
+          {/* SAVE — closure */}
+          <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+            <span className="text-[11px] text-slate-500">Now you can keep watching.</span>
+            <button className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+              <Bookmark className="h-3 w-3 text-blue-600" /> Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProductMock() {
+
   const transcript = [
     { t: "0:38", text: "Ik begrijp het niet helemaal.", active: false },
     { t: "0:42", text: "Dat slaat nergens op.", active: true },
