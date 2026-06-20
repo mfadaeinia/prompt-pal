@@ -374,7 +374,6 @@ function Index() {
     mutationFn: (vars: {
       sentence: TranscriptSentence;
       translation: string | null;
-      meaning: string | null;
       note: string | null;
     }) =>
       saveExpressionFx({
@@ -382,7 +381,6 @@ function Index() {
           sessionId: browserId,
           sentenceText: vars.sentence.text,
           translation: vars.translation,
-          meaning: vars.meaning,
           expressionNotes: vars.note,
           videoTitle: videoTitle,
           videoUrl: url || null,
@@ -439,7 +437,6 @@ function Index() {
     const payload = {
       sentence: s,
       translation: ready?.translation || null,
-      meaning: ready?.meaning || null,
       note: ready?.note && ready.note !== "—" ? ready.note : null,
     };
     requireAuth(() => saveExpressionMutation.mutate(payload));
@@ -1293,7 +1290,6 @@ function Index() {
     | {
         status: "ready";
         translation: string;
-        meaning: string;
         keyExpression: string;
         whyThisWay: string;
         vocabulary: string;
@@ -1341,7 +1337,6 @@ function Index() {
           [s.id]: {
             status: "ready",
             translation: parsed.translation,
-            meaning: parsed.meaning,
             keyExpression: parsed.keyExpression,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
@@ -3015,7 +3010,6 @@ function CompactHowItWorks() {
 function parseExplanation(text: string | null) {
   const empty = {
     translation: "",
-    meaning: "",
     keyExpression: "",
     whyThisWay: "",
     vocabulary: "",
@@ -3034,7 +3028,6 @@ function parseExplanation(text: string | null) {
   const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
     translation: clean(get("Natural Translation", "Translation")),
-    meaning: clean(get("Whats Happening", "What's Happening", "Whats happening", "Meaning")),
     keyExpression: clean(get("Key Expression", "Expression")),
     whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
     vocabulary: clean(get("Vocabulary", "Vocab")),
@@ -3048,7 +3041,6 @@ type ExplanationPanelEntry =
   | {
       status: "ready";
       translation: string;
-      meaning: string;
       keyExpression: string;
       whyThisWay: string;
       vocabulary: string;
@@ -3211,16 +3203,6 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {ready.meaning && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  What's happening
-                </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {ready.meaning}
-                </p>
-              </div>
-            )}
 
             {ready.keyExpression && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
@@ -3309,7 +3291,7 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+            {!ready.translation && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
@@ -3324,7 +3306,7 @@ function ExplanationPanel({
           // Graceful fallback while the explanation is preloading — no spinner blocking the UI.
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Preparing translation, meaning, and notes for this sentence…
+              Preparing translation and notes for this sentence…
             </p>
             {isLoading && (
               <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -3375,15 +3357,15 @@ function InlineExplanation({
   if (!entry || entry.status === "loading") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation, meaning &amp; vocabulary…
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation &amp; vocabulary…
       </p>
     );
   }
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, meaning, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !meaning && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
+  if (!translation && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
     return <FallbackHint />;
   }
   return (
@@ -3392,12 +3374,6 @@ function InlineExplanation({
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
-        </div>
-      )}
-      {meaning && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{meaning}</p>
         </div>
       )}
       {keyExpression && (
@@ -3744,7 +3720,7 @@ function HeroWithPreview({
             </span>
           </h1>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Never leave the video to figure out what was just said. Get translation, meaning and expression notes in one tap.
+            Never leave the video to figure out what was just said. Get translation and expression notes in one tap.
           </p>
 
           <form
@@ -3862,7 +3838,6 @@ type PreviewMoment = {
   t: string;
   sentence: string;
   translation: string;
-  meaning: string;
   note: string;
 };
 
@@ -3871,21 +3846,18 @@ const PREVIEW_MOMENTS: PreviewMoment[] = [
     t: "0:17",
     sentence: "Rij eens door, man.",
     translation: "Come on, keep driving.",
-    meaning: "Used when someone is moving too slowly and you want them to hurry up.",
     note: "Not literal — 'eens' here softens the command, like a casual nudge.",
   },
   {
     t: "0:42",
     sentence: "Dat slaat nergens op.",
     translation: "That makes no sense at all.",
-    meaning: "A common reaction when something feels illogical or absurd.",
     note: "'Slaat nergens op' is everyday spoken Dutch — you'll hear it constantly.",
   },
   {
     t: "1:08",
     sentence: "Ik heb er geen zin in.",
     translation: "I don't feel like it.",
-    meaning: "Expresses lack of motivation or interest in doing something.",
     note: "'Zin hebben in' = to feel like (doing) — a core Dutch expression.",
   },
 ];
@@ -3992,10 +3964,6 @@ function ProductPreview() {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Translation</p>
               <p className="mt-0.5 text-sm text-foreground">{moment.translation}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Meaning</p>
-              <p className="mt-0.5 text-sm text-foreground">{moment.meaning}</p>
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">Expression note</p>
@@ -4161,7 +4129,7 @@ function LoadingProgress() {
 function ValueCards() {
   const cards = [
     { emoji: "🎬", title: "Watch real content", desc: "Any YouTube video, in your target language." },
-    { emoji: "💡", title: "Understand difficult sentences instantly", desc: "Translations and meaning appear as you watch." },
+    { emoji: "💡", title: "Understand difficult sentences instantly", desc: "Translations appear as you watch." },
     { emoji: "🧠", title: "Learn expressions in context", desc: "Idioms, slang, and grammar explained where they appear." },
   ];
   return (
