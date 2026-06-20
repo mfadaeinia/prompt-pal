@@ -184,36 +184,33 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
       <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
-          <div className="max-w-xl">
+        <div className="relative z-10 grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="max-w-[560px]">
             <span
-              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
+              className="mb-5 inline-flex items-center rounded-full border border-[#4F7FFF]/25 bg-[#4F7FFF]/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3B6BEA] shadow-sm backdrop-blur sm:mb-6"
               style={heading}
             >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-[#4F7FFF]" />
               Understand real content, sentence by sentence
             </span>
 
             <h1
-              className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
-              style={heading}
+              className="text-[2.1rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-slate-900 sm:text-5xl lg:text-[3.5rem]"
+              style={{ ...heading, fontWeight: 800, fontFeatureSettings: "'ss01','cv11'" }}
             >
-              Understand
-              <br />
-              Any Video.
-              <br />
-              <span className="text-blue-600">Without Leaving It.</span>
+              <span className="block">Understand Any Video.</span>
+              <span className="block text-[#4F7FFF]">Without Leaving It.</span>
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Stop pausing videos, opening dictionaries, and switching tabs.
-              Click any sentence to get translations, explanations, vocabulary, and context instantly.
+            <p className="mt-5 max-w-[520px] text-base leading-relaxed text-slate-600 sm:mt-6 sm:text-[17px]">
+              Click any sentence to instantly see the translation, meaning, and key
+              vocabulary — without ever leaving the video.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
               <button
                 onClick={onPrimary}
-                className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+                className="group inline-flex items-center gap-2 rounded-full bg-[#4F7FFF] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(79,127,255,0.6)] transition-all hover:bg-[#3B6BEA] active:scale-[0.98]"
                 style={heading}
               >
                 Try NativeFlow Free
@@ -224,7 +221,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
                 style={heading}
               >
-                <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
+                <Play className="h-4 w-4 fill-[#4F7FFF] text-[#4F7FFF]" />
                 Watch Demo
               </button>
             </div>
@@ -255,7 +252,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative lg:max-w-[560px] lg:-ml-2 xl:-ml-6">
             <ProductMock />
           </div>
         </div>
