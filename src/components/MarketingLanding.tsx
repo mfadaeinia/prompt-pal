@@ -88,79 +88,114 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 
 /* ============================== HERO ============================== */
 
+// Real-content collage imagery — news, podcasts, talks, interviews, canals.
+const COLLAGE = [
+  { src: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=600&q=70", alt: "News broadcast" },
+  { src: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&q=70", alt: "Podcast microphone" },
+  { src: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600&q=70", alt: "TED-style stage" },
+  { src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=70", alt: "Interview" },
+  { src: "https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=600&q=70", alt: "Amsterdam canal" },
+  { src: "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&q=70", alt: "YouTube creator" },
+  { src: "https://images.unsplash.com/photo-1551817958-d9d86fb29431?w=600&q=70", alt: "Documentary" },
+  { src: "https://images.unsplash.com/photo-1521133573892-e44906baee46?w=600&q=70", alt: "Educational presenter" },
+];
+
+function ContentCollage() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 grid grid-cols-4 gap-3 p-4 opacity-[0.18] blur-[2px] sm:opacity-[0.22] sm:blur-[1px]">
+        {COLLAGE.map((img, i) => (
+          <div
+            key={img.src}
+            className="overflow-hidden rounded-xl bg-slate-200"
+            style={{ aspectRatio: "16/10", transform: `translateY(${(i % 2) * 28}px)` }}
+          >
+            <img src={img.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+          </div>
+        ))}
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC]/70 to-[#F8FAFC]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#F8FAFC_75%)]" />
+    </div>
+  );
+}
+
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
-      <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-        <div className="min-w-0">
-          <span
-            className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm"
-            style={heading}
-          >
-            <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-            Understand real content, sentence by sentence
-          </span>
-
-          <h1
-            className="text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
-            style={heading}
-          >
-            Understand Any Video.
-            <br />
-            <span className="text-blue-600">Without Leaving It.</span>
-          </h1>
-
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
-            Stop pausing videos, opening dictionaries, and switching tabs. Click any sentence to get
-            translations, explanations, vocabulary, and context — instantly.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              onClick={onPrimary}
-              className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+    <section className="relative">
+      <ContentCollage />
+      <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+          <div className="min-w-0">
+            <span
+              className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
               style={heading}
             >
-              Try NativeFlow Free
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-            <button
-              onClick={onSecondary}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+              For the content you already watch
+            </span>
+
+            <h1
+              className="text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
               style={heading}
             >
-              <Play className="h-4 w-4" />
-              Watch Demo
-            </button>
+              Understand the videos
+              <br />
+              <span className="text-blue-600">you already love.</span>
+            </h1>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
+              News, podcasts, interviews, YouTube. Paste any link and click a sentence — get the
+              translation, the meaning, and the words behind it. Without breaking your flow.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={onPrimary}
+                className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+                style={heading}
+              >
+                Try NativeFlow Free
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <button
+                onClick={onSecondary}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+                style={heading}
+              >
+                <Play className="h-4 w-4" />
+                Watch Demo
+              </button>
+            </div>
+
+            <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6 sm:mt-7">
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> No credit card required
+              </li>
+            </ul>
+
+            <div className="mt-8 border-t border-slate-200 pt-6">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
+                style={heading}
+              >
+                Built for real content
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                YouTube · TED Talks · News · Podcasts · Interviews · Documentaries
+              </p>
+            </div>
           </div>
 
-          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6 sm:mt-7">
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> No credit card required
-            </li>
-          </ul>
-
-          <div className="mt-8 border-t border-slate-200 pt-6">
-            <p
-              className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
-              style={heading}
-            >
-              Learn from content you already love
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              YouTube · TED Talks · News · Podcasts · Interviews
-            </p>
+          <div className="relative min-w-0">
+            <ProductMock />
           </div>
-        </div>
-
-        <div className="relative min-w-0">
-          <ProductMock />
         </div>
       </div>
     </section>
@@ -169,75 +204,97 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 function ProductMock() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)]">
-      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
-        <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </div>
-        <div
-          className="mx-auto text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
-          style={heading}
-        >
-          nativeflow.life · Dutch
-        </div>
+    <div className="relative">
+      <div className="pointer-events-none absolute -left-6 -top-6 hidden h-20 w-28 overflow-hidden rounded-lg border-2 border-white shadow-xl sm:block">
+        <img
+          src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=300&q=70"
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      </div>
+      <div className="pointer-events-none absolute -right-4 top-20 hidden h-20 w-28 overflow-hidden rounded-lg border-2 border-white shadow-xl sm:block">
+        <img
+          src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=300&q=70"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
-      <div className="relative aspect-video bg-slate-900">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,#1e3a8a_0%,#0f172a_60%,#020617_100%)]" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur">
-            <Play className="ml-0.5 h-6 w-6 fill-slate-900 text-slate-900" />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_30px_80px_-25px_rgba(15,23,42,0.25)]">
+        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
+          <div className="flex gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
           </div>
-        </div>
-        <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
-          <Youtube className="h-3 w-3" /> YouTube
-        </div>
-        <div className="absolute bottom-3 left-3 right-3 h-1 rounded-full bg-white/20">
-          <div className="h-full w-1/3 rounded-full bg-blue-500" />
-        </div>
-      </div>
-
-      <div className="space-y-4 p-5">
-        <div className="rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2.5">
           <div
-            className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700"
+            className="mx-auto text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
             style={heading}
           >
-            0:42 · Dutch
+            nativeflow.life · Dutch
           </div>
-          <p className="text-base font-semibold text-slate-900">Dat slaat nergens op.</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Translation">
-            <p className="text-sm text-slate-800">That makes no sense at all.</p>
-          </Field>
-          <Field label="Meaning">
-            <p className="text-sm text-slate-600">
-              Used when something feels illogical or absurd.
-            </p>
-          </Field>
+        <div className="relative aspect-video bg-slate-900">
+          <img
+            src="https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=900&q=80"
+            alt="Amsterdam canal scene from a Dutch YouTube video"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/10" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 shadow-lg backdrop-blur">
+              <Play className="ml-0.5 h-6 w-6 fill-slate-900 text-slate-900" />
+            </div>
+          </div>
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+            <Youtube className="h-3 w-3" /> YouTube
+          </div>
+          <div className="absolute bottom-3 left-3 right-3 h-1 rounded-full bg-white/30">
+            <div className="h-full w-1/3 rounded-full bg-blue-500" />
+          </div>
         </div>
 
-        <Field label="Vocabulary">
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              ["slaat", "hits / strikes"],
-              ["nergens", "nowhere"],
-              ["op", "on / makes sense"],
-            ].map(([w, m]) => (
-              <span
-                key={w}
-                className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
-              >
-                <span className="font-semibold text-slate-900">{w}</span>
-                <span className="text-slate-400">{m}</span>
-              </span>
-            ))}
+        <div className="space-y-4 p-5">
+          <div className="rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2.5">
+            <div
+              className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700"
+              style={heading}
+            >
+              0:42 · Dutch
+            </div>
+            <p className="text-base font-semibold text-slate-900">Dat slaat nergens op.</p>
           </div>
-        </Field>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Translation">
+              <p className="text-sm text-slate-800">That makes no sense at all.</p>
+            </Field>
+            <Field label="Meaning">
+              <p className="text-sm text-slate-600">
+                Used when something feels illogical or absurd.
+              </p>
+            </Field>
+          </div>
+
+          <Field label="Vocabulary">
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                ["slaat", "hits / strikes"],
+                ["nergens", "nowhere"],
+                ["op", "on / makes sense"],
+              ].map(([w, m]) => (
+                <span
+                  key={w}
+                  className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
+                >
+                  <span className="font-semibold text-slate-900">{w}</span>
+                  <span className="text-slate-400">{m}</span>
+                </span>
+              ))}
+            </div>
+          </Field>
+        </div>
       </div>
     </div>
   );
