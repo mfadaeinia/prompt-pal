@@ -401,24 +401,6 @@ function ProductDemo() {
   );
 }
 
-function TranscriptLine({
-  time,
-  muted,
-  children,
-}: {
-  time: string;
-  muted?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`flex items-baseline gap-3 ${muted ? "opacity-60" : ""}`}>
-      <span className="w-10 shrink-0 text-[10px] font-medium tabular-nums text-slate-400" style={heading}>
-        {time}
-      </span>
-      <span className="text-slate-700">{children}</span>
-    </div>
-  );
-}
 
 /* ============================== BENEFITS ============================== */
 
