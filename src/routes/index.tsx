@@ -269,6 +269,26 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
+  // Warm the demo transcript cache in the background on first mount so
+  // that clicking "Try Demo" is instant. Best-effort: any failure is
+  // silently ignored and the normal load path will still run on click.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (readDemoTranscriptCache(DEMO_VIDEO_ID)) return;
+    const t = window.setTimeout(() => {
+      fetchTxFast({ data: { url: DEMO_VIDEO_URL, skipYoutube: true } })
+        .then((r) => {
+          if (r.status === "ready" && r.result.videoId === DEMO_VIDEO_ID) {
+            writeDemoTranscriptCache(DEMO_VIDEO_ID, r.result);
+          }
+        })
+        .catch(() => {});
+    }, 1200);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   // Auto-load a video when arriving from a saved-library link (e.g. /?url=...)
   const autoLoadedRef = useRef(false);
   useEffect(() => {
