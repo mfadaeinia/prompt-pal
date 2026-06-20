@@ -2162,14 +2162,15 @@ function Index() {
               </div>
             ) : (
             <div
-              className={`grid gap-6 ${
+              className={`grid gap-8 ${
                 studyMode
                   ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
 
-              <div className="contents lg:flex lg:flex-col lg:gap-6">
+              <div className="contents lg:flex lg:flex-col lg:gap-8">
+
 
               <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
