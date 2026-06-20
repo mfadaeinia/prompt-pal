@@ -3846,21 +3846,18 @@ const PREVIEW_MOMENTS: PreviewMoment[] = [
     t: "0:17",
     sentence: "Rij eens door, man.",
     translation: "Come on, keep driving.",
-    meaning: "Used when someone is moving too slowly and you want them to hurry up.",
     note: "Not literal — 'eens' here softens the command, like a casual nudge.",
   },
   {
     t: "0:42",
     sentence: "Dat slaat nergens op.",
     translation: "That makes no sense at all.",
-    meaning: "A common reaction when something feels illogical or absurd.",
     note: "'Slaat nergens op' is everyday spoken Dutch — you'll hear it constantly.",
   },
   {
     t: "1:08",
     sentence: "Ik heb er geen zin in.",
     translation: "I don't feel like it.",
-    meaning: "Expresses lack of motivation or interest in doing something.",
     note: "'Zin hebben in' = to feel like (doing) — a core Dutch expression.",
   },
 ];
