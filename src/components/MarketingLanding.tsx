@@ -265,106 +265,115 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 function ProductMock() {
-  const transcript = [
-    { t: "0:38", text: "Ik begrijp het niet helemaal.", active: false },
-    { t: "0:42", text: "Dat slaat nergens op.", active: true },
-    { t: "0:45", text: "Kun je het nog eens uitleggen?", active: false },
-    { t: "0:48", text: "Ja, natuurlijk.", active: false },
-  ];
-
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
-      <div className="grid grid-cols-1 sm:grid-cols-[1.35fr_1fr]">
-        {/* LEFT: video + transcript */}
-        <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
-          {/* video */}
-          <img
-            src={youtubePlayer.url}
-            alt="YouTube video — Dat slaat nergens op."
-            className="block w-full"
-          />
-
-
-          {/* transcript */}
-          <ul className="divide-y divide-slate-100">
-            {transcript.map((s) => (
-              <li
-                key={s.t}
-                className={`flex items-start gap-3 px-4 py-2.5 text-sm ${
-                  s.active ? "bg-blue-50/70" : ""
-                }`}
-              >
-                <span
-                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
-                    s.active ? "text-blue-600" : "text-slate-400"
-                  }`}
-                  style={heading}
-                >
-                  {s.t}
-                </span>
-                <span
-                  className={`leading-snug ${
-                    s.active ? "font-semibold text-slate-900" : "text-slate-600"
-                  }`}
-                >
-                  {s.text}
-                </span>
-                {s.active && (
-                  <MousePointerClick className="ml-auto h-4 w-4 shrink-0 text-blue-500" />
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* RIGHT: translation / meaning / vocab panel */}
-        <div className="space-y-4 p-5">
-          <Field label="Dutch">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[15px] font-semibold text-slate-900">Dat slaat nergens op.</p>
-              <button className="text-slate-400 hover:text-slate-600">🔊</button>
-            </div>
-          </Field>
-
-          <Field label="Translation">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-slate-800">That makes no sense at all.</p>
-              <button className="text-slate-400 hover:text-slate-600">📋</button>
-            </div>
-          </Field>
-
-          <Field label="Meaning">
-            <p className="text-sm leading-relaxed text-slate-600">
-              Used when something feels illogical or absurd.
-            </p>
-          </Field>
-
-          <Field label="Vocabulary">
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                ["slaat", "hits / strikes"],
-                ["nergens", "nowhere"],
-                ["op", "on / makes sense"],
-              ].map(([w, m]) => (
-                <span
-                  key={w}
-                  className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
-                >
-                  <span className="font-semibold text-slate-900">{w}</span>
-                  <span className="text-slate-400">{m}</span>
-                </span>
-              ))}
-            </div>
-          </Field>
-
-          <Field label="Expression note">
-            <p className="text-sm leading-relaxed text-slate-600">
-              Very common Dutch expression.
-            </p>
-          </Field>
+      {/* Compact video header — visual context, not the focal point */}
+      <div className="relative border-b border-slate-100">
+        <img
+          src={youtubePlayer.url}
+          alt="YouTube video — Dat slaat nergens op."
+          className="block w-full"
+        />
+        {/* Click-this-sentence affordance */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-lg bg-slate-900/85 px-3 py-2 text-[13px] font-medium text-white backdrop-blur">
+          <MousePointerClick className="h-4 w-4 shrink-0 text-[#8AB0FF]" />
+          <span className="truncate">"Dat slaat nergens op."</span>
+          <span className="ml-auto rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90">
+            Clicked
+          </span>
         </div>
       </div>
+
+      {/* THE MAGIC — vertical flow: Original → Translation → Meaning → Vocabulary */}
+      <div className="space-y-3.5 p-5 sm:p-6">
+        <FlowStep tone="dutch" label="Original">
+          <p className="text-[17px] font-semibold leading-snug text-slate-900" style={heading}>
+            Dat slaat nergens op.
+          </p>
+        </FlowStep>
+
+        <FlowArrow />
+
+        <FlowStep tone="translation" label="Translation">
+          <p className="text-[15px] leading-snug text-slate-800">
+            That makes no sense at all.
+          </p>
+        </FlowStep>
+
+        <FlowArrow />
+
+        <FlowStep tone="meaning" label="Meaning">
+          <p className="text-[13.5px] leading-relaxed text-slate-600">
+            Used when something feels illogical or absurd — very common in everyday Dutch.
+          </p>
+        </FlowStep>
+
+        <FlowArrow />
+
+        <FlowStep tone="vocab" label="Vocabulary">
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              ["slaat", "hits / strikes"],
+              ["nergens", "nowhere"],
+              ["op", "makes sense"],
+            ].map(([w, m]) => (
+              <span
+                key={w}
+                className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 shadow-sm"
+              >
+                <span className="font-semibold text-slate-900">{w}</span>
+                <span className="text-slate-400">{m}</span>
+              </span>
+            ))}
+          </div>
+        </FlowStep>
+      </div>
     </div>
+  );
+}
+
+function FlowArrow() {
+  return (
+    <div aria-hidden className="flex justify-center">
+      <div className="h-3 w-px bg-gradient-to-b from-slate-200 to-slate-300" />
+    </div>
+  );
+}
+
+function FlowStep({
+  tone,
+  label,
+  children,
+}: {
+  tone: "dutch" | "translation" | "meaning" | "vocab";
+  label: string;
+  children: ReactNode;
+}) {
+  const toneCls =
+    tone === "dutch"
+      ? "border-[#4F7FFF]/25 bg-[#4F7FFF]/[0.04]"
+      : tone === "translation"
+        ? "border-emerald-200/70 bg-emerald-50/40"
+        : "border-slate-200 bg-slate-50/60";
+  const dotCls =
+    tone === "dutch"
+      ? "bg-[#4F7FFF]"
+      : tone === "translation"
+        ? "bg-emerald-500"
+        : tone === "meaning"
+          ? "bg-amber-500"
+          : "bg-slate-400";
+  return (
+    <section className={`rounded-xl border px-4 py-3 ${toneCls}`}>
+      <div
+        className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500"
+        style={heading}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />
+        {label}
+      </div>
+      {children}
+    </section>
   );
 }
 
