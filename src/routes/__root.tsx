@@ -81,8 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NativeFlow" },
-      { name: "description", content: "NativeFlow turns real YouTube videos into interactive language lessons with sentence-level translations and explanations." },
+      { title: "NativeFlow — Understand any video, sentence by sentence" },
+      { name: "description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
       { name: "author", content: "NativeFlow" },
       { property: "og:site_name", content: "NativeFlow" },
       { property: "og:type", content: "website" },
