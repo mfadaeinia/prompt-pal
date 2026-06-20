@@ -90,25 +90,53 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 
 /* ============================== HERO ============================== */
 
+// Peek tiles that wrap around the product mock so the screenshot feels
+// embedded in the content ecosystem instead of floating above it.
+const PEEK_TILES = [
+  {
+    src: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=500&q=75",
+    alt: "News broadcast",
+    label: "News",
+    cls: "absolute -top-6 -left-10 w-28 sm:w-36 rotate-[-4deg]",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=500&q=75",
+    alt: "Podcast",
+    label: "Podcast",
+    cls: "absolute -top-10 right-6 w-24 sm:w-32 rotate-[5deg]",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=500&q=75",
+    alt: "TED talk",
+    label: "TED",
+    cls: "absolute -bottom-8 -left-6 w-28 sm:w-36 rotate-[3deg]",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=75",
+    alt: "Interview",
+    label: "Interview",
+    cls: "absolute -bottom-10 right-0 w-24 sm:w-32 rotate-[-4deg]",
+  },
+];
+
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="relative overflow-hidden">
-      {/* Background collage — right-weighted, fades left for copy legibility */}
+      {/* Layer 1 — dense content collage covering ~75% from the right */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-right"
+          className="absolute inset-y-0 right-0 h-full w-full object-cover object-right sm:w-[88%] lg:w-[78%]"
         />
-        {/* Left-side soft white gradient — keeps text readable, content visible */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/85 to-transparent lg:from-[#F8FAFC] lg:via-[#F8FAFC]/70 lg:via-40% lg:to-transparent" />
-        {/* Subtle bottom fade into next section */}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+        {/* Layer 2 — soft left-side gradient for copy legibility; keeps tiles visible */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/80 via-30% to-transparent to-55%" />
+        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8">
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pt-16 pb-28 sm:pt-24 sm:pb-32 lg:grid-cols-[0.95fr_1.15fr] lg:items-center lg:gap-4">
         {/* LEFT — copy */}
-        <div className="relative">
+        <div className="relative z-10">
           <span
             className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
             style={heading}
@@ -142,7 +170,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </button>
             <button
               onClick={onSecondary}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white sm:px-6 sm:py-3.5"
               style={heading}
             >
               <Play className="h-4 w-4" />
@@ -170,16 +198,30 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </p>
         </div>
 
-        {/* RIGHT — product screenshot overlapping the collage */}
-        <div className="relative lg:pl-4">
-          <div className="relative mx-auto w-full max-w-xl lg:ml-auto lg:mr-0">
-            <ProductMock />
+        {/* RIGHT — Layer 3: product mock embedded in the collage, with peek tiles wrapping around */}
+        <div className="relative z-10 lg:-ml-8 xl:-ml-16">
+          <div className="relative mx-auto w-full max-w-lg lg:max-w-xl lg:ml-auto lg:mr-0">
+            {/* Peek tiles — content wrapping around the screenshot */}
+            {PEEK_TILES.map((t) => (
+              <div
+                key={t.src}
+                aria-hidden
+                className={`${t.cls} z-0 overflow-hidden rounded-xl border border-white/80 shadow-[0_18px_40px_-15px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/5`}
+                style={{ aspectRatio: "16/10" }}
+              >
+                <img src={t.src} alt="" loading="lazy" className="h-full w-full object-cover" />
+              </div>
+            ))}
+            <div className="relative z-10">
+              <ProductMock />
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
+
 
 
 function ProductMock() {
