@@ -194,7 +194,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </span>
 
           <h1
-            className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
+            className="text-[1.85rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]"
             style={heading}
           >
             Understand Any Video.
