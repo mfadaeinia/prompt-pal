@@ -3045,7 +3045,16 @@ function parseExplanation(text: string | null) {
 
 type ExplanationPanelEntry =
   | { status: "loading" }
-  | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
+  | {
+      status: "ready";
+      translation: string;
+      meaning: string;
+      keyExpression: string;
+      whyThisWay: string;
+      vocabulary: string;
+      note: string;
+      grammar: string;
+    }
   | { status: "error"; error: string };
 
 function ExplanationPanel({
