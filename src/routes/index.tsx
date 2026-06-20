@@ -1290,7 +1290,16 @@ function Index() {
   // Explanation cache: sentenceId -> parsed explanation (or loading/error).
   type ExplanationEntry =
     | { status: "loading" }
-    | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
+    | {
+        status: "ready";
+        translation: string;
+        meaning: string;
+        keyExpression: string;
+        whyThisWay: string;
+        vocabulary: string;
+        note: string;
+        grammar: string;
+      }
     | { status: "error"; error: string };
   const [explanationCache, setExplanationCache] = useState<
     Record<number, ExplanationEntry>
@@ -1333,8 +1342,11 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             meaning: parsed.meaning,
+            keyExpression: parsed.keyExpression,
+            whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
             note: parsed.note,
+            grammar: parsed.grammar,
           },
         }));
         if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
@@ -3001,23 +3013,48 @@ function CompactHowItWorks() {
 
 
 function parseExplanation(text: string | null) {
-  if (!text) return { translation: "", meaning: "", vocabulary: "", note: "" };
-  const get = (label: string) => {
-    const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
-    const m = text.match(re);
-    return m ? m[1].trim() : "";
+  const empty = {
+    translation: "",
+    meaning: "",
+    keyExpression: "",
+    whyThisWay: "",
+    vocabulary: "",
+    note: "",
+    grammar: "",
   };
+  if (!text) return empty;
+  const get = (...labels: string[]) => {
+    for (const label of labels) {
+      const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
+      const m = text.match(re);
+      if (m) return m[1].trim();
+    }
+    return "";
+  };
+  const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
-    translation: get("Translation"),
-    meaning: get("Meaning"),
-    vocabulary: get("Vocabulary") || get("Vocab"),
-    note: get("Note") || get("Notes") || get("Expression Notes"),
+    translation: clean(get("Natural Translation", "Translation")),
+    meaning: clean(get("Whats Happening", "What's Happening", "Whats happening", "Meaning")),
+    keyExpression: clean(get("Key Expression", "Expression")),
+    whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
+    vocabulary: clean(get("Vocabulary", "Vocab")),
+    note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
+    grammar: clean(get("Grammar Insight", "Grammar")),
   };
 }
 
 type ExplanationPanelEntry =
   | { status: "loading" }
-  | { status: "ready"; translation: string; meaning: string; vocabulary: string; note: string }
+  | {
+      status: "ready";
+      translation: string;
+      meaning: string;
+      keyExpression: string;
+      whyThisWay: string;
+      vocabulary: string;
+      note: string;
+      grammar: string;
+    }
   | { status: "error"; error: string };
 
 function ExplanationPanel({
@@ -3062,21 +3099,21 @@ function ExplanationPanel({
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
+          Every sentence unlocks a coach-style breakdown — natural translation, the key expression, and why native speakers say it this way.
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Translation", "Meaning", "Vocabulary", "Notes"].map((l) => (
+          {["Natural translation", "What's happening", "Key expression", "Why this way"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
-          <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
-          <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
-          <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
+          <PreviewSection label="Natural translation" sample="How a real speaker would say this idea in your language." />
+          <PreviewSection label="What's happening" sample="Intent and context — why this line matters in the conversation." />
+          <PreviewSection label="Key expression" sample="ervoor kiezen = to choose to, to opt to" mono />
+          <PreviewSection label="Why speakers say it this way" sample="Common in news and formal speech when describing decisions." />
         </div>
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
@@ -3167,7 +3204,7 @@ function ExplanationPanel({
             {ready.translation && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  {tgtLabel}
+                  Natural translation · {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
@@ -3177,7 +3214,7 @@ function ExplanationPanel({
             {ready.meaning && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  Meaning
+                  What's happening
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.meaning}
@@ -3185,7 +3222,46 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary && ready.vocabulary !== "—" && (
+            {ready.keyExpression && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Key expression
+                </h4>
+                {(() => {
+                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
+                  const tail = rest.join(" = ");
+                  return (
+                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+                      <span className="font-semibold">{head}</span>
+                      {tail && (
+                        <>
+                          <span className="text-muted-foreground"> — </span>
+                          <span className="text-foreground/85">{tail}</span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
+                {ready.whyThisWay && (
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                    {ready.whyThisWay}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!ready.keyExpression && ready.whyThisWay && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Why speakers say it this way
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.whyThisWay}
+                </p>
+              </div>
+            )}
+
+            {ready.vocabulary && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
@@ -3213,20 +3289,31 @@ function ExplanationPanel({
                 </ul>
               </div>
             )}
-            {ready.note && ready.note !== "—" && (
+            {ready.note && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  Notes
+                  Usage notes
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.vocabulary && !ready.note && (
+            {ready.grammar && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Grammar insight
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.grammar}
+                </p>
+              </div>
+            )}
+            {!ready.translation && !ready.meaning && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
 
         ) : error ? (
           <div className="space-y-3">
@@ -3295,25 +3382,54 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, meaning, vocabulary, note } = entry;
-  if (!translation && !meaning && !vocabulary && !note) {
+  const { translation, meaning, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
+  if (!translation && !meaning && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
     return <FallbackHint />;
   }
   return (
     <div className="space-y-3">
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Translation</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
         </div>
       )}
       {meaning && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{meaning}</p>
         </div>
       )}
-      {vocabulary && vocabulary !== "—" && (
+      {keyExpression && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
+          {(() => {
+            const [head, ...rest] = keyExpression.split(/\s*=\s*/);
+            const tail = rest.join(" = ");
+            return (
+              <p className="mt-0.5 text-sm leading-relaxed text-foreground">
+                <span className="font-semibold">{head}</span>
+                {tail && (
+                  <>
+                    <span className="text-muted-foreground"> — </span>
+                    <span className="text-foreground/85">{tail}</span>
+                  </>
+                )}
+              </p>
+            );
+          })()}
+          {whyThisWay && (
+            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{whyThisWay}</p>
+          )}
+        </div>
+      )}
+      {!keyExpression && whyThisWay && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Why speakers say it this way</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
+        </div>
+      )}
+      {vocabulary && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
           <ul className="mt-0.5 space-y-0.5">
@@ -3339,10 +3455,16 @@ function InlineExplanation({
           </ul>
         </div>
       )}
-      {note && note !== "—" && (
+      {note && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Expression Notes</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Usage notes</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
+        </div>
+      )}
+      {grammar && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Grammar insight</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{grammar}</p>
         </div>
       )}
     </div>
