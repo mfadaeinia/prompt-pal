@@ -29,13 +29,20 @@ export type FounderMetrics = {
     mostRecentAt: string | null;
     mostRecentEmail: string | null;
   };
+  funnel: {
+    cohortLabel: string;
+    visitors: number;
+    startedLearning: number;
+    clickedSentence: number;
+    savedWord: number;
+  };
 };
 
 export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
   async (): Promise<FounderMetrics> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [vs, fb, ea] = await Promise.all([
+    const [vs, fb, ea, sx] = await Promise.all([
       supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
       supabaseAdmin
         .from("user_feedback" as any)
@@ -45,6 +52,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         .from("early_access_signups" as any)
         .select("email,created_at")
         .order("created_at", { ascending: false }),
+      supabaseAdmin.from("saved_expressions" as any).select("session_id"),
     ]);
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
@@ -58,6 +66,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       feedback_text: string | null;
     }>;
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
+    const savedRows = ((sx.data ?? []) as unknown) as Array<{ session_id: string | null }>;
 
     const durations = sessions.map((s) => s.duration_seconds ?? 0);
     const totalSessions = sessions.length;
@@ -83,6 +92,24 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       maybe: feedback.filter((f) => f.would_use_again === "maybe").length,
       probably_not: feedback.filter((f) => f.would_use_again === "probably_not").length,
     };
+
+    // Funnel: unique sessions per stage, monotonically clamped so a
+    // later stage can never exceed an earlier one.
+    const startedSessions = uniqueVideoSessionIds;
+    const clickedSessions = new Set(
+      feedback
+        .filter((f) => (f.total_sentence_clicks ?? 0) > 0)
+        .map((f) => f.session_id)
+        .filter(Boolean) as string[],
+    );
+    const savedSessions = new Set(
+      savedRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+
+    const fVisitors = visitors;
+    const fStarted = Math.min(startedSessions.size, fVisitors);
+    const fClicked = Math.min(clickedSessions.size, fStarted);
+    const fSaved = Math.min(savedSessions.size, fClicked);
 
     return {
       visitors,
@@ -112,6 +139,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         total: signups.length,
         mostRecentAt: signups[0]?.created_at ?? null,
         mostRecentEmail: signups[0]?.email ?? null,
+      },
+      funnel: {
+        cohortLabel: "unique sessions",
+        visitors: fVisitors,
+        startedLearning: fStarted,
+        clickedSentence: fClicked,
+        savedWord: fSaved,
       },
     };
   },
