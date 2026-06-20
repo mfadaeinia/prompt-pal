@@ -12,6 +12,10 @@ import {
   type FetchTranscriptFastResult,
   type FetchTranscriptResult,
 } from "@/lib/transcript.functions";
+import {
+  readDemoTranscriptCache,
+  writeDemoTranscriptCache,
+} from "@/lib/demo-transcript-cache";
 
 
 import { explainSentence } from "@/lib/explain.functions";
