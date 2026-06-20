@@ -1293,7 +1293,6 @@ function Index() {
     | {
         status: "ready";
         translation: string;
-        meaning: string;
         keyExpression: string;
         whyThisWay: string;
         vocabulary: string;
@@ -1341,7 +1340,6 @@ function Index() {
           [s.id]: {
             status: "ready",
             translation: parsed.translation,
-            meaning: parsed.meaning,
             keyExpression: parsed.keyExpression,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
@@ -3015,7 +3013,6 @@ function CompactHowItWorks() {
 function parseExplanation(text: string | null) {
   const empty = {
     translation: "",
-    meaning: "",
     keyExpression: "",
     whyThisWay: "",
     vocabulary: "",
@@ -3034,7 +3031,6 @@ function parseExplanation(text: string | null) {
   const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
     translation: clean(get("Natural Translation", "Translation")),
-    meaning: clean(get("Whats Happening", "What's Happening", "Whats happening", "Meaning")),
     keyExpression: clean(get("Key Expression", "Expression")),
     whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
     vocabulary: clean(get("Vocabulary", "Vocab")),
@@ -3048,7 +3044,6 @@ type ExplanationPanelEntry =
   | {
       status: "ready";
       translation: string;
-      meaning: string;
       keyExpression: string;
       whyThisWay: string;
       vocabulary: string;
@@ -3208,16 +3203,6 @@ function ExplanationPanel({
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
-                </p>
-              </div>
-            )}
-            {ready.meaning && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  What's happening
-                </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {ready.meaning}
                 </p>
               </div>
             )}

@@ -56,7 +56,7 @@ Rules:
       console.error("[explain] generation failed", { status, message });
 
       const fallback = (msg: string) =>
-        `Translation: —\nWhats Happening: ${msg}\nKey Expression: —\nWhy This Way: —\nVocabulary: —\nUsage Notes: —\nGrammar Insight: —`;
+        `Translation: —\nKey Expression: —\nWhy This Way: —\nVocabulary: —\nUsage Notes: —\nGrammar Insight: —`;
 
       if (isRateLimit) {
         return {
