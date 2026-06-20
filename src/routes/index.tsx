@@ -12,6 +12,10 @@ import {
   type FetchTranscriptFastResult,
   type FetchTranscriptResult,
 } from "@/lib/transcript.functions";
+import {
+  readDemoTranscriptCache,
+  writeDemoTranscriptCache,
+} from "@/lib/demo-transcript-cache";
 
 
 import { explainSentence } from "@/lib/explain.functions";
@@ -264,6 +268,26 @@ function Index() {
   useEffect(() => {
     setBrowserId(getBrowserId());
   }, []);
+
+  // Warm the demo transcript cache in the background on first mount so
+  // that clicking "Try Demo" is instant. Best-effort: any failure is
+  // silently ignored and the normal load path will still run on click.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (readDemoTranscriptCache(DEMO_VIDEO_ID)) return;
+    const t = window.setTimeout(() => {
+      fetchTxFast({ data: { url: DEMO_VIDEO_URL, skipYoutube: true } })
+        .then((r) => {
+          if (r.status === "ready" && r.result.videoId === DEMO_VIDEO_ID) {
+            writeDemoTranscriptCache(DEMO_VIDEO_ID, r.result);
+          }
+        })
+        .catch(() => {});
+    }, 1200);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // Auto-load a video when arriving from a saved-library link (e.g. /?url=...)
   const autoLoadedRef = useRef(false);
@@ -778,6 +802,17 @@ function Index() {
       setSlowTimeoutLevel(0);
       setTranscriptStatus("checking_cache");
 
+      // ── Demo fast-path: localStorage cache ─────────────────────────────
+      // The Demo button always opens the same fixed video. If we have a
+      // previously-stored transcript for it, hydrate from there with zero
+      // network — the Demo should feel like a preloaded showcase.
+      if (vars.url === DEMO_VIDEO_URL) {
+        const cached = readDemoTranscriptCache(DEMO_VIDEO_ID);
+        if (cached) {
+          return { res: cached, vars, viaSlowPath: false };
+        }
+      }
+
       // ── Fast path: cache + YouTube captions only ────────────────────────
       // For the demo video we skip YouTube captions entirely — their
       // auto-generated timestamps drift out of sync with the audio. ASR
@@ -1098,6 +1133,13 @@ function Index() {
           video_id: res.videoId,
           source: res.source,
         });
+      } else if (
+        res.videoId === DEMO_VIDEO_ID &&
+        res.sentences.length > 0 &&
+        !(payload as any).streaming
+      ) {
+        // Warm the client cache so the next Demo open is instant.
+        writeDemoTranscriptCache(DEMO_VIDEO_ID, res);
       }
     },
     onError: (err: any, vars) => {
