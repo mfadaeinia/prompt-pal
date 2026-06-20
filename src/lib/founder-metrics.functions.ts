@@ -97,7 +97,17 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         sessionsOver5min,
         totalSessions,
       },
-      feedback: { positive, negative, wouldUseAgain },
+      feedback: {
+        positive,
+        negative,
+        wouldUseAgain,
+        recent: feedback.slice(0, 8).map((f) => ({
+          created_at: f.created_at,
+          feedback_type: f.feedback_type,
+          feedback_text: f.feedback_text,
+          would_use_again: f.would_use_again,
+        })),
+      },
       waitlist: {
         total: signups.length,
         mostRecentAt: signups[0]?.created_at ?? null,
