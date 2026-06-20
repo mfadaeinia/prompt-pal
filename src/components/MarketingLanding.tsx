@@ -184,33 +184,36 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
       <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
-        <div className="relative z-10 grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
-          <div className="max-w-[560px]">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
+          <div className="max-w-xl">
             <span
-              className="mb-5 inline-flex items-center rounded-full border border-[#4F7FFF]/25 bg-[#4F7FFF]/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#3B6BEA] shadow-sm backdrop-blur sm:mb-6"
+              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
               style={heading}
             >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-[#4F7FFF]" />
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
               Understand real content, sentence by sentence
             </span>
 
             <h1
-              className="text-[2.1rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-slate-900 sm:text-5xl lg:text-[3.5rem]"
-              style={{ ...heading, fontWeight: 800, fontFeatureSettings: "'ss01','cv11'" }}
+              className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
+              style={heading}
             >
-              <span className="block">Understand Any Video.</span>
-              <span className="block text-[#4F7FFF]">Without Leaving It.</span>
+              Understand
+              <br />
+              Any Video.
+              <br />
+              <span className="text-blue-600">Without Leaving It.</span>
             </h1>
 
-            <p className="mt-5 max-w-[520px] text-base leading-relaxed text-slate-600 sm:mt-6 sm:text-[17px]">
-              Click any sentence to instantly see the translation, meaning, and key
-              vocabulary — without ever leaving the video.
+            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
+              Stop pausing videos, opening dictionaries, and switching tabs.
+              Click any sentence to get translations, explanations, vocabulary, and context instantly.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
               <button
                 onClick={onPrimary}
-                className="group inline-flex items-center gap-2 rounded-full bg-[#4F7FFF] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(79,127,255,0.6)] transition-all hover:bg-[#3B6BEA] active:scale-[0.98]"
+                className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
                 Try NativeFlow Free
@@ -221,7 +224,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
                 style={heading}
               >
-                <Play className="h-4 w-4 fill-[#4F7FFF] text-[#4F7FFF]" />
+                <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
                 Watch Demo
               </button>
             </div>
@@ -252,7 +255,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative lg:max-w-[560px] lg:-ml-2 xl:-ml-6">
+          <div className="relative">
             <ProductMock />
           </div>
         </div>
@@ -265,118 +268,123 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 function ProductMock() {
+  const transcript = [
+    { t: "0:38", text: "Ik begrijp het niet helemaal.", active: false },
+    { t: "0:42", text: "Dat slaat nergens op.", active: true },
+    { t: "0:45", text: "Kun je het nog eens uitleggen?", active: false },
+    { t: "0:48", text: "Ja, natuurlijk.", active: false },
+  ];
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
-      {/* Compact video header — visual context, not the focal point */}
-      <div className="relative border-b border-slate-100">
-        <img
-          src={youtubePlayer.url}
-          alt="YouTube video — Dat slaat nergens op."
-          className="block w-full"
-        />
-        {/* Click-this-sentence affordance */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-lg bg-slate-900/85 px-3 py-2 text-[13px] font-medium text-white backdrop-blur">
-          <MousePointerClick className="h-4 w-4 shrink-0 text-[#8AB0FF]" />
-          <span className="truncate">"Dat slaat nergens op."</span>
-          <span className="ml-auto rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90">
-            Clicked
-          </span>
+      <div className="grid grid-cols-1 sm:grid-cols-[1.35fr_1fr]">
+        {/* LEFT: video + transcript */}
+        <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
+          {/* video */}
+          <img
+            src={youtubePlayer.url}
+            alt="YouTube video — Dat slaat nergens op."
+            className="block w-full"
+          />
+
+
+          {/* transcript */}
+          <ul className="divide-y divide-slate-100">
+            {transcript.map((s) => (
+              <li
+                key={s.t}
+                className={`flex items-start gap-3 px-4 py-2.5 text-sm ${
+                  s.active ? "bg-blue-50/70" : ""
+                }`}
+              >
+                <span
+                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
+                    s.active ? "text-blue-600" : "text-slate-400"
+                  }`}
+                  style={heading}
+                >
+                  {s.t}
+                </span>
+                <span
+                  className={`leading-snug ${
+                    s.active ? "font-semibold text-slate-900" : "text-slate-600"
+                  }`}
+                >
+                  {s.text}
+                </span>
+                {s.active && (
+                  <MousePointerClick className="ml-auto h-4 w-4 shrink-0 text-blue-500" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* RIGHT: translation / meaning / vocab panel */}
+        <div className="space-y-4 p-5">
+          <Field label="Dutch">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[15px] font-semibold text-slate-900">Dat slaat nergens op.</p>
+              <button className="text-slate-400 hover:text-slate-600">🔊</button>
+            </div>
+          </Field>
+
+          <Field label="Translation">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-slate-800">That makes no sense at all.</p>
+              <button className="text-slate-400 hover:text-slate-600">📋</button>
+            </div>
+          </Field>
+
+          <Field label="Meaning">
+            <p className="text-sm leading-relaxed text-slate-600">
+              Used when something feels illogical or absurd.
+            </p>
+          </Field>
+
+          <Field label="Vocabulary">
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                ["slaat", "hits / strikes"],
+                ["nergens", "nowhere"],
+                ["op", "on / makes sense"],
+              ].map(([w, m]) => (
+                <span
+                  key={w}
+                  className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
+                >
+                  <span className="font-semibold text-slate-900">{w}</span>
+                  <span className="text-slate-400">{m}</span>
+                </span>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Expression note">
+            <p className="text-sm leading-relaxed text-slate-600">
+              Very common Dutch expression.
+            </p>
+          </Field>
         </div>
       </div>
-
-      {/* THE MAGIC — vertical flow: Original → Translation → Meaning → Vocabulary */}
-      <div className="space-y-3.5 p-5 sm:p-6">
-        <FlowStep tone="dutch" label="Original">
-          <p className="text-[17px] font-semibold leading-snug text-slate-900" style={heading}>
-            Dat slaat nergens op.
-          </p>
-        </FlowStep>
-
-        <FlowArrow />
-
-        <FlowStep tone="translation" label="Translation">
-          <p className="text-[15px] leading-snug text-slate-800">
-            That makes no sense at all.
-          </p>
-        </FlowStep>
-
-        <FlowArrow />
-
-        <FlowStep tone="meaning" label="Meaning">
-          <p className="text-[13.5px] leading-relaxed text-slate-600">
-            Used when something feels illogical or absurd — very common in everyday Dutch.
-          </p>
-        </FlowStep>
-
-        <FlowArrow />
-
-        <FlowStep tone="vocab" label="Vocabulary">
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              ["slaat", "hits / strikes"],
-              ["nergens", "nowhere"],
-              ["op", "makes sense"],
-            ].map(([w, m]) => (
-              <span
-                key={w}
-                className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 shadow-sm"
-              >
-                <span className="font-semibold text-slate-900">{w}</span>
-                <span className="text-slate-400">{m}</span>
-              </span>
-            ))}
-          </div>
-        </FlowStep>
-      </div>
     </div>
   );
 }
 
-function FlowArrow() {
-  return (
-    <div aria-hidden className="flex justify-center">
-      <div className="h-3 w-px bg-gradient-to-b from-slate-200 to-slate-300" />
-    </div>
-  );
-}
 
-function FlowStep({
-  tone,
-  label,
-  children,
-}: {
-  tone: "dutch" | "translation" | "meaning" | "vocab";
-  label: string;
-  children: ReactNode;
-}) {
-  const toneCls =
-    tone === "dutch"
-      ? "border-[#4F7FFF]/25 bg-[#4F7FFF]/[0.04]"
-      : tone === "translation"
-        ? "border-emerald-200/70 bg-emerald-50/40"
-        : "border-slate-200 bg-slate-50/60";
-  const dotCls =
-    tone === "dutch"
-      ? "bg-[#4F7FFF]"
-      : tone === "translation"
-        ? "bg-emerald-500"
-        : tone === "meaning"
-          ? "bg-amber-500"
-          : "bg-slate-400";
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <section className={`rounded-xl border px-4 py-3 ${toneCls}`}>
+    <section>
       <div
-        className="mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500"
+        className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
         style={heading}
       >
-        <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />
         {label}
       </div>
       {children}
     </section>
   );
 }
-
 
 /* ============================== CONTENT TYPES ============================== */
 
