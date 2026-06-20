@@ -3099,21 +3099,21 @@ function ExplanationPanel({
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence unlocks a full breakdown — translation, meaning, key vocabulary, and expression notes — instantly.
+          Every sentence unlocks a coach-style breakdown — natural translation, the key expression, and why native speakers say it this way.
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Translation", "Meaning", "Vocabulary", "Notes"].map((l) => (
+          {["Natural translation", "What's happening", "Key expression", "Why this way"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Translation" sample="The natural translation of the sentence appears here." />
-          <PreviewSection label="Meaning" sample="A short, plain-language explanation of what the speaker means." />
-          <PreviewSection label="Vocabulary" sample="key word = meaning · phrase = meaning" mono />
-          <PreviewSection label="Expression Notes" sample="Idioms, slang, or grammar tips for the line." />
+          <PreviewSection label="Natural translation" sample="How a real speaker would say this idea in your language." />
+          <PreviewSection label="What's happening" sample="Intent and context — why this line matters in the conversation." />
+          <PreviewSection label="Key expression" sample="ervoor kiezen = to choose to, to opt to" mono />
+          <PreviewSection label="Why speakers say it this way" sample="Common in news and formal speech when describing decisions." />
         </div>
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
