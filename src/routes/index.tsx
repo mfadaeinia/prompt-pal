@@ -1113,6 +1113,13 @@ function Index() {
           video_id: res.videoId,
           source: res.source,
         });
+      } else if (
+        res.videoId === DEMO_VIDEO_ID &&
+        res.sentences.length > 0 &&
+        !(payload as any).streaming
+      ) {
+        // Warm the client cache so the next Demo open is instant.
+        writeDemoTranscriptCache(DEMO_VIDEO_ID, res);
       }
     },
     onError: (err: any, vars) => {
