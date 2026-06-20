@@ -184,66 +184,80 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
-        <div className="relative z-10 max-w-xl md:max-w-2xl lg:max-w-3xl">
-          <span
-            className="mb-5 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur sm:mb-6"
-            style={heading}
-          >
-            <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-            For the content you already watch
-          </span>
-
-          <h1
-            className="text-[1.85rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]"
-            style={heading}
-          >
-            Understand Any Video.
-            <br />
-            <span className="text-blue-600">Without Leaving It.</span>
-          </h1>
-
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-            Click any sentence to get translations, explanations, vocabulary, and context — instantly.
-            No tabs. No dictionaries. No broken focus.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
-            <button
-              onClick={onPrimary}
-              className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
+          <div className="max-w-xl">
+            <span
+              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
               style={heading}
             >
-              Try NativeFlow Free
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-            <button
-              onClick={onSecondary}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white sm:px-6 sm:py-3.5"
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+              Understand real content, sentence by sentence
+            </span>
+
+            <h1
+              className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
               style={heading}
             >
-              <Play className="h-4 w-4" />
-              Watch Demo
-            </button>
+              Understand
+              <br />
+              Any Video.
+              <br />
+              <span className="text-blue-600">Without Leaving It.</span>
+            </h1>
+
+            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
+              Stop pausing videos, opening dictionaries, and switching tabs.
+              Click any sentence to get translations, explanations, vocabulary, and context instantly.
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
+              <button
+                onClick={onPrimary}
+                className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+                style={heading}
+              >
+                Try NativeFlow Free
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <button
+                onClick={onSecondary}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
+                style={heading}
+              >
+                <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
+                Watch Demo
+              </button>
+            </div>
+
+            <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Check className="h-4 w-4 text-emerald-600" /> No credit card
+              </li>
+            </ul>
+
+            <div className="mt-8">
+              <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
+                Learn from content you already love:
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
+                <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
+                <span className="inline-flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-slate-700" /> TED Talks</span>
+                <span className="inline-flex items-center gap-1.5"><Newspaper className="h-4 w-4 text-slate-700" /> News</span>
+                <span className="inline-flex items-center gap-1.5"><Headphones className="h-4 w-4 text-purple-600" /> Podcasts</span>
+                <span className="text-slate-400">… and more</span>
+              </div>
+            </div>
           </div>
 
-          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
-            </li>
-            <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> No credit card required
-            </li>
-          </ul>
-
-          <p
-            className="mt-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:mt-8"
-            style={heading}
-          >
-            YouTube · TED Talks · News · Podcasts · Interviews
-          </p>
+          <div className="relative">
+            <ProductMock />
+          </div>
         </div>
       </div>
     </section>
