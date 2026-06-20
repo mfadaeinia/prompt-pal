@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
+import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 
 /**
 
@@ -140,7 +141,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
     <section className="relative overflow-hidden">
       {/* ============== BACKGROUND — MOBILE: small tile grid as texture ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 md:hidden">
-        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.35] blur-[2px]">
+        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.55]">
           {MOBILE_TILES.map((id, i) => (
             <div
               key={id + i}
@@ -156,8 +157,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           ))}
         </div>
-        {/* fade so the headline stays dominant */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/50 via-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/30 via-[#F8FAFC]/50 to-[#F8FAFC]" />
       </div>
 
       {/* ============== BACKGROUND — TABLET: collage spans most of the hero ============== */}
@@ -167,8 +167,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           alt=""
           className="absolute inset-y-0 right-0 h-full w-[92%] object-cover object-right"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/50 via-25% to-transparent to-55%" />
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-5% via-[#F8FAFC]/20 via-20% to-transparent to-45%" />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
       {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
@@ -178,10 +178,10 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           alt=""
           className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
         />
-        {/* strong left clean area, soft fade into collage */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-25% via-[#F8FAFC]/50 via-40% to-transparent to-60%" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55%" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
+
 
       <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
         <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
@@ -281,45 +281,12 @@ function ProductMock() {
         {/* LEFT: video + transcript */}
         <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
           {/* video */}
-          <div className="relative aspect-video bg-slate-900">
-            <img
-              src="https://images.unsplash.com/photo-1534351590666-13e3e96c5017?w=900&q=80"
-              alt="Dutch canal scene"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-            <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow">
-              <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-red-600">
-                <Play className="h-2 w-2 fill-white text-white" />
-              </span>
-              YouTube
-            </div>
-            <div className="absolute inset-x-4 bottom-10 text-center">
-              <p
-                className="text-lg font-semibold text-white drop-shadow-lg sm:text-xl"
-                style={heading}
-              >
-                Dat slaat nergens op.
-              </p>
-            </div>
-            {/* player controls */}
-            <div className="absolute inset-x-0 bottom-0 px-3 pb-2">
-              <div className="mb-1.5 h-1 rounded-full bg-white/30">
-                <div className="h-full w-[35%] rounded-full bg-red-500" />
-              </div>
-              <div className="flex items-center justify-between text-[10px] font-medium text-white/90">
-                <div className="flex items-center gap-2">
-                  <Play className="h-3 w-3 fill-white" />
-                  <span>🔊</span>
-                  <span>0:42 / 12:45</span>
-                </div>
-                <div className="flex items-center gap-2 opacity-80">
-                  <span>⚙</span>
-                  <span>⛶</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <img
+            src={youtubePlayer.url}
+            alt="YouTube video — Dat slaat nergens op."
+            className="block w-full"
+          />
+
 
           {/* transcript */}
           <ul className="divide-y divide-slate-100">
