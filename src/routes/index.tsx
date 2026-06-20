@@ -2165,10 +2165,12 @@ function Index() {
             <div
               className={`grid gap-6 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start"
+                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
+
+              <div className="contents lg:flex lg:flex-col lg:gap-6">
 
               <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
@@ -2249,7 +2251,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:sticky lg:top-[68px]">
+                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -2264,7 +2266,7 @@ function Index() {
               </div>
 
               {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
-              <div className="min-w-0 order-3 lg:order-2 lg:sticky lg:top-[68px] lg:self-start">
+              <div className="min-w-0 order-3 lg:order-2">
                 <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
@@ -2450,10 +2452,11 @@ function Index() {
 
                   </aside>
               </div>
+              </div>
 
-              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column (order-3). */}
+              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column. */}
               {studyMode && (
-                <div className="min-w-0 order-2 lg:order-3 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+                <div className="min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
