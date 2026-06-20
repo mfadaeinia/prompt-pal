@@ -183,9 +183,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:gap-14 md:pt-24 md:pb-32 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-6 lg:pb-28">
-        {/* LEFT — copy */}
-        <div className="relative z-10 max-w-xl md:max-w-2xl lg:max-w-xl">
+      <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
+        <div className="relative z-10 max-w-xl md:max-w-2xl lg:max-w-3xl">
           <span
             className="mb-5 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur sm:mb-6"
             style={heading}
@@ -246,29 +245,11 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             YouTube · TED Talks · News · Podcasts · Interviews
           </p>
         </div>
-
-        {/* RIGHT — product mock. Peek tiles only on tablet+ to avoid mobile clutter */}
-        <div className="relative z-10 lg:-ml-4 xl:-ml-10">
-          <div className="relative mx-auto w-full max-w-lg md:max-w-xl lg:ml-auto lg:mr-0">
-            {PEEK_TILES.map((t) => (
-              <div
-                key={t.src}
-                aria-hidden
-                className={`${t.cls} z-0 hidden overflow-hidden rounded-xl border border-white/80 shadow-[0_18px_40px_-15px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/5 md:block`}
-                style={{ aspectRatio: "16/10" }}
-              >
-                <img src={t.src} alt="" loading="lazy" className="h-full w-full object-cover" />
-              </div>
-            ))}
-            <div className="relative z-10">
-              <ProductMock />
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
 }
+
 
 
 
