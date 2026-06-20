@@ -782,6 +782,17 @@ function Index() {
       setSlowTimeoutLevel(0);
       setTranscriptStatus("checking_cache");
 
+      // ── Demo fast-path: localStorage cache ─────────────────────────────
+      // The Demo button always opens the same fixed video. If we have a
+      // previously-stored transcript for it, hydrate from there with zero
+      // network — the Demo should feel like a preloaded showcase.
+      if (vars.url === DEMO_VIDEO_URL) {
+        const cached = readDemoTranscriptCache(DEMO_VIDEO_ID);
+        if (cached) {
+          return { res: cached, vars, viaSlowPath: false };
+        }
+      }
+
       // ── Fast path: cache + YouTube captions only ────────────────────────
       // For the demo video we skip YouTube captions entirely — their
       // auto-generated timestamps drift out of sync with the audio. ASR
