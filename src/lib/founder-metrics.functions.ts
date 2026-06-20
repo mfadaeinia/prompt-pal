@@ -17,6 +17,12 @@ export type FounderMetrics = {
     positive: number;
     negative: number;
     wouldUseAgain: { definitely: number; maybe: number; probably_not: number };
+    recent: Array<{
+      created_at: string;
+      feedback_type: string;
+      feedback_text: string | null;
+      would_use_again: string | null;
+    }>;
   };
   waitlist: {
     total: number;
@@ -33,7 +39,8 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
       supabaseAdmin
         .from("user_feedback" as any)
-        .select("feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id"),
+        .select("created_at,feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id,feedback_text")
+        .order("created_at", { ascending: false }),
       supabaseAdmin
         .from("early_access_signups" as any)
         .select("email,created_at")
@@ -42,11 +49,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
     const feedback = ((fb.data ?? []) as unknown) as Array<{
+      created_at: string;
       feedback_type: string;
       would_use_again: string | null;
       total_sentence_clicks: number | null;
       demo_started: boolean | null;
       session_id: string | null;
+      feedback_text: string | null;
     }>;
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
 
@@ -88,7 +97,17 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         sessionsOver5min,
         totalSessions,
       },
-      feedback: { positive, negative, wouldUseAgain },
+      feedback: {
+        positive,
+        negative,
+        wouldUseAgain,
+        recent: feedback.slice(0, 8).map((f) => ({
+          created_at: f.created_at,
+          feedback_type: f.feedback_type,
+          feedback_text: f.feedback_text,
+          would_use_again: f.would_use_again,
+        })),
+      },
       waitlist: {
         total: signups.length,
         mostRecentAt: signups[0]?.created_at ?? null,

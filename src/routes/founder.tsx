@@ -107,11 +107,24 @@ function FounderGate() {
   );
 }
 
+type FounderTab = "overview" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
+
+const TABS: Array<{ id: FounderTab; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "funnel", label: "Activation Funnel" },
+  { id: "cohort", label: "User Test Cohort" },
+  { id: "health", label: "Product Health" },
+  { id: "feedback", label: "Feedback" },
+  { id: "engineering", label: "Engineering" },
+];
+
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
+  const [tab, setTab] = useState<FounderTab>("overview");
+
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["founder-metrics"],
     queryFn: () => fetcher(),
@@ -133,6 +146,13 @@ function FounderPage() {
     refetchInterval: 30_000,
   });
 
+  const refreshAll = () => {
+    refetch();
+    libQ.refetch();
+    txQ.refetch();
+    cohortQ.refetch();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -144,12 +164,7 @@ function FounderPage() {
             </p>
           </div>
           <button
-            onClick={() => {
-              refetch();
-              libQ.refetch();
-              txQ.refetch();
-              cohortQ.refetch();
-            }}
+            onClick={refreshAll}
             className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
           >
             {isFetching || libQ.isFetching || txQ.isFetching || cohortQ.isFetching
@@ -158,21 +173,296 @@ function FounderPage() {
           </button>
         </header>
 
-        <AsrProbeSection />
-        {cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
-        <PipelineTraceSection />
-        <TranscriptCacheTools />
-        <TranscriptTruthSection />
-        <BenchmarkSection />
+        <nav className="flex flex-wrap gap-1 border-b border-slate-200">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={
+                "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors " +
+                (tab === t.id
+                  ? "border-slate-900 text-slate-900"
+                  : "border-transparent text-slate-500 hover:text-slate-900")
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
-        {data && <Dashboard m={data} />}
-        {libQ.data && <LibrarySection m={libQ.data} />}
-        {txQ.data && <TranscriptQualitySection m={txQ.data} />}
+
+        {tab === "overview" && data && (
+          <OverviewSection
+            m={data}
+            lib={libQ.data}
+            tx={txQ.data}
+            cohort={cohortQ.data}
+          />
+        )}
+        {tab === "funnel" && data && (
+          <FunnelSection m={data} lib={libQ.data} tx={txQ.data} cohort={cohortQ.data} />
+        )}
+        {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
+        {tab === "health" && <ProductHealthSection tx={txQ.data} />}
+        {tab === "feedback" && data && <FeedbackTab m={data} />}
+        {tab === "engineering" && (
+          <div className="space-y-6">
+            <AsrProbeSection />
+            <PipelineTraceSection />
+            <TranscriptCacheTools />
+            <TranscriptTruthSection />
+            <BenchmarkSection />
+            {data && <Dashboard m={data} />}
+            {libQ.data && <LibrarySection m={libQ.data} />}
+            {txQ.data && <TranscriptQualitySection m={txQ.data} />}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+function OverviewSection({
+  m,
+  lib,
+  tx,
+  cohort,
+}: {
+  m: FounderMetrics;
+  lib?: LibraryMetrics;
+  tx?: TranscriptQualityMetrics;
+  cohort?: TesterCohortMetrics;
+}) {
+  const activated = cohort?.totals.activated ?? 0;
+  const returned = cohort?.totals.returned7d ?? 0;
+  const videosProcessed = tx?.totalVideos ?? m.video.totalSessions;
+  return (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Founder Overview
+      </h2>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <BigKpi label="Visitors" value={m.visitors} hint="unique sessions" />
+        <BigKpi label="Activated Users" value={activated} hint="≥1 video & ≥3 clicks" />
+        <BigKpi label="Returning Users" value={returned} hint="day 6–10 after first seen" />
+        <BigKpi label="Videos Processed" value={videosProcessed} />
+        <BigKpi label="Sentence Clicks" value={m.transcriptClicks} />
+        <BigKpi label="Words Saved" value={lib?.totalSaves ?? 0} />
+        <BigKpi label="Average Session" value={fmtDur(m.video.avgDurationSeconds)} />
+        <BigKpi label="Feedback Received" value={m.feedbackCount} />
+      </div>
+    </div>
+  );
+}
+
+function FunnelSection({
+  m,
+  lib,
+  tx,
+  cohort,
+}: {
+  m: FounderMetrics;
+  lib?: LibraryMetrics;
+  tx?: TranscriptQualityMetrics;
+  cohort?: TesterCohortMetrics;
+}) {
+  const visitors = m.visitors || 0;
+  const startedLearning = m.video.totalSessions || 0;
+  const loadedVideo = tx?.totalVideos ?? 0;
+  const clickedSentence = m.transcriptClicks > 0 ? m.transcriptClicks : 0;
+  const savedWord = lib?.totalSaves ?? 0;
+  const returnedUser = cohort?.totals.returned7d ?? 0;
+
+  const stages = [
+    { label: "Visitors", value: visitors },
+    { label: "Started Learning", value: startedLearning },
+    { label: "Loaded Video", value: loadedVideo },
+    { label: "Clicked Sentence", value: clickedSentence },
+    { label: "Saved Word", value: savedWord },
+    { label: "Returned User", value: returnedUser },
+  ];
+
+  const drops = stages.slice(1).map((s, i) => {
+    const prev = stages[i].value;
+    const dropPct = prev > 0 ? Math.round(((prev - s.value) / prev) * 100) : 0;
+    return { ...s, dropPct };
+  });
+  const worstIdx = drops.reduce(
+    (worst, s, i) => (s.dropPct > drops[worst].dropPct ? i : worst),
+    0,
+  );
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Activation Funnel
+      </h2>
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="space-y-2">
+          <FunnelRow label={stages[0].label} value={stages[0].value} pct={100} />
+          {drops.map((s, i) => {
+            const prev = stages[i].value;
+            const conv = prev > 0 ? Math.round((s.value / prev) * 100) : 0;
+            const isWorst = i === worstIdx && s.dropPct > 0;
+            return (
+              <div key={s.label}>
+                <div
+                  className={
+                    "ml-4 text-xs " +
+                    (isWorst ? "text-red-600 font-semibold" : "text-slate-400")
+                  }
+                >
+                  ↓ {conv}% continue ({s.dropPct}% drop-off)
+                  {isWorst && " ← biggest drop-off"}
+                </div>
+                <FunnelRow label={s.label} value={s.value} pct={conv} highlight={isWorst} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FunnelRow({
+  label,
+  value,
+  pct,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  pct: number;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-40 text-sm font-medium text-slate-800">{label}</div>
+      <div className="text-xl font-bold tabular-nums text-slate-900 w-16">{value}</div>
+      <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
+        <div
+          className={"h-full " + (highlight ? "bg-red-500" : "bg-slate-900")}
+          style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ProductHealthSection({ tx }: { tx?: TranscriptQualityMetrics }) {
+  if (!tx) return <p className="text-sm text-slate-500">Loading health metrics…</p>;
+  const transcriptSuccess = 100 - Math.round(tx.limitedModePct ?? 0);
+  const learningMode = tx.fullLearningPct;
+  const explanation = tx.explanationEnabledPct;
+  const translation = 100 - Math.round(tx.limitedModePct ?? 0);
+  const reliability = Math.round(
+    (transcriptSuccess + learningMode + explanation + translation) / 4,
+  );
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Product Health
+      </h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <HealthCard label="Transcript Success" value={transcriptSuccess} />
+        <HealthCard label="Learning Mode Success" value={learningMode} />
+        <HealthCard label="Explanation Success" value={explanation} />
+        <HealthCard label="Translation Success" value={translation} />
+        <HealthCard label="Reliability Score" value={reliability} bold />
+      </div>
+    </div>
+  );
+}
+
+function HealthCard({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+  const tier =
+    value >= 85
+      ? { dot: "bg-emerald-500", text: "text-emerald-700", word: "Healthy" }
+      : value >= 60
+      ? { dot: "bg-amber-500", text: "text-amber-700", word: "Watch" }
+      : { dot: "bg-red-500", text: "text-red-700", word: "Critical" };
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${tier.dot}`} />
+        <div className="text-xs text-slate-500">{label}</div>
+      </div>
+      <div className={"mt-2 " + (bold ? "text-3xl" : "text-2xl") + " font-bold text-slate-900"}>
+        {value}%
+      </div>
+      <div className={"mt-0.5 text-xs font-medium " + tier.text}>{tier.word}</div>
+    </div>
+  );
+}
+
+function FeedbackTab({ m }: { m: FounderMetrics }) {
+  const featureRequests = m.feedback.recent.filter((r) =>
+    (r.feedback_text ?? "").toLowerCase().match(/\b(would love|wish|feature|please add|could you|can you add|request)\b/),
+  ).length;
+  return (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Recent Feedback
+      </h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <BigKpi label="Positive 👍" value={m.feedback.positive} />
+        <BigKpi label="Negative 👎" value={m.feedback.negative} />
+        <BigKpi label="Feature Requests" value={featureRequests} hint="keyword match" />
+        <BigKpi label="Total Feedback" value={m.feedbackCount} />
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Most Recent Comments
+        </div>
+        <ul className="space-y-3">
+          {m.feedback.recent.length === 0 && (
+            <li className="text-sm text-slate-400">No feedback yet.</li>
+          )}
+          {m.feedback.recent.map((r, i) => (
+            <li key={i} className="border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span
+                  className={
+                    "rounded px-1.5 py-0.5 font-medium " +
+                    (r.feedback_type === "positive"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : r.feedback_type === "negative"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-slate-100 text-slate-600")
+                  }
+                >
+                  {r.feedback_type}
+                </span>
+                <span>{new Date(r.created_at).toLocaleString()}</span>
+                {r.would_use_again && (
+                  <span className="text-slate-400">· would use: {r.would_use_again}</span>
+                )}
+              </div>
+              <div className="mt-1 text-sm text-slate-800">
+                {r.feedback_text?.trim() || <span className="text-slate-400">(no comment)</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function BigKpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-2 text-3xl font-bold tabular-nums text-slate-900">{value}</div>
+      {hint && <div className="mt-1 text-[11px] text-slate-400">{hint}</div>}
+    </div>
+  );
+}
+
 
 function TranscriptTruthSection() {
   const queueFetcher = useServerFn(getTranscriptReviewQueue);
