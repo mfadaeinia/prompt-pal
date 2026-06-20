@@ -141,7 +141,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
     <section className="relative overflow-hidden">
       {/* ============== BACKGROUND — MOBILE: small tile grid as texture ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 md:hidden">
-        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.35] blur-[2px]">
+        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.55]">
           {MOBILE_TILES.map((id, i) => (
             <div
               key={id + i}
@@ -157,8 +157,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           ))}
         </div>
-        {/* fade so the headline stays dominant */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/50 via-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/30 via-[#F8FAFC]/50 to-[#F8FAFC]" />
       </div>
 
       {/* ============== BACKGROUND — TABLET: collage spans most of the hero ============== */}
@@ -168,8 +167,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           alt=""
           className="absolute inset-y-0 right-0 h-full w-[92%] object-cover object-right"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/50 via-25% to-transparent to-55%" />
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-5% via-[#F8FAFC]/20 via-20% to-transparent to-45%" />
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
       {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
@@ -179,10 +178,10 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           alt=""
           className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
         />
-        {/* strong left clean area, soft fade into collage */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-25% via-[#F8FAFC]/50 via-40% to-transparent to-60%" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55%" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
+
 
       <div className="relative mx-auto max-w-7xl px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:pt-24 md:pb-32 lg:pb-28">
         <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] lg:gap-12">
