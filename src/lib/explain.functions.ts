@@ -23,7 +23,6 @@ Your job is to help an intermediate learner understand WHY native speakers say a
 Output PLAIN TEXT in this EXACT format. Every field on its own line, in this order. Use "—" to skip a field.
 
 Translation: <NATURAL ${data.targetLanguage} translation — how a real speaker would say this idea, NOT word-for-word. Avoid literal calques.>
-Whats Happening: <1–2 short sentences in ${data.targetLanguage} explaining intent / context / why this line matters in the conversation. Do NOT start with "The speaker is...". Be specific.>
 Key Expression: <The single most learning-worthy idiom, collocation, phrasal verb, separable verb, fixed expression, or spoken pattern from the sentence, in the ORIGINAL language, followed by " = " and 1–3 natural ${data.targetLanguage} equivalents separated by ", ". If literally nothing notable, write "—".>
 Why This Way: <1–2 sentences in ${data.targetLanguage}: where/when native speakers use this expression or construction, what register (news, conversational, formal), and why it sounds natural here. Skip with "—" only if there is no Key Expression.>
 Vocabulary: <ONLY 0–3 genuinely difficult or high-value words from the sentence, formatted "word = ${data.targetLanguage} meaning" separated by " · ". Skip common words (and, the, is, more, very, etc.). If nothing qualifies, write "—".>
