@@ -42,7 +42,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
   async (): Promise<FounderMetrics> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [vs, fb, ea] = await Promise.all([
+    const [vs, fb, ea, sx] = await Promise.all([
       supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
       supabaseAdmin
         .from("user_feedback" as any)
@@ -52,6 +52,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         .from("early_access_signups" as any)
         .select("email,created_at")
         .order("created_at", { ascending: false }),
+      supabaseAdmin.from("saved_expressions" as any).select("session_id"),
     ]);
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
