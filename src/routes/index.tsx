@@ -1342,8 +1342,11 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             meaning: parsed.meaning,
+            keyExpression: parsed.keyExpression,
+            whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
             note: parsed.note,
+            grammar: parsed.grammar,
           },
         }));
         if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
