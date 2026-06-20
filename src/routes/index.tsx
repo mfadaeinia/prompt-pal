@@ -3056,12 +3056,12 @@ function ExplanationPanel({
   const tgtLabel = targetLangLabel || "English";
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-md ring-1 ring-primary/5">
+    <div className="rounded-2xl bg-muted/30 p-6 sm:p-7">
       {/* Sentence-first header. The original sentence is the largest, full-width element. Utility actions are demoted to a small row below. */}
-      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+      <div>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-            Original{srcLabel ? ` · ${srcLabel}` : ""}
+          <p className="text-xs font-medium text-muted-foreground">
+            {srcLabel}
           </p>
           <button
             type="button"
@@ -3072,15 +3072,15 @@ function ExplanationPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-2 text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl" lang={sourceLangLabel ? undefined : undefined}>
+        <p className="mt-2 text-xl font-semibold leading-relaxed tracking-tight text-foreground sm:text-2xl">
           {sentence.text}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="mt-4 flex flex-wrap items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -3090,7 +3090,7 @@ function ExplanationPanel({
               size="sm"
               onClick={onSave}
               disabled={saveDisabled}
-              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
               title={
                 isSaved
                   ? "Already in My Library"
@@ -3110,6 +3110,7 @@ function ExplanationPanel({
           )}
         </div>
       </div>
+
 
       {justSaved && (
         <p className="mt-2 px-6 text-xs font-medium text-primary">
