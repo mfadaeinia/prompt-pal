@@ -3,7 +3,6 @@ import {
   Play,
   Check,
   ArrowRight,
-  MousePointerClick,
   Languages,
   BookOpen,
   Youtube,
@@ -12,13 +11,19 @@ import {
   GraduationCap,
   Headphones,
   Quote,
+  Bookmark,
+  Globe,
+  Zap,
+  Search,
+  Pause,
+  X,
+  MousePointerClick,
 } from "lucide-react";
 import { track } from "@/lib/analytics";
 
 /**
- * Light, product-first landing — inspired by Linear / Notion / Readwise / Raycast.
- * Self-contained: no URL inputs in the hero. Primary CTA scrolls to #try,
- * where the existing PrimaryHero (with the YouTube URL form) lives.
+ * Light, product-first landing — premium "understanding layer" for real content.
+ * Inspired by Linear, Notion, Stripe, Readwise.
  */
 export function MarketingLanding({
   onStartDemo,
@@ -27,7 +32,6 @@ export function MarketingLanding({
 }: {
   onStartDemo: () => void;
   onSignUp: () => void;
-  /** The existing PrimaryHero (URL input + form). Rendered in the "Try it" section. */
   conversionSlot: ReactNode;
 }) {
   useEffect(() => {
@@ -50,15 +54,13 @@ export function MarketingLanding({
     >
       <div className="relative z-10">
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
-        <RealContent />
-        <HowItWorks />
-        <ProductDemo />
-        <Benefits />
+        <ContentTypes />
+        <Comparison />
+        <Features />
         <Testimonials />
         <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
 
-      {/* Conversion section — light, matches the rest of the landing */}
       <section id="try" className="relative border-t border-slate-200 bg-white">
         <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-6 sm:pt-24">
           <div className="mb-10 text-center">
@@ -82,18 +84,17 @@ export function MarketingLanding({
   );
 }
 
-/* ============================== HERO ============================== */
-
 const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
+
+/* ============================== HERO ============================== */
 
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
       <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-        {/* Copy */}
         <div className="min-w-0">
           <span
-            className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm"
+            className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm"
             style={heading}
           >
             <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
@@ -106,12 +107,12 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           >
             Understand Any Video.
             <br />
-            <span className="text-blue-600">Sentence by Sentence.</span>
+            <span className="text-blue-600">Without Leaving It.</span>
           </h1>
 
           <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
-            Click any sentence to get translations, explanations, vocabulary, and context —
-            instantly, without leaving the video.
+            Stop pausing videos, opening dictionaries, and switching tabs. Click any sentence to get
+            translations, explanations, vocabulary, and context — instantly.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -141,12 +142,23 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
             </li>
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-600" /> No credit card
+              <Check className="h-4 w-4 text-emerald-600" /> No credit card required
             </li>
           </ul>
+
+          <div className="mt-8 border-t border-slate-200 pt-6">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
+              style={heading}
+            >
+              Learn from content you already love
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              YouTube · TED Talks · News · Podcasts · Interviews
+            </p>
+          </div>
         </div>
 
-        {/* Product visualization */}
         <div className="relative min-w-0">
           <ProductMock />
         </div>
@@ -158,7 +170,6 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 function ProductMock() {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_-20px_rgba(15,23,42,0.18)]">
-      {/* Toolbar */}
       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
         <div className="flex gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
@@ -173,11 +184,10 @@ function ProductMock() {
         </div>
       </div>
 
-      {/* Video */}
       <div className="relative aspect-video bg-slate-900">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,#1e3a8a_0%,#0f172a_60%,#020617_100%)]" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-lg">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur">
             <Play className="ml-0.5 h-6 w-6 fill-slate-900 text-slate-900" />
           </div>
         </div>
@@ -189,10 +199,12 @@ function ProductMock() {
         </div>
       </div>
 
-      {/* Sentence + explanation, the real value */}
       <div className="space-y-4 p-5">
         <div className="rounded-lg border border-blue-200 bg-blue-50/70 px-3 py-2.5">
-          <div className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700" style={heading}>
+          <div
+            className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-blue-700"
+            style={heading}
+          >
             0:42 · Dutch
           </div>
           <p className="text-base font-semibold text-slate-900">Dat slaat nergens op.</p>
@@ -203,7 +215,9 @@ function ProductMock() {
             <p className="text-sm text-slate-800">That makes no sense at all.</p>
           </Field>
           <Field label="Meaning">
-            <p className="text-sm text-slate-600">Used when something feels illogical.</p>
+            <p className="text-sm text-slate-600">
+              Used when something feels illogical or absurd.
+            </p>
           </Field>
         </div>
 
@@ -243,34 +257,83 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/* ============================== REAL CONTENT (trust strip) ============================== */
+/* ============================== CONTENT TYPES ============================== */
 
-function RealContent() {
-  const items = [
-    { icon: <Youtube className="h-4 w-4" />, label: "YouTube videos" },
-    { icon: <Mic className="h-4 w-4" />, label: "Interviews" },
-    { icon: <Newspaper className="h-4 w-4" />, label: "News" },
-    { icon: <Headphones className="h-4 w-4" />, label: "Podcasts" },
-    { icon: <GraduationCap className="h-4 w-4" />, label: "Educational" },
+function ContentTypes() {
+  const cards = [
+    {
+      icon: <Newspaper className="h-4 w-4" />,
+      tag: "News",
+      original: "Le gouvernement a annoncé de nouvelles mesures.",
+      lang: "French",
+      translation: "The government announced new measures.",
+    },
+    {
+      icon: <Headphones className="h-4 w-4" />,
+      tag: "Podcast",
+      original: "Eso no tiene ningún sentido para mí.",
+      lang: "Spanish",
+      translation: "That makes no sense to me.",
+    },
+    {
+      icon: <Youtube className="h-4 w-4" />,
+      tag: "YouTube",
+      original: "Dat slaat nergens op, eerlijk gezegd.",
+      lang: "Dutch",
+      translation: "Honestly, that makes no sense at all.",
+    },
+    {
+      icon: <Mic className="h-4 w-4" />,
+      tag: "Interview",
+      original: "Ich hätte das nie für möglich gehalten.",
+      lang: "German",
+      translation: "I would never have thought it possible.",
+    },
   ];
+
   return (
     <section className="border-y border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-10 sm:py-12">
-        <p
-          className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"
-          style={heading}
-        >
-          Built for real content — learn from what you already enjoy
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          {items.map((it) => (
-            <span
-              key={it.label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
+      <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
+        <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
+          <h2
+            className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+            style={heading}
+          >
+            Learn From Content You Already Watch
+          </h2>
+          <p className="mt-3 text-base text-slate-600 sm:text-lg">
+            Real videos. Real language. Real understanding.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map((c) => (
+            <div
+              key={c.tag}
+              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
             >
-              <span className="text-blue-600">{it.icon}</span>
-              {it.label}
-            </span>
+              <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                <span className="text-blue-600">{c.icon}</span>
+                {c.tag}
+              </div>
+              <div
+                className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                style={heading}
+              >
+                {c.lang}
+              </div>
+              <p className="text-[15px] font-semibold leading-snug text-slate-900">
+                {c.original}
+              </p>
+              <div className="my-3 h-px bg-slate-100" />
+              <div
+                className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+                style={heading}
+              >
+                Translation
+              </div>
+              <p className="text-sm leading-relaxed text-slate-600">{c.translation}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -278,122 +341,98 @@ function RealContent() {
   );
 }
 
-/* ============================== HOW IT WORKS ============================== */
+/* ============================== COMPARISON ============================== */
 
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      icon: <Youtube className="h-5 w-5" />,
-      title: "Paste a video",
-      body: "Drop in any YouTube link — podcasts, interviews, news, lectures.",
-    },
-    {
-      n: "02",
-      icon: <MousePointerClick className="h-5 w-5" />,
-      title: "Click a sentence",
-      body: "Pick the line you didn't catch. No pausing, no tab-switching.",
-    },
-    {
-      n: "03",
-      icon: <BookOpen className="h-5 w-5" />,
-      title: "Understand instantly",
-      body: "Translation, meaning, vocabulary, and context in one place.",
-    },
-  ];
+function Comparison() {
+  const oldWay = ["Watch", "Pause", "Search", "Look Up", "Lose Context", "Resume"];
+  const newWay = ["Watch", "Click", "Understand", "Keep Watching"];
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
       <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
-          Three steps. Real understanding.
+        <h2
+          className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+          style={heading}
+        >
+          The Old Way vs. The NativeFlow Way
         </h2>
         <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          Designed to keep you in the flow of the video — not in a textbook.
+          One breaks your focus. The other keeps you in the flow.
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
-        {steps.map((s) => (
-          <div
-            key={s.n}
-            className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm transition-all hover:border-slate-300 hover:shadow-md"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                {s.icon}
-              </div>
-              <span className="text-xs font-semibold tracking-widest text-slate-400" style={heading}>
-                {s.n}
-              </span>
-            </div>
-            <h3 className="mt-5 text-lg font-semibold text-slate-900" style={heading}>
-              {s.title}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.body}</p>
+      <div className="grid gap-5 md:grid-cols-2">
+        {/* OLD WAY */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="mb-6 flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+              <X className="h-3.5 w-3.5" />
+            </span>
+            <span
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"
+              style={heading}
+            >
+              The Old Way
+            </span>
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ============================== YOUTUBE FOCUS ============================== */
-
-function ProductDemo() {
-  const examples = [
-    { title: "Interviews & talk shows", duration: "12 min" },
-    { title: "News & documentaries", duration: "8 min" },
-    { title: "Podcasts & conversations", duration: "24 min" },
-    { title: "Lectures & educational", duration: "15 min" },
-  ];
-
-  return (
-    <section className="border-y border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
-        <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
-            <Youtube className="h-3.5 w-3.5" />
-            YouTube-first
-          </span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
-            Paste any YouTube link
-          </h2>
-          <p className="mt-3 text-base text-slate-600 sm:text-lg">
-            Podcasts, interviews, news, lectures — if it is on YouTube, it works.
-          </p>
-        </div>
-
-        <div className="mx-auto max-w-3xl">
-          {/* URL input mock */}
-          <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-sm sm:p-8">
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <Youtube className="h-5 w-5 shrink-0 text-red-600" />
-              <span className="text-sm text-slate-400">youtube.com/watch?v=...</span>
-              <span className="ml-auto rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">
-                Understand
-              </span>
-            </div>
-
-            {/* Supported types */}
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {examples.map((ex) => (
-                <div
-                  key={ex.title}
-                  className="rounded-xl border border-slate-200 bg-white p-4 text-center transition-all hover:border-slate-300 hover:shadow-sm"
+          <ol className="space-y-2.5">
+            {oldWay.map((step, i) => (
+              <li
+                key={step}
+                className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-3.5 py-2.5"
+              >
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[11px] font-semibold text-slate-500"
+                  style={heading}
                 >
-                  <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                    <Youtube className="h-4 w-4" />
-                  </div>
-                  <p className="text-xs font-semibold text-slate-900">{ex.title}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">{ex.duration}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+                  {i + 1}
+                </span>
+                <span className="text-sm text-slate-700">{step}</span>
+                {step === "Pause" && <Pause className="ml-auto h-3.5 w-3.5 text-slate-400" />}
+                {step === "Search" && <Search className="ml-auto h-3.5 w-3.5 text-slate-400" />}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 text-sm leading-relaxed text-slate-500">
+            Breaks your flow. Kills your focus.
+          </p>
+        </div>
 
-          <p className="mt-6 text-center text-xs text-slate-500">
-            No downloads. No extensions. Just paste a link and click a sentence.
+        {/* NEW WAY */}
+        <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/40 p-7 shadow-sm">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+          <div className="relative mb-6 flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white">
+              <Check className="h-3.5 w-3.5" />
+            </span>
+            <span
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700"
+              style={heading}
+            >
+              The NativeFlow Way
+            </span>
+          </div>
+          <ol className="relative space-y-2.5">
+            {newWay.map((step, i) => (
+              <li
+                key={step}
+                className="flex items-center gap-3 rounded-lg border border-blue-100 bg-white px-3.5 py-2.5 shadow-sm"
+              >
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-600 text-[11px] font-semibold text-white"
+                  style={heading}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-sm font-medium text-slate-900">{step}</span>
+                {step === "Click" && (
+                  <MousePointerClick className="ml-auto h-3.5 w-3.5 text-blue-500" />
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-6 text-sm leading-relaxed text-slate-700">
+            Stay in the flow. Understand more. Enjoy more.
           </p>
         </div>
       </div>
@@ -401,58 +440,62 @@ function ProductDemo() {
   );
 }
 
+/* ============================== FEATURES ============================== */
 
-/* ============================== BENEFITS ============================== */
-
-function Benefits() {
+function Features() {
   const items = [
     {
+      icon: <Globe className="h-5 w-5" />,
+      title: "50+ Languages",
+      body: "Learn from content in the languages you actually care about.",
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "Instant Understanding",
+      body: "Translations, meaning, and vocabulary appear the moment you click.",
+    },
+    {
+      icon: <Bookmark className="h-5 w-5" />,
+      title: "Save & Review",
+      body: "Build your own library of sentences and expressions to revisit.",
+    },
+    {
       icon: <Languages className="h-5 w-5" />,
-      title: "Understand without leaving the video",
-      body: "Translations and meaning are one click away. No dictionaries, no tabs.",
-    },
-    {
-      icon: <BookOpen className="h-5 w-5" />,
-      title: "Learn vocabulary in context",
-      body: "Real sentences, real situations. Words stick when they have a home.",
-    },
-    {
-      icon: <Headphones className="h-5 w-5" />,
-      title: "Train your ear on real speech",
-      body: "Build listening comprehension with authentic native content, at your pace.",
-    },
-    {
-      icon: <Check className="h-5 w-5" />,
-      title: "Save phrases you want to remember",
-      body: "Build a personal library of expressions you can revisit anytime.",
+      title: "Works Everywhere",
+      body: "YouTube, podcasts, news, talks — wherever real conversations live.",
     },
   ];
   return (
-    <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
-      <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
-          Stop pausing videos to look things up
-        </h2>
-        <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          NativeFlow folds the dictionary, translator, and notebook into the video itself.
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {items.map((b) => (
-          <div
-            key={b.title}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-slate-300"
+    <section className="border-y border-slate-200 bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
+        <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
+          <h2
+            className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+            style={heading}
           >
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              {b.icon}
+            Everything you need to understand real content
+          </h2>
+          <p className="mt-3 text-base text-slate-600 sm:text-lg">
+            Designed to support your listening, not replace it.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((b) => (
+            <div
+              key={b.title}
+              className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 transition-all hover:border-slate-300 hover:bg-white"
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                {b.icon}
+              </div>
+              <h3 className="text-base font-semibold text-slate-900" style={heading}>
+                {b.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{b.body}</p>
             </div>
-            <h3 className="text-base font-semibold text-slate-900" style={heading}>
-              {b.title}
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{b.body}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -486,43 +529,47 @@ const TESTIMONIALS = [
 
 function Testimonials() {
   return (
-    <section className="border-y border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28">
-        <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl" style={heading}>
-            Built for people who already love content
-          </h2>
-        </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <figure
-              key={t.name}
-              className="flex h-full flex-col rounded-2xl border border-slate-200 bg-[#F8FAFC] p-7"
-            >
-              <Quote className="h-5 w-5 text-blue-500/60" />
-              <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-slate-700">
-                "{t.quote}"
-              </blockquote>
-              <figcaption className="mt-6 flex items-center gap-3">
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-                  style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)` }}
-                >
-                  {t.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-slate-900" style={heading}>
-                    {t.name}
-                  </div>
-                  <div className="text-xs text-slate-500">{t.lang}</div>
+    <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
+      <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
+        <h2
+          className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+          style={heading}
+        >
+          Built For Learners Who Use Real Content
+        </h2>
+        <p className="mt-3 text-base text-slate-600 sm:text-lg">
+          People who want to enjoy native podcasts, videos, and shows — and understand them.
+        </p>
+      </div>
+      <div className="grid gap-5 md:grid-cols-3">
+        {TESTIMONIALS.map((t) => (
+          <figure
+            key={t.name}
+            className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
+          >
+            <Quote className="h-5 w-5 text-blue-500/60" />
+            <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-slate-700">
+              "{t.quote}"
+            </blockquote>
+            <figcaption className="mt-6 flex items-center gap-3">
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
+                style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)` }}
+              >
+                {t.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </span>
+              <div>
+                <div className="text-sm font-semibold text-slate-900" style={heading}>
+                  {t.name}
                 </div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
+                <div className="text-xs text-slate-500">{t.lang}</div>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
       </div>
     </section>
   );
@@ -541,7 +588,7 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
           Understand any video today
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-base text-slate-600 sm:text-lg">
-          Paste a YouTube link and start understanding every sentence in seconds.
+          Paste a link and start understanding every sentence in seconds.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button
@@ -560,6 +607,9 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
             <Play className="h-4 w-4" /> Watch Demo
           </button>
         </div>
+        <p className="mt-5 text-xs text-slate-500">
+          Free to try · No credit card required · Works with YouTube
+        </p>
       </div>
     </section>
   );
