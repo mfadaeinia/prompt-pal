@@ -1887,7 +1887,7 @@ function Index() {
         />
       )}
 
-      <main className="mx-auto max-w-6xl px-6">
+      <main className={`relative mx-auto max-w-6xl px-6 ${view === "demo" ? "dark" : ""}`}>
         {view === "landing" && <EarlyAccessSection />}
 
 
