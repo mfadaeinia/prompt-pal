@@ -1838,6 +1838,18 @@ function Index() {
       {view === "landing" && (
         <MarketingLanding
           onStartDemo={startDemo}
+          onSignUp={() => {
+            if (isAuthenticated) {
+              const el = document.getElementById("try");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+              pendingActionRef.current = () => {
+                const el = document.getElementById("try");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              };
+              setAuthOpen(true);
+            }
+          }}
           conversionSlot={
             <PrimaryHero
               url={url}
@@ -1849,8 +1861,17 @@ function Index() {
               loading={loadMutation.isPending}
               onSubmit={(u) => {
                 track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
-                setView("demo");
-                submitLoad(u);
+                const go = () => {
+                  setUrl(u);
+                  setView("demo");
+                  submitLoad(u);
+                };
+                if (isAuthenticated) {
+                  go();
+                } else {
+                  pendingActionRef.current = go;
+                  setAuthOpen(true);
+                }
               }}
               onStartDemo={startDemo}
             />
