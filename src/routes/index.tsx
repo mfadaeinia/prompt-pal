@@ -2266,7 +2266,7 @@ function Index() {
               </div>
 
               {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
-              <div className="min-w-0 order-3 lg:order-2 lg:sticky lg:top-[68px] lg:self-start">
+              <div className="min-w-0 order-3 lg:order-2">
                 <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
