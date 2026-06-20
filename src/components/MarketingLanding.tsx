@@ -103,19 +103,20 @@ const COLLAGE = [
 function ContentCollage() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 grid grid-cols-4 gap-3 p-4 opacity-[0.18] blur-[2px] sm:opacity-[0.22] sm:blur-[1px]">
-        {COLLAGE.map((img, i) => (
+      <div className="absolute -inset-8 grid grid-cols-4 gap-4 opacity-[0.14] blur-[6px] sm:opacity-[0.18] sm:blur-[5px]">
+        {COLLAGE.map((img) => (
           <div
             key={img.src}
-            className="overflow-hidden rounded-xl bg-slate-200"
-            style={{ aspectRatio: "16/10", transform: `translateY(${(i % 2) * 28}px)` }}
+            className="overflow-hidden rounded-2xl bg-slate-200"
+            style={{ aspectRatio: "16/10" }}
           >
             <img src={img.src} alt="" loading="lazy" className="h-full w-full object-cover" />
           </div>
         ))}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC]/70 to-[#F8FAFC]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#F8FAFC_75%)]" />
+      {/* Soft top/bottom fade only — keep collage visible across the middle */}
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#F8FAFC] to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
     </div>
   );
 }
@@ -124,79 +125,71 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
   return (
     <section className="relative">
       <ContentCollage />
-      <div className="relative mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-          <div className="min-w-0">
-            <span
-              className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
-              style={heading}
-            >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              For the content you already watch
-            </span>
+      <div className="relative mx-auto max-w-5xl px-6 pt-16 pb-20 text-center sm:pt-24 sm:pb-24">
+        <span
+          className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
+          style={heading}
+        >
+          <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+          For the content you already watch
+        </span>
 
-            <h1
-              className="text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
-              style={heading}
-            >
-              Understand the videos
-              <br />
-              <span className="text-blue-600">you already love.</span>
-            </h1>
+        <h1
+          className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
+          style={heading}
+        >
+          Understand Any Video.
+          <br />
+          <span className="text-blue-600">Without Leaving It.</span>
+        </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
-              News, podcasts, interviews, YouTube. Paste any link and click a sentence — get the
-              translation, the meaning, and the words behind it. Without breaking your flow.
-            </p>
+        <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg sm:mt-6">
+          Click any sentence to get translations, explanations, vocabulary, and context — instantly.
+          No tabs. No dictionaries. No broken focus.
+        </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                onClick={onPrimary}
-                className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
-                style={heading}
-              >
-                Try NativeFlow Free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
-              <button
-                onClick={onSecondary}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
-                style={heading}
-              >
-                <Play className="h-4 w-4" />
-                Watch Demo
-              </button>
-            </div>
-
-            <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6 sm:mt-7">
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> No credit card required
-              </li>
-            </ul>
-
-            <div className="mt-8 border-t border-slate-200 pt-6">
-              <p
-                className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"
-                style={heading}
-              >
-                Built for real content
-              </p>
-              <p className="mt-2 text-sm text-slate-600">
-                YouTube · TED Talks · News · Podcasts · Interviews · Documentaries
-              </p>
-            </div>
-          </div>
-
-          <div className="relative min-w-0">
-            <ProductMock />
-          </div>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={onPrimary}
+            className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
+            style={heading}
+          >
+            Try NativeFlow Free
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </button>
+          <button
+            onClick={onSecondary}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm transition-all hover:bg-slate-50 sm:px-6 sm:py-3.5"
+            style={heading}
+          >
+            <Play className="h-4 w-4" />
+            Watch Demo
+          </button>
         </div>
+
+        <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6">
+          <li className="inline-flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <Check className="h-4 w-4 text-emerald-600" /> No credit card required
+          </li>
+        </ul>
+
+        {/* Product screenshot — supporting evidence, ~70% width, centered */}
+        <div className="relative mx-auto mt-14 w-full max-w-2xl">
+          <ProductMock />
+        </div>
+
+        <p
+          className="mt-10 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500"
+          style={heading}
+        >
+          Built for real content · YouTube · TED · News · Podcasts · Interviews
+        </p>
       </div>
     </section>
   );
@@ -204,23 +197,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 function ProductMock() {
   return (
-    <div className="relative">
-      <div className="pointer-events-none absolute -left-6 -top-6 hidden h-20 w-28 overflow-hidden rounded-lg border-2 border-white shadow-xl sm:block">
-        <img
-          src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=300&q=70"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
-      <div className="pointer-events-none absolute -right-4 top-20 hidden h-20 w-28 overflow-hidden rounded-lg border-2 border-white shadow-xl sm:block">
-        <img
-          src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=300&q=70"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_30px_80px_-25px_rgba(15,23,42,0.25)]">
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_30px_80px_-25px_rgba(15,23,42,0.25)]">
         <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-2.5">
           <div className="flex gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
@@ -296,9 +274,9 @@ function ProductMock() {
           </Field>
         </div>
       </div>
-    </div>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
