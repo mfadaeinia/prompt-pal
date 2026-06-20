@@ -90,55 +90,104 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 
 /* ============================== HERO ============================== */
 
-// Peek tiles that wrap around the product mock so the screenshot feels
-// embedded in the content ecosystem instead of floating above it.
+// Peek tiles that wrap around the product mock on tablet+ so the screenshot
+// feels embedded in the content ecosystem instead of floating above it.
 const PEEK_TILES = [
   {
     src: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=500&q=75",
     alt: "News broadcast",
-    label: "News",
     cls: "absolute -top-6 -left-10 w-28 sm:w-36 rotate-[-4deg]",
   },
   {
     src: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=500&q=75",
     alt: "Podcast",
-    label: "Podcast",
     cls: "absolute -top-10 right-6 w-24 sm:w-32 rotate-[5deg]",
   },
   {
     src: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=500&q=75",
     alt: "TED talk",
-    label: "TED",
     cls: "absolute -bottom-8 -left-6 w-28 sm:w-36 rotate-[3deg]",
   },
   {
     src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=75",
     alt: "Interview",
-    label: "Interview",
     cls: "absolute -bottom-10 right-0 w-24 sm:w-32 rotate-[-4deg]",
   },
+];
+
+// Small mobile tiles — many of them, used as background texture only.
+const MOBILE_TILES = [
+  "photo-1495020689067-958852a7765e", // news
+  "photo-1478737270239-2f02b77fc618", // podcast
+  "photo-1505373877841-8d25f7d46678", // ted
+  "photo-1573496359142-b8d87734a5a2", // interview
+  "photo-1485579149621-3123dd979885", // mic
+  "photo-1517245386807-bb43f82c33c4", // documentary
+  "photo-1522202176988-66273c2fd55f", // discussion
+  "photo-1556761175-5973dc0f32e7", // newsroom
+  "photo-1531058020387-3be344556be6", // youtuber
+  "photo-1551817958-d9d86fb29431", // podcast2
+  "photo-1494059980473-813e73ee784b", // talk
+  "photo-1540317580384-e5d43616b9aa", // creator
+  "photo-1492724441997-5dc865305da7", // tv
+  "photo-1581368087028-4f4f5e0c5d6a", // interview2
+  "photo-1551836022-d5d88e9218df", // mic2
+  "photo-1503676260728-1c00da094a0b", // educational
 ];
 
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="relative overflow-hidden">
-      {/* Layer 1 — dense content collage covering ~75% from the right */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
+      {/* ============== BACKGROUND — MOBILE: small tile grid as texture ============== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 md:hidden">
+        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.18] blur-[3px]">
+          {MOBILE_TILES.map((id, i) => (
+            <div
+              key={id + i}
+              className="overflow-hidden rounded-md"
+              style={{ aspectRatio: "1/1" }}
+            >
+              <img
+                src={`https://images.unsplash.com/${id}?w=200&q=60`}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+        {/* fade so the headline stays dominant */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 via-[#F8FAFC]/85 to-[#F8FAFC]" />
+      </div>
+
+      {/* ============== BACKGROUND — TABLET: collage spans most of the hero ============== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block lg:hidden">
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-y-0 right-0 h-full w-full object-cover object-right sm:w-[88%] lg:w-[78%]"
+          className="absolute inset-y-0 right-0 h-full w-[92%] object-cover object-right"
         />
-        {/* Layer 2 — soft left-side gradient for copy legibility; keeps tiles visible */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/80 via-30% to-transparent to-55%" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/70 via-35% to-transparent to-70%" />
         <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pt-16 pb-28 sm:pt-24 sm:pb-32 lg:grid-cols-[0.95fr_1.15fr] lg:items-center lg:gap-4">
+      {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
+        <img
+          src={heroCollage.url}
+          alt=""
+          className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
+        />
+        {/* strong left clean area, soft fade into collage */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-35% via-[#F8FAFC]/70 via-50% to-transparent to-72%" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+      </div>
+
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pt-14 pb-20 sm:pt-20 sm:pb-28 md:gap-14 md:pt-24 md:pb-32 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-6 lg:pb-28">
         {/* LEFT — copy */}
-        <div className="relative z-10">
+        <div className="relative z-10 max-w-xl md:max-w-2xl lg:max-w-xl">
           <span
-            className="mb-6 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur"
+            className="mb-5 inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm backdrop-blur sm:mb-6"
             style={heading}
           >
             <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
@@ -146,7 +195,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </span>
 
           <h1
-            className="max-w-xl text-4xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
+            className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
             style={heading}
           >
             Understand Any Video.
@@ -154,12 +203,12 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             <span className="text-blue-600">Without Leaving It.</span>
           </h1>
 
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-700 sm:text-lg sm:mt-6">
+          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
             Click any sentence to get translations, explanations, vocabulary, and context — instantly.
             No tabs. No dictionaries. No broken focus.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
             <button
               onClick={onPrimary}
               className="group inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] sm:px-6 sm:py-3.5"
@@ -178,7 +227,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </button>
           </div>
 
-          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:text-sm sm:gap-x-6">
+          <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
             </li>
@@ -191,22 +240,21 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </ul>
 
           <p
-            className="mt-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500"
+            className="mt-7 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:mt-8"
             style={heading}
           >
             YouTube · TED Talks · News · Podcasts · Interviews
           </p>
         </div>
 
-        {/* RIGHT — Layer 3: product mock embedded in the collage, with peek tiles wrapping around */}
-        <div className="relative z-10 lg:-ml-8 xl:-ml-16">
-          <div className="relative mx-auto w-full max-w-lg lg:max-w-xl lg:ml-auto lg:mr-0">
-            {/* Peek tiles — content wrapping around the screenshot */}
+        {/* RIGHT — product mock. Peek tiles only on tablet+ to avoid mobile clutter */}
+        <div className="relative z-10 lg:-ml-4 xl:-ml-10">
+          <div className="relative mx-auto w-full max-w-lg md:max-w-xl lg:ml-auto lg:mr-0">
             {PEEK_TILES.map((t) => (
               <div
                 key={t.src}
                 aria-hidden
-                className={`${t.cls} z-0 overflow-hidden rounded-xl border border-white/80 shadow-[0_18px_40px_-15px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/5`}
+                className={`${t.cls} z-0 hidden overflow-hidden rounded-xl border border-white/80 shadow-[0_18px_40px_-15px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/5 md:block`}
                 style={{ aspectRatio: "16/10" }}
               >
                 <img src={t.src} alt="" loading="lazy" className="h-full w-full object-cover" />
