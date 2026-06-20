@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
+import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 
 /**
 
