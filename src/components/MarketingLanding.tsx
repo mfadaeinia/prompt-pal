@@ -191,23 +191,23 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               style={heading}
             >
               <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Understand real content, sentence by sentence
+              For everyone who keeps pausing the video
             </span>
 
             <h1
-              className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
+              className="text-[2.2rem] font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.6rem]"
               style={heading}
             >
-              Understand
+              Finally.
               <br />
-              Any Video.
+              <span className="text-blue-600">Understand</span> what
               <br />
-              <span className="text-blue-600">Without Leaving It.</span>
+              they're actually saying.
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Stop pausing videos, opening dictionaries, and switching tabs.
-              Click any sentence to get translations, explanations, vocabulary, and context instantly.
+              No more pausing, rewinding, or jumping to a translator. Tap any
+              sentence — the meaning is right there, the moment you needed it.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
@@ -216,7 +216,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
-                Try NativeFlow Free
+                Start Understanding — Free
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               <button
@@ -225,13 +225,13 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 style={heading}
               >
                 <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
-                Watch Demo
+                See it in 20 seconds
               </button>
             </div>
 
             <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
               <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
+                <Check className="h-4 w-4 text-emerald-600" /> Works on real YouTube videos
               </li>
               <li className="inline-flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
@@ -243,7 +243,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
             <div className="mt-8">
               <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
-                Learn from content you already love:
+                The videos you already watch:
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
                 <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
@@ -255,8 +255,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
-            <ProductMock />
+          <div className="relative lg:max-w-[94%] lg:-ml-4 xl:-ml-6">
+            <UnderstandingMoment />
           </div>
         </div>
       </div>
