@@ -3204,7 +3204,7 @@ function ExplanationPanel({
             {ready.translation && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  {tgtLabel}
+                  Natural translation · {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
@@ -3214,7 +3214,7 @@ function ExplanationPanel({
             {ready.meaning && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  Meaning
+                  What's happening
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.meaning}
@@ -3222,7 +3222,46 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary && ready.vocabulary !== "—" && (
+            {ready.keyExpression && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Key expression
+                </h4>
+                {(() => {
+                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
+                  const tail = rest.join(" = ");
+                  return (
+                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+                      <span className="font-semibold">{head}</span>
+                      {tail && (
+                        <>
+                          <span className="text-muted-foreground"> — </span>
+                          <span className="text-foreground/85">{tail}</span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
+                {ready.whyThisWay && (
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                    {ready.whyThisWay}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!ready.keyExpression && ready.whyThisWay && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Why speakers say it this way
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.whyThisWay}
+                </p>
+              </div>
+            )}
+
+            {ready.vocabulary && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
@@ -3250,20 +3289,31 @@ function ExplanationPanel({
                 </ul>
               </div>
             )}
-            {ready.note && ready.note !== "—" && (
+            {ready.note && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
-                  Notes
+                  Usage notes
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.meaning && !ready.vocabulary && !ready.note && (
+            {ready.grammar && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Grammar insight
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.grammar}
+                </p>
+              </div>
+            )}
+            {!ready.translation && !ready.meaning && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
 
         ) : error ? (
           <div className="space-y-3">
