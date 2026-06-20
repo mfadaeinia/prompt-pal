@@ -378,20 +378,6 @@ function FlowStep({
 }
 
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <section>
-      <div
-        className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
-        style={heading}
-      >
-        {label}
-      </div>
-      {children}
-    </section>
-  );
-}
-
 /* ============================== CONTENT TYPES ============================== */
 
 function ContentTypes() {
