@@ -255,7 +255,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
             <ProductMock />
           </div>
         </div>
