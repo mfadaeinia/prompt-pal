@@ -93,6 +93,24 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       probably_not: feedback.filter((f) => f.would_use_again === "probably_not").length,
     };
 
+    // Funnel: unique sessions per stage, monotonically clamped so a
+    // later stage can never exceed an earlier one.
+    const startedSessions = uniqueVideoSessionIds;
+    const clickedSessions = new Set(
+      feedback
+        .filter((f) => (f.total_sentence_clicks ?? 0) > 0)
+        .map((f) => f.session_id)
+        .filter(Boolean) as string[],
+    );
+    const savedSessions = new Set(
+      savedRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+
+    const fVisitors = visitors;
+    const fStarted = Math.min(startedSessions.size, fVisitors);
+    const fClicked = Math.min(clickedSessions.size, fStarted);
+    const fSaved = Math.min(savedSessions.size, fClicked);
+
     return {
       visitors,
       demoStarts,
@@ -121,6 +139,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         total: signups.length,
         mostRecentAt: signups[0]?.created_at ?? null,
         mostRecentEmail: signups[0]?.email ?? null,
+      },
+      funnel: {
+        cohortLabel: "unique sessions",
+        visitors: fVisitors,
+        startedLearning: fStarted,
+        clickedSentence: fClicked,
+        savedWord: fSaved,
       },
     };
   },
