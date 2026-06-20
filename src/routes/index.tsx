@@ -2031,13 +2031,12 @@ function Index() {
                 </div>
               )}
 
-            {/* Prominent Watch / Learning mode toggle, near the video. */}
+            {/* Watch / Learning toggle — flat segmented control, sits directly below the video. */}
             <div className="flex items-center justify-between gap-3">
-
               <div
                 role="tablist"
                 aria-label="Viewing mode"
-                className="inline-flex items-center rounded-full border border-border bg-muted/50 p-1 shadow-sm"
+                className="inline-flex items-center rounded-lg bg-muted/60 p-0.5"
               >
                 <button
                   role="tab"
@@ -2049,14 +2048,14 @@ function Index() {
                     track("study_mode_closed", { video_id: videoId });
                     track("watch_mode_opened", { video_id: videoId });
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
                     !studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Tv className="h-4 w-4" />
-                  Watch Mode
+                  <Tv className="h-3.5 w-3.5" />
+                  Watch
                 </button>
                 <button
                   role="tab"
@@ -2075,20 +2074,19 @@ function Index() {
                     setStudyMode(true);
                     track("study_mode_opened", { video_id: videoId });
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
                     studyMode
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
                 >
-                  <BookOpen className="h-4 w-4" />
-                  Learning Mode
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Learning
                 </button>
-
               </div>
               <label
                 className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
-                title="Focus Mode keeps the active sentence in view automatically. Transcript Mode lets you scroll freely."
+                title="Keep the active sentence in view automatically."
               >
                 <input
                   type="checkbox"
@@ -2102,9 +2100,10 @@ function Index() {
                   }}
                   className="h-3.5 w-3.5 cursor-pointer accent-primary"
                 />
-                Focus Mode
+                Auto-follow
               </label>
             </div>
+
 
 
             {transcriptStatus === "failed" ? (
@@ -2163,14 +2162,15 @@ function Index() {
               </div>
             ) : (
             <div
-              className={`grid gap-6 ${
+              className={`grid gap-8 ${
                 studyMode
                   ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start"
                   : "grid-cols-1"
               }`}
             >
 
-              <div className="contents lg:flex lg:flex-col lg:gap-6">
+              <div className="contents lg:flex lg:flex-col lg:gap-8">
+
 
               <div className="space-y-4 min-w-0 order-1">
                 {isDevPanelEnabled() && (
@@ -2251,7 +2251,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black shadow-sm sticky top-[68px] z-10 lg:static">
+                <div className="mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl bg-black sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -2267,7 +2267,7 @@ function Index() {
 
               {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
               <div className="min-w-0 order-3 lg:order-2">
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:max-h-[calc(100vh-96px)]">
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[calc(100vh-96px)]">
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
                       <TranscriptQualityBanner
@@ -2317,7 +2317,7 @@ function Index() {
                         reprocessing={loadMutation.isPending}
                       />
                     )}
-                    <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2 text-xs font-medium text-muted-foreground">
                       <span>
                         Transcript
                         <span className="hidden sm:inline">
@@ -2404,7 +2404,7 @@ function Index() {
                         </div>
                       </div>
                     ) : (
-                      <ol ref={listRef} className="flex-1 overflow-y-auto">
+                      <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
                         {sentences.map((s) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
@@ -2414,15 +2414,15 @@ function Index() {
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
-                                className={`block w-full border-l-4 border-b border-border/60 px-3 py-2.5 text-left text-sm leading-relaxed transition hover:bg-accent ${
+                                className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
                                   active
-                                    ? "border-l-primary bg-primary/15 font-semibold text-foreground ring-1 ring-inset ring-primary/20"
+                                    ? "bg-primary/10 font-medium text-foreground"
                                     : playing
-                                    ? "border-l-primary/70 bg-primary/10 font-medium text-foreground"
-                                    : "border-l-transparent text-foreground/85"
+                                    ? "bg-accent/50 text-foreground"
+                                    : "text-foreground/85"
                                 }`}
                               >
-                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground">
+                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
                                 {s.text}
@@ -3057,12 +3057,12 @@ function ExplanationPanel({
   const tgtLabel = targetLangLabel || "English";
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-md ring-1 ring-primary/5">
+    <div className="rounded-2xl bg-muted/30 p-6 sm:p-7">
       {/* Sentence-first header. The original sentence is the largest, full-width element. Utility actions are demoted to a small row below. */}
-      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+      <div>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-            Original{srcLabel ? ` · ${srcLabel}` : ""}
+          <p className="text-xs font-medium text-muted-foreground">
+            {srcLabel}
           </p>
           <button
             type="button"
@@ -3073,15 +3073,15 @@ function ExplanationPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-2 text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl" lang={sourceLangLabel ? undefined : undefined}>
+        <p className="mt-2 text-xl font-semibold leading-relaxed tracking-tight text-foreground sm:text-2xl">
           {sentence.text}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="mt-4 flex flex-wrap items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -3091,7 +3091,7 @@ function ExplanationPanel({
               size="sm"
               onClick={onSave}
               disabled={saveDisabled}
-              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
               title={
                 isSaved
                   ? "Already in My Library"
@@ -3112,24 +3112,25 @@ function ExplanationPanel({
         </div>
       </div>
 
+
       {justSaved && (
-        <p className="mt-2 px-6 text-xs font-medium text-primary">
+        <p className="mt-2 text-xs font-medium text-primary">
           Saved to My Expressions ✓
         </p>
       )}
 
 
-      <div className="mt-5 border-t border-border px-5 pb-6 pt-5 sm:px-6">
+      <div className="mt-6 pt-6 border-t border-border/60">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {ready.translation && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Translation · {tgtLabel}
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  {tgtLabel}
                 </h4>
                 <p className="mt-1.5 text-base leading-relaxed text-foreground">
                   {ready.translation}
@@ -3138,8 +3139,8 @@ function ExplanationPanel({
             )}
             {ready.meaning && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Meaning · {tgtLabel}
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Meaning
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.meaning}
@@ -3149,10 +3150,10 @@ function ExplanationPanel({
 
             {ready.vocabulary && ready.vocabulary !== "—" && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
+                <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
                 </h4>
-                <ul className="mt-1.5 space-y-1.5">
+                <ul className="mt-2 space-y-1.5">
                   {ready.vocabulary
                     .split(/\s*(?:·|•|;|\|)\s*/)
                     .map((v) => v.trim())
@@ -3162,11 +3163,11 @@ function ExplanationPanel({
                       const tail = rest.join(" = ");
                       return (
                         <li key={i} className="flex items-baseline gap-2 text-sm">
-                          <span className="font-semibold text-foreground">{head}</span>
+                          <span className="font-medium text-foreground">{head}</span>
                           {tail && (
                             <>
                               <span className="text-muted-foreground">—</span>
-                              <span className="text-foreground/85">{tail}</span>
+                              <span className="text-foreground/80">{tail}</span>
                             </>
                           )}
                         </li>
@@ -3177,8 +3178,8 @@ function ExplanationPanel({
             )}
             {ready.note && ready.note !== "—" && (
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
-                  Expression Notes
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Notes
                 </h4>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
@@ -3189,6 +3190,7 @@ function ExplanationPanel({
               <FallbackHint />
             )}
           </div>
+
         ) : error ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive">{error}</p>
