@@ -2316,7 +2316,7 @@ function Index() {
                         reprocessing={loadMutation.isPending}
                       />
                     )}
-                    <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2 text-xs font-medium text-muted-foreground">
                       <span>
                         Transcript
                         <span className="hidden sm:inline">
