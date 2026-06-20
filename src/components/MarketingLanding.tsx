@@ -145,7 +145,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
           <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400 sm:text-sm sm:gap-x-6 sm:mt-7">
             <li className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-emerald-400" /> No account required
+              <Check className="h-4 w-4 text-emerald-400" /> Free account — save your progress
             </li>
             <li className="inline-flex items-center gap-1.5">
               <Check className="h-4 w-4 text-emerald-400" /> Works with 50+ languages
