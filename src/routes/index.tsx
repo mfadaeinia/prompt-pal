@@ -50,6 +50,7 @@ import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { OnboardingOverlay } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
+import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
@@ -2007,25 +2008,18 @@ function Index() {
               Welcome to NativeFlow
             </h1>
             <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-              Paste any YouTube video to start learning , or try the demo.
+              Search any video, or try a popular example to start learning.
             </p>
           </div>
           <div className="mt-8">
-            <PrimaryHero
-              url={url}
-              setUrl={setUrl}
-              targetLang={targetLang}
-              setTargetLang={setTargetLang}
-              spokenLang={spokenLang}
-              setSpokenLang={setSpokenLang}
+            <YouTubeDiscovery
               loading={loadMutation.isPending}
-              onSubmit={(u) => {
+              onPick={(u) => {
                 track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
                 setUrl(u);
                 setView("demo");
                 submitLoad(u);
               }}
-              onStartDemo={startDemo}
             />
           </div>
         </section>
@@ -3811,35 +3805,14 @@ function HeroWithPreview({
             Never leave the video to figure out what was just said. Get translation and expression notes in one tap.
           </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const u = url.trim();
-              if (!u) return;
-              track("landing_cta_clicked", { has_url: true, spoken_language: spokenLang || "auto" });
-              onSubmit(u);
-            }}
-            className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-lg shadow-primary/10 sm:p-5"
-          >
-            <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
-              <div className="space-y-1.5 min-w-0">
-                <label htmlFor="hero-url" className="text-xs font-medium text-foreground">
-                  YouTube URL
-                </label>
-                <Input
-                  id="hero-url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste any YouTube URL"
-                  className="h-12 w-full rounded-xl bg-background px-4 text-base"
-                />
-              </div>
+          <div className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-lg shadow-primary/10 sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 min-w-0">
                 <label htmlFor="hero-lang" className="text-xs font-medium text-foreground">
                   Explanation language
                 </label>
                 <Select value={targetLang} onValueChange={setTargetLang}>
-                  <SelectTrigger id="hero-lang" className="h-12 w-full rounded-xl bg-background px-4">
+                  <SelectTrigger id="hero-lang" className="h-11 w-full rounded-xl bg-background px-4">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -3849,46 +3822,45 @@ function HeroWithPreview({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5 min-w-0">
+                <label htmlFor="hero-spoken-lang" className="text-xs font-medium text-foreground">
+                  Video language
+                </label>
+                <Select
+                  value={spokenLang === "" ? "__auto__" : spokenLang}
+                  onValueChange={(v) => setSpokenLang(v === "__auto__" ? "" : v)}
+                >
+                  <SelectTrigger id="hero-spoken-lang" className="h-11 w-full rounded-xl bg-background px-4">
+                    <SelectValue placeholder="Auto-detect (original)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPOKEN_LANGUAGE_OPTIONS.map((o) => (
+                      <SelectItem key={o.code || "__auto__"} value={o.code || "__auto__"}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="mt-3 space-y-1.5 min-w-0">
-              <label htmlFor="hero-spoken-lang" className="text-xs font-medium text-foreground">
-                Video language <span className="text-muted-foreground font-normal">(language spoken in the video)</span>
-              </label>
-              <Select
-                value={spokenLang === "" ? "__auto__" : spokenLang}
-                onValueChange={(v) => setSpokenLang(v === "__auto__" ? "" : v)}
-              >
-                <SelectTrigger id="hero-spoken-lang" className="h-11 w-full rounded-xl bg-background px-4">
-                  <SelectValue placeholder="Auto-detect (original)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPOKEN_LANGUAGE_OPTIONS.map((o) => (
-                    <SelectItem key={o.code || "__auto__"} value={o.code || "__auto__"}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground">
-                Set this when auto-detect picks the wrong language (transcript comes back translated).
+
+            <div className="mt-4">
+              <YouTubeDiscovery
+                loading={loading}
+                onPick={(u) => {
+                  track("landing_cta_clicked", { has_url: true, spoken_language: spokenLang || "auto" });
+                  setUrl(u);
+                  onSubmit(u);
+                }}
+              />
+            </div>
+
+            {loading && (
+              <p className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…
               </p>
-            </div>
-            <Button
-              type="submit"
-              disabled={loading || !url.trim()}
-              size="lg"
-              className="mt-3 h-12 w-full gap-2 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
-            >
-              {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…</>
-              ) : (
-                <><Sparkles className="h-4 w-4" /> Understand This Video</>
-              )}
-            </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Paste a YouTube link and see sentence-by-sentence explanations in seconds.
-            </p>
-          </form>
+            )}
+          </div>
 
           {/* Micro-trust signals */}
           <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
