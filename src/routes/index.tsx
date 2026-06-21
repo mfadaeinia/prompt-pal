@@ -3056,6 +3056,7 @@ function parseExplanation(text: string | null) {
   const empty = {
     translation: "",
     keyExpression: "",
+    whatsHappening: "",
     whyThisWay: "",
     vocabulary: "",
     note: "",
@@ -3074,7 +3075,8 @@ function parseExplanation(text: string | null) {
   return {
     translation: clean(get("Natural Translation", "Translation")),
     keyExpression: clean(get("Key Expression", "Expression")),
-    whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
+    whatsHappening: clean(get("What's Happening", "Whats Happening", "What is Happening", "Context")),
+    whyThisWay: clean(get("Why Speakers Say It This Way", "Why Native Speakers Say It This Way", "Why This Way")),
     vocabulary: clean(get("Vocabulary", "Vocab")),
     note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
     grammar: clean(get("Grammar Insight", "Grammar")),
@@ -3087,6 +3089,7 @@ type ExplanationPanelEntry =
       status: "ready";
       translation: string;
       keyExpression: string;
+      whatsHappening: string;
       whyThisWay: string;
       vocabulary: string;
       note: string;
