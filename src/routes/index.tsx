@@ -2008,25 +2008,18 @@ function Index() {
               Welcome to NativeFlow
             </h1>
             <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-              Paste any YouTube video to start learning , or try the demo.
+              Search any video, or try a popular example to start learning.
             </p>
           </div>
           <div className="mt-8">
-            <PrimaryHero
-              url={url}
-              setUrl={setUrl}
-              targetLang={targetLang}
-              setTargetLang={setTargetLang}
-              spokenLang={spokenLang}
-              setSpokenLang={setSpokenLang}
+            <YouTubeDiscovery
               loading={loadMutation.isPending}
-              onSubmit={(u) => {
+              onPick={(u) => {
                 track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
                 setUrl(u);
                 setView("demo");
                 submitLoad(u);
               }}
-              onStartDemo={startDemo}
             />
           </div>
         </section>
