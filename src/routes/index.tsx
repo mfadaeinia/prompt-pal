@@ -447,7 +447,7 @@ function Index() {
     const payload = {
       sentence: s,
       translation: ready?.translation || null,
-      note: ready?.keyExpression?.whyItMatters || null,
+      note: ready?.note && ready.note !== "—" ? ready.note : null,
     };
     requireAuth(() => saveExpressionMutation.mutate(payload));
   }
@@ -1299,18 +1299,17 @@ function Index() {
 
 
 
-  // Explanation cache: sentenceId -> structured explanation (or loading/error).
+  // Explanation cache: sentenceId -> parsed explanation (or loading/error).
   type ExplanationEntry =
     | { status: "loading" }
     | {
         status: "ready";
         translation: string;
-        keyExpression:
-          | { expression: string; meaning: string; whyItMatters: string }
-          | null;
+        keyExpression: string;
         whatsHappening: string;
         whyThisWay: string;
-        vocabulary: Array<{ term: string; meaning: string; importance: "high" | "medium" | "low" }>;
+        vocabulary: string;
+        note: string;
         grammar: string;
       }
     | { status: "error"; error: string };
@@ -1348,7 +1347,7 @@ function Index() {
       data: { sentence: s.text, context: ctx, targetLanguage: targetLang },
     })
       .then((res) => {
-        const parsed = normalizeExplanation(res.explanation ?? null);
+        const parsed = parseExplanation(res.explanation ?? null);
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: {
@@ -1358,6 +1357,7 @@ function Index() {
             whatsHappening: parsed.whatsHappening,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
+            note: parsed.note,
             grammar: parsed.grammar,
           },
         }));
@@ -3054,49 +3054,34 @@ function CompactHowItWorks() {
 
 
 
-type ExplanationJsonLike = {
-  natural_translation?: string | null;
-  key_expression?:
-    | { expression?: string | null; meaning?: string | null; why_it_matters?: string | null }
-    | null;
-  whats_happening?: string | null;
-  why_speakers_say_it_this_way?: string | null;
-  vocabulary?: Array<{
-    term?: string | null;
-    meaning?: string | null;
-    importance?: "high" | "medium" | "low" | null;
-  }> | null;
-  grammar_insight?: string | null;
-};
-
-function normalizeExplanation(raw: ExplanationJsonLike | null | undefined) {
-  const clean = (v: string | null | undefined) => {
-    const s = (v ?? "").trim();
-    return s === "—" || s === "-" ? "" : s;
+function parseExplanation(text: string | null) {
+  const empty = {
+    translation: "",
+    keyExpression: "",
+    whatsHappening: "",
+    whyThisWay: "",
+    vocabulary: "",
+    note: "",
+    grammar: "",
   };
-  const ke = raw?.key_expression
-    ? {
-        expression: clean(raw.key_expression.expression),
-        meaning: clean(raw.key_expression.meaning),
-        whyItMatters: clean(raw.key_expression.why_it_matters),
-      }
-    : null;
-  const keyExpression =
-    ke && (ke.expression || ke.meaning) ? ke : null;
-  const vocabulary = (raw?.vocabulary ?? [])
-    .map((v) => ({
-      term: clean(v?.term),
-      meaning: clean(v?.meaning),
-      importance: (v?.importance ?? "medium") as "high" | "medium" | "low",
-    }))
-    .filter((v) => v.term && v.meaning);
+  if (!text) return empty;
+  const get = (...labels: string[]) => {
+    for (const label of labels) {
+      const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
+      const m = text.match(re);
+      if (m) return m[1].trim();
+    }
+    return "";
+  };
+  const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
-    translation: clean(raw?.natural_translation),
-    keyExpression,
-    whatsHappening: clean(raw?.whats_happening),
-    whyThisWay: clean(raw?.why_speakers_say_it_this_way),
-    vocabulary,
-    grammar: clean(raw?.grammar_insight),
+    translation: clean(get("Natural Translation", "Translation")),
+    keyExpression: clean(get("Key Expression", "Expression")),
+    whatsHappening: clean(get("What's Happening", "Whats Happening", "What is Happening", "Context")),
+    whyThisWay: clean(get("Why Speakers Say It This Way", "Why Native Speakers Say It This Way", "Why This Way")),
+    vocabulary: clean(get("Vocabulary", "Vocab")),
+    note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
+    grammar: clean(get("Grammar Insight", "Grammar")),
   };
 }
 
@@ -3105,12 +3090,11 @@ type ExplanationPanelEntry =
   | {
       status: "ready";
       translation: string;
-      keyExpression:
-        | { expression: string; meaning: string; whyItMatters: string }
-        | null;
+      keyExpression: string;
       whatsHappening: string;
       whyThisWay: string;
-      vocabulary: Array<{ term: string; meaning: string; importance: "high" | "medium" | "low" }>;
+      vocabulary: string;
+      note: string;
       grammar: string;
     }
   | { status: "error"; error: string };
@@ -3259,28 +3243,6 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-6">
-            {ready.keyExpression && (
-              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Key expression
-                </h4>
-                <p className="mt-2 text-base leading-relaxed text-foreground sm:text-lg">
-                  <span className="font-semibold">{ready.keyExpression.expression}</span>
-                  {ready.keyExpression.meaning && (
-                    <>
-                      <span className="text-muted-foreground"> — </span>
-                      <span className="text-foreground/85">{ready.keyExpression.meaning}</span>
-                    </>
-                  )}
-                </p>
-                {ready.keyExpression.whyItMatters && (
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                    {ready.keyExpression.whyItMatters}
-                  </p>
-                )}
-              </div>
-            )}
-
             {ready.translation && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
@@ -3303,7 +3265,35 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.whyThisWay && (
+            {ready.keyExpression && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Key expression
+                </h4>
+                {(() => {
+                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
+                  const tail = rest.join(" = ");
+                  return (
+                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+                      <span className="font-semibold">{head}</span>
+                      {tail && (
+                        <>
+                          <span className="text-muted-foreground"> — </span>
+                          <span className="text-foreground/85">{tail}</span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
+                {ready.whyThisWay && (
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                    {ready.whyThisWay}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!ready.keyExpression && ready.whyThisWay && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Why speakers say it this way
@@ -3314,29 +3304,44 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary.length > 0 && (
+            {ready.vocabulary && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
                 </h4>
                 <ul className="mt-2 space-y-1.5">
-                  {ready.vocabulary.map((item, i) => (
-                    <li key={i} className="flex items-baseline gap-2 text-sm">
-                      {item.importance === "high" && (
-                        <span
-                          aria-hidden
-                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                        />
-                      )}
-                      <span className="font-medium text-foreground">{item.term}</span>
-                      <span className="text-muted-foreground">—</span>
-                      <span className="text-foreground/80">{item.meaning}</span>
-                    </li>
-                  ))}
+                  {ready.vocabulary
+                    .split(/\s*(?:·|•|;|\|)\s*/)
+                    .map((v) => v.trim())
+                    .filter(Boolean)
+                    .map((item, i) => {
+                      const [head, ...rest] = item.split(/\s*=\s*/);
+                      const tail = rest.join(" = ");
+                      return (
+                        <li key={i} className="flex items-baseline gap-2 text-sm">
+                          <span className="font-medium text-foreground">{head}</span>
+                          {tail && (
+                            <>
+                              <span className="text-muted-foreground">—</span>
+                              <span className="text-foreground/80">{tail}</span>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
                 </ul>
               </div>
             )}
-
+            {ready.note && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Usage notes
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.note}
+                </p>
+              </div>
+            )}
             {ready.grammar && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
@@ -3347,13 +3352,9 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-
-            {!ready.translation &&
-              !ready.keyExpression &&
-              !ready.whatsHappening &&
-              !ready.whyThisWay &&
-              ready.vocabulary.length === 0 &&
-              !ready.grammar && <FallbackHint />}
+            {!ready.translation && !ready.keyExpression && !ready.whatsHappening && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+              <FallbackHint />
+            )}
           </div>
 
 
@@ -3424,36 +3425,12 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, grammar } = entry;
-  if (
-    !translation &&
-    !keyExpression &&
-    !whatsHappening &&
-    !whyThisWay &&
-    vocabulary.length === 0 &&
-    !grammar
-  ) {
+  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, note, grammar } = entry;
+  if (!translation && !keyExpression && !whatsHappening && !whyThisWay && !vocabulary && !note && !grammar) {
     return <FallbackHint />;
   }
   return (
     <div className="space-y-3">
-      {keyExpression && (
-        <div className="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground">
-            <span className="font-semibold">{keyExpression.expression}</span>
-            {keyExpression.meaning && (
-              <>
-                <span className="text-muted-foreground"> — </span>
-                <span className="text-foreground/85">{keyExpression.meaning}</span>
-              </>
-            )}
-          </p>
-          {keyExpression.whyItMatters && (
-            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{keyExpression.whyItMatters}</p>
-          )}
-        </div>
-      )}
       {translation && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
@@ -3466,24 +3443,65 @@ function InlineExplanation({
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whatsHappening}</p>
         </div>
       )}
-      {whyThisWay && (
+      {keyExpression && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
+          {(() => {
+            const [head, ...rest] = keyExpression.split(/\s*=\s*/);
+            const tail = rest.join(" = ");
+            return (
+              <p className="mt-0.5 text-sm leading-relaxed text-foreground">
+                <span className="font-semibold">{head}</span>
+                {tail && (
+                  <>
+                    <span className="text-muted-foreground"> — </span>
+                    <span className="text-foreground/85">{tail}</span>
+                  </>
+                )}
+              </p>
+            );
+          })()}
+          {whyThisWay && (
+            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{whyThisWay}</p>
+          )}
+        </div>
+      )}
+      {!keyExpression && whyThisWay && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Why speakers say it this way</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
         </div>
       )}
-      {vocabulary.length > 0 && (
+      {vocabulary && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
           <ul className="mt-0.5 space-y-0.5">
-            {vocabulary.map((item, i) => (
-              <li key={i} className="text-sm">
-                <span className="font-semibold text-foreground">{item.term}</span>
-                <span className="text-muted-foreground"> — </span>
-                <span className="text-foreground/85">{item.meaning}</span>
-              </li>
-            ))}
+            {vocabulary
+              .split(/\s*(?:·|•|;|\|)\s*/)
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .map((item, i) => {
+                const [head, ...rest] = item.split(/\s*=\s*/);
+                const tail = rest.join(" = ");
+                return (
+                  <li key={i} className="text-sm">
+                    <span className="font-semibold text-foreground">{head}</span>
+                    {tail && (
+                      <>
+                        <span className="text-muted-foreground"> — </span>
+                        <span className="text-foreground/85">{tail}</span>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
           </ul>
+        </div>
+      )}
+      {note && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Usage notes</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
         </div>
       )}
       {grammar && (
