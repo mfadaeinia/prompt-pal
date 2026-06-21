@@ -3485,88 +3485,42 @@ function InlineExplanation({
   }
   return (
     <div className="space-y-3">
+      {keyExpression && <KeyExpressionHero expression={keyExpression} />}
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+        </div>
+      )}
+      {whyThisWay && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Why speakers say it this way</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
         </div>
       )}
       {whatsHappening && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whatsHappening}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">What's happening</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
         </div>
       )}
-      {keyExpression && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
-          {(() => {
-            const [head, ...rest] = keyExpression.split(/\s*=\s*/);
-            const tail = rest.join(" = ");
-            return (
-              <p className="mt-0.5 text-sm leading-relaxed text-foreground">
-                <span className="font-semibold">{head}</span>
-                {tail && (
-                  <>
-                    <span className="text-muted-foreground"> — </span>
-                    <span className="text-foreground/85">{tail}</span>
-                  </>
-                )}
-              </p>
-            );
-          })()}
-          {whyThisWay && (
-            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{whyThisWay}</p>
-          )}
-        </div>
-      )}
-      {!keyExpression && whyThisWay && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Why speakers say it this way</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
-        </div>
-      )}
-      {vocabulary && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
-          <ul className="mt-0.5 space-y-0.5">
-            {vocabulary
-              .split(/\s*(?:·|•|;|\|)\s*/)
-              .map((v) => v.trim())
-              .filter(Boolean)
-              .map((item, i) => {
-                const [head, ...rest] = item.split(/\s*=\s*/);
-                const tail = rest.join(" = ");
-                return (
-                  <li key={i} className="text-sm">
-                    <span className="font-semibold text-foreground">{head}</span>
-                    {tail && (
-                      <>
-                        <span className="text-muted-foreground"> — </span>
-                        <span className="text-foreground/85">{tail}</span>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
-      )}
+      {vocabulary && <TieredVocabulary raw={vocabulary} />}
       {note && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Usage notes</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usage notes</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
         </div>
       )}
       {grammar && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Grammar insight</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Grammar insight</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{grammar}</p>
         </div>
       )}
     </div>
   );
 }
+
 
 
 
