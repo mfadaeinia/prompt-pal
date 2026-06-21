@@ -447,7 +447,7 @@ function Index() {
     const payload = {
       sentence: s,
       translation: ready?.translation || null,
-      note: ready?.note && ready.note !== "—" ? ready.note : null,
+      note: ready?.keyExpression?.whyItMatters || null,
     };
     requireAuth(() => saveExpressionMutation.mutate(payload));
   }
