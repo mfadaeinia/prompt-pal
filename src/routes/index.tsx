@@ -2342,7 +2342,7 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="mx-auto aspect-video w-full max-w-xl overflow-hidden rounded-xl bg-black sticky top-[68px] z-10 lg:static">
+                <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black sticky top-[68px] z-10 lg:static">
                   {embedSrc && (
                     <iframe
                       ref={iframeRef}
@@ -3173,8 +3173,8 @@ function ExplanationPanel({
   const tgtLabel = targetLangLabel || "English";
 
   return (
-    <div className="rounded-2xl bg-muted/30 p-6 sm:p-7">
-      {/* Sentence-first header. The original sentence is the largest, full-width element. Utility actions are demoted to a small row below. */}
+    <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
+      {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
       <div>
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-muted-foreground">
@@ -3189,15 +3189,15 @@ function ExplanationPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-2 text-xl font-semibold leading-relaxed tracking-tight text-foreground sm:text-2xl">
+        <p className="mt-1.5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
           {sentence.text}
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-1">
+        <div className="mt-2 flex flex-wrap items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -3207,7 +3207,7 @@ function ExplanationPanel({
               size="sm"
               onClick={onSave}
               disabled={saveDisabled}
-              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
               title={
                 isSaved
                   ? "Already in My Library"
@@ -3236,118 +3236,69 @@ function ExplanationPanel({
       )}
 
 
-      <div className="mt-6 pt-6 border-t border-border/60">
+      <div className="mt-4 pt-4 border-t border-border/60">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-6">
+          <div className="space-y-5">
+            {/* ⭐ HERO — Key Expression. Always first, visually dominant. */}
+            {ready.keyExpression && (
+              <KeyExpressionHero expression={ready.keyExpression} />
+            )}
+
             {ready.translation && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Natural translation · {tgtLabel}
                 </h4>
-                <p className="mt-1.5 text-base leading-relaxed text-foreground">
+                <p className="mt-1 text-base leading-relaxed text-foreground">
                   {ready.translation}
+                </p>
+              </div>
+            )}
+
+            {ready.whyThisWay && (
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Why speakers say it this way
+                </h4>
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
+                  {ready.whyThisWay}
                 </p>
               </div>
             )}
 
             {ready.whatsHappening && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   What's happening
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                   {ready.whatsHappening}
                 </p>
               </div>
             )}
 
-            {ready.keyExpression && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Key expression
-                </h4>
-                {(() => {
-                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
-                  const tail = rest.join(" = ");
-                  return (
-                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
-                      <span className="font-semibold">{head}</span>
-                      {tail && (
-                        <>
-                          <span className="text-muted-foreground"> — </span>
-                          <span className="text-foreground/85">{tail}</span>
-                        </>
-                      )}
-                    </p>
-                  );
-                })()}
-                {ready.whyThisWay && (
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                    {ready.whyThisWay}
-                  </p>
-                )}
-              </div>
-            )}
+            {ready.vocabulary && <TieredVocabulary raw={ready.vocabulary} />}
 
-            {!ready.keyExpression && ready.whyThisWay && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Why speakers say it this way
-                </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {ready.whyThisWay}
-                </p>
-              </div>
-            )}
-
-            {ready.vocabulary && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Vocabulary
-                </h4>
-                <ul className="mt-2 space-y-1.5">
-                  {ready.vocabulary
-                    .split(/\s*(?:·|•|;|\|)\s*/)
-                    .map((v) => v.trim())
-                    .filter(Boolean)
-                    .map((item, i) => {
-                      const [head, ...rest] = item.split(/\s*=\s*/);
-                      const tail = rest.join(" = ");
-                      return (
-                        <li key={i} className="flex items-baseline gap-2 text-sm">
-                          <span className="font-medium text-foreground">{head}</span>
-                          {tail && (
-                            <>
-                              <span className="text-muted-foreground">—</span>
-                              <span className="text-foreground/80">{tail}</span>
-                            </>
-                          )}
-                        </li>
-                      );
-                    })}
-                </ul>
-              </div>
-            )}
             {ready.note && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Usage notes
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
                 </p>
               </div>
             )}
             {ready.grammar && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Grammar insight
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
                   {ready.grammar}
                 </p>
               </div>
@@ -3356,6 +3307,8 @@ function ExplanationPanel({
               <FallbackHint />
             )}
           </div>
+
+
 
 
         ) : error ? (
@@ -3401,6 +3354,107 @@ function PreviewSection({ label, sample, mono = false }: { label: string; sample
   );
 }
 
+function KeyExpressionHero({ expression }: { expression: string }) {
+  const [head, ...rest] = expression.split(/\s*=\s*/);
+  const tail = rest.join(" = ");
+  const meanings = tail
+    ? tail.split(/\s*,\s*/).map((m) => m.trim()).filter(Boolean)
+    : [];
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-4 shadow-sm ring-1 ring-primary/10 sm:p-5">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+      />
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+          Key Expression
+        </p>
+      </div>
+      <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
+        {head}
+      </p>
+      {meanings.length > 0 && (
+        <p className="mt-1 text-sm leading-relaxed text-foreground/80">
+          {meanings.join(" · ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type VocabTier = "high" | "useful" | "basic";
+type VocabItem = { tier: VocabTier; head: string; meaning: string };
+
+function parseVocabulary(raw: string): VocabItem[] {
+  return raw
+    .split(/\s*(?:·|•|;|\|)\s*/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map<VocabItem>((item) => {
+      const tierMatch = item.match(/^\[\s*(high|useful|basic)\s*\]\s*(.+)$/i);
+      let tier: VocabTier = "useful";
+      let rest = item;
+      if (tierMatch) {
+        tier = tierMatch[1].toLowerCase() as VocabTier;
+        rest = tierMatch[2];
+      }
+      const [head, ...tailParts] = rest.split(/\s*=\s*/);
+      return { tier, head: head.trim(), meaning: tailParts.join(" = ").trim() };
+    })
+    .filter((it) => it.head.length > 0);
+}
+
+const TIER_META: Record<VocabTier, { label: string; dot: string; text: string }> = {
+  high: { label: "High value", dot: "bg-primary", text: "text-primary" },
+  useful: { label: "Useful", dot: "bg-amber-500", text: "text-amber-700 dark:text-amber-400" },
+  basic: { label: "Basic", dot: "bg-muted-foreground/50", text: "text-muted-foreground" },
+};
+
+function TieredVocabulary({ raw }: { raw: string }) {
+  const items = parseVocabulary(raw);
+  if (items.length === 0) return null;
+  const order: VocabTier[] = ["high", "useful", "basic"];
+  const groups = order
+    .map((tier) => ({ tier, items: items.filter((i) => i.tier === tier) }))
+    .filter((g) => g.items.length > 0);
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        Vocabulary
+      </h4>
+      <div className="mt-2 space-y-3">
+        {groups.map((g) => {
+          const meta = TIER_META[g.tier];
+          return (
+            <div key={g.tier}>
+              <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${meta.text}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                {meta.label}
+              </div>
+              <ul className="mt-1 space-y-1">
+                {g.items.map((it, i) => (
+                  <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                    <span className={`font-semibold ${g.tier === "high" ? "text-foreground" : "text-foreground/90"}`}>{it.head}</span>
+                    {it.meaning && (
+                      <>
+                        <span className="text-muted-foreground">—</span>
+                        <span className="text-foreground/80">{it.meaning}</span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function InlineExplanation({
   entry,
   limitedMode,
@@ -3431,88 +3485,42 @@ function InlineExplanation({
   }
   return (
     <div className="space-y-3">
+      {keyExpression && <KeyExpressionHero expression={keyExpression} />}
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+        </div>
+      )}
+      {whyThisWay && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Why speakers say it this way</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
         </div>
       )}
       {whatsHappening && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whatsHappening}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">What's happening</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
         </div>
       )}
-      {keyExpression && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
-          {(() => {
-            const [head, ...rest] = keyExpression.split(/\s*=\s*/);
-            const tail = rest.join(" = ");
-            return (
-              <p className="mt-0.5 text-sm leading-relaxed text-foreground">
-                <span className="font-semibold">{head}</span>
-                {tail && (
-                  <>
-                    <span className="text-muted-foreground"> — </span>
-                    <span className="text-foreground/85">{tail}</span>
-                  </>
-                )}
-              </p>
-            );
-          })()}
-          {whyThisWay && (
-            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{whyThisWay}</p>
-          )}
-        </div>
-      )}
-      {!keyExpression && whyThisWay && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Why speakers say it this way</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
-        </div>
-      )}
-      {vocabulary && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
-          <ul className="mt-0.5 space-y-0.5">
-            {vocabulary
-              .split(/\s*(?:·|•|;|\|)\s*/)
-              .map((v) => v.trim())
-              .filter(Boolean)
-              .map((item, i) => {
-                const [head, ...rest] = item.split(/\s*=\s*/);
-                const tail = rest.join(" = ");
-                return (
-                  <li key={i} className="text-sm">
-                    <span className="font-semibold text-foreground">{head}</span>
-                    {tail && (
-                      <>
-                        <span className="text-muted-foreground"> — </span>
-                        <span className="text-foreground/85">{tail}</span>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
-      )}
+      {vocabulary && <TieredVocabulary raw={vocabulary} />}
       {note && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Usage notes</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usage notes</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
         </div>
       )}
       {grammar && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Grammar insight</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Grammar insight</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{grammar}</p>
         </div>
       )}
     </div>
   );
 }
+
 
 
 
