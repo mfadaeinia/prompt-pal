@@ -158,7 +158,7 @@ function Index() {
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
-  const [view, setView] = useState<"landing" | "demo">(() => {
+  const [view, setView] = useState<"landing" | "demo" | "app">(() => {
     if (typeof window === "undefined") return "landing";
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
