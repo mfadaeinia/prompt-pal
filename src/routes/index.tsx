@@ -3054,34 +3054,49 @@ function CompactHowItWorks() {
 
 
 
-function parseExplanation(text: string | null) {
-  const empty = {
-    translation: "",
-    keyExpression: "",
-    whatsHappening: "",
-    whyThisWay: "",
-    vocabulary: "",
-    note: "",
-    grammar: "",
+type ExplanationJsonLike = {
+  natural_translation?: string | null;
+  key_expression?:
+    | { expression?: string | null; meaning?: string | null; why_it_matters?: string | null }
+    | null;
+  whats_happening?: string | null;
+  why_speakers_say_it_this_way?: string | null;
+  vocabulary?: Array<{
+    term?: string | null;
+    meaning?: string | null;
+    importance?: "high" | "medium" | "low" | null;
+  }> | null;
+  grammar_insight?: string | null;
+};
+
+function normalizeExplanation(raw: ExplanationJsonLike | null | undefined) {
+  const clean = (v: string | null | undefined) => {
+    const s = (v ?? "").trim();
+    return s === "—" || s === "-" ? "" : s;
   };
-  if (!text) return empty;
-  const get = (...labels: string[]) => {
-    for (const label of labels) {
-      const re = new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im");
-      const m = text.match(re);
-      if (m) return m[1].trim();
-    }
-    return "";
-  };
-  const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
+  const ke = raw?.key_expression
+    ? {
+        expression: clean(raw.key_expression.expression),
+        meaning: clean(raw.key_expression.meaning),
+        whyItMatters: clean(raw.key_expression.why_it_matters),
+      }
+    : null;
+  const keyExpression =
+    ke && (ke.expression || ke.meaning) ? ke : null;
+  const vocabulary = (raw?.vocabulary ?? [])
+    .map((v) => ({
+      term: clean(v?.term),
+      meaning: clean(v?.meaning),
+      importance: (v?.importance ?? "medium") as "high" | "medium" | "low",
+    }))
+    .filter((v) => v.term && v.meaning);
   return {
-    translation: clean(get("Natural Translation", "Translation")),
-    keyExpression: clean(get("Key Expression", "Expression")),
-    whatsHappening: clean(get("What's Happening", "Whats Happening", "What is Happening", "Context")),
-    whyThisWay: clean(get("Why Speakers Say It This Way", "Why Native Speakers Say It This Way", "Why This Way")),
-    vocabulary: clean(get("Vocabulary", "Vocab")),
-    note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
-    grammar: clean(get("Grammar Insight", "Grammar")),
+    translation: clean(raw?.natural_translation),
+    keyExpression,
+    whatsHappening: clean(raw?.whats_happening),
+    whyThisWay: clean(raw?.why_speakers_say_it_this_way),
+    vocabulary,
+    grammar: clean(raw?.grammar_insight),
   };
 }
 
@@ -3090,11 +3105,12 @@ type ExplanationPanelEntry =
   | {
       status: "ready";
       translation: string;
-      keyExpression: string;
+      keyExpression:
+        | { expression: string; meaning: string; whyItMatters: string }
+        | null;
       whatsHappening: string;
       whyThisWay: string;
-      vocabulary: string;
-      note: string;
+      vocabulary: Array<{ term: string; meaning: string; importance: "high" | "medium" | "low" }>;
       grammar: string;
     }
   | { status: "error"; error: string };
