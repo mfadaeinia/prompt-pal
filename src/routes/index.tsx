@@ -1354,6 +1354,7 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             keyExpression: parsed.keyExpression,
+            whatsHappening: parsed.whatsHappening,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
             note: parsed.note,
