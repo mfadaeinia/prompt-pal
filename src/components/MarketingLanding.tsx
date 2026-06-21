@@ -24,9 +24,8 @@ import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 
 /**
-
- * Light, product-first landing — premium "understanding layer" for real content.
- * Inspired by Linear, Notion, Stripe, Readwise.
+ * Mission-first landing — philosophy over features.
+ * NativeFlow is a bridge between authentic content and language growth.
  */
 export function MarketingLanding({
   onStartDemo,
@@ -74,10 +73,10 @@ export function MarketingLanding({
               className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
               style={heading}
             >
-              Paste a video to start understanding it
+              Start learning from the content you already love
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:text-base">
-              Free account. Save words, track progress, and return anytime.
+              Free to try. Save words, track progress, and return anytime.
             </p>
           </div>
           {conversionSlot}
@@ -191,23 +190,23 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               style={heading}
             >
               <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Understand real content, sentence by sentence
+              Learn from authentic content, naturally
             </span>
 
             <h1
               className="text-[2.1rem] font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]"
               style={heading}
             >
-              Understand
+              Grow Through
               <br />
-              Any Video.
+              Real Content.
               <br />
-              <span className="text-blue-600">Without Leaving It.</span>
+              <span className="text-blue-600">Not Another Lesson.</span>
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Stop pausing videos, opening dictionaries, and switching tabs.
-              Click any sentence to get translations, explanations, vocabulary, and context instantly.
+              Turn videos, podcasts, interviews, and native media into learning experiences
+              with just enough support to keep watching, understanding, and improving.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
@@ -216,7 +215,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
-                Try NativeFlow Free
+                Start Learning
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               <button
@@ -428,10 +427,10 @@ function ContentTypes() {
             className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
             style={heading}
           >
-            Learn From Content You Already Watch
+            The Best Language Lessons Are Already Out There
           </h2>
           <p className="mt-3 text-base text-slate-600 sm:text-lg">
-            Real videos. Real language. Real understanding.
+            Podcasts, interviews, documentaries, news — real language in real context.
           </p>
         </div>
 
@@ -459,7 +458,7 @@ function ContentTypes() {
                 className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
                 style={heading}
               >
-                Translation
+                Meaning
               </div>
               <p className="text-sm leading-relaxed text-slate-600">{c.translation}</p>
             </div>
@@ -473,8 +472,8 @@ function ContentTypes() {
 /* ============================== COMPARISON ============================== */
 
 function Comparison() {
-  const oldWay = ["Watch", "Pause", "Search", "Look Up", "Lose Context", "Resume"];
-  const newWay = ["Watch", "Click", "Understand", "Keep Watching"];
+  const oldWay = ["Find content", "Lose focus", "Miss meaning", "Give up", "Try again", "Stay stuck"];
+  const newWay = ["Watch what you love", "Understand more", "Stay engaged", "Grow naturally"];
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
@@ -483,10 +482,10 @@ function Comparison() {
           className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
           style={heading}
         >
-          The Old Way vs. The NativeFlow Way
+          Content Should Teach You. Not Frustrate You.
         </h2>
         <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          One breaks your focus. The other keeps you in the flow.
+          Real content is the best teacher — when you have just enough support to follow it.
         </p>
       </div>
 
@@ -501,7 +500,7 @@ function Comparison() {
               className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"
               style={heading}
             >
-              The Old Way
+              Without Support
             </span>
           </div>
           <ol className="space-y-2.5">
@@ -517,13 +516,13 @@ function Comparison() {
                   {i + 1}
                 </span>
                 <span className="text-sm text-slate-700">{step}</span>
-                {step === "Pause" && <Pause className="ml-auto h-3.5 w-3.5 text-slate-400" />}
-                {step === "Search" && <Search className="ml-auto h-3.5 w-3.5 text-slate-400" />}
+                {step === "Lose focus" && <Pause className="ml-auto h-3.5 w-3.5 text-slate-400" />}
+                {step === "Miss meaning" && <Search className="ml-auto h-3.5 w-3.5 text-slate-400" />}
               </li>
             ))}
           </ol>
           <p className="mt-6 text-sm leading-relaxed text-slate-500">
-            Breaks your flow. Kills your focus.
+            Breaks your flow. Kills your motivation.
           </p>
         </div>
 
@@ -538,7 +537,7 @@ function Comparison() {
               className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700"
               style={heading}
             >
-              The NativeFlow Way
+              With NativeFlow
             </span>
           </div>
           <ol className="relative space-y-2.5">
@@ -554,7 +553,7 @@ function Comparison() {
                   {i + 1}
                 </span>
                 <span className="text-sm font-medium text-slate-900">{step}</span>
-                {step === "Click" && (
+                {step === "Understand more" && (
                   <MousePointerClick className="ml-auto h-3.5 w-3.5 text-blue-500" />
                 )}
               </li>
