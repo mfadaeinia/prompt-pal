@@ -740,6 +740,11 @@ function Index() {
     if (videoId !== DEMO_VIDEO_ID) {
       submitLoad(DEMO_VIDEO_URL);
     }
+    // Reset playback state so a re-entry into the demo starts from sentence 1
+    // in sync with the video (the iframe remounts but videoId is unchanged).
+    setCurrentTime(0);
+    setManualActiveId(null);
+    deepLinkSeekRef.current = null;
     demoStartTimeRef.current = performance.now();
     // First-time onboarding
     try {
