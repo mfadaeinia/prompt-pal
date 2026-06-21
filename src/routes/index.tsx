@@ -3259,6 +3259,28 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-6">
+            {ready.keyExpression && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Key expression
+                </h4>
+                <p className="mt-2 text-base leading-relaxed text-foreground sm:text-lg">
+                  <span className="font-semibold">{ready.keyExpression.expression}</span>
+                  {ready.keyExpression.meaning && (
+                    <>
+                      <span className="text-muted-foreground"> — </span>
+                      <span className="text-foreground/85">{ready.keyExpression.meaning}</span>
+                    </>
+                  )}
+                </p>
+                {ready.keyExpression.whyItMatters && (
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                    {ready.keyExpression.whyItMatters}
+                  </p>
+                )}
+              </div>
+            )}
+
             {ready.translation && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
@@ -3281,35 +3303,7 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.keyExpression && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Key expression
-                </h4>
-                {(() => {
-                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
-                  const tail = rest.join(" = ");
-                  return (
-                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
-                      <span className="font-semibold">{head}</span>
-                      {tail && (
-                        <>
-                          <span className="text-muted-foreground"> — </span>
-                          <span className="text-foreground/85">{tail}</span>
-                        </>
-                      )}
-                    </p>
-                  );
-                })()}
-                {ready.whyThisWay && (
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                    {ready.whyThisWay}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {!ready.keyExpression && ready.whyThisWay && (
+            {ready.whyThisWay && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Why speakers say it this way
@@ -3320,44 +3314,29 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary && (
+            {ready.vocabulary.length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Vocabulary
                 </h4>
                 <ul className="mt-2 space-y-1.5">
-                  {ready.vocabulary
-                    .split(/\s*(?:·|•|;|\|)\s*/)
-                    .map((v) => v.trim())
-                    .filter(Boolean)
-                    .map((item, i) => {
-                      const [head, ...rest] = item.split(/\s*=\s*/);
-                      const tail = rest.join(" = ");
-                      return (
-                        <li key={i} className="flex items-baseline gap-2 text-sm">
-                          <span className="font-medium text-foreground">{head}</span>
-                          {tail && (
-                            <>
-                              <span className="text-muted-foreground">—</span>
-                              <span className="text-foreground/80">{tail}</span>
-                            </>
-                          )}
-                        </li>
-                      );
-                    })}
+                  {ready.vocabulary.map((item, i) => (
+                    <li key={i} className="flex items-baseline gap-2 text-sm">
+                      {item.importance === "high" && (
+                        <span
+                          aria-hidden
+                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                        />
+                      )}
+                      <span className="font-medium text-foreground">{item.term}</span>
+                      <span className="text-muted-foreground">—</span>
+                      <span className="text-foreground/80">{item.meaning}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
-            {ready.note && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Usage notes
-                </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {ready.note}
-                </p>
-              </div>
-            )}
+
             {ready.grammar && (
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground">
@@ -3368,9 +3347,13 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.keyExpression && !ready.whatsHappening && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
-              <FallbackHint />
-            )}
+
+            {!ready.translation &&
+              !ready.keyExpression &&
+              !ready.whatsHappening &&
+              !ready.whyThisWay &&
+              ready.vocabulary.length === 0 &&
+              !ready.grammar && <FallbackHint />}
           </div>
 
 
