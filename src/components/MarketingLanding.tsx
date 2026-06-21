@@ -205,8 +205,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Turn videos, podcasts, interviews, and native media into learning experiences
-              with just enough support to keep watching, understanding, and improving.
+              Learn from videos, podcasts, and native content without leaving the experience.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
