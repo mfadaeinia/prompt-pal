@@ -22,6 +22,7 @@ import {
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
+import tedLogo from "@/assets/ted-logo.png.asset.json";
 
 /**
  * Mission-first landing — philosophy over features.
@@ -212,7 +213,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
                 <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
-                <span className="inline-flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-slate-700" /> TED Talks</span>
+                <span className="inline-flex items-center gap-1.5"><img src={tedLogo.url} alt="TED" className="h-4 w-auto" /> TED Talks</span>
                 <span className="inline-flex items-center gap-1.5"><Newspaper className="h-4 w-4 text-slate-700" /> News</span>
                 <span className="inline-flex items-center gap-1.5"><Headphones className="h-4 w-4 text-purple-600" /> Podcasts</span>
                 <span className="text-slate-400">… and more</span>
