@@ -3354,6 +3354,107 @@ function PreviewSection({ label, sample, mono = false }: { label: string; sample
   );
 }
 
+function KeyExpressionHero({ expression }: { expression: string }) {
+  const [head, ...rest] = expression.split(/\s*=\s*/);
+  const tail = rest.join(" = ");
+  const meanings = tail
+    ? tail.split(/\s*,\s*/).map((m) => m.trim()).filter(Boolean)
+    : [];
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-4 shadow-sm ring-1 ring-primary/10 sm:p-5">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,oklch(0.55_0.22_265/0.12),transparent_70%)]"
+      />
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+          Key Expression
+        </p>
+      </div>
+      <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
+        {head}
+      </p>
+      {meanings.length > 0 && (
+        <p className="mt-1 text-sm leading-relaxed text-foreground/80">
+          {meanings.join(" · ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type VocabTier = "high" | "useful" | "basic";
+type VocabItem = { tier: VocabTier; head: string; meaning: string };
+
+function parseVocabulary(raw: string): VocabItem[] {
+  return raw
+    .split(/\s*(?:·|•|;|\|)\s*/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map<VocabItem>((item) => {
+      const tierMatch = item.match(/^\[\s*(high|useful|basic)\s*\]\s*(.+)$/i);
+      let tier: VocabTier = "useful";
+      let rest = item;
+      if (tierMatch) {
+        tier = tierMatch[1].toLowerCase() as VocabTier;
+        rest = tierMatch[2];
+      }
+      const [head, ...tailParts] = rest.split(/\s*=\s*/);
+      return { tier, head: head.trim(), meaning: tailParts.join(" = ").trim() };
+    })
+    .filter((it) => it.head.length > 0);
+}
+
+const TIER_META: Record<VocabTier, { label: string; dot: string; text: string }> = {
+  high: { label: "High value", dot: "bg-primary", text: "text-primary" },
+  useful: { label: "Useful", dot: "bg-amber-500", text: "text-amber-700 dark:text-amber-400" },
+  basic: { label: "Basic", dot: "bg-muted-foreground/50", text: "text-muted-foreground" },
+};
+
+function TieredVocabulary({ raw }: { raw: string }) {
+  const items = parseVocabulary(raw);
+  if (items.length === 0) return null;
+  const order: VocabTier[] = ["high", "useful", "basic"];
+  const groups = order
+    .map((tier) => ({ tier, items: items.filter((i) => i.tier === tier) }))
+    .filter((g) => g.items.length > 0);
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        Vocabulary
+      </h4>
+      <div className="mt-2 space-y-3">
+        {groups.map((g) => {
+          const meta = TIER_META[g.tier];
+          return (
+            <div key={g.tier}>
+              <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${meta.text}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                {meta.label}
+              </div>
+              <ul className="mt-1 space-y-1">
+                {g.items.map((it, i) => (
+                  <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                    <span className={`font-semibold ${g.tier === "high" ? "text-foreground" : "text-foreground/90"}`}>{it.head}</span>
+                    {it.meaning && (
+                      <>
+                        <span className="text-muted-foreground">—</span>
+                        <span className="text-foreground/80">{it.meaning}</span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function InlineExplanation({
   entry,
   limitedMode,
