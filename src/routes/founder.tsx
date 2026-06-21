@@ -629,7 +629,12 @@ function UserRetentionSection({
                         Yes
                       </span>
                     ) : (
-                      <span className="text-slate-400">No</span>
+                      <span
+                        className="text-slate-400"
+                        title={`Needs ≥1 video & ≥3 clicks. Has ${r.videos_loaded}v / ${r.sentence_clicks}c`}
+                      >
+                        No <span className="text-[10px] text-slate-400">({r.videos_loaded}v/{r.sentence_clicks}c)</span>
+                      </span>
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-slate-700">
