@@ -691,7 +691,7 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
             style={heading}
           >
-            Start Learning
+            Start Learning Free
             <ArrowRight className="h-4 w-4" />
           </button>
           <button
