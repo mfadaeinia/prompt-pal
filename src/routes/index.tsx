@@ -1306,6 +1306,7 @@ function Index() {
         status: "ready";
         translation: string;
         keyExpression: string;
+        whatsHappening: string;
         whyThisWay: string;
         vocabulary: string;
         note: string;
