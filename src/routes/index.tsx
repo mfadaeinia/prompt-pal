@@ -1306,6 +1306,7 @@ function Index() {
         status: "ready";
         translation: string;
         keyExpression: string;
+        whatsHappening: string;
         whyThisWay: string;
         vocabulary: string;
         note: string;
@@ -1353,6 +1354,7 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             keyExpression: parsed.keyExpression,
+            whatsHappening: parsed.whatsHappening,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
             note: parsed.note,
@@ -3056,6 +3058,7 @@ function parseExplanation(text: string | null) {
   const empty = {
     translation: "",
     keyExpression: "",
+    whatsHappening: "",
     whyThisWay: "",
     vocabulary: "",
     note: "",
@@ -3074,7 +3077,8 @@ function parseExplanation(text: string | null) {
   return {
     translation: clean(get("Natural Translation", "Translation")),
     keyExpression: clean(get("Key Expression", "Expression")),
-    whyThisWay: clean(get("Why This Way", "Why Speakers Say It This Way", "Why Native Speakers Say It This Way")),
+    whatsHappening: clean(get("What's Happening", "Whats Happening", "What is Happening", "Context")),
+    whyThisWay: clean(get("Why Speakers Say It This Way", "Why Native Speakers Say It This Way", "Why This Way")),
     vocabulary: clean(get("Vocabulary", "Vocab")),
     note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
     grammar: clean(get("Grammar Insight", "Grammar")),
@@ -3087,6 +3091,7 @@ type ExplanationPanelEntry =
       status: "ready";
       translation: string;
       keyExpression: string;
+      whatsHappening: string;
       whyThisWay: string;
       vocabulary: string;
       note: string;
@@ -3249,6 +3254,17 @@ function ExplanationPanel({
               </div>
             )}
 
+            {ready.whatsHappening && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  What's happening
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.whatsHappening}
+                </p>
+              </div>
+            )}
+
             {ready.keyExpression && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
@@ -3336,7 +3352,7 @@ function ExplanationPanel({
                 </p>
               </div>
             )}
-            {!ready.translation && !ready.keyExpression && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+            {!ready.translation && !ready.keyExpression && !ready.whatsHappening && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
@@ -3409,8 +3425,8 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !keyExpression && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, note, grammar } = entry;
+  if (!translation && !keyExpression && !whatsHappening && !whyThisWay && !vocabulary && !note && !grammar) {
     return <FallbackHint />;
   }
   return (
@@ -3419,6 +3435,12 @@ function InlineExplanation({
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+        </div>
+      )}
+      {whatsHappening && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">What's happening</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whatsHappening}</p>
         </div>
       )}
       {keyExpression && (
