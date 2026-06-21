@@ -1552,7 +1552,7 @@ function Index() {
       } catch {}
       playerRef.current = null;
     };
-  }, [videoId]);
+  }, [videoId, view]);
 
   // Active sentence id, derived from currentTime range, with manual override
   // when the user clicks (so the click feels instant even before the player
