@@ -110,7 +110,12 @@ function Index() {
   const claimAnonFx = useServerFn(claimAnonymousSaves);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
+
+
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | (() => void)>(null);
   const initialAuthHandledRef = useRef(false);
@@ -418,6 +423,7 @@ function Index() {
           eventName: "expression_saved",
           sessionId: browserId,
           videoId: videoId ?? null,
+          userId,
           metadata: { source: "explanation_panel" },
         },
       }).catch(() => {});
@@ -556,6 +562,7 @@ function Index() {
             eventName: "expression_saved",
             sessionId: browserId,
             videoId: videoId ?? null,
+            userId,
             metadata: { source: "text_selection", selected_length: text.length },
           },
         }).catch(() => {});
@@ -1436,6 +1443,7 @@ function Index() {
           targetLanguage: targetLang || null,
           pageUrl: typeof window !== "undefined" ? window.location.href : null,
           ended,
+          userId: userIdRef.current,
         },
       }).catch(() => {
         // Best-effort engagement telemetry — never surface to user.
@@ -1794,6 +1802,7 @@ function Index() {
           eventName: "sentence_clicked",
           sessionId: browserId,
           videoId: videoId ?? null,
+          userId,
         },
       }).catch(() => {});
     }

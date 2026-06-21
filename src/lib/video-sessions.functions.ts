@@ -10,6 +10,7 @@ const Input = z.object({
   targetLanguage: z.string().max(50).optional().nullable(),
   pageUrl: z.string().max(500).optional().nullable(),
   ended: z.boolean().optional(),
+  userId: z.string().uuid().optional().nullable(),
 });
 
 function getClientIp(): string | null {
@@ -46,9 +47,11 @@ export const recordVideoSession = createServerFn({ method: "POST" })
           ended: data.ended ?? false,
           ip_address: ip,
           user_agent: userAgent,
+          user_id: data.userId ?? null,
         } as any,
         { onConflict: "session_id,video_id" } as any,
       );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+

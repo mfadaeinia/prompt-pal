@@ -445,6 +445,7 @@ export type Database = {
           id: string
           metadata: Json | null
           session_id: string | null
+          user_id: string | null
           video_id: string | null
         }
         Insert: {
@@ -454,6 +455,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           session_id?: string | null
+          user_id?: string | null
           video_id?: string | null
         }
         Update: {
@@ -463,6 +465,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           session_id?: string | null
+          user_id?: string | null
           video_id?: string | null
         }
         Relationships: []
@@ -742,6 +745,7 @@ export type Database = {
           target_language: string | null
           updated_at: string
           user_agent: string | null
+          user_id: string | null
           video_id: string
           video_url: string | null
         }
@@ -758,6 +762,7 @@ export type Database = {
           target_language?: string | null
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
           video_id: string
           video_url?: string | null
         }
@@ -774,6 +779,7 @@ export type Database = {
           target_language?: string | null
           updated_at?: string
           user_agent?: string | null
+          user_id?: string | null
           video_id?: string
           video_url?: string | null
         }
