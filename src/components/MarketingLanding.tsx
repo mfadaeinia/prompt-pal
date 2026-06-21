@@ -198,10 +198,14 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               style={heading}
             >
               Grow Through&nbsp;Real Content
-              <br />
-              <br />
-              <span className="text-blue-600">Learn naturally from the content you already love.</span>
             </h1>
+
+            <p
+              className="mt-2 max-w-md text-base font-medium leading-relaxed text-slate-700 sm:text-lg"
+              style={heading}
+            >
+              Learn naturally from the content you already love.
+            </p>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
               <br />
