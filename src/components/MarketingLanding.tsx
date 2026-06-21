@@ -143,7 +143,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
+          className="absolute inset-0 h-full w-full object-cover opacity-45 scale-[0.65]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC]" />
       </div>
