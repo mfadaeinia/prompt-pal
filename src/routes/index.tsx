@@ -3424,12 +3424,36 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !keyExpression && !whatsHappening && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, grammar } = entry;
+  if (
+    !translation &&
+    !keyExpression &&
+    !whatsHappening &&
+    !whyThisWay &&
+    vocabulary.length === 0 &&
+    !grammar
+  ) {
     return <FallbackHint />;
   }
   return (
     <div className="space-y-3">
+      {keyExpression && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground">
+            <span className="font-semibold">{keyExpression.expression}</span>
+            {keyExpression.meaning && (
+              <>
+                <span className="text-muted-foreground"> — </span>
+                <span className="text-foreground/85">{keyExpression.meaning}</span>
+              </>
+            )}
+          </p>
+          {keyExpression.whyItMatters && (
+            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{keyExpression.whyItMatters}</p>
+          )}
+        </div>
+      )}
       {translation && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Natural translation</p>
@@ -3442,65 +3466,24 @@ function InlineExplanation({
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whatsHappening}</p>
         </div>
       )}
-      {keyExpression && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Key expression</p>
-          {(() => {
-            const [head, ...rest] = keyExpression.split(/\s*=\s*/);
-            const tail = rest.join(" = ");
-            return (
-              <p className="mt-0.5 text-sm leading-relaxed text-foreground">
-                <span className="font-semibold">{head}</span>
-                {tail && (
-                  <>
-                    <span className="text-muted-foreground"> — </span>
-                    <span className="text-foreground/85">{tail}</span>
-                  </>
-                )}
-              </p>
-            );
-          })()}
-          {whyThisWay && (
-            <p className="mt-1 text-xs leading-relaxed text-foreground/75">{whyThisWay}</p>
-          )}
-        </div>
-      )}
-      {!keyExpression && whyThisWay && (
+      {whyThisWay && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Why speakers say it this way</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
         </div>
       )}
-      {vocabulary && (
+      {vocabulary.length > 0 && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Vocabulary</p>
           <ul className="mt-0.5 space-y-0.5">
-            {vocabulary
-              .split(/\s*(?:·|•|;|\|)\s*/)
-              .map((v) => v.trim())
-              .filter(Boolean)
-              .map((item, i) => {
-                const [head, ...rest] = item.split(/\s*=\s*/);
-                const tail = rest.join(" = ");
-                return (
-                  <li key={i} className="text-sm">
-                    <span className="font-semibold text-foreground">{head}</span>
-                    {tail && (
-                      <>
-                        <span className="text-muted-foreground"> — </span>
-                        <span className="text-foreground/85">{tail}</span>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
+            {vocabulary.map((item, i) => (
+              <li key={i} className="text-sm">
+                <span className="font-semibold text-foreground">{item.term}</span>
+                <span className="text-muted-foreground"> — </span>
+                <span className="text-foreground/85">{item.meaning}</span>
+              </li>
+            ))}
           </ul>
-        </div>
-      )}
-      {note && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Usage notes</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
         </div>
       )}
       {grammar && (
