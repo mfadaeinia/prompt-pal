@@ -3173,8 +3173,8 @@ function ExplanationPanel({
   const tgtLabel = targetLangLabel || "English";
 
   return (
-    <div className="rounded-2xl bg-muted/30 p-6 sm:p-7">
-      {/* Sentence-first header. The original sentence is the largest, full-width element. Utility actions are demoted to a small row below. */}
+    <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
+      {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
       <div>
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-medium text-muted-foreground">
@@ -3189,15 +3189,15 @@ function ExplanationPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-2 text-xl font-semibold leading-relaxed tracking-tight text-foreground sm:text-2xl">
+        <p className="mt-1.5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
           {sentence.text}
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-1">
+        <div className="mt-2 flex flex-wrap items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReplay}
-            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
@@ -3207,7 +3207,7 @@ function ExplanationPanel({
               size="sm"
               onClick={onSave}
               disabled={saveDisabled}
-              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
               title={
                 isSaved
                   ? "Already in My Library"
@@ -3236,118 +3236,69 @@ function ExplanationPanel({
       )}
 
 
-      <div className="mt-6 pt-6 border-t border-border/60">
+      <div className="mt-4 pt-4 border-t border-border/60">
         {limitedMode ? (
           <div className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-6">
+          <div className="space-y-5">
+            {/* ⭐ HERO — Key Expression. Always first, visually dominant. */}
+            {ready.keyExpression && (
+              <KeyExpressionHero expression={ready.keyExpression} />
+            )}
+
             {ready.translation && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Natural translation · {tgtLabel}
                 </h4>
-                <p className="mt-1.5 text-base leading-relaxed text-foreground">
+                <p className="mt-1 text-base leading-relaxed text-foreground">
                   {ready.translation}
+                </p>
+              </div>
+            )}
+
+            {ready.whyThisWay && (
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Why speakers say it this way
+                </h4>
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
+                  {ready.whyThisWay}
                 </p>
               </div>
             )}
 
             {ready.whatsHappening && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   What's happening
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                   {ready.whatsHappening}
                 </p>
               </div>
             )}
 
-            {ready.keyExpression && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Key expression
-                </h4>
-                {(() => {
-                  const [head, ...rest] = ready.keyExpression.split(/\s*=\s*/);
-                  const tail = rest.join(" = ");
-                  return (
-                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">
-                      <span className="font-semibold">{head}</span>
-                      {tail && (
-                        <>
-                          <span className="text-muted-foreground"> — </span>
-                          <span className="text-foreground/85">{tail}</span>
-                        </>
-                      )}
-                    </p>
-                  );
-                })()}
-                {ready.whyThisWay && (
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                    {ready.whyThisWay}
-                  </p>
-                )}
-              </div>
-            )}
+            {ready.vocabulary && <TieredVocabulary raw={ready.vocabulary} />}
 
-            {!ready.keyExpression && ready.whyThisWay && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Why speakers say it this way
-                </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
-                  {ready.whyThisWay}
-                </p>
-              </div>
-            )}
-
-            {ready.vocabulary && (
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Vocabulary
-                </h4>
-                <ul className="mt-2 space-y-1.5">
-                  {ready.vocabulary
-                    .split(/\s*(?:·|•|;|\|)\s*/)
-                    .map((v) => v.trim())
-                    .filter(Boolean)
-                    .map((item, i) => {
-                      const [head, ...rest] = item.split(/\s*=\s*/);
-                      const tail = rest.join(" = ");
-                      return (
-                        <li key={i} className="flex items-baseline gap-2 text-sm">
-                          <span className="font-medium text-foreground">{head}</span>
-                          {tail && (
-                            <>
-                              <span className="text-muted-foreground">—</span>
-                              <span className="text-foreground/80">{tail}</span>
-                            </>
-                          )}
-                        </li>
-                      );
-                    })}
-                </ul>
-              </div>
-            )}
             {ready.note && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Usage notes
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
                   {ready.note}
                 </p>
               </div>
             )}
             {ready.grammar && (
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Grammar insight
                 </h4>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
                   {ready.grammar}
                 </p>
               </div>
@@ -3356,6 +3307,8 @@ function ExplanationPanel({
               <FallbackHint />
             )}
           </div>
+
+
 
 
         ) : error ? (
