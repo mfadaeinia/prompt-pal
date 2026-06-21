@@ -574,23 +574,23 @@ function Features() {
   const items = [
     {
       icon: <Globe className="h-5 w-5" />,
-      title: "50+ Languages",
-      body: "Learn from content in the languages you actually care about.",
+      title: "Any Language, Any Content",
+      body: "Learn from the podcasts, videos, and interviews you actually care about — in any language.",
     },
     {
       icon: <Zap className="h-5 w-5" />,
-      title: "Instant Understanding",
-      body: "Translations, meaning, and vocabulary appear the moment you click.",
+      title: "Comprehension On Demand",
+      body: "Get the exact support you need, exactly when you need it — then keep watching.",
     },
     {
       icon: <Bookmark className="h-5 w-5" />,
-      title: "Save & Review",
-      body: "Build your own library of sentences and expressions to revisit.",
+      title: "Build Your Own Learning Path",
+      body: "Save expressions, revisit them, and watch your understanding grow over time.",
     },
     {
       icon: <Languages className="h-5 w-5" />,
-      title: "Works Everywhere",
-      body: "YouTube, podcasts, news, talks — wherever real conversations live.",
+      title: "Stay in the Flow",
+      body: "Never pause, search, or switch tabs. Stay immersed in the content you love.",
     },
   ];
   return (
@@ -601,10 +601,10 @@ function Features() {
             className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
             style={heading}
           >
-            Everything you need to understand real content
+            A Bridge Between Content and Growth
           </h2>
           <p className="mt-3 text-base text-slate-600 sm:text-lg">
-            Designed to support your listening, not replace it.
+            Support your listening. Don't replace it.
           </p>
         </div>
 
@@ -663,10 +663,10 @@ function Testimonials() {
           className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
           style={heading}
         >
-          Built For Learners Who Use Real Content
+          Learners Who Choose Real Content
         </h2>
         <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          People who want to enjoy native podcasts, videos, and shows — and understand them.
+          People who want to enjoy native podcasts, videos, and shows — and grow from them.
         </p>
       </div>
       <div className="grid gap-5 md:grid-cols-3">
@@ -713,10 +713,10 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
           className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
           style={heading}
         >
-          Understand any video today
+          The Content You Love Can Become Your Teacher
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-base text-slate-600 sm:text-lg">
-          Paste a link and start understanding every sentence in seconds.
+          Start learning naturally from real-world content today.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button
@@ -724,7 +724,7 @@ function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSeconda
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
             style={heading}
           >
-            Try NativeFlow Free
+            Start Learning
             <ArrowRight className="h-4 w-4" />
           </button>
           <button
