@@ -363,11 +363,9 @@ function Index() {
       pendingActionRef.current = null;
       if (action) {
         setTimeout(action, 50);
-      } else {
-        // No pending action — drop the user straight into the product
-        // experience instead of the marketing page they came from.
-        setView((prev) => (prev === "landing" ? "app" : prev));
       }
+      // After login, stay on the current page. The user decides when to
+      // enter learning mode by clicking the CTA.
     });
     return () => sub.subscription.unsubscribe();
   }, [browserId, claimAnonFx, qc]);
