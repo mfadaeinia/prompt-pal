@@ -201,7 +201,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               <br />
               Real Content.
               <br />
-              <span className="text-blue-600">Not Another Lesson.</span>
+              <span className="text-blue-600">Stay Curious. Keep Improving.</span>
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
