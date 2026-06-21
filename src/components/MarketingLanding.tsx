@@ -182,16 +182,16 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
       </div>
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
-          <div className="max-w-xl">
+      <div className="relative mx-auto max-w-7xl px-6 pt-2 pb-12 sm:pt-4 sm:pb-20 md:pt-6 md:pb-24 lg:pb-20">
+        <div className="relative z-10 grid items-start gap-8 lg:grid-cols-[1fr_0.95fr] lg:gap-10">
+          <div className="max-w-xl pt-2 lg:pt-4">
             <h1
               className="text-[1.25rem] font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-[1.75rem] lg:text-[2.25rem]"
               style={heading}
             >
               Grow Through
               <br />
-              Real Content
+              Real Content.
             </h1>
 
             <p
@@ -201,11 +201,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               Learn naturally from the content you already love.
             </p>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Turn videos, podcasts, interviews, and native media into learning experiences.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
+            <div className="mt-5 flex flex-wrap gap-3 sm:mt-6">
               <button
                 onClick={onPrimary}
                 className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
@@ -224,11 +220,8 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               </button>
             </div>
 
-            <div className="mt-8">
-              <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
-                Learn from content you already love:
-              </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-5">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-700">
                 <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
                 <span className="inline-flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-slate-700" /> TED Talks</span>
                 <span className="inline-flex items-center gap-1.5"><Newspaper className="h-4 w-4 text-slate-700" /> News</span>
@@ -238,7 +231,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
+          <div className="relative lg:-mt-4 lg:max-w-[92%] lg:-ml-8 xl:-ml-12">
             <ProductMock />
           </div>
         </div>
