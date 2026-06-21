@@ -28,6 +28,12 @@ import { clearBenchmarkTranscriptCache } from "@/lib/transcript.functions";
 import { traceTranscriptPipeline, type PipelineTrace } from "@/lib/transcript-trace.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
+import {
+  getUserRetentionCohort,
+  type UserRetentionCohort,
+  type UserRetentionRow,
+} from "@/lib/user-retention.functions";
+
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
@@ -107,10 +113,11 @@ function FounderGate() {
   );
 }
 
-type FounderTab = "overview" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
+type FounderTab = "overview" | "users" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
 
 const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "overview", label: "Overview" },
+  { id: "users", label: "Users" },
   { id: "funnel", label: "Activation Funnel" },
   { id: "cohort", label: "User Test Cohort" },
   { id: "health", label: "Product Health" },
@@ -118,11 +125,13 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "engineering", label: "Engineering" },
 ];
 
+
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
+  const retentionFetcher = useServerFn(getUserRetentionCohort);
   const [tab, setTab] = useState<FounderTab>("overview");
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -145,13 +154,20 @@ function FounderPage() {
     queryFn: () => cohortFetcher(),
     refetchInterval: 30_000,
   });
+  const retentionQ = useQuery({
+    queryKey: ["user-retention"],
+    queryFn: () => retentionFetcher(),
+    refetchInterval: 60_000,
+  });
 
   const refreshAll = () => {
     refetch();
     libQ.refetch();
     txQ.refetch();
     cohortQ.refetch();
+    retentionQ.refetch();
   };
+
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
@@ -201,9 +217,13 @@ function FounderPage() {
             cohort={cohortQ.data}
           />
         )}
+        {tab === "users" && (
+          <UserRetentionSection q={retentionQ.data} loading={retentionQ.isLoading} />
+        )}
         {tab === "funnel" && data && (
           <FunnelSection m={data} lib={libQ.data} tx={txQ.data} cohort={cohortQ.data} />
         )}
+
         {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         {tab === "health" && <ProductHealthSection tx={txQ.data} />}
         {tab === "feedback" && data && <FeedbackTab m={data} />}
@@ -486,7 +506,166 @@ function FeedbackTab({ m }: { m: FounderMetrics }) {
   );
 }
 
+function UserRetentionSection({
+  q,
+  loading,
+}: {
+  q: UserRetentionCohort | undefined;
+  loading: boolean;
+}) {
+  const [sortKey, setSortKey] = useState<
+    "created_at" | "last_seen_at" | "videos_loaded" | "sentence_clicks" | "words_saved"
+  >("created_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filter, setFilter] = useState<"all" | "activated" | "returned">("all");
+
+  if (loading && !q) return <p className="text-sm text-slate-500">Loading user retention…</p>;
+  if (!q) return <p className="text-sm text-slate-500">No data.</p>;
+
+  const t = q.totals;
+  const activationPct = Math.round(t.activation_rate * 100);
+
+  let rows: UserRetentionRow[] = q.users;
+  if (filter === "activated") rows = rows.filter((r) => r.activated);
+  if (filter === "returned") rows = rows.filter((r) => r.returned_7d);
+  rows = [...rows].sort((a, b) => {
+    const av = a[sortKey] as string | number;
+    const bv = b[sortKey] as string | number;
+    if (av === bv) return 0;
+    const cmp = av > bv ? 1 : -1;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  const setSort = (k: typeof sortKey) => {
+    if (k === sortKey) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
+  };
+  const arrow = (k: typeof sortKey) =>
+    sortKey === k ? (sortDir === "asc" ? " ↑" : " ↓") : "";
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        User Retention (authenticated users only)
+      </h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <BigKpi label="New Users" value={t.new_users} hint="signed up" />
+        <BigKpi label="Activated" value={t.activated} hint="≥1 video & ≥3 clicks" />
+        <BigKpi label="Activation Rate" value={`${activationPct}%`} />
+        <BigKpi label="Weekly Active" value={t.weekly_active} hint="seen ≤ 7d ago" />
+        <BigKpi label="7-Day Retention" value={t.returned_7d} hint="active 7d+ after signup" />
+        <BigKpi label="30-Day Retention" value={t.returned_30d} hint="active 30d+ after signup" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-slate-500">Filter:</span>
+        {(["all", "activated", "returned"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={
+              "rounded-full border px-3 py-1 transition-colors " +
+              (filter === f
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-400")
+            }
+          >
+            {f === "all" ? "All users" : f === "activated" ? "Activated only" : "Returned 7d+"}
+          </button>
+        ))}
+        <span className="ml-auto text-slate-400">{rows.length} users</span>
+      </div>
+
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="w-full min-w-[900px] text-left text-xs">
+          <thead className="bg-slate-50 text-slate-600">
+            <tr>
+              <th className="px-3 py-2 font-semibold">Email</th>
+              <th className="px-2 py-2 font-semibold">
+                <button onClick={() => setSort("created_at")}>Signup{arrow("created_at")}</button>
+              </th>
+              <th className="px-2 py-2 font-semibold">
+                <button onClick={() => setSort("last_seen_at")}>Last Seen{arrow("last_seen_at")}</button>
+              </th>
+              <th className="px-2 py-2 font-semibold text-right">
+                <button onClick={() => setSort("videos_loaded")}>Videos{arrow("videos_loaded")}</button>
+              </th>
+              <th className="px-2 py-2 font-semibold text-right">
+                <button onClick={() => setSort("sentence_clicks")}>Clicks{arrow("sentence_clicks")}</button>
+              </th>
+              <th className="px-2 py-2 font-semibold text-right">
+                <button onClick={() => setSort("words_saved")}>Saved{arrow("words_saved")}</button>
+              </th>
+              <th className="px-2 py-2 font-semibold">Activated</th>
+              <th className="px-2 py-2 font-semibold">Returned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-3 py-6 text-center text-slate-400">
+                  No users match this filter.
+                </td>
+              </tr>
+            )}
+            {rows.map((r) => {
+              const fmt = (s: string) => new Date(s).toLocaleDateString();
+              return (
+                <tr key={r.user_id} className="border-t border-slate-100">
+                  <td className="px-3 py-1.5 text-slate-800">
+                    {r.email ?? <span className="text-slate-400">—</span>}
+                  </td>
+                  <td className="px-2 py-1.5 tabular-nums text-slate-600">{fmt(r.created_at)}</td>
+                  <td className="px-2 py-1.5 tabular-nums text-slate-600">{fmt(r.last_seen_at)}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{r.videos_loaded}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{r.sentence_clicks}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{r.words_saved}</td>
+                  <td className="px-2 py-1.5">
+                    {r.activated ? (
+                      <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-700">
+                        Yes
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">No</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-slate-700">
+                    <span className="flex gap-1">
+                      {r.returned_1d && (
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px]">1d</span>
+                      )}
+                      {r.returned_7d && (
+                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+                          7d
+                        </span>
+                      )}
+                      {r.returned_30d && (
+                        <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] text-violet-700">
+                          30d
+                        </span>
+                      )}
+                      {!r.returned_1d && <span className="text-slate-400">—</span>}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-slate-400">
+        Sentence click data only includes clicks logged after this feature shipped; older
+        users may show 0 clicks even if they used the app.
+      </p>
+    </div>
+  );
+}
+
 function BigKpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
