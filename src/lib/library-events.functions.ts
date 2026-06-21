@@ -12,6 +12,7 @@ const LogInput = z.object({
   sessionId: z.string().min(1).max(128),
   videoId: z.string().max(64).nullable().optional(),
   expressionId: z.string().uuid().nullable().optional(),
+  userId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.any()).nullable().optional(),
 });
 
@@ -25,6 +26,7 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
       session_id: data.sessionId,
       video_id: data.videoId ?? null,
       expression_id: data.expressionId ?? null,
+      user_id: data.userId ?? null,
       metadata: data.metadata ?? null,
     });
     if (error) {
@@ -33,6 +35,7 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 export type LibraryMetrics = {
   totalSaves: number;
