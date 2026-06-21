@@ -1299,17 +1299,18 @@ function Index() {
 
 
 
-  // Explanation cache: sentenceId -> parsed explanation (or loading/error).
+  // Explanation cache: sentenceId -> structured explanation (or loading/error).
   type ExplanationEntry =
     | { status: "loading" }
     | {
         status: "ready";
         translation: string;
-        keyExpression: string;
+        keyExpression:
+          | { expression: string; meaning: string; whyItMatters: string }
+          | null;
         whatsHappening: string;
         whyThisWay: string;
-        vocabulary: string;
-        note: string;
+        vocabulary: Array<{ term: string; meaning: string; importance: "high" | "medium" | "low" }>;
         grammar: string;
       }
     | { status: "error"; error: string };
@@ -1347,7 +1348,7 @@ function Index() {
       data: { sentence: s.text, context: ctx, targetLanguage: targetLang },
     })
       .then((res) => {
-        const parsed = parseExplanation(res.explanation ?? null);
+        const parsed = normalizeExplanation(res.explanation ?? null);
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: {
@@ -1357,7 +1358,6 @@ function Index() {
             whatsHappening: parsed.whatsHappening,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
-            note: parsed.note,
             grammar: parsed.grammar,
           },
         }));
