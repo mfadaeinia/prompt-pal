@@ -7,12 +7,14 @@ const LogInput = z.object({
     "library_opened",
     "watch_again_clicked",
     "saved_item_revisited",
+    "sentence_clicked",
   ]),
   sessionId: z.string().min(1).max(128),
   videoId: z.string().max(64).nullable().optional(),
   expressionId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.any()).nullable().optional(),
 });
+
 
 export const logLibraryEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LogInput.parse(d))

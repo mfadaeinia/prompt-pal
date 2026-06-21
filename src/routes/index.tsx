@@ -1788,10 +1788,20 @@ function Index() {
         video_id: videoId,
       });
     }
+    if (browserId) {
+      void logLibraryEventFx({
+        data: {
+          eventName: "sentence_clicked",
+          sessionId: browserId,
+          videoId: videoId ?? null,
+        },
+      }).catch(() => {});
+    }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
     // Feedback trigger is now bound to explanation_viewed (after value is delivered),
     // not raw clicks. See effect above.
+
   }
 
 
