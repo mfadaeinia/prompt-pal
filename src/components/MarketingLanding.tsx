@@ -197,11 +197,9 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               className="text-[1.25rem] font-bold leading-[1.1] tracking-tight whitespace-nowrap text-slate-900 sm:text-[1.75rem] lg:text-[2.25rem]"
               style={heading}
             >
-              Grow Through
+              Grow Through&nbsp;Real Content.
               <br />
-              Real Content.
-              <br />
-              <span className="text-blue-600">Stay Curious. Keep Improving.</span>
+              <span className="text-blue-600">Stay Curious, Keep Improving.</span>
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
