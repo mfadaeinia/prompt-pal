@@ -365,12 +365,19 @@ function Index() {
       pendingActionRef.current = null;
       if (action) {
         setTimeout(action, 50);
+      } else if (typeof window !== "undefined") {
+        // OAuth redirects cause a full page reload, so the in-memory
+        // pendingActionRef is gone. Recover the intent from sessionStorage.
+        const intent = sessionStorage.getItem("nativeflow_post_auth_intent");
+        if (intent) {
+          sessionStorage.removeItem("nativeflow_post_auth_intent");
+          if (intent === "enter_app") setTimeout(() => setView("app"), 50);
+        }
       }
-      // After login, stay on the current page. The user decides when to
-      // enter learning mode by clicking the CTA.
     });
     return () => sub.subscription.unsubscribe();
   }, [browserId, claimAnonFx, qc]);
+
 
   // Authenticated users can still visit the landing page directly — the
   // marketing CTAs route them into the app on click. No forced redirect here.
@@ -1938,9 +1945,13 @@ function Index() {
               enterApp();
             } else {
               pendingActionRef.current = enterApp;
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("nativeflow_post_auth_intent", "enter_app");
+              }
               setAuthOpen(true);
             }
           }}
+
           conversionSlot={
             <PrimaryHero
               url={url}
