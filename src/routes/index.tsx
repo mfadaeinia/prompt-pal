@@ -63,17 +63,17 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NativeFlow — Understand any video, sentence by sentence" },
+      { title: "NativeFlow — Grow Through Real Content" },
       {
         name: "description",
         content:
-          "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly.",
+          "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving.",
       },
-      { property: "og:title", content: "NativeFlow — Understand any video, sentence by sentence" },
-      { property: "og:description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
+      { property: "og:title", content: "NativeFlow — Grow Through Real Content" },
+      { property: "og:description", content: "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving." },
       { property: "og:url", content: "https://native-lens.lovable.app/" },
-      { name: "twitter:title", content: "NativeFlow — Understand any video, sentence by sentence" },
-      { name: "twitter:description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
+      { name: "twitter:title", content: "NativeFlow — Grow Through Real Content" },
+      { name: "twitter:description", content: "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving." },
     ],
     links: [
       { rel: "canonical", href: "https://native-lens.lovable.app/" },
@@ -89,7 +89,7 @@ export const Route = createFileRoute("/")({
           operatingSystem: "Web",
           url: "https://native-lens.lovable.app/",
           description:
-            "Understand real YouTube videos sentence by sentence. Click any line to get translations, explanations, vocabulary, and context — instantly.",
+            "Learn naturally from real-world content. Turn videos, podcasts, and native media into language learning experiences with just enough support to keep you engaged and improving.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },
