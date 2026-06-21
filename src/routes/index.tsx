@@ -361,10 +361,26 @@ function Index() {
       setAuthOpen(false);
       const action = pendingActionRef.current;
       pendingActionRef.current = null;
-      if (action) setTimeout(action, 50);
+      if (action) {
+        setTimeout(action, 50);
+      } else {
+        // No pending action — drop the user straight into the product
+        // experience instead of the marketing page they came from.
+        setView((prev) => (prev === "landing" ? "app" : prev));
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [browserId, claimAnonFx, qc]);
+
+  // First load: if the user is already authenticated and lands on the marketing
+  // page (no demo URL in the address bar), route them into the app experience.
+  useEffect(() => {
+    if (authLoading || initialAuthHandledRef.current) return;
+    initialAuthHandledRef.current = true;
+    if (!isAuthenticated) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("v")) return;
+    setView((prev) => (prev === "landing" ? "app" : prev));
+  }, [authLoading, isAuthenticated]);
 
   function isSentenceSaved(s: TranscriptSentence | null) {
     if (!s) return false;
