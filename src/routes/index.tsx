@@ -3445,40 +3445,23 @@ const TIER_META: Record<VocabTier, { label: string; dot: string; text: string }>
 function TieredVocabulary({ raw }: { raw: string }) {
   const items = parseVocabulary(raw);
   if (items.length === 0) return null;
-  const order: VocabTier[] = ["high", "useful", "basic"];
-  const groups = order
-    .map((tier) => ({ tier, items: items.filter((i) => i.tier === tier) }))
-    .filter((g) => g.items.length > 0);
   return (
     <div>
       <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         Vocabulary
       </h4>
-      <div className="mt-2 space-y-3">
-        {groups.map((g) => {
-          const meta = TIER_META[g.tier];
-          return (
-            <div key={g.tier}>
-              <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${meta.text}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                {meta.label}
-              </div>
-              <ul className="mt-1 space-y-1">
-                {g.items.map((it, i) => (
-                  <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                    <span className={`font-semibold ${g.tier === "high" ? "text-foreground" : "text-foreground/90"}`}>{it.head}</span>
-                    {it.meaning && (
-                      <>
-                        <span className="text-muted-foreground">—</span>
-                        <span className="text-foreground/80">{it.meaning}</span>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {items.map((it, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm"
+          >
+            <span className="font-semibold text-foreground">{it.head}</span>
+            {it.meaning && (
+              <span className="text-muted-foreground">{it.meaning}</span>
+            )}
+          </span>
+        ))}
       </div>
     </div>
   );
