@@ -110,9 +110,10 @@ function Index() {
   const claimAnonFx = useServerFn(claimAnonymousSaves);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | (() => void)>(null);
+  const initialAuthHandledRef = useRef(false);
 
   function requireAuth(action: () => void) {
     if (isAuthenticated) {
@@ -157,7 +158,7 @@ function Index() {
   const [limitedMode, setLimitedMode] = useState(false);
   const [qualityBannerDismissed, setQualityBannerDismissed] = useState(false);
   const [manualText, setManualText] = useState("");
-  const [view, setView] = useState<"landing" | "demo">(() => {
+  const [view, setView] = useState<"landing" | "demo" | "app">(() => {
     if (typeof window === "undefined") return "landing";
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
@@ -360,10 +361,26 @@ function Index() {
       setAuthOpen(false);
       const action = pendingActionRef.current;
       pendingActionRef.current = null;
-      if (action) setTimeout(action, 50);
+      if (action) {
+        setTimeout(action, 50);
+      } else {
+        // No pending action — drop the user straight into the product
+        // experience instead of the marketing page they came from.
+        setView((prev) => (prev === "landing" ? "app" : prev));
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [browserId, claimAnonFx, qc]);
+
+  // First load: if the user is already authenticated and lands on the marketing
+  // page (no demo URL in the address bar), route them into the app experience.
+  useEffect(() => {
+    if (authLoading || initialAuthHandledRef.current) return;
+    initialAuthHandledRef.current = true;
+    if (!isAuthenticated) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("v")) return;
+    setView((prev) => (prev === "landing" ? "app" : prev));
+  }, [authLoading, isAuthenticated]);
 
   function isSentenceSaved(s: TranscriptSentence | null) {
     if (!s) return false;
@@ -761,7 +778,7 @@ function Index() {
 
 
   const goHome = () => {
-    setView("landing");
+    setView(isAuthenticated ? "app" : "landing");
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
@@ -1914,14 +1931,11 @@ function Index() {
         <MarketingLanding
           onStartDemo={startDemo}
           onSignUp={() => {
+            const enterApp = () => setView("app");
             if (isAuthenticated) {
-              const el = document.getElementById("try");
-              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              enterApp();
             } else {
-              pendingActionRef.current = () => {
-                const el = document.getElementById("try");
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-              };
+              pendingActionRef.current = enterApp;
               setAuthOpen(true);
             }
           }}
@@ -1952,6 +1966,37 @@ function Index() {
             />
           }
         />
+      )}
+
+      {view === "app" && (
+        <section className="mx-auto max-w-3xl px-6 pt-10 pb-16 sm:pt-16">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Welcome to NativeFlow
+            </h1>
+            <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+              Paste any YouTube video to start learning — or try the demo.
+            </p>
+          </div>
+          <div className="mt-8">
+            <PrimaryHero
+              url={url}
+              setUrl={setUrl}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              spokenLang={spokenLang}
+              setSpokenLang={setSpokenLang}
+              loading={loadMutation.isPending}
+              onSubmit={(u) => {
+                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u);
+              }}
+              onStartDemo={startDemo}
+            />
+          </div>
+        </section>
       )}
 
       <main className="relative mx-auto max-w-6xl px-6">
