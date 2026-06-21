@@ -1968,7 +1968,7 @@ function Index() {
               Welcome to NativeFlow
             </h1>
             <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-              Paste any YouTube video to start learning — or try the demo.
+              Paste any YouTube video to start learning , or try the demo.
             </p>
           </div>
           <div className="mt-8">
