@@ -771,7 +771,7 @@ function Index() {
 
 
   const goHome = () => {
-    setView(isAuthenticated ? "app" : "landing");
+    setView("landing");
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
