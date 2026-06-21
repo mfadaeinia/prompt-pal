@@ -916,10 +916,11 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
               data: { sentence: sample.text.slice(0, 800), targetLanguage: "English" },
             });
             const err = (ex as { error?: string }).error;
-            translation_success = !err && (ex.explanation?.length ?? 0) > 10;
+            const translationLen = ex.explanation?.natural_translation?.length ?? 0;
+            translation_success = !err && translationLen > 10;
             translation_generated = translation_success;
             if (!translation_success && !failure_code) failure_code = "L01";
-            log({ step: "translation", ok: translation_success, detail: err ?? `len=${ex.explanation?.length ?? 0}`, ms: Date.now() - tTr });
+            log({ step: "translation", ok: translation_success, detail: err ?? `len=${translationLen}`, ms: Date.now() - tTr });
           } catch (e) {
             translation_success = false;
             if (!failure_code) failure_code = "L01";
