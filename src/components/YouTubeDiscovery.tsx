@@ -264,45 +264,89 @@ export function YouTubeDiscovery({
       )}
 
       {showExamples && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Popular examples</h3>
-            <span className="text-xs text-muted-foreground">Tap to analyze instantly</span>
+        <div className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Popular examples</h3>
+              <span className="text-xs text-muted-foreground">Tap to analyze instantly</span>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {POPULAR_EXAMPLES.map((r) => (
+                <div
+                  key={r.videoId}
+                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
+                >
+                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
+                    <img
+                      src={r.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {r.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {r.channel}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={loading}
+                      onClick={() => onPick(r.url)}
+                      className="mt-2 h-7 rounded-full px-3 text-xs"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" /> Try now
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {POPULAR_EXAMPLES.map((r) => (
-              <div
-                key={r.videoId}
-                className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
-              >
-                <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
-                  <img
-                    src={r.thumbnail}
-                    alt=""
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Learn Dutch 🇳🇱</h3>
+              <span className="text-xs text-muted-foreground">NPO / Jeugdjournaal</span>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {DUTCH_EXAMPLES.map((r) => (
+                <div
+                  key={r.videoId}
+                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
+                >
+                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
+                    <img
+                      src={r.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {r.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {r.channel}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={loading}
+                      onClick={() => onPick(r.url)}
+                      className="mt-2 h-7 rounded-full px-3 text-xs"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" /> Try now
+                    </Button>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                    {r.title}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {r.channel}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={loading}
-                    onClick={() => onPick(r.url)}
-                    className="mt-2 h-7 rounded-full px-3 text-xs"
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" /> Try now
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
