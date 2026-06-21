@@ -1931,14 +1931,11 @@ function Index() {
         <MarketingLanding
           onStartDemo={startDemo}
           onSignUp={() => {
+            const enterApp = () => setView("app");
             if (isAuthenticated) {
-              const el = document.getElementById("try");
-              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              enterApp();
             } else {
-              pendingActionRef.current = () => {
-                const el = document.getElementById("try");
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-              };
+              pendingActionRef.current = enterApp;
               setAuthOpen(true);
             }
           }}
@@ -1969,6 +1966,37 @@ function Index() {
             />
           }
         />
+      )}
+
+      {view === "app" && (
+        <section className="mx-auto max-w-3xl px-6 pt-10 pb-16 sm:pt-16">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Welcome to NativeFlow
+            </h1>
+            <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+              Paste any YouTube video to start learning — or try the demo.
+            </p>
+          </div>
+          <div className="mt-8">
+            <PrimaryHero
+              url={url}
+              setUrl={setUrl}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              spokenLang={spokenLang}
+              setSpokenLang={setSpokenLang}
+              loading={loadMutation.isPending}
+              onSubmit={(u) => {
+                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u);
+              }}
+              onStartDemo={startDemo}
+            />
+          </div>
+        </section>
       )}
 
       <main className="relative mx-auto max-w-6xl px-6">
