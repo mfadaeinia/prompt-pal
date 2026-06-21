@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
 const Input = z.object({
@@ -8,6 +8,31 @@ const Input = z.object({
   context: z.string().max(4000).optional(),
   targetLanguage: z.string().min(1).max(40).default("English"),
 });
+
+// Structured contract returned to the client. Frontend renders sections
+// dynamically and hides anything null / empty / low value.
+const ExplanationSchema = z.object({
+  natural_translation: z.string(),
+  key_expression: z
+    .object({
+      expression: z.string(),
+      meaning: z.string(),
+      why_it_matters: z.string(),
+    })
+    .nullable(),
+  whats_happening: z.string(),
+  why_speakers_say_it_this_way: z.string(),
+  vocabulary: z.array(
+    z.object({
+      term: z.string(),
+      meaning: z.string(),
+      importance: z.enum(["high", "medium", "low"]),
+    }),
+  ),
+  grammar_insight: z.string().nullable(),
+});
+
+export type ExplanationJson = z.infer<typeof ExplanationSchema>;
 
 const BANNED_OPENERS = [
   "the speaker is discussing",
@@ -22,51 +47,58 @@ const BANNED_OPENERS = [
 
 function buildSystem(targetLanguage: string, retry: boolean) {
   return `You are NativeFlow, a friendly language coach for an intermediate learner.
-You are NOT a translator and NOT a dictionary. Your job is to teach HOW NATIVE SPEAKERS ACTUALLY USE the language — practical, real-world, plain English.
+You are NOT a translator and NOT a dictionary. Teach HOW NATIVE SPEAKERS ACTUALLY USE the language — practical, real-world, plain ${targetLanguage}.
 
-Output PLAIN TEXT only, in this EXACT format. Every field on its own line, in this exact order. Use "—" to OMIT a field that would not add real value.
+You MUST return ONE JSON object matching the provided schema. No prose, no markdown, no commentary.
 
-Natural Translation: <Translate the sentence into ${targetLanguage} the way a real native speaker would say it. Natural, idiomatic, NOT word-for-word. Never preserve awkward source-language word order.>
-Key Expression: <The single most learning-worthy multi-word expression, collocation, separable verb, idiom, phrasal verb, or spoken/news-style phrasing from the sentence. Format: "<expression in original language> = <2–3 natural ${targetLanguage} equivalents separated by ', '>". If there is no genuinely strong expression worth teaching, write "—" (do NOT invent one).>
-What's Happening: <1 short sentence in ${targetLanguage} explaining the intent / what's going on in plain language. Do NOT start with "The speaker", "The sentence", "This sentence" or any meta phrasing. Just describe what's going on, like a friend would.>
-Why Speakers Say It This Way: <1–2 short sentences in plain ${targetLanguage} explaining the linguistic pattern — how native speakers express this idea, register (news / casual / formal), and why this phrasing sounds natural. Plain English, NOT academic. Avoid jargon like "dative object", "subjunctive mood", "valency" unless absolutely necessary, and if used, explain it in one tiny phrase.>
-Vocabulary: <ONLY 2–4 words/phrases with real learning value, ranked by usefulness. Format: "word = ${targetLanguage} meaning" separated by " · ". NEVER include filler words (the, and, is, of, more, very, a, to, in, on, with, that). If fewer than 2 qualify, write "—".>
-Grammar Insight: <Only if there is a genuinely useful, practical pattern (separable-verb split, V2 word order, modal stacking, perfect-tense auxiliary choice, etc.). One short, plain-English sentence. If the sentence has nothing special, write "—".>
+FIELD GUIDANCE:
+- natural_translation: Natural ${targetLanguage} translation a real speaker would say. Idiomatic, NOT word-for-word. Concise and readable.
+- key_expression: The single most learning-worthy multi-word expression / collocation / separable verb / idiom / phrasal verb / news-style phrasing in the sentence. Set to null if there is no genuinely strong expression worth teaching. Do NOT invent one.
+  - expression: the phrase in the original language
+  - meaning: 2–3 natural ${targetLanguage} equivalents, comma-separated
+  - why_it_matters: 1 short sentence in ${targetLanguage} on when / why native speakers reach for it
+- whats_happening: 1 short sentence in ${targetLanguage} describing the intent / context. Do NOT start with "The speaker", "The sentence", "This sentence", "In this sentence". Do NOT repeat the translation. Describe what's going on like a friend would.
+- why_speakers_say_it_this_way: 1–2 short sentences in plain ${targetLanguage} explaining the pattern / register / why this phrasing sounds natural. Avoid academic jargon (dative object, subjunctive mood, valency, etc.).
+- vocabulary: 2–4 items max, ranked by usefulness, highest first. NEVER include filler words (the, and, is, of, more, very, a, to, in, on, with, that). Use "high" only for genuinely high-value learning items. Use [] if nothing qualifies.
+- grammar_insight: Only if there is a genuinely useful, practical pattern (separable-verb split, V2 word order, modal stacking, perfect-tense auxiliary, etc.). One short, plain-${targetLanguage} sentence. Set null otherwise.
 
-HARD RULES — failure to follow means your output is rejected:
+HARD RULES:
 - Be a coach, not a parser. Teach a PATTERN, not the obvious meaning.
-- NEVER restate the translation in "What's Happening" or "Why Speakers Say It This Way".
-- NEVER list every word. Vocabulary is curated, not exhaustive.
-- NEVER use these openers: "The speaker is discussing/explaining", "The sentence refers to/means", "In this sentence", "This sentence is about".
+- NEVER restate the translation in whats_happening or why_speakers_say_it_this_way.
+- NEVER list every word. vocabulary is curated.
 - NEVER sound like a dictionary entry or a grammar textbook.
-- NO bullet points, NO markdown, NO headings beyond the six labels above.
-- Each label appears exactly once, in the exact order above.
-- Prefer "—" over weak filler. Empty is better than generic.
+- Prefer null / [] over weak filler. Empty is better than generic.
 ${retry ? "\nIMPORTANT: Your previous output was weak (generic, meta, or restating the translation). Rewrite from scratch following the rules above strictly." : ""}`;
 }
 
-function validate(text: string) {
-  const get = (label: string) => {
-    const m = text.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
-    return m ? m[1].trim() : "";
-  };
-  const translation = get("Natural Translation");
-  const whats = get("What's Happening").toLowerCase();
-  const why = get("Why Speakers Say It This Way").toLowerCase();
-
+function validate(obj: ExplanationJson): string[] {
   const weak: string[] = [];
-  if (!translation || translation === "—") weak.push("missing-translation");
+  if (!obj.natural_translation || !obj.natural_translation.trim()) {
+    weak.push("missing-translation");
+  }
+  const whats = obj.whats_happening.toLowerCase().trim();
+  const why = obj.why_speakers_say_it_this_way.toLowerCase().trim();
   for (const opener of BANNED_OPENERS) {
     if (whats.startsWith(opener) || why.startsWith(opener)) {
       weak.push(`banned-opener:${opener}`);
       break;
     }
   }
-  // "What's Happening" should not just repeat the translation.
-  if (whats && translation && whats === translation.toLowerCase()) {
+  if (whats && whats === obj.natural_translation.toLowerCase().trim()) {
     weak.push("whats-equals-translation");
   }
   return weak;
+}
+
+function emptyExplanation(): ExplanationJson {
+  return {
+    natural_translation: "",
+    key_expression: null,
+    whats_happening: "",
+    why_speakers_say_it_this_way: "",
+    vocabulary: [],
+    grammar_insight: null,
+  };
 }
 
 export const explainSentence = createServerFn({ method: "POST" })
@@ -83,27 +115,28 @@ export const explainSentence = createServerFn({ method: "POST" })
     }`;
 
     const run = async (retry: boolean) => {
-      const { text } = await generateText({
+      const { object } = await generateObject({
         model,
+        schema: ExplanationSchema,
         system: buildSystem(data.targetLanguage, retry),
         prompt,
       });
-      return text.trim();
+      return object;
     };
 
     try {
-      let text = await run(false);
-      const issues = validate(text);
+      let obj = await run(false);
+      const issues = validate(obj);
       if (issues.length > 0) {
         console.warn("[explain] weak output, regenerating", { issues });
         try {
           const retried = await run(true);
-          if (validate(retried).length <= issues.length) text = retried;
+          if (validate(retried).length <= issues.length) obj = retried;
         } catch {
           // keep first attempt if retry fails
         }
       }
-      return { explanation: text };
+      return { explanation: obj };
     } catch (error: unknown) {
       const status =
         (error as { statusCode?: number; status?: number })?.statusCode ??
@@ -113,14 +146,12 @@ export const explainSentence = createServerFn({ method: "POST" })
       const isCredits = status === 402 || /payment required|credit/i.test(message);
       console.error("[explain] generation failed", { status, message });
 
-      const fallback = `Natural Translation: —\nKey Expression: —\nWhat's Happening: —\nWhy Speakers Say It This Way: —\nVocabulary: —\nGrammar Insight: —`;
-
       if (isRateLimit) {
-        return { explanation: fallback, error: "rate_limited" as const };
+        return { explanation: emptyExplanation(), error: "rate_limited" as const };
       }
       if (isCredits) {
-        return { explanation: fallback, error: "credits_exhausted" as const };
+        return { explanation: emptyExplanation(), error: "credits_exhausted" as const };
       }
-      return { explanation: fallback, error: "unavailable" as const };
+      return { explanation: emptyExplanation(), error: "unavailable" as const };
     }
   });
