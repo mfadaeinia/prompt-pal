@@ -1863,33 +1863,35 @@ function Index() {
                 </button>
               )}
             </div>
-            <div className="relative">
-              <Link
-                to="/saved"
-                className="relative inline-flex items-center gap-1.5 rounded-full border border-border bg-card p-2 text-xs font-medium text-foreground hover:bg-accent sm:px-3 sm:py-1.5"
-                onClick={() => {
-                  track("my_expressions_opened", { from: view });
-                  setShowSavedTooltip(false);
-                  localStorage.setItem("nativeflow_saved_tooltip_seen", "1");
-                }}
-                aria-label="My Library"
-                title="My Library"
-              >
-                <Bookmark className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                <span className="hidden sm:inline">My Library</span>
-                {savedQuery.data && (savedQuery.data.items ?? []).length > 0 && (
-                  <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-background sm:static sm:ring-0">
-                    {(savedQuery.data.items ?? []).length > 99 ? "99+" : (savedQuery.data.items ?? []).length}
-                  </span>
+            {isAuthenticated && (
+              <div className="relative">
+                <Link
+                  to="/saved"
+                  className="relative inline-flex items-center gap-1.5 rounded-full border border-border bg-card p-2 text-xs font-medium text-foreground hover:bg-accent sm:px-3 sm:py-1.5"
+                  onClick={() => {
+                    track("my_expressions_opened", { from: view });
+                    setShowSavedTooltip(false);
+                    localStorage.setItem("nativeflow_saved_tooltip_seen", "1");
+                  }}
+                  aria-label="My Library"
+                  title="My Library"
+                >
+                  <Bookmark className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                  <span className="hidden sm:inline">My Library</span>
+                  {savedQuery.data && (savedQuery.data.items ?? []).length > 0 && (
+                    <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-background sm:static sm:ring-0">
+                      {(savedQuery.data.items ?? []).length > 99 ? "99+" : (savedQuery.data.items ?? []).length}
+                    </span>
+                  )}
+                </Link>
+                {showSavedTooltip && (
+                  <div className="absolute left-1/2 top-full z-50 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow-lg animate-in fade-in zoom-in-95">
+                    <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-primary" />
+                    Your saved words and expressions appear here.
+                  </div>
                 )}
-              </Link>
-              {showSavedTooltip && (
-                <div className="absolute left-1/2 top-full z-50 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground shadow-lg animate-in fade-in zoom-in-95">
-                  <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-primary" />
-                  Your saved words and expressions appear here.
-                </div>
-              )}
-            </div>
+              </div>
+            )}
             {videoId && view !== "landing" && (
               <Button
                 size="sm"
