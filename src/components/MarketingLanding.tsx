@@ -138,36 +138,9 @@ const MOBILE_TILES = [
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="relative overflow-hidden">
-      {/* ============== BACKGROUND — MOBILE: small tile grid as texture ============== */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 md:hidden">
-        <div className="absolute inset-0 grid grid-cols-4 gap-1.5 p-2 opacity-[0.55]">
-          {MOBILE_TILES.map((id, i) => (
-            <div
-              key={id + i}
-              className="overflow-hidden rounded-md"
-              style={{ aspectRatio: "1/1" }}
-            >
-              <img
-                src={`https://images.unsplash.com/${id}?w=200&q=60`}
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/30 via-[#F8FAFC]/50 to-[#F8FAFC]" />
-      </div>
-
-      {/* ============== BACKGROUND — TABLET: collage spans most of the hero ============== */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 hidden md:block lg:hidden">
-        <img
-          src={heroCollage.url}
-          alt=""
-          className="absolute inset-y-0 right-0 h-full w-[92%] object-cover object-right"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-5% via-[#F8FAFC]/20 via-20% to-transparent to-45%" />
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
+      {/* ============== BACKGROUND — MOBILE & TABLET: clean, no busy collage ============== */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 lg:hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/40 via-[#F8FAFC] to-[#F8FAFC]" />
       </div>
 
       {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
