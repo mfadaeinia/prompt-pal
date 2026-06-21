@@ -3254,6 +3254,17 @@ function ExplanationPanel({
               </div>
             )}
 
+            {ready.whatsHappening && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  What's happening
+                </h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+                  {ready.whatsHappening}
+                </p>
+              </div>
+            )}
+
             {ready.keyExpression && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
