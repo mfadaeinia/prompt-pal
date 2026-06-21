@@ -217,9 +217,13 @@ function FounderPage() {
             cohort={cohortQ.data}
           />
         )}
+        {tab === "users" && (
+          <UserRetentionSection q={retentionQ.data} loading={retentionQ.isLoading} />
+        )}
         {tab === "funnel" && data && (
           <FunnelSection m={data} lib={libQ.data} tx={txQ.data} cohort={cohortQ.data} />
         )}
+
         {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
         {tab === "health" && <ProductHealthSection tx={txQ.data} />}
         {tab === "feedback" && data && <FeedbackTab m={data} />}
