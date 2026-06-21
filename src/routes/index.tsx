@@ -271,21 +271,23 @@ function Index() {
   }, []);
 
   // Warm the demo transcript cache in the background on first mount so
-  // that clicking "Try Demo" is instant. Best-effort: any failure is
-  // silently ignored and the normal load path will still run on click.
+  // that clicking "Try Demo" is instant. The transcript for the fixed
+  // demo video is pre-seeded in the server cache, so the fast-path fetch
+  // returns immediately; we mirror it into localStorage so subsequent
+  // opens skip the network entirely. Best-effort: any failure is silently
+  // ignored and the normal load path will still run on click.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (readDemoTranscriptCache(DEMO_VIDEO_ID)) return;
-    const t = window.setTimeout(() => {
-      fetchTxFast({ data: { url: DEMO_VIDEO_URL, skipYoutube: true } })
-        .then((r) => {
-          if (r.status === "ready" && r.result.videoId === DEMO_VIDEO_ID) {
-            writeDemoTranscriptCache(DEMO_VIDEO_ID, r.result);
-          }
-        })
-        .catch(() => {});
-    }, 1200);
-    return () => window.clearTimeout(t);
+    // Kick off immediately (no artificial delay) so the cache is warm by
+    // the time the user reaches for the Try Demo button.
+    fetchTxFast({ data: { url: DEMO_VIDEO_URL } })
+      .then((r) => {
+        if (r.status === "ready" && r.result.videoId === DEMO_VIDEO_ID) {
+          writeDemoTranscriptCache(DEMO_VIDEO_ID, r.result);
+        }
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
