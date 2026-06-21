@@ -112,6 +112,9 @@ function Index() {
   const qc = useQueryClient();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const userId = user?.id ?? null;
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
+
 
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | (() => void)>(null);
@@ -1440,7 +1443,7 @@ function Index() {
           targetLanguage: targetLang || null,
           pageUrl: typeof window !== "undefined" ? window.location.href : null,
           ended,
-          userId,
+          userId: userIdRef.current,
         },
       }).catch(() => {
         // Best-effort engagement telemetry — never surface to user.
