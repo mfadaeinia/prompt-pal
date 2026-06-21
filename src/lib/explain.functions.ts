@@ -118,7 +118,7 @@ export const explainSentence = createServerFn({ method: "POST" })
       const isCredits = status === 402 || /payment required|credit/i.test(message);
       console.error("[explain] generation failed", { status, message });
 
-      const fallback = `Natural Translation: —\nKey Expression: —\nWhat's Happening: —\nWhy Speakers Say It This Way: —\nVocabulary: —\nGrammar Insight: —`;
+      const fallback = `Key Expression: —\nNatural Translation: —\nWhy Speakers Say It This Way: —\nWhat's Happening: —\nVocabulary: —\nGrammar Insight: —`;
 
       if (isRateLimit) {
         return { explanation: fallback, error: "rate_limited" as const };
