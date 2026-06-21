@@ -138,10 +138,16 @@ const MOBILE_TILES = [
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="relative overflow-hidden">
-      {/* ============== BACKGROUND — MOBILE & TABLET: clean, no busy collage ============== */}
+      {/* ============== BACKGROUND — MOBILE & TABLET: very faded collage ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 lg:hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/40 via-[#F8FAFC] to-[#F8FAFC]" />
+        <img
+          src={heroCollage.url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.06]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 via-[#F8FAFC]/85 to-[#F8FAFC]" />
       </div>
+
 
       {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
