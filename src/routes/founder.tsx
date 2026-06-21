@@ -28,6 +28,12 @@ import { clearBenchmarkTranscriptCache } from "@/lib/transcript.functions";
 import { traceTranscriptPipeline, type PipelineTrace } from "@/lib/transcript-trace.functions";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { verifyFounderPassword } from "@/lib/founder-auth.functions";
+import {
+  getUserRetentionCohort,
+  type UserRetentionCohort,
+  type UserRetentionRow,
+} from "@/lib/user-retention.functions";
+
 
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
@@ -107,10 +113,11 @@ function FounderGate() {
   );
 }
 
-type FounderTab = "overview" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
+type FounderTab = "overview" | "users" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
 
 const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "overview", label: "Overview" },
+  { id: "users", label: "Users" },
   { id: "funnel", label: "Activation Funnel" },
   { id: "cohort", label: "User Test Cohort" },
   { id: "health", label: "Product Health" },
@@ -118,11 +125,13 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "engineering", label: "Engineering" },
 ];
 
+
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
+  const retentionFetcher = useServerFn(getUserRetentionCohort);
   const [tab, setTab] = useState<FounderTab>("overview");
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -145,13 +154,20 @@ function FounderPage() {
     queryFn: () => cohortFetcher(),
     refetchInterval: 30_000,
   });
+  const retentionQ = useQuery({
+    queryKey: ["user-retention"],
+    queryFn: () => retentionFetcher(),
+    refetchInterval: 60_000,
+  });
 
   const refreshAll = () => {
     refetch();
     libQ.refetch();
     txQ.refetch();
     cohortQ.refetch();
+    retentionQ.refetch();
   };
+
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
