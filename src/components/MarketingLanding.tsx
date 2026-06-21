@@ -228,18 +228,6 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               </button>
             </div>
 
-            <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600 sm:gap-x-6 sm:text-sm">
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> Works with YouTube
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> 50+ languages
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" /> No credit card
-              </li>
-            </ul>
-
             <div className="mt-8">
               <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
                 Learn from content you already love:
