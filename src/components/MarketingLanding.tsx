@@ -185,19 +185,13 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
       <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
         <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
           <div className="max-w-xl">
-            <span
-              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
-              style={heading}
-            >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Learn from authentic content, naturally
-            </span>
-
             <h1
-              className="text-[1.25rem] font-bold leading-[1.1] tracking-tight whitespace-nowrap text-slate-900 sm:text-[1.75rem] lg:text-[2.25rem]"
+              className="text-[1.25rem] font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-[1.75rem] lg:text-[2.25rem]"
               style={heading}
             >
-              Grow Through&nbsp;Real Content
+              Grow Through
+              <br />
+              Real Content
             </h1>
 
             <p
@@ -208,7 +202,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </p>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              <br />
+              Turn videos, podcasts, interviews, and native media into learning experiences.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
