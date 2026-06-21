@@ -182,11 +182,19 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
       </div>
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-2 pb-12 sm:pt-4 sm:pb-20 md:pt-6 md:pb-24 lg:pb-20">
-        <div className="relative z-10 grid items-start gap-8 lg:grid-cols-[1fr_0.95fr] lg:gap-10">
-          <div className="max-w-xl pt-2 lg:pt-4">
+      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
+          <div className="max-w-xl">
+            <span
+              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
+              style={heading}
+            >
+              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+              Learn from authentic content, naturally
+            </span>
+
             <h1
-              className="text-[1.25rem] font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-[1.75rem] lg:text-[2.25rem]"
+              className="text-[1.75rem] font-bold leading-[1.1] tracking-tight whitespace-nowrap text-slate-900 sm:text-[2.5rem] lg:text-[3.25rem]"
               style={heading}
             >
               Grow Through
@@ -195,13 +203,13 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </h1>
 
             <p
-              className="mt-2 max-w-md text-base font-medium leading-relaxed text-slate-700 sm:text-lg"
+              className="mt-3 max-w-md text-base font-medium leading-relaxed text-slate-700 sm:text-lg"
               style={heading}
             >
               Learn naturally from the content you already love.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-3 sm:mt-6">
+            <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
               <button
                 onClick={onPrimary}
                 className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
@@ -220,8 +228,11 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               </button>
             </div>
 
-            <div className="mt-5">
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-8">
+              <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
+                Learn from content you already love:
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
                 <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
                 <span className="inline-flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-slate-700" /> TED Talks</span>
                 <span className="inline-flex items-center gap-1.5"><Newspaper className="h-4 w-4 text-slate-700" /> News</span>
@@ -231,7 +242,16 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative lg:-mt-4 lg:max-w-[92%] lg:-ml-8 xl:-ml-12">
+          <div className="relative min-w-0 lg:-mt-2">
+            {PEEK_TILES.map((tile) => (
+              <img
+                key={tile.alt}
+                src={tile.src}
+                alt={tile.alt}
+                loading="lazy"
+                className={`pointer-events-none rounded-lg border-2 border-white shadow-lg ${tile.cls}`}
+              />
+            ))}
             <ProductMock />
           </div>
         </div>
