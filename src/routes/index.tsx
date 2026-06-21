@@ -110,9 +110,10 @@ function Index() {
   const claimAnonFx = useServerFn(claimAnonymousSaves);
   const logLibraryEventFx = useServerFn(logLibraryEvent);
   const qc = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const pendingActionRef = useRef<null | (() => void)>(null);
+  const initialAuthHandledRef = useRef(false);
 
   function requireAuth(action: () => void) {
     if (isAuthenticated) {
