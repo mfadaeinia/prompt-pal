@@ -47,7 +47,7 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import nativeflowLogo from "@/assets/nativeflow-logo.png.asset.json";
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
-import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
@@ -175,6 +175,9 @@ function Index() {
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPlayNudge, setShowPlayNudge] = useState(false);
+  const hasInteractedWithSentenceRef = useRef(false);
+  const playNudgeTimerRef = useRef<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
@@ -814,6 +817,20 @@ function Index() {
       scroll();
     }
   };
+
+  // Auto-show the first-time coachmark whenever the demo view is active and
+  // we have sentences rendered (covers direct ?v= URL entry that bypasses startDemo).
+  useEffect(() => {
+    if (view !== "demo" || !studyMode) return;
+    if (sentences.length === 0) return;
+    if (hasInteractedWithSentenceRef.current) return;
+    try {
+      if (typeof window === "undefined") return;
+      if (localStorage.getItem("nativeflow_sentence_hinted") === "1") return;
+      if (localStorage.getItem("nativeflow_onboarded") === "1") return;
+      setShowOnboarding(true);
+    } catch {}
+  }, [view, studyMode, sentences.length]);
 
   // Tiny URL → 11-char video ID extractor (mirrors the server-side regex).
   function extractVideoIdClient(u: string): string | null {
@@ -1582,8 +1599,32 @@ function Index() {
             const t = p?.getCurrentTime?.() ?? 0;
             if (e.data === YT.PlayerState.PLAYING) {
               track("video_played", { video_id: videoId, current_time: t });
+              // Reinforcement hint: if the user plays without interacting, gently surface it.
+              if (
+                !hasInteractedWithSentenceRef.current &&
+                !showOnboarding &&
+                playNudgeTimerRef.current == null
+              ) {
+                try {
+                  const alreadyHinted =
+                    typeof window !== "undefined" &&
+                    localStorage.getItem("nativeflow_sentence_hinted") === "1";
+                  if (!alreadyHinted) {
+                    playNudgeTimerRef.current = window.setTimeout(() => {
+                      if (!hasInteractedWithSentenceRef.current) {
+                        setShowPlayNudge(true);
+                      }
+                      playNudgeTimerRef.current = null;
+                    }, 6000);
+                  }
+                } catch {}
+              }
             } else if (e.data === YT.PlayerState.PAUSED) {
               track("video_paused", { video_id: videoId, current_time: t });
+              if (playNudgeTimerRef.current != null) {
+                window.clearTimeout(playNudgeTimerRef.current);
+                playNudgeTimerRef.current = null;
+              }
             }
           },
         },
@@ -1915,6 +1956,17 @@ function Index() {
     }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
+    if (!hasInteractedWithSentenceRef.current) {
+      hasInteractedWithSentenceRef.current = true;
+      try {
+        localStorage.setItem("nativeflow_sentence_hinted", "1");
+      } catch {}
+    }
+    if (playNudgeTimerRef.current != null) {
+      window.clearTimeout(playNudgeTimerRef.current);
+      playNudgeTimerRef.current = null;
+    }
+    if (showPlayNudge) setShowPlayNudge(false);
     // Feedback trigger is now bound to explanation_viewed (after value is delivered),
     // not raw clicks. See effect above.
 
@@ -2658,12 +2710,12 @@ function Index() {
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
-                                className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
+                                className={`block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 hover:border-primary/60 ${
                                   active
-                                    ? "bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
+                                    ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
-                                    ? "bg-primary/15 text-foreground"
-                                    : "text-foreground/85"
+                                    ? "border-primary/70 bg-primary/15 text-foreground"
+                                    : "border-transparent text-foreground/85"
                                 }`}
                               >
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
@@ -2814,8 +2866,14 @@ function Index() {
         </div>
       </footer>
 
-      {showOnboarding && view === "demo" && (
-        <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
+      {showOnboarding && view === "demo" && studyMode && (
+        <SentenceCoachmark
+          containerRef={listRef}
+          onDismiss={() => dismissOnboarding(false)}
+        />
+      )}
+      {showPlayNudge && view === "demo" && studyMode && (
+        <PlayNudge onDismiss={() => setShowPlayNudge(false)} />
       )}
       {showFeedback ? (
         <FeedbackWidget
