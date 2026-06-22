@@ -15,6 +15,7 @@ const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
     channel: "TED",
     thumbnail: "https://i.ytimg.com/vi/8jPQjjsBbIc/hqdefault.jpg",
     durationSec: 853,
+    language: "en",
   },
   {
     videoId: "ZSt9tm3RoUU",
@@ -23,6 +24,7 @@ const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
     channel: "Stanford",
     thumbnail: "https://i.ytimg.com/vi/ZSt9tm3RoUU/hqdefault.jpg",
     durationSec: 902,
+    language: "en",
   },
   {
     videoId: "Ks-_Mh1QhMc",
@@ -31,6 +33,7 @@ const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
     channel: "TED",
     thumbnail: "https://i.ytimg.com/vi/Ks-_Mh1QhMc/hqdefault.jpg",
     durationSec: 1262,
+    language: "en",
   },
   {
     videoId: "5MgBikgcWnY",
@@ -39,6 +42,7 @@ const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
     channel: "TEDx Talks",
     thumbnail: "https://i.ytimg.com/vi/5MgBikgcWnY/hqdefault.jpg",
     durationSec: 1163,
+    language: "en",
   },
 ];
 
@@ -50,6 +54,7 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/hqdefault.jpg",
     durationSec: 246,
+    language: "nl",
   },
   {
     videoId: "yKKSoD9beaQ",
@@ -58,6 +63,7 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/yKKSoD9beaQ/hqdefault.jpg",
     durationSec: 283,
+    language: "nl",
   },
   {
     videoId: "4ngmE-BV5sE",
@@ -66,6 +72,7 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/4ngmE-BV5sE/hqdefault.jpg",
     durationSec: 151,
+    language: "nl",
   },
   {
     videoId: "isimFyR9MnI",
@@ -74,6 +81,7 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/isimFyR9MnI/hqdefault.jpg",
     durationSec: 82,
+    language: "nl",
   },
   {
     videoId: "W3Pu2RuTZ8A",
@@ -82,6 +90,7 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/W3Pu2RuTZ8A/hqdefault.jpg",
     durationSec: 99,
+    language: "nl",
   },
 ];
 
