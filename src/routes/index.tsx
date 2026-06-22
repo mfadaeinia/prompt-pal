@@ -2066,7 +2066,7 @@ function Index() {
                 track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
                 setUrl(u);
                 setView("demo");
-                submitLoad(u);
+                submitLoad(u, lang);
               }}
             />
           </div>
