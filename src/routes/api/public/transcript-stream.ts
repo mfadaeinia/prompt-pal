@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { buildSentencesFromChunksExport, type RawChunk } from "@/lib/transcript.functions";
+import {
+  buildSentencesFromChunksExport,
+  TRANSCRIPT_PIPELINE_VERSION,
+  type RawChunk,
+} from "@/lib/transcript.functions";
 
 /**
  * Progressive Whisper SSE stream.
