@@ -177,7 +177,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem] whitespace-pre-wrap"
               style={heading}
             >
-              Enjoy Native Content.{"\u00a0\n"}Understand more of it
+              Enjoy Native Content.{"\u00a0\n"}<span className="text-blue-600">Understand more of it</span>
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg whitespace-pre-wrap">
