@@ -8,9 +8,11 @@ export type UserRetentionRow = {
   total_sessions: number;
   videos_loaded: number;
   sentence_clicks: number;
+  explanations_viewed: number;
   words_saved: number;
   videos_saved: number;
   activated: boolean;
+  reason_not_activated: string | null;
   returned_1d: boolean;
   returned_7d: boolean;
   returned_30d: boolean;
@@ -92,7 +94,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
         .from("library_events" as any)
         .select("session_id,event_name,created_at")
         .is("user_id", null)
-        .eq("event_name", "sentence_clicked"),
+        .in("event_name", ["sentence_clicked", "explanation_viewed"]),
     ]);
 
     // Build session → user mapping from saved tables (covers historical rows)
@@ -112,6 +114,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
     const userSessions = new Map<string, Set<string>>();
     const userVideos = new Map<string, Set<string>>();
     const userClicks = new Map<string, number>();
+    const userExplanations = new Map<string, number>();
     const userSaved = new Map<string, number>();
     const userSavedVideos = new Map<string, number>();
     const userLastSeen = new Map<string, string>();
@@ -151,6 +154,8 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
       addSession(r.user_id, r.session_id);
       if (r.event_name === "sentence_clicked") {
         userClicks.set(r.user_id, (userClicks.get(r.user_id) ?? 0) + 1);
+      } else if (r.event_name === "explanation_viewed") {
+        userExplanations.set(r.user_id, (userExplanations.get(r.user_id) ?? 0) + 1);
       }
       touch(r.user_id, r.created_at);
     }
@@ -166,7 +171,11 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
     for (const r of (leAll.data ?? []) as any[]) {
       const uid = sessionToUser.get(r.session_id);
       if (!uid) continue;
-      userClicks.set(uid, (userClicks.get(uid) ?? 0) + 1);
+      if (r.event_name === "sentence_clicked") {
+        userClicks.set(uid, (userClicks.get(uid) ?? 0) + 1);
+      } else if (r.event_name === "explanation_viewed") {
+        userExplanations.set(uid, (userExplanations.get(uid) ?? 0) + 1);
+      }
       touch(uid, r.created_at);
     }
 
@@ -174,6 +183,8 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
     const rows: UserRetentionRow[] = users.map((u) => {
       const videos = userVideos.get(u.id)?.size ?? 0;
       const clicks = userClicks.get(u.id) ?? 0;
+      const explanations = userExplanations.get(u.id) ?? 0;
+      const engagement = clicks + explanations;
       const saved = userSaved.get(u.id) ?? 0;
       const savedVideos = userSavedVideos.get(u.id) ?? 0;
       const sessions = userSessions.get(u.id)?.size ?? 0;
@@ -181,6 +192,15 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
       const createdMs = new Date(u.created_at).getTime();
       const lastMs = new Date(lastSeen).getTime();
       const gap = lastMs - createdMs;
+      const activated = videos >= 1 && engagement >= 3;
+      let reason: string | null = null;
+      if (!activated) {
+        const missingVideo = videos < 1;
+        const missingEngagement = engagement < 3;
+        if (missingVideo && missingEngagement) reason = "no video & <3 explanations";
+        else if (missingVideo) reason = "no video watched";
+        else reason = `only ${engagement} explanation${engagement === 1 ? "" : "s"} viewed`;
+      }
       return {
         user_id: u.id,
         email: u.email,
@@ -189,9 +209,11 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
         total_sessions: sessions,
         videos_loaded: videos,
         sentence_clicks: clicks,
+        explanations_viewed: explanations,
         words_saved: saved,
         videos_saved: savedVideos,
-        activated: videos >= 1 && clicks >= 3,
+        activated,
+        reason_not_activated: reason,
         returned_1d: gap >= 1 * DAY,
         returned_7d: gap >= 7 * DAY,
         returned_30d: gap >= 30 * DAY,

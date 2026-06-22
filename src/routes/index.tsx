@@ -1724,6 +1724,16 @@ function Index() {
       video_id: videoId,
       explanations_opened: explanationsOpenedRef.current,
     });
+    if (browserId) {
+      void logLibraryEventFx({
+        data: {
+          eventName: "explanation_viewed",
+          sessionId: browserId,
+          videoId: videoId ?? null,
+          userId,
+        },
+      }).catch(() => {});
+    }
     // Primary feedback trigger: after the 3rd explanation in this session.
     // Slight delay so the user has time to actually read the explanation.
     if (explanationsOpenedRef.current === 3) {

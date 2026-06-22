@@ -8,6 +8,7 @@ const LogInput = z.object({
     "watch_again_clicked",
     "saved_item_revisited",
     "sentence_clicked",
+    "explanation_viewed",
   ]),
   sessionId: z.string().min(1).max(128),
   videoId: z.string().max(64).nullable().optional(),
