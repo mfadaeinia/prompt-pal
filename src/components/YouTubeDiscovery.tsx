@@ -236,7 +236,7 @@ export function YouTubeDiscovery({
     return () => clearTimeout(t);
   }, [q, search]);
 
-  const showExamples = true;
+  const showExamples = q.trim().length === 0;
 
   return (
     <div className="space-y-4">
