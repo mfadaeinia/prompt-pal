@@ -3290,6 +3290,7 @@ function ExplanationPanel({
   entry,
   onClose,
   onReplay,
+  onResume,
   onSave,
   isSaved,
   justSaved,
@@ -3302,6 +3303,7 @@ function ExplanationPanel({
   entry: ExplanationPanelEntry | undefined;
   onClose: () => void;
   onReplay: () => void;
+  onResume?: () => void;
   onSave: () => void;
   isSaved: boolean;
   justSaved: boolean;
