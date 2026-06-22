@@ -2325,7 +2325,7 @@ function Index() {
                 </button>
               </div>
               <label
-                className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
+                className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
                 title="Keep the active sentence in view automatically."
               >
                 <input
