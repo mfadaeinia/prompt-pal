@@ -2817,8 +2817,14 @@ function Index() {
         </div>
       </footer>
 
-      {showOnboarding && view === "demo" && (
-        <OnboardingOverlay onDismiss={() => dismissOnboarding(false)} />
+      {showOnboarding && view === "demo" && studyMode && (
+        <SentenceCoachmark
+          containerRef={listRef}
+          onDismiss={() => dismissOnboarding(false)}
+        />
+      )}
+      {showPlayNudge && view === "demo" && studyMode && (
+        <PlayNudge onDismiss={() => setShowPlayNudge(false)} />
       )}
       {showFeedback ? (
         <FeedbackWidget
