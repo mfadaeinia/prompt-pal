@@ -3,7 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
-import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
+import {
+  getLibraryMetrics,
+  getSentenceClickDebug,
+  type LibraryMetrics,
+  type SentenceClickDebug,
+} from "@/lib/library-events.functions";
 import {
   getTranscriptQualityMetrics,
   type TranscriptQualityMetrics,
@@ -129,6 +134,7 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
+  const clickDebugFetcher = useServerFn(getSentenceClickDebug);
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
   const retentionFetcher = useServerFn(getUserRetentionCohort);
@@ -142,6 +148,11 @@ function FounderPage() {
   const libQ = useQuery({
     queryKey: ["library-metrics"],
     queryFn: () => libFetcher(),
+    refetchInterval: 30_000,
+  });
+  const clickDebugQ = useQuery({
+    queryKey: ["sentence-click-debug"],
+    queryFn: () => clickDebugFetcher(),
     refetchInterval: 30_000,
   });
   const txQ = useQuery({
@@ -163,6 +174,7 @@ function FounderPage() {
   const refreshAll = () => {
     refetch();
     libQ.refetch();
+    clickDebugQ.refetch();
     txQ.refetch();
     cohortQ.refetch();
     retentionQ.refetch();
@@ -235,7 +247,7 @@ function FounderPage() {
             <TranscriptTruthSection />
             <BenchmarkSection />
             {data && <Dashboard m={data} />}
-            {libQ.data && <LibrarySection m={libQ.data} />}
+            {libQ.data && <LibrarySection m={libQ.data} debug={clickDebugQ.data} />}
             {txQ.data && <TranscriptQualitySection m={txQ.data} />}
           </div>
         )}
@@ -1379,15 +1391,109 @@ function TesterCohortSection({ m }: { m: TesterCohortMetrics }) {
   );
 }
 
-function LibrarySection({ m }: { m: LibraryMetrics }) {
+function LibrarySection({ m, debug }: { m: LibraryMetrics; debug?: SentenceClickDebug }) {
   return (
-    <Section title="My Library">
-      <Stat label="Users who saved" value={m.uniqueSavers} hint="unique browser sessions" />
-      <Stat label="Saved expressions" value={m.totalSaves} />
-      <Stat label="Library opens" value={m.libraryOpens} />
-      <Stat label="Watch-again clicks" value={m.watchAgainClicks} />
-      <Stat label="Saved-item revisits" value={m.savedItemRevisits} />
-    </Section>
+    <div className="space-y-4">
+      <Section title="My Library">
+        <Stat label="Users who saved" value={m.uniqueSavers} hint="unique browser sessions" />
+        <Stat label="Saved expressions" value={m.totalSaves} />
+        <Stat label="Library opens" value={m.libraryOpens} />
+        <Stat label="Watch-again clicks" value={m.watchAgainClicks} />
+        <Stat label="Saved-item revisits" value={m.savedItemRevisits} />
+        <Stat label="Sentence clicks (all-time)" value={m.sentenceClicks} />
+        <Stat
+          label="Sessions w/ sentence click"
+          value={m.uniqueSentenceClickSessions}
+          hint="unique browser sessions"
+        />
+      </Section>
+      <Section title="Sentence Click Debug">
+        {debug ? (
+          <>
+            <Stat label="Clicks today" value={debug.clicksToday} />
+            <Stat label="Clicks last 7d" value={debug.clicksLast7d} />
+            <Stat
+              label="Unique sessions (7d)"
+              value={debug.uniqueSessionsLast7d}
+            />
+          </>
+        ) : (
+          <p className="text-xs text-slate-500">Loading…</p>
+        )}
+      </Section>
+      {debug && (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Top clicked videos (last 7d)
+          </h2>
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50 text-left text-slate-500">
+                <tr>
+                  <th className="px-2 py-2">Video ID</th>
+                  <th className="px-2 py-2">Clicks</th>
+                  <th className="px-2 py-2">Sessions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {debug.topVideos.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-2 py-2 text-slate-400">
+                      No sentence clicks in last 7 days.
+                    </td>
+                  </tr>
+                )}
+                {debug.topVideos.map((v, i) => (
+                  <tr key={i} className="border-t border-slate-100">
+                    <td className="px-2 py-1 font-mono">{v.video_id ?? "(unknown)"}</td>
+                    <td className="px-2 py-1">{v.clicks}</td>
+                    <td className="px-2 py-1">{v.sessions}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+      {debug && (
+        <section>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Recent sentence_clicked events
+          </h2>
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-full text-xs">
+              <thead className="bg-slate-50 text-left text-slate-500">
+                <tr>
+                  <th className="px-2 py-2">When</th>
+                  <th className="px-2 py-2">Session</th>
+                  <th className="px-2 py-2">Video</th>
+                  <th className="px-2 py-2">User</th>
+                </tr>
+              </thead>
+              <tbody>
+                {debug.recent.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-2 py-2 text-slate-400">
+                      No recent events.
+                    </td>
+                  </tr>
+                )}
+                {debug.recent.map((r, i) => (
+                  <tr key={i} className="border-t border-slate-100">
+                    <td className="px-2 py-1 text-slate-500">
+                      {new Date(r.created_at).toLocaleString()}
+                    </td>
+                    <td className="px-2 py-1 font-mono">{r.session_id?.slice(0, 8) ?? "—"}</td>
+                    <td className="px-2 py-1 font-mono">{r.video_id ?? "—"}</td>
+                    <td className="px-2 py-1 font-mono">{r.user_id?.slice(0, 8) ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
 

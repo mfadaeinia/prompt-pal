@@ -42,7 +42,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
   async (): Promise<FounderMetrics> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [vs, fb, ea, sx] = await Promise.all([
+    const [vs, fb, ea, sx, le] = await Promise.all([
       supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
       supabaseAdmin
         .from("user_feedback" as any)
@@ -53,6 +53,10 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         .select("email,created_at")
         .order("created_at", { ascending: false }),
       supabaseAdmin.from("saved_expressions" as any).select("session_id"),
+      supabaseAdmin
+        .from("library_events" as any)
+        .select("session_id,event_name")
+        .eq("event_name", "sentence_clicked"),
     ]);
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
@@ -83,7 +87,8 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     );
     const visitors = new Set<string>([...uniqueVideoSessionIds, ...uniqueFeedbackSessionIds]).size;
     const demoStarts = totalSessions;
-    const transcriptClicks = feedback.reduce((sum, f) => sum + (f.total_sentence_clicks ?? 0), 0);
+    const clickEventRows = ((le.data ?? []) as unknown) as Array<{ session_id: string | null }>;
+    const transcriptClicks = clickEventRows.length;
 
     const positive = feedback.filter((f) => f.feedback_type === "positive").length;
     const negative = feedback.filter((f) => f.feedback_type === "negative").length;
@@ -97,10 +102,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     // later stage can never exceed an earlier one.
     const startedSessions = uniqueVideoSessionIds;
     const clickedSessions = new Set(
-      feedback
-        .filter((f) => (f.total_sentence_clicks ?? 0) > 0)
-        .map((f) => f.session_id)
-        .filter(Boolean) as string[],
+      clickEventRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
     const savedSessions = new Set(
       savedRows.map((r) => r.session_id).filter(Boolean) as string[],

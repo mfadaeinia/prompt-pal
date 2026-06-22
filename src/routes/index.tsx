@@ -1784,7 +1784,7 @@ function Index() {
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
-    track("transcript_sentence_clicked", {
+    track("sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
       sentence_start_time: s.offset,
@@ -1798,6 +1798,7 @@ function Index() {
       });
     }
     if (browserId) {
+      console.log("sentence_click_start", { sessionId: browserId, videoId });
       void logLibraryEventFx({
         data: {
           eventName: "sentence_clicked",
@@ -1805,7 +1806,19 @@ function Index() {
           videoId: videoId ?? null,
           userId,
         },
-      }).catch(() => {});
+      })
+        .then((res) => {
+          if (res && (res as any).ok === false) {
+            console.error("sentence_click_failed", (res as any).error);
+          } else {
+            console.log("sentence_click_success");
+          }
+        })
+        .catch((err) => {
+          console.error("sentence_click_failed", err);
+        });
+    } else {
+      console.warn("sentence_click_skipped: no browserId yet");
     }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
