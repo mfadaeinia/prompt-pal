@@ -88,8 +88,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/s5dEz7LcCzaJ5od1wRUTKGEmBsg2/social-images/social-1782128623961-Branding.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/s5dEz7LcCzaJ5od1wRUTKGEmBsg2/social-images/social-1782128623961-Branding.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/s5dEz7LcCzaJ5od1wRUTKGEmBsg2/social-images/social-1782128857966-Branding.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/s5dEz7LcCzaJ5od1wRUTKGEmBsg2/social-images/social-1782128857966-Branding.webp" },
       // Cache-busting: force browsers to always fetch fresh HTML so they never load a stale asset manifest
       { httpEquiv: "Cache-Control", content: "no-cache, no-store, must-revalidate" },
       { httpEquiv: "Pragma", content: "no-cache" },
