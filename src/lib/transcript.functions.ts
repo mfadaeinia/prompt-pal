@@ -766,7 +766,19 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
     console.warn("[transcript] cache read error", error.message);
     return null;
   }
-  const rows = (data ?? []) as unknown as CacheRow[];
+  const allRows = (data ?? []) as unknown as CacheRow[];
+  // Pipeline-version gate: rows written by older pipelines are stale and
+  // must be re-run. Do NOT delete them — bumping the version naturally
+  // routes future writes to a fresh row.
+  const rows = allRows.filter((r) => (r.source_version ?? 1) >= TRANSCRIPT_PIPELINE_VERSION);
+  if (allRows.length && !rows.length) {
+    console.log("[transcript] cache rows present but all below current pipeline version — re-running", {
+      videoId,
+      requestedLanguage,
+      currentVersion: TRANSCRIPT_PIPELINE_VERSION,
+      staleVersions: allRows.map((r) => r.source_version ?? 1),
+    });
+  }
   if (!rows.length) return null;
 
   const isPoisoned = (r: CacheRow): boolean => {
