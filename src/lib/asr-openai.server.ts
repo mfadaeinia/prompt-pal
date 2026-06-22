@@ -395,6 +395,8 @@ export async function transcribeWithOpenAi(params: {
     form.append("file", new Blob([audioBuffer], { type: audio.contentType }), "audio.mp3");
     form.append("model", DEFAULT_MODEL);
     form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "word");
+    form.append("timestamp_granularities[]", "segment");
     if (params.expectedLanguage && params.expectedLanguage !== "_any_") {
       // OpenAI expects ISO-639-1 base (e.g. "nl", "en").
       const base = params.expectedLanguage.toLowerCase().split(/[-_]/)[0];
@@ -434,10 +436,11 @@ export async function transcribeWithOpenAi(params: {
       return { result: null, trace };
     }
     const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
+    const words: any[] = Array.isArray(json?.words) ? json.words : [];
     trace.segmentsCount = segments.length;
     trace.language = typeof json?.language === "string" ? json.language : null;
 
-    if (!segments.length) {
+    if (!segments.length && !words.length) {
       trace.failureCode = "openai_empty_transcript";
       trace.errorMessage = "OpenAI returned 0 segments";
       trace.durationMs = Date.now() - tStart;
@@ -462,9 +465,10 @@ export async function transcribeWithOpenAi(params: {
       }
     }
 
-    const chunks = segments
+    const sourceItems = words.length ? words : segments;
+    const chunks = sourceItems
       .map((s) => ({
-        text: String(s?.text ?? "").trim(),
+        text: String(s?.word ?? s?.text ?? "").trim(),
         offset: Number(s?.start ?? 0),
         duration: Math.max(0, Number(s?.end ?? 0) - Number(s?.start ?? 0)),
       }))

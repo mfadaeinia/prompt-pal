@@ -1652,7 +1652,7 @@ function Index() {
 
   const [activeOutOfView, setActiveOutOfView] = useState(false);
   useEffect(() => {
-    if (!playingId || !listRef.current) {
+    if (playingId == null || !listRef.current) {
       setActiveOutOfView(false);
       return;
     }
@@ -1689,7 +1689,7 @@ function Index() {
   }, [playingId, focusMode]);
 
   function jumpToCurrentSentence() {
-    if (!playingId || !listRef.current) return;
+    if (playingId == null || !listRef.current) return;
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
