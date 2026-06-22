@@ -8,9 +8,11 @@ export type UserRetentionRow = {
   total_sessions: number;
   videos_loaded: number;
   sentence_clicks: number;
+  explanations_viewed: number;
   words_saved: number;
   videos_saved: number;
   activated: boolean;
+  reason_not_activated: string | null;
   returned_1d: boolean;
   returned_7d: boolean;
   returned_30d: boolean;
