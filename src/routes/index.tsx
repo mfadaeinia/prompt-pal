@@ -64,20 +64,24 @@ const DEMO_LANGUAGE = "English";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NativeFlow — Grow Through Real Content" },
+      { title: "NativeFlow — Enjoy Native Content. Understand more of it." },
       {
         name: "description",
         content:
-          "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving.",
+          "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience.",
       },
-      { property: "og:title", content: "NativeFlow — Grow Through Real Content" },
-      { property: "og:description", content: "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving." },
-      { property: "og:url", content: "https://native-lens.lovable.app/" },
-      { name: "twitter:title", content: "NativeFlow — Grow Through Real Content" },
-      { name: "twitter:description", content: "Turn videos, podcasts, interviews, and native media into learning experiences. Just enough support to keep watching, understanding, and improving." },
+      { property: "og:title", content: "NativeFlow — Enjoy Native Content. Understand more of it." },
+      { property: "og:description", content: "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience." },
+      { property: "og:url", content: "https://nativeflow.life/" },
+      { property: "og:image", content: "https://nativeflow.life/og-image.jpg?v=2" },
+      { property: "og:image:width", content: "1216" },
+      { property: "og:image:height", content: "640" },
+      { name: "twitter:title", content: "NativeFlow — Enjoy Native Content. Understand more of it." },
+      { name: "twitter:description", content: "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience." },
+      { name: "twitter:image", content: "https://nativeflow.life/og-image.jpg?v=2" },
     ],
     links: [
-      { rel: "canonical", href: "https://native-lens.lovable.app/" },
+      { rel: "canonical", href: "https://nativeflow.life/" },
     ],
     scripts: [
       {
@@ -88,14 +92,15 @@ export const Route = createFileRoute("/")({
           name: "NativeFlow",
           applicationCategory: "EducationApplication",
           operatingSystem: "Web",
-          url: "https://native-lens.lovable.app/",
+          url: "https://nativeflow.life/",
           description:
-            "Learn naturally from real-world content. Turn videos, podcasts, and native media into language learning experiences with just enough support to keep you engaged and improving.",
+            "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },
     ],
   }),
+
   component: Index,
 });
 
