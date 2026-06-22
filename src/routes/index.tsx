@@ -2660,9 +2660,9 @@ function Index() {
                                 onClick={() => jumpTo(s)}
                                 className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
                                   active
-                                    ? "bg-primary/10 font-medium text-foreground"
+                                    ? "bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
-                                    ? "bg-accent/50 text-foreground"
+                                    ? "bg-primary/15 text-foreground"
                                     : "text-foreground/85"
                                 }`}
                               >
