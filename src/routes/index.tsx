@@ -1867,8 +1867,11 @@ function Index() {
     if (studyMode) {
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
+      // Learning Mode: pause on tap so the learner can study. Resume is explicit.
+      seekAndPause(s);
+    } else {
+      seekAndPlay(s);
     }
-    seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
