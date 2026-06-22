@@ -181,7 +181,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg whitespace-pre-wrap">
-              {"\n\n"}Turn every Video/podcast you love into a language lesson without leaving the experience.
+              Turn every Video/podcast you love into a language lesson without leaving the experience.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
