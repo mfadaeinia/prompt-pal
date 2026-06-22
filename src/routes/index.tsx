@@ -2694,16 +2694,19 @@ function Index() {
               </div>
               </div>
 
-              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column. */}
+              {/* Aha Panel — primary learning surface.
+                  Desktop / tablet: side panel in the right column.
+                  Mobile: rendered below as a bottom Sheet so the transcript stays the primary interaction layer. */}
               {studyMode && (
-                <div className="min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+                <div className="hidden lg:block min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
                       selected ? explanationCache[selected.id] : undefined
                     }
-                    onClose={() => setSelected(null)}
+                    onClose={resumeFromHere}
                     onReplay={replaySelected}
+                    onResume={resumeFromHere}
                     onSave={() => handleSaveExpression(selected)}
                     isSaved={isSentenceSaved(selected)}
                     justSaved={!!selected && justSavedId === selected.id}
@@ -2713,6 +2716,40 @@ function Index() {
                     targetLangLabel={targetLang}
                   />
                 </div>
+              )}
+
+              {/* Mobile Aha Panel as a bottom Sheet. Closing or swiping down resumes playback. */}
+              {studyMode && isMobile && (
+                <Sheet
+                  open={!!selected}
+                  onOpenChange={(open) => {
+                    if (!open) resumeFromHere();
+                  }}
+                >
+                  <SheetContent
+                    side="bottom"
+                    className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-t p-0"
+                  >
+                    <div className="p-4 pt-8">
+                      <ExplanationPanel
+                        sentence={selected}
+                        entry={
+                          selected ? explanationCache[selected.id] : undefined
+                        }
+                        onClose={resumeFromHere}
+                        onReplay={replaySelected}
+                        onResume={resumeFromHere}
+                        onSave={() => handleSaveExpression(selected)}
+                        isSaved={isSentenceSaved(selected)}
+                        justSaved={!!selected && justSavedId === selected.id}
+                        saving={saveExpressionMutation.isPending}
+                        limitedMode={limitedMode}
+                        sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
+                        targetLangLabel={targetLang}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
               )}
 
             </div>
