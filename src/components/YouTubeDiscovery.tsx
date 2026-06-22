@@ -242,23 +242,45 @@ export function YouTubeDiscovery({
     <div className="space-y-4">
       <PlatformTabs value={platform} onChange={setPlatform} />
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search any YouTube video…"
-          className="h-12 w-full rounded-xl bg-background pl-11 pr-11 text-base"
-          inputMode="search"
-          autoComplete="off"
-        />
-        {searching && (
-          <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-        )}
-      </div>
+      <form
+        className="flex items-stretch gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          // Force an immediate refetch by bumping reqId (effect re-runs on q change normally;
+          // here we just blur to dismiss the mobile keyboard so results are visible).
+          (e.currentTarget.querySelector("input") as HTMLInputElement | null)?.blur();
+        }}
+      >
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search any YouTube video…"
+            className="h-12 w-full rounded-xl bg-background pl-11 pr-11 text-base"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+          />
+          {searching && (
+            <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          )}
+        </div>
+        <Button
+          type="submit"
+          disabled={!q.trim() || searching}
+          className="h-12 rounded-xl px-4"
+        >
+          <Search className="mr-1.5 h-4 w-4" />
+          Search
+        </Button>
+      </form>
 
       {!showExamples && (
         <div className="space-y-2">
+          {searching && (!results || results.length === 0) && (
+            <p className="text-sm text-muted-foreground">Searching…</p>
+          )}
           {error && !searching && (
             <p className="text-sm text-muted-foreground">{error}</p>
           )}
@@ -271,6 +293,7 @@ export function YouTubeDiscovery({
           )}
         </div>
       )}
+
 
       {showExamples && (
         <div className="space-y-5">
