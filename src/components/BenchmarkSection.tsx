@@ -202,11 +202,26 @@ export function BenchmarkSection() {
         </div>
       </div>
 
-      {mut.isError && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-          {(mut.error as Error).message}
-        </div>
-      )}
+      {mut.isError && (() => {
+        const raw = (mut.error as Error)?.message ?? "Unknown error";
+        const isStalePreview = /FORCE_RELOAD|<html/i.test(raw);
+        const friendly = isStalePreview
+          ? "Preview is out of date. Reload the page and try again."
+          : raw.replace(/<[^>]+>/g, "").slice(0, 500);
+        return (
+          <div className="flex items-start justify-between gap-3 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            <span className="break-words">{friendly}</span>
+            {isStalePreview && (
+              <button
+                onClick={() => window.location.reload()}
+                className="shrink-0 rounded-md border border-red-300 bg-white px-2 py-1 text-red-700 hover:bg-red-100"
+              >
+                Reload
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {healthQ.data && <DatasetHealthPanel h={healthQ.data} />}
 
