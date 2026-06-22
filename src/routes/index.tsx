@@ -818,6 +818,20 @@ function Index() {
     }
   };
 
+  // Auto-show the first-time coachmark whenever the demo view is active and
+  // we have sentences rendered (covers direct ?v= URL entry that bypasses startDemo).
+  useEffect(() => {
+    if (view !== "demo" || !studyMode) return;
+    if (sentences.length === 0) return;
+    if (hasInteractedWithSentenceRef.current) return;
+    try {
+      if (typeof window === "undefined") return;
+      if (localStorage.getItem("nativeflow_sentence_hinted") === "1") return;
+      if (localStorage.getItem("nativeflow_onboarded") === "1") return;
+      setShowOnboarding(true);
+    } catch {}
+  }, [view, studyMode, sentences.length]);
+
   // Tiny URL → 11-char video ID extractor (mirrors the server-side regex).
   function extractVideoIdClient(u: string): string | null {
     try {
