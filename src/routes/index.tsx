@@ -1678,10 +1678,9 @@ function Index() {
     // Never fight a user who is actively scrolling the transcript.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Teleprompter target: keep the active sentence ~28% from the top of
-    // the transcript viewport. Only scroll when it drifts meaningfully
-    // out of that band so we don't jitter on every sentence.
-    const targetVisibleTop = cHeight * 0.28;
+    // Keep the active sentence just below the video / near the top of the
+    // transcript viewport so it is always clearly visible under the player.
+    const targetVisibleTop = cHeight * 0.02;
     const drift = visibleTop - targetVisibleTop;
     const band = cHeight * 0.18; // dead-zone around the target
     if (Math.abs(drift) < band && fullyVisible) return;
