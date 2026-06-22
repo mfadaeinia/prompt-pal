@@ -150,6 +150,12 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               let prevSentencesLen = 0;
               let chunkIndex = 0;
               let lastDetectedLanguage: string | null = null;
+              // Cumulative true-decoded duration of all PRIOR chunks. This is
+              // the absolute file-time at which the next chunk's audio begins.
+              // Using the sum of Whisper-reported durations (instead of
+              // byte/bitrate math) eliminates drift caused by VBR encoding,
+              // ID3/Xing padding, and MPEG frame alignment.
+              let cumulativePriorDurationSec = 0;
 
               while (true) {
                 const tChunk = Date.now();
@@ -204,21 +210,21 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 if (detectedLanguage) lastDetectedLanguage = detectedLanguage;
                 const whisperReportedDuration: number = Number(json?.duration ?? 0);
 
-                // Refine bitrate from chunk 0 so subsequent offsets are exact.
+                // Refine bitrate from chunk 0 so subsequent BYTE offsets are
+                // close to the intended chunk size (not used for time mapping).
                 if (chunkIndex === 0 && whisperReportedDuration > 0) {
                   const measured = buf.byteLength / whisperReportedDuration;
-                  // Only accept if within sane range (32–320 kbps)
                   const measuredKbps = (measured * 8) / 1000;
                   if (measuredKbps >= 24 && measuredKbps <= 400) {
                     measuredBytesPerSec = measured;
                   }
                 }
 
-                // Chunk's real start time in the video. For chunk 0 this is 0
-                // (Whisper saw absolute start). For chunk N>0, Range starts at
-                // byteStart bytes → byteStart / measuredBytesPerSec seconds.
-                const chunkStartSec =
-                  chunkIndex === 0 ? 0 : byteStart / measuredBytesPerSec;
+                // Absolute start of this chunk in the full video timeline.
+                // Chunks are CONTIGUOUS byte ranges, so the true file-time
+                // where chunk N begins equals the sum of decoded durations of
+                // chunks 0..N-1. This is exact regardless of CBR/VBR.
+                const chunkStartSec = cumulativePriorDurationSec;
 
                 const newRawChunks: RawChunk[] = segments
                   .map((s) => ({
@@ -227,6 +233,25 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                     duration: Math.max(0, Number(s?.end ?? 0) - Number(s?.start ?? 0)),
                   }))
                   .filter((c) => c.text.length > 0);
+
+                // Diagnostic: compare the OLD (bytes/bps) estimate vs the new
+                // cumulative-duration value so drift sources are visible.
+                const byteEstimateSec =
+                  chunkIndex === 0 ? 0 : byteStart / measuredBytesPerSec;
+                console.log("[sync-debug][server] chunk timing", {
+                  videoId,
+                  chunkIndex,
+                  chunkStartSec: Number(chunkStartSec.toFixed(3)),
+                  byteEstimateSec: Number(byteEstimateSec.toFixed(3)),
+                  driftVsByteEstimateSec: Number(
+                    (chunkStartSec - byteEstimateSec).toFixed(3),
+                  ),
+                  whisperReportedDuration,
+                  segmentsCount: segments.length,
+                });
+
+                // Advance the cumulative clock for the NEXT chunk.
+                cumulativePriorDurationSec += whisperReportedDuration || chunkSeconds;
 
                 allRawChunks.push(...newRawChunks);
                 const sentences = buildSentencesFromChunksExport(allRawChunks);

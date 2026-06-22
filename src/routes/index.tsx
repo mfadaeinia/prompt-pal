@@ -1604,10 +1604,10 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
-  // Small tuning knob: negative = highlight lags playback, positive = leads.
-  // Compensate for YT API getCurrentTime latency + polling interval so the
-  // highlight tracks the audio the user actually hears.
-  const SYNC_OFFSET_SECONDS = 0.2;
+  // Server-side timestamps are now derived from Whisper's true decoded
+  // duration per chunk (see transcript-stream.ts), so no client-side fudge
+  // factor is needed. Keep at 0 — do NOT use this to mask drift bugs.
+  const SYNC_OFFSET_SECONDS = 0;
 
 
   const playingId = useMemo(() => {
@@ -1772,6 +1772,33 @@ function Index() {
       playerRef.current?.pauseVideo?.();
     }
   }, [currentTime]);
+
+  // Sync diagnostics: once every ~2s, log the active sentence vs. video
+  // currentTime so drift is visible without spamming the console.
+  const lastSyncLogRef = useRef(0);
+  useEffect(() => {
+    if (!sentences.length) return;
+    const now = performance.now();
+    if (now - lastSyncLogRef.current < 2000) return;
+    lastSyncLogRef.current = now;
+    const active = sentences.find((s) => s.id === playingId) ?? null;
+    const expected = active
+      ? currentTime < active.offset
+        ? active.offset - currentTime
+        : currentTime > active.endTime
+          ? currentTime - active.endTime
+          : 0
+      : null;
+    console.log("[sync-debug][client]", {
+      videoCurrentTime: Number(currentTime.toFixed(3)),
+      activeSentenceId: active?.id ?? null,
+      activeStart: active ? Number(active.offset.toFixed(3)) : null,
+      activeEnd: active ? Number(active.endTime.toFixed(3)) : null,
+      offsetFromExpectedSec: expected,
+      totalSentences: sentences.length,
+    });
+  }, [currentTime, playingId, sentences]);
+
 
   function seekAndPlay(s: TranscriptSentence, pauseAtEnd = false) {
     const p = playerRef.current;
