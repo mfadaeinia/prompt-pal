@@ -2012,6 +2012,24 @@ function Index() {
             </p>
           </div>
           <div className="mt-8">
+            <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+              <label htmlFor="app-target-lang" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Explanation language
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sentence explanations and translations will be shown in this language.
+              </p>
+              <Select value={targetLang} onValueChange={setTargetLang}>
+                <SelectTrigger id="app-target-lang" className="mt-2 h-11 w-full rounded-xl bg-background px-4 sm:max-w-xs">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {["English","Dutch","Spanish","French","German","Italian","Portuguese","Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish","Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian","Vietnamese","Thai","Greek","Czech","Persian"].map((lang) => (
+                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <YouTubeDiscovery
               loading={loadMutation.isPending}
               onPick={(u) => {
@@ -2024,6 +2042,7 @@ function Index() {
           </div>
         </section>
       )}
+
 
       <main className="relative mx-auto max-w-6xl px-6">
         {view === "landing" && <EarlyAccessSection />}
