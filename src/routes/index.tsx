@@ -1730,6 +1730,11 @@ function Index() {
     container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
   }, [playingId, focusMode]);
 
+  const stickySentence = useMemo(() => {
+    if (!isMobile || !activeOutOfView || playingId == null) return null;
+    return sentences.find((x) => x.id === playingId) ?? null;
+  }, [isMobile, activeOutOfView, playingId, sentences]);
+
   function jumpToCurrentSentence() {
     if (playingId == null || !listRef.current) return;
     const container = listRef.current;
