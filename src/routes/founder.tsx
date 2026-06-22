@@ -150,6 +150,11 @@ function FounderPage() {
     queryFn: () => libFetcher(),
     refetchInterval: 30_000,
   });
+  const clickDebugQ = useQuery({
+    queryKey: ["sentence-click-debug"],
+    queryFn: () => clickDebugFetcher(),
+    refetchInterval: 30_000,
+  });
   const txQ = useQuery({
     queryKey: ["transcript-quality-metrics"],
     queryFn: () => txFetcher(),
