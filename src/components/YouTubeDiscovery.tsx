@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, Play, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -236,7 +236,7 @@ export function YouTubeDiscovery({
     return () => clearTimeout(t);
   }, [q, search]);
 
-  const showExamples = useMemo(() => !q.trim() && !results, [q, results]);
+  const showExamples = false;
 
   return (
     <div className="space-y-4">
