@@ -1240,7 +1240,7 @@ function Index() {
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
-    loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
+    loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId, spokenLanguageOverride });
   };
 
   // 15s / 45s slow-path messaging. Only ticks while the ASR fallback is
