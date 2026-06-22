@@ -1678,10 +1678,9 @@ function Index() {
     // Never fight a user who is actively scrolling the transcript.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Teleprompter target: keep the active sentence ~28% from the top of
-    // the transcript viewport. Only scroll when it drifts meaningfully
-    // out of that band so we don't jitter on every sentence.
-    const targetVisibleTop = cHeight * 0.28;
+    // Keep the active sentence just below the video / near the top of the
+    // transcript viewport so it is always clearly visible under the player.
+    const targetVisibleTop = cHeight * 0.02;
     const drift = visibleTop - targetVisibleTop;
     const band = cHeight * 0.18; // dead-zone around the target
     if (Math.abs(drift) < band && fullyVisible) return;
@@ -1695,7 +1694,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = container.clientHeight * 0.28;
+      const targetVisibleTop = container.clientHeight * 0.02;
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
@@ -2661,9 +2660,9 @@ function Index() {
                                 onClick={() => jumpTo(s)}
                                 className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
                                   active
-                                    ? "bg-primary/10 font-medium text-foreground"
+                                    ? "bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
-                                    ? "bg-accent/50 text-foreground"
+                                    ? "bg-primary/15 text-foreground"
                                     : "text-foreground/85"
                                 }`}
                               >
