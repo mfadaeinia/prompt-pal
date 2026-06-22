@@ -2010,12 +2010,13 @@ function Index() {
               spokenLang={spokenLang}
               setSpokenLang={setSpokenLang}
               loading={loadMutation.isPending}
-              onSubmit={(u) => {
-                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+              onSubmit={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
                 const go = () => {
                   setUrl(u);
                   setView("demo");
-                  submitLoad(u);
+                  submitLoad(u, lang);
                 };
                 if (isAuthenticated) {
                   go();
