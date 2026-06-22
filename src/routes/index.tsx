@@ -3900,7 +3900,7 @@ function HeroWithPreview({
                   if (lang) setSpokenLang(lang);
                   track("landing_cta_clicked", { has_url: true, spoken_language: lang || spokenLang || "auto" });
                   setUrl(u);
-                  onSubmit(u);
+                  onSubmit(u, lang);
                 }}
               />
             </div>
