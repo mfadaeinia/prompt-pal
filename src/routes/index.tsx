@@ -54,6 +54,7 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
