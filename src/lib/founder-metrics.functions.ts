@@ -102,10 +102,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     // later stage can never exceed an earlier one.
     const startedSessions = uniqueVideoSessionIds;
     const clickedSessions = new Set(
-      feedback
-        .filter((f) => (f.total_sentence_clicks ?? 0) > 0)
-        .map((f) => f.session_id)
-        .filter(Boolean) as string[],
+      clickEventRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
     const savedSessions = new Set(
       savedRows.map((r) => r.session_id).filter(Boolean) as string[],
