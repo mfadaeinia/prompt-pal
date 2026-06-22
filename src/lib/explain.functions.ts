@@ -74,6 +74,39 @@ function validate(text: string) {
   return weak;
 }
 
+function normalize(s: string) {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function overlapScore(phrase: string, sentence: string) {
+  const sN = normalize(sentence);
+  const tokens = normalize(phrase).split(" ").filter((t) => t.length >= 2);
+  if (tokens.length === 0) return 0;
+  let hits = 0;
+  for (const t of tokens) if (sN.includes(t)) hits++;
+  return hits / tokens.length;
+}
+
+// If the model swapped sides (put the target-language translation on the left),
+// detect it by comparing overlap with the original sentence and flip back.
+function fixKeyExpressionOrder(text: string, sentence: string): string {
+  return text.replace(/^(\s*Key Expression\s*:\s*)(.+)$/im, (_m, label, val) => {
+    const v = String(val).trim();
+    if (!v || v === "—") return `${label}${v}`;
+    const idx = v.indexOf("=");
+    if (idx < 0) return `${label}${v}`;
+    const left = v.slice(0, idx).trim();
+    const right = v.slice(idx + 1).trim();
+    if (!left || !right) return `${label}${v}`;
+    const leftScore = overlapScore(left, sentence);
+    const rightScore = overlapScore(right.split(/\s*,\s*/)[0] || right, sentence);
+    if (rightScore > leftScore + 0.25) {
+      return `${label}${right} = ${left}`;
+    }
+    return `${label}${v}`;
+  });
+}
+
 export const explainSentence = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
