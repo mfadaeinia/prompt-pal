@@ -1733,7 +1733,7 @@ function Index() {
     });
     ensureExplanation(s, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playingId, sentences, studyMode]);
+  }, [playingId, sentences, studyMode, focusMode]);
 
   // Fire `explanation_viewed` once per sentence when its explanation finishes
   // loading AND it is the currently selected sentence (i.e. actually visible).
