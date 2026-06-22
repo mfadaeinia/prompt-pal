@@ -154,6 +154,8 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
       addSession(r.user_id, r.session_id);
       if (r.event_name === "sentence_clicked") {
         userClicks.set(r.user_id, (userClicks.get(r.user_id) ?? 0) + 1);
+      } else if (r.event_name === "explanation_viewed") {
+        userExplanations.set(r.user_id, (userExplanations.get(r.user_id) ?? 0) + 1);
       }
       touch(r.user_id, r.created_at);
     }
