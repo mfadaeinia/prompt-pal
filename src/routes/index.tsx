@@ -1218,6 +1218,13 @@ function Index() {
   // on screen), and submits the mutation with the seq attached.
   const submitLoad = (u: string, spokenLanguageOverride?: string) => {
     const requestedId = extractVideoIdClient(u);
+    console.log("[lang-pipeline][client] submitLoad", {
+      url: u,
+      detectedSourceLanguage: spokenLang || null,
+      spokenLanguageOverride: spokenLanguageOverride || null,
+      userTargetLanguage: targetLang,
+      note: "transcript uses spoken/source language; translation uses target language",
+    });
     requestSeqRef.current += 1;
     const seq = requestSeqRef.current;
     // Tear down any in-flight progressive stream from a previous URL.
