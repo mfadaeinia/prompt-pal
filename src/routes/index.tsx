@@ -3895,8 +3895,9 @@ function HeroWithPreview({
             <div className="mt-4">
               <YouTubeDiscovery
                 loading={loading}
-                onPick={(u) => {
-                  track("landing_cta_clicked", { has_url: true, spoken_language: spokenLang || "auto" });
+                onPick={(u, lang) => {
+                  if (lang) setSpokenLang(lang);
+                  track("landing_cta_clicked", { has_url: true, spoken_language: lang || spokenLang || "auto" });
                   setUrl(u);
                   onSubmit(u);
                 }}
