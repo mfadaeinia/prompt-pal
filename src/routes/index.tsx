@@ -3796,7 +3796,7 @@ function PrimaryHero({
   spokenLang: string;
   setSpokenLang: (v: string) => void;
   loading: boolean;
-  onSubmit: (u: string) => void;
+  onSubmit: (u: string, lang?: string) => void;
   onStartDemo: () => void;
 }) {
   return (
