@@ -1203,7 +1203,7 @@ function Index() {
   // this — it allocates the next request seq, resets transcript-bound UI
   // state synchronously (so the previous video's transcript can never linger
   // on screen), and submits the mutation with the seq attached.
-  const submitLoad = (u: string) => {
+  const submitLoad = (u: string, spokenLanguageOverride?: string) => {
     const requestedId = extractVideoIdClient(u);
     requestSeqRef.current += 1;
     const seq = requestSeqRef.current;
