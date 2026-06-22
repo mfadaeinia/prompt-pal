@@ -823,7 +823,7 @@ function Index() {
     }
   }
 
-  type LoadVars = { url: string; seq: number; requestedVideoId: string | null };
+  type LoadVars = { url: string; seq: number; requestedVideoId: string | null; spokenLanguageOverride?: string };
 
   const loadMutation = useMutation({
     mutationFn: async (vars: LoadVars) => {
@@ -851,10 +851,11 @@ function Index() {
       // (Whisper) produces tight word-level timings, so we force that path
       // and then cache the result for subsequent loads.
       const isDemoUrl = vars.url === DEMO_VIDEO_URL;
+      const effectiveSpokenLang = vars.spokenLanguageOverride || spokenLang || undefined;
       const fast: FetchTranscriptFastResult = await fetchTxFast({
         data: {
           url: vars.url,
-          spokenLanguage: spokenLang || undefined,
+          spokenLanguage: effectiveSpokenLang,
           skipYoutube: isDemoUrl || undefined,
         },
       });
@@ -877,7 +878,7 @@ function Index() {
         streamRef.current = null;
       }
 
-      const langParam = (spokenLang || "").trim() || "nl";
+      const langParam = (effectiveSpokenLang || "").trim() || "nl";
       const streamUrl =
         `/api/public/transcript-stream` +
         `?url=${encodeURIComponent(vars.url)}` +
@@ -926,7 +927,7 @@ function Index() {
               source: "asr",
               cachedFromProvider: null,
               language: detected,
-              spokenLanguage: spokenLang || null,
+              spokenLanguage: effectiveSpokenLang || null,
               transcriptLanguage: detected,
               cacheHit: false,
               quality: {
@@ -1202,7 +1203,7 @@ function Index() {
   // this — it allocates the next request seq, resets transcript-bound UI
   // state synchronously (so the previous video's transcript can never linger
   // on screen), and submits the mutation with the seq attached.
-  const submitLoad = (u: string) => {
+  const submitLoad = (u: string, spokenLanguageOverride?: string) => {
     const requestedId = extractVideoIdClient(u);
     requestSeqRef.current += 1;
     const seq = requestSeqRef.current;
@@ -1239,7 +1240,7 @@ function Index() {
     // Switch the player to the new video immediately. videoId drives the
     // iframe src and the explanation-cache reset effect.
     if (requestedId) setVideoId(requestedId);
-    loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId });
+    loadMutation.mutate({ url: u, seq, requestedVideoId: requestedId, spokenLanguageOverride });
   };
 
   // 15s / 45s slow-path messaging. Only ticks while the ASR fallback is
@@ -2009,12 +2010,13 @@ function Index() {
               spokenLang={spokenLang}
               setSpokenLang={setSpokenLang}
               loading={loadMutation.isPending}
-              onSubmit={(u) => {
-                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+              onSubmit={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
                 const go = () => {
                   setUrl(u);
                   setView("demo");
-                  submitLoad(u);
+                  submitLoad(u, lang);
                 };
                 if (isAuthenticated) {
                   go();
@@ -2060,11 +2062,12 @@ function Index() {
             </div>
             <YouTubeDiscovery
               loading={loadMutation.isPending}
-              onPick={(u) => {
-                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
                 setUrl(u);
                 setView("demo");
-                submitLoad(u);
+                submitLoad(u, lang);
               }}
             />
           </div>
@@ -3794,7 +3797,7 @@ function PrimaryHero({
   spokenLang: string;
   setSpokenLang: (v: string) => void;
   loading: boolean;
-  onSubmit: (u: string) => void;
+  onSubmit: (u: string, lang?: string) => void;
   onStartDemo: () => void;
 }) {
   return (
@@ -3822,7 +3825,7 @@ function HeroWithPreview({
   spokenLang: string;
   setSpokenLang: (v: string) => void;
   loading: boolean;
-  onSubmit: (u: string) => void;
+  onSubmit: (u: string, lang?: string) => void;
   onStartDemo: () => void;
 }) {
   useEffect(() => {
@@ -3894,10 +3897,11 @@ function HeroWithPreview({
             <div className="mt-4">
               <YouTubeDiscovery
                 loading={loading}
-                onPick={(u) => {
-                  track("landing_cta_clicked", { has_url: true, spoken_language: spokenLang || "auto" });
+                onPick={(u, lang) => {
+                  if (lang) setSpokenLang(lang);
+                  track("landing_cta_clicked", { has_url: true, spoken_language: lang || spokenLang || "auto" });
                   setUrl(u);
-                  onSubmit(u);
+                  onSubmit(u, lang);
                 }}
               />
             </div>
