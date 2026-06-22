@@ -1585,8 +1585,32 @@ function Index() {
             const t = p?.getCurrentTime?.() ?? 0;
             if (e.data === YT.PlayerState.PLAYING) {
               track("video_played", { video_id: videoId, current_time: t });
+              // Reinforcement hint: if the user plays without interacting, gently surface it.
+              if (
+                !hasInteractedWithSentenceRef.current &&
+                !showOnboarding &&
+                playNudgeTimerRef.current == null
+              ) {
+                try {
+                  const alreadyHinted =
+                    typeof window !== "undefined" &&
+                    localStorage.getItem("nativeflow_sentence_hinted") === "1";
+                  if (!alreadyHinted) {
+                    playNudgeTimerRef.current = window.setTimeout(() => {
+                      if (!hasInteractedWithSentenceRef.current) {
+                        setShowPlayNudge(true);
+                      }
+                      playNudgeTimerRef.current = null;
+                    }, 6000);
+                  }
+                } catch {}
+              }
             } else if (e.data === YT.PlayerState.PAUSED) {
               track("video_paused", { video_id: videoId, current_time: t });
+              if (playNudgeTimerRef.current != null) {
+                window.clearTimeout(playNudgeTimerRef.current);
+                playNudgeTimerRef.current = null;
+              }
             }
           },
         },
