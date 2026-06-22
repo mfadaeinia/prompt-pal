@@ -396,6 +396,7 @@ export async function transcribeWithOpenAi(params: {
     form.append("model", DEFAULT_MODEL);
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
+    form.append("timestamp_granularities[]", "segment");
     if (params.expectedLanguage && params.expectedLanguage !== "_any_") {
       // OpenAI expects ISO-639-1 base (e.g. "nl", "en").
       const base = params.expectedLanguage.toLowerCase().split(/[-_]/)[0];

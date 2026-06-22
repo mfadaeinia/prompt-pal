@@ -176,6 +176,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   form.append("model", "whisper-1");
                   form.append("response_format", "verbose_json");
                   form.append("timestamp_granularities[]", "word");
+                  form.append("timestamp_granularities[]", "segment");
                   if (lang && lang !== "_any_") form.append("language", lang);
 
                   const ctrl = new AbortController();
@@ -341,6 +342,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 form.append("model", "whisper-1");
                 form.append("response_format", "verbose_json");
                 form.append("timestamp_granularities[]", "word");
+                form.append("timestamp_granularities[]", "segment");
                 if (lang && lang !== "_any_") form.append("language", lang);
 
                 const ctrl = new AbortController();
