@@ -1773,6 +1773,33 @@ function Index() {
     }
   }, [currentTime]);
 
+  // Sync diagnostics: once every ~2s, log the active sentence vs. video
+  // currentTime so drift is visible without spamming the console.
+  const lastSyncLogRef = useRef(0);
+  useEffect(() => {
+    if (!sentences.length) return;
+    const now = performance.now();
+    if (now - lastSyncLogRef.current < 2000) return;
+    lastSyncLogRef.current = now;
+    const active = sentences.find((s) => s.id === playingId) ?? null;
+    const expected = active
+      ? currentTime < active.offset
+        ? active.offset - currentTime
+        : currentTime > active.endTime
+          ? currentTime - active.endTime
+          : 0
+      : null;
+    console.log("[sync-debug][client]", {
+      videoCurrentTime: Number(currentTime.toFixed(3)),
+      activeSentenceId: active?.id ?? null,
+      activeStart: active ? Number(active.offset.toFixed(3)) : null,
+      activeEnd: active ? Number(active.endTime.toFixed(3)) : null,
+      offsetFromExpectedSec: expected,
+      totalSentences: sentences.length,
+    });
+  }, [currentTime, playingId, sentences]);
+
+
   function seekAndPlay(s: TranscriptSentence, pauseAtEnd = false) {
     const p = playerRef.current;
     if (p?.seekTo) {
