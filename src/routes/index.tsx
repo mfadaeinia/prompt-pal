@@ -878,7 +878,20 @@ function Index() {
         streamRef.current = null;
       }
 
-      const langParam = (effectiveSpokenLang || "").trim() || "nl";
+      // CRITICAL: never default to a concrete language here. The transcript
+      // must reflect the SPOKEN language of the media, not the learner's
+      // target/translation language. When the user hasn't pinned a source
+      // language, pass "_any_" so Whisper auto-detects instead of being told
+      // (wrongly) that the audio is e.g. Dutch.
+      const langParam = (effectiveSpokenLang || "").trim() || "_any_";
+      console.log("[lang-pipeline][client] slow-path stream", {
+        url: vars.url,
+        detectedSourceLanguage: spokenLang || null,
+        spokenLanguageOverride: vars.spokenLanguageOverride || null,
+        effectiveSpokenLang: effectiveSpokenLang || null,
+        userTargetLanguage: targetLang,
+        whisperLangParam: langParam,
+      });
       const streamUrl =
         `/api/public/transcript-stream` +
         `?url=${encodeURIComponent(vars.url)}` +
