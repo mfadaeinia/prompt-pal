@@ -138,10 +138,19 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               // --- Inspect total audio size (Content-Length via HEAD-style Range)
               let totalAudioBytes: number | null = null;
               try {
-                const probe = await fetch(audioUrl, { headers: { Range: "bytes=0-0" } });
+                const head = await fetch(audioUrl, { method: "HEAD" });
+                const len = Number(head.headers.get("content-length") || "0");
+                if (Number.isFinite(len) && len > 0) totalAudioBytes = len;
+              } catch {
+                /* ignore */
+              }
+              try {
+                if (totalAudioBytes == null) {
+                  const probe = await fetch(audioUrl, { headers: { Range: "bytes=0-0" } });
                 const cr = probe.headers.get("content-range"); // bytes 0-0/12345
                 const m = cr?.match(/\/(\d+)\s*$/);
                 if (m) totalAudioBytes = Number(m[1]);
+                }
               } catch {
                 /* ignore */
               }
