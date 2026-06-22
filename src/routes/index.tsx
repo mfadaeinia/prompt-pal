@@ -2313,6 +2313,7 @@ function Index() {
                     if (studyMode) return;
                     if (transcriptStatus === "failed" || sentences.length === 0) return;
                     setStudyMode(true);
+                    setFocusMode(false); // Learning Mode: learner drives via taps
                     track("study_mode_opened", { video_id: videoId });
                   }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
