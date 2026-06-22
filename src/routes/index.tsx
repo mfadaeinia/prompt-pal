@@ -1604,10 +1604,10 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
-  // Small tuning knob: negative = highlight lags playback, positive = leads.
-  // Compensate for YT API getCurrentTime latency + polling interval so the
-  // highlight tracks the audio the user actually hears.
-  const SYNC_OFFSET_SECONDS = 0.2;
+  // Server-side timestamps are now derived from Whisper's true decoded
+  // duration per chunk (see transcript-stream.ts), so no client-side fudge
+  // factor is needed. Keep at 0 — do NOT use this to mask drift bugs.
+  const SYNC_OFFSET_SECONDS = 0;
 
 
   const playingId = useMemo(() => {
