@@ -878,7 +878,7 @@ function Index() {
         streamRef.current = null;
       }
 
-      const langParam = (spokenLang || "").trim() || "nl";
+      const langParam = (effectiveSpokenLang || "").trim() || "nl";
       const streamUrl =
         `/api/public/transcript-stream` +
         `?url=${encodeURIComponent(vars.url)}` +
