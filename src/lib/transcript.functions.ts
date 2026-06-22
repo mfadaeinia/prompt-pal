@@ -685,7 +685,22 @@ function chunksFromManualText(text: string): RawChunk[] {
   }));
 }
 
-const SOURCE_VERSION = 1;
+/**
+ * Transcript pipeline version. BUMP when the timing/segmentation pipeline
+ * changes in a way that makes older cached transcripts incorrect.
+ *
+ *   v1: original CBR byte→time mapping.
+ *   v2: progressive Whisper stream, still byte-derived offsets (drifted).
+ *   v3: cumulative Whisper-decoded durations across chunks. Eliminates
+ *       progressive drift caused by VBR/padding/frame alignment.
+ *
+ * Any cached row with `source_version < TRANSCRIPT_PIPELINE_VERSION` is
+ * treated as stale and the pipeline re-runs. We do NOT delete the old row —
+ * the upsert on (video_id, requested_language, provider, source_version)
+ * just writes a new row at the current version.
+ */
+export const TRANSCRIPT_PIPELINE_VERSION = 3;
+const SOURCE_VERSION = TRANSCRIPT_PIPELINE_VERSION;
 
 function makeCacheKey(videoId: string, requestedLanguage: string, provider: string, version = SOURCE_VERSION) {
   return `${videoId}|${requestedLanguage}|${provider}|${version}`;
