@@ -174,6 +174,7 @@ function FounderPage() {
   const refreshAll = () => {
     refetch();
     libQ.refetch();
+    clickDebugQ.refetch();
     txQ.refetch();
     cohortQ.refetch();
     retentionQ.refetch();
