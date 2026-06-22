@@ -247,7 +247,7 @@ function FounderPage() {
             <TranscriptTruthSection />
             <BenchmarkSection />
             {data && <Dashboard m={data} />}
-            {libQ.data && <LibrarySection m={libQ.data} />}
+            {libQ.data && <LibrarySection m={libQ.data} debug={clickDebugQ.data} />}
             {txQ.data && <TranscriptQualitySection m={txQ.data} />}
           </div>
         )}
