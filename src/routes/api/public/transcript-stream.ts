@@ -331,12 +331,37 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               try {
                 const requestedLanguage = lang && lang !== "_any_" ? lang : "_any_";
                 const provider = "openai";
-                const sourceVersion = 2;
+                const sourceVersion = TRANSCRIPT_PIPELINE_VERSION;
                 const totalChars = allRawChunks.reduce(
                   (n, c) => n + (c.text?.length ?? 0),
                   0,
                 );
                 const cacheKey = `${videoId}::${requestedLanguage}::${provider}::v${sourceVersion}`;
+
+                // Safety guard: compare summed Whisper-decoded durations vs
+                // the media duration we can estimate from totalAudioBytes /
+                // measured bitrate. If they diverge by more than ~2%, future
+                // playback may drift — log loudly so we catch regressions.
+                if (totalAudioBytes != null && measuredBytesPerSec > 0) {
+                  const estimatedMediaSec = totalAudioBytes / measuredBytesPerSec;
+                  const decodedSec = cumulativePriorDurationSec;
+                  const driftSec = decodedSec - estimatedMediaSec;
+                  const driftPct = estimatedMediaSec > 0
+                    ? Math.abs(driftSec) / estimatedMediaSec
+                    : 0;
+                  const payload = {
+                    videoId,
+                    estimatedMediaSec: Number(estimatedMediaSec.toFixed(2)),
+                    decodedSec: Number(decodedSec.toFixed(2)),
+                    driftSec: Number(driftSec.toFixed(2)),
+                    driftPct: Number((driftPct * 100).toFixed(2)),
+                  };
+                  if (driftPct > 0.02) {
+                    console.warn("[sync-debug][server] DRIFT WARNING (>2%)", payload);
+                  } else {
+                    console.log("[sync-debug][server] drift OK", payload);
+                  }
+                }
                 await supabaseAdmin
                   .from("youtube_transcript_cache" as any)
                   .upsert(
