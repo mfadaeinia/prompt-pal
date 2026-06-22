@@ -6,6 +6,8 @@ import {
   type RawChunk,
 } from "@/lib/transcript.functions";
 
+const OPENAI_AUDIO_LIMIT_BYTES = 25 * 1024 * 1024;
+
 /**
  * Progressive Whisper SSE stream.
  *
@@ -25,13 +27,10 @@ import {
  *   - error      { message, stage }
  *
  * Timestamp policy:
- *   chunk 0  → Whisper sees absolute audio start → segment.start is real.
- *   chunk N  → Range `[0, (N+1)*chunkSeconds*bytesPerSec - 1]` is too costly;
- *              we instead Range `[N*chunkSeconds*bytesPerSec, ...]`, then offset
- *              each Whisper segment by exactly `N * chunkSeconds`. For CBR MP3
- *              this is the actual byte→time mapping — not synthesis. The
- *              measured bitrate from chunk 0 is reported in the trace so the
- *              founder dashboard can verify CBR.
+ *   Prefer a single full-file Whisper call when the extracted audio is under
+ *   the provider limit. That preserves absolute media timestamps, including
+ *   initial music/silence before the first spoken phrase. Only fall back to
+ *   chunked processing for larger files.
  */
 export const Route = createFileRoute("/api/public/transcript-stream")({
   server: {
@@ -147,6 +146,142 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 /* ignore */
               }
 
+              if (totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
+                const tFull = Date.now();
+                const dl = await fetch(audioUrl);
+                if (!dl.ok) throw new Error(`full audio fetch: HTTP ${dl.status}`);
+                const buf = new Uint8Array(await dl.arrayBuffer());
+                if (buf.byteLength > OPENAI_AUDIO_LIMIT_BYTES) {
+                  console.warn("[sync-debug][server] full audio exceeded limit after download; using chunked fallback", {
+                    videoId,
+                    bytes: buf.byteLength,
+                  });
+                } else if (buf.byteLength >= 1024) {
+                  const form = new FormData();
+                  const ab = buf.buffer.slice(
+                    buf.byteOffset,
+                    buf.byteOffset + buf.byteLength,
+                  ) as ArrayBuffer;
+                  form.append("file", new Blob([ab], { type: "audio/mpeg" }), "audio.mp3");
+                  form.append("model", "whisper-1");
+                  form.append("response_format", "verbose_json");
+                  form.append("timestamp_granularities[]", "word");
+                  if (lang && lang !== "_any_") form.append("language", lang);
+
+                  const ctrl = new AbortController();
+                  const timer = setTimeout(() => ctrl.abort(), 90_000);
+                  let res: Response;
+                  try {
+                    res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${openaiKey}` },
+                      body: form,
+                      signal: ctrl.signal,
+                    });
+                  } finally {
+                    clearTimeout(timer);
+                  }
+                  if (!res.ok) {
+                    const body = await res.text().catch(() => "");
+                    throw new Error(`whisper full-file: ${res.status} ${body.slice(0, 200)}`);
+                  }
+                  const json: any = await res.json();
+                  const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
+                  const words: any[] = Array.isArray(json?.words) ? json.words : [];
+                  const sourceItems = words.length ? words : segments;
+                  const detectedLanguage: string | null = json?.language ?? null;
+                  const fullDurationSec = Number(json?.duration ?? 0);
+                  const allRawChunks: RawChunk[] = sourceItems
+                    .map((s) => {
+                      const start = Number(s?.start ?? 0);
+                      const end = Number(s?.end ?? start);
+                      return {
+                        text: String(s?.word ?? s?.text ?? "").trim(),
+                        offset: start,
+                        duration: Math.max(0, end - start),
+                      };
+                    })
+                    .filter((c) => c.text.length > 0);
+                  const firstSpeechSec = allRawChunks.length ? allRawChunks[0].offset : null;
+                  console.log("[sync-debug][server] full-file timing", {
+                    videoId,
+                    fullDurationSec: Number(fullDurationSec.toFixed(3)),
+                    firstSpeechSec: firstSpeechSec == null ? null : Number(firstSpeechSec.toFixed(3)),
+                    segmentsCount: segments.length,
+                    wordsCount: words.length,
+                    note: "full-file ASR preserves initial music/silence before first speech",
+                  });
+
+                  const sentences = buildSentencesFromChunksExport(allRawChunks);
+                  const totalMs = Date.now() - t0;
+                  const firstSentenceMs = Date.now() - t0;
+                  await supabaseAdmin
+                    .from("transcript_jobs")
+                    .update({
+                      status: "complete",
+                      detected_language: detectedLanguage,
+                      completed_chunks: 1,
+                      total_chunks: 1,
+                      chunks: allRawChunks,
+                      whisper_reported_duration_s: fullDurationSec || null,
+                      first_chunk_at: new Date().toISOString(),
+                      completed_at: new Date().toISOString(),
+                      time_to_first_clickable_sentence_ms: firstSentenceMs,
+                      time_to_full_transcript_ms: totalMs,
+                    })
+                    .eq("id", jobId);
+
+                  send("chunk", {
+                    index: 0,
+                    startSec: 0,
+                    endSec: fullDurationSec || (allRawChunks.at(-1)?.offset ?? 0),
+                    ms: Date.now() - tFull,
+                    detectedLanguage,
+                    completedChunks: 1,
+                    totalChunks: 1,
+                    sentences,
+                    newSentencesFrom: 0,
+                    time_to_first_clickable_sentence_ms: firstSentenceMs,
+                  });
+
+                  try {
+                    const requestedLanguage = lang && lang !== "_any_" ? lang : "_any_";
+                    const provider = "openai";
+                    const sourceVersion = TRANSCRIPT_PIPELINE_VERSION;
+                    const totalChars = allRawChunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
+                    const cacheKey = `${videoId}::${requestedLanguage}::${provider}::v${sourceVersion}`;
+                    await supabaseAdmin
+                      .from("youtube_transcript_cache" as any)
+                      .upsert(
+                        {
+                          video_id: videoId,
+                          video_url: url,
+                          transcript_json: allRawChunks,
+                          language: detectedLanguage,
+                          source: provider,
+                          provider,
+                          requested_language: requestedLanguage,
+                          provider_response_language: detectedLanguage,
+                          source_version: sourceVersion,
+                          cache_key: cacheKey,
+                          transcript_length_chars: totalChars,
+                          updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: "video_id,requested_language,provider,source_version" },
+                      );
+                  } catch (cacheErr) {
+                    console.warn("[transcript-stream] cache write failed", cacheErr);
+                  }
+                  send("complete", {
+                    totalSentences: sentences.length,
+                    time_to_full_transcript_ms: totalMs,
+                    detectedLanguage,
+                  });
+                  controller.close();
+                  return;
+                }
+              }
+
               // --- Chunk loop
               const allRawChunks: RawChunk[] = [];
               let measuredBytesPerSec = (kbps * 1000) / 8; // refined after chunk 0
@@ -189,6 +324,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 form.append("file", new Blob([ab], { type: "audio/mpeg" }), "audio.mp3");
                 form.append("model", "whisper-1");
                 form.append("response_format", "verbose_json");
+                form.append("timestamp_granularities[]", "word");
                 if (lang && lang !== "_any_") form.append("language", lang);
 
                 const ctrl = new AbortController();
@@ -210,6 +346,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 }
                 const json: any = await res.json();
                 const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
+                const words: any[] = Array.isArray(json?.words) ? json.words : [];
                 const detectedLanguage: string | null = json?.language ?? null;
                 if (detectedLanguage) lastDetectedLanguage = detectedLanguage;
                 const whisperReportedDuration: number = Number(json?.duration ?? 0);
@@ -230,12 +367,17 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 // chunks 0..N-1. This is exact regardless of CBR/VBR.
                 const chunkStartSec = cumulativePriorDurationSec;
 
-                const newRawChunks: RawChunk[] = segments
-                  .map((s) => ({
-                    text: String(s?.text ?? "").trim(),
-                    offset: chunkStartSec + Number(s?.start ?? 0),
-                    duration: Math.max(0, Number(s?.end ?? 0) - Number(s?.start ?? 0)),
-                  }))
+                const sourceItems = words.length ? words : segments;
+                const newRawChunks: RawChunk[] = sourceItems
+                  .map((s) => {
+                    const start = Number(s?.start ?? 0);
+                    const end = Number(s?.end ?? start);
+                    return {
+                      text: String(s?.word ?? s?.text ?? "").trim(),
+                      offset: chunkStartSec + start,
+                      duration: Math.max(0, end - start),
+                    };
+                  })
                   .filter((c) => c.text.length > 0);
 
                 // Diagnostic: compare the OLD (bytes/bps) estimate vs the new
@@ -252,6 +394,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   ),
                   whisperReportedDuration,
                   segmentsCount: segments.length,
+                  wordsCount: words.length,
                 });
 
                 // Advance the cumulative clock for the NEXT chunk.
