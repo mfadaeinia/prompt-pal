@@ -3,7 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
-import { getLibraryMetrics, type LibraryMetrics } from "@/lib/library-events.functions";
+import {
+  getLibraryMetrics,
+  getSentenceClickDebug,
+  type LibraryMetrics,
+  type SentenceClickDebug,
+} from "@/lib/library-events.functions";
 import {
   getTranscriptQualityMetrics,
   type TranscriptQualityMetrics,
