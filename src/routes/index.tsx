@@ -3381,6 +3381,15 @@ function ExplanationPanel({
           {sentence.text}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
+          {onResume && (
+            <Button
+              size="sm"
+              onClick={onResume}
+              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+            >
+              <Play className="h-3.5 w-3.5" /> Resume
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
