@@ -1942,6 +1942,17 @@ function Index() {
     }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
+    if (!hasInteractedWithSentenceRef.current) {
+      hasInteractedWithSentenceRef.current = true;
+      try {
+        localStorage.setItem("nativeflow_sentence_hinted", "1");
+      } catch {}
+    }
+    if (playNudgeTimerRef.current != null) {
+      window.clearTimeout(playNudgeTimerRef.current);
+      playNudgeTimerRef.current = null;
+    }
+    if (showPlayNudge) setShowPlayNudge(false);
     // Feedback trigger is now bound to explanation_viewed (after value is delivered),
     // not raw clicks. See effect above.
 
