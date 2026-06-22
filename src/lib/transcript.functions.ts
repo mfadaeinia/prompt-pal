@@ -685,7 +685,22 @@ function chunksFromManualText(text: string): RawChunk[] {
   }));
 }
 
-const SOURCE_VERSION = 1;
+/**
+ * Transcript pipeline version. BUMP when the timing/segmentation pipeline
+ * changes in a way that makes older cached transcripts incorrect.
+ *
+ *   v1: original CBR byte→time mapping.
+ *   v2: progressive Whisper stream, still byte-derived offsets (drifted).
+ *   v3: cumulative Whisper-decoded durations across chunks. Eliminates
+ *       progressive drift caused by VBR/padding/frame alignment.
+ *
+ * Any cached row with `source_version < TRANSCRIPT_PIPELINE_VERSION` is
+ * treated as stale and the pipeline re-runs. We do NOT delete the old row —
+ * the upsert on (video_id, requested_language, provider, source_version)
+ * just writes a new row at the current version.
+ */
+export const TRANSCRIPT_PIPELINE_VERSION = 3;
+const SOURCE_VERSION = TRANSCRIPT_PIPELINE_VERSION;
 
 function makeCacheKey(videoId: string, requestedLanguage: string, provider: string, version = SOURCE_VERSION) {
   return `${videoId}|${requestedLanguage}|${provider}|${version}`;
@@ -751,7 +766,19 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
     console.warn("[transcript] cache read error", error.message);
     return null;
   }
-  const rows = (data ?? []) as unknown as CacheRow[];
+  const allRows = (data ?? []) as unknown as CacheRow[];
+  // Pipeline-version gate: rows written by older pipelines are stale and
+  // must be re-run. Do NOT delete them — bumping the version naturally
+  // routes future writes to a fresh row.
+  const rows = allRows.filter((r) => (r.source_version ?? 1) >= TRANSCRIPT_PIPELINE_VERSION);
+  if (allRows.length && !rows.length) {
+    console.log("[transcript] cache rows present but all below current pipeline version — re-running", {
+      videoId,
+      requestedLanguage,
+      currentVersion: TRANSCRIPT_PIPELINE_VERSION,
+      staleVersions: allRows.map((r) => r.source_version ?? 1),
+    });
+  }
   if (!rows.length) return null;
 
   const isPoisoned = (r: CacheRow): boolean => {
