@@ -305,7 +305,7 @@ export function YouTubeDiscovery({
                       size="sm"
                       variant="secondary"
                       disabled={loading}
-                      onClick={() => onPick(r.url)}
+                      onClick={() => onPick(r.url, r.language)}
                       className="mt-2 h-7 rounded-full px-3 text-xs"
                     >
                       <Sparkles className="mr-1 h-3 w-3" /> Try now
