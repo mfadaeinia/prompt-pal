@@ -94,7 +94,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
         .from("library_events" as any)
         .select("session_id,event_name,created_at")
         .is("user_id", null)
-        .eq("event_name", "sentence_clicked"),
+        .in("event_name", ["sentence_clicked", "explanation_viewed"]),
     ]);
 
     // Build session → user mapping from saved tables (covers historical rows)
