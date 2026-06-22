@@ -243,7 +243,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   send("chunk", {
                     index: 0,
                     startSec: 0,
-                    endSec: fullDurationSec || (allRawChunks.at(-1)?.offset ?? 0),
+                    endSec: fullDurationSec || (allRawChunks[allRawChunks.length - 1]?.offset ?? 0),
                     ms: Date.now() - tFull,
                     detectedLanguage,
                     completedChunks: 1,
