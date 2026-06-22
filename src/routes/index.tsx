@@ -927,7 +927,7 @@ function Index() {
               source: "asr",
               cachedFromProvider: null,
               language: detected,
-              spokenLanguage: spokenLang || null,
+              spokenLanguage: effectiveSpokenLang || null,
               transcriptLanguage: detected,
               cacheHit: false,
               quality: {
