@@ -47,7 +47,7 @@ import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brai
 import nativeflowLogo from "@/assets/nativeflow-logo.png.asset.json";
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
-import { OnboardingOverlay } from "@/components/OnboardingOverlay";
+import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
