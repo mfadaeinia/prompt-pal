@@ -1694,7 +1694,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = container.clientHeight * 0.28;
+      const targetVisibleTop = container.clientHeight * 0.02;
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
