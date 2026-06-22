@@ -823,7 +823,7 @@ function Index() {
     }
   }
 
-  type LoadVars = { url: string; seq: number; requestedVideoId: string | null };
+  type LoadVars = { url: string; seq: number; requestedVideoId: string | null; spokenLanguageOverride?: string };
 
   const loadMutation = useMutation({
     mutationFn: async (vars: LoadVars) => {
