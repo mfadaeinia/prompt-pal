@@ -2696,12 +2696,12 @@ function Index() {
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
-                                className={`block w-full rounded-lg px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 ${
+                                className={`block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 hover:border-primary/60 ${
                                   active
-                                    ? "bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
+                                    ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
-                                    ? "bg-primary/15 text-foreground"
-                                    : "text-foreground/85"
+                                    ? "border-primary/70 bg-primary/15 text-foreground"
+                                    : "border-transparent text-foreground/85"
                                 }`}
                               >
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
