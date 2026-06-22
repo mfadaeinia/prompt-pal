@@ -851,10 +851,11 @@ function Index() {
       // (Whisper) produces tight word-level timings, so we force that path
       // and then cache the result for subsequent loads.
       const isDemoUrl = vars.url === DEMO_VIDEO_URL;
+      const effectiveSpokenLang = vars.spokenLanguageOverride || spokenLang || undefined;
       const fast: FetchTranscriptFastResult = await fetchTxFast({
         data: {
           url: vars.url,
-          spokenLanguage: spokenLang || undefined,
+          spokenLanguage: effectiveSpokenLang,
           skipYoutube: isDemoUrl || undefined,
         },
       });
