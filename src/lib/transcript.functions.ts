@@ -1801,6 +1801,41 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
     timings.youtube_caption_attempt_ms = Date.now() - tYt;
 
     if (raw && raw.length) {
+      // Validate that the caption track YouTube returned is actually in the
+      // language the caller asked for. Some videos expose auto-translated
+      // tracks (e.g. an English video with Arabic auto-captions) and YouTube
+      // may hand us those when the explicit lang fetch fails. If a spoken
+      // language was requested but the returned text is clearly a different
+      // language, treat as a miss so we fall through to ASR — which detects
+      // the true spoken language from audio.
+      const joinedText = raw.map((r) => r.text).join(" ");
+      const detected = detectLanguage(joinedText);
+      console.log("[lang-pipeline][server] youtube-captions", {
+        videoId,
+        requestedSpokenLanguage: spokenLanguage,
+        youtubeReturnedLang: usedLang,
+        detectedFromText: detected.language,
+        detectionConfidence: detected.confidence,
+      });
+      if (
+        spokenLanguage &&
+        detected.language &&
+        detected.confidence >= 0.4 &&
+        !sameBaseLanguage(detected.language, spokenLanguage)
+      ) {
+        console.warn(
+          "[lang-pipeline][server] youtube caption language mismatch — discarding",
+          { videoId, requestedSpokenLanguage: spokenLanguage, detectedFromText: detected.language },
+        );
+        timings.total_server_ms = Date.now() - tStart;
+        logTimings("fast:youtube-lang-mismatch", videoId, timings);
+        return {
+          status: "miss",
+          videoId,
+          reason: "youtube_lang_mismatch",
+          youtubeError: `captions detected as ${detected.language}, expected ${spokenLanguage}`,
+        };
+      }
       const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
       timings.sentence_build_ms = Date.now() - tBuild;
@@ -1826,9 +1861,9 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
           videoId,
           sentences,
           source: "youtube",
-          language: usedLang,
+          language: detected.language ?? usedLang,
           spokenLanguage,
-          transcriptLanguage: usedLang,
+          transcriptLanguage: detected.language ?? usedLang,
           cacheHit: false,
           quality,
           provenance: cacheWrite.provenance ?? null,
