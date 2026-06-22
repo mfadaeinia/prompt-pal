@@ -396,8 +396,8 @@ function ContentTypes() {
           >
             The Best Language Lessons Are Already Out There
           </h2>
-          <p className="mt-3 text-base text-slate-600 sm:text-lg">
-            Podcasts, interviews, documentaries, news — real language in real context.
+          <p className="mt-3 text-base text-slate-600 sm:text-lg whitespace-pre-wrap">
+            NativeFlow helps you understand real language in real context:{"\u00a0\n\u00a0"}podcasts, interviews, documentaries, news ....
           </p>
         </div>
 
