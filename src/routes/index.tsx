@@ -2285,6 +2285,7 @@ function Index() {
                     if (!studyMode) return;
                     setStudyMode(false);
                     setSelected(null);
+                    setFocusMode(true); // Watch Mode: auto-follow on
                     track("study_mode_closed", { video_id: videoId });
                     track("watch_mode_opened", { video_id: videoId });
                   }}
