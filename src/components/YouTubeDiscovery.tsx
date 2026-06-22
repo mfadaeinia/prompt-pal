@@ -236,7 +236,7 @@ export function YouTubeDiscovery({
     return () => clearTimeout(t);
   }, [q, search]);
 
-  const showExamples = useMemo(() => !q.trim() && !results, [q, results]);
+  const showExamples = false;
 
   return (
     <div className="space-y-4">
