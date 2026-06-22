@@ -54,6 +54,7 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
@@ -178,8 +179,9 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(true);
-  // Focus Mode: transcript auto-follows. Transcript Mode: user controls scrolling.
-  const [focusMode, setFocusMode] = useState(true);
+  // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
+  // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
+  const [focusMode, setFocusMode] = useState(false);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
@@ -1711,6 +1713,9 @@ function Index() {
   const lastAutoExplainedRef = useRef<number | null>(null);
   useEffect(() => {
     if (!studyMode) return;
+    // Auto-following the active sentence is gated on auto-follow (focusMode).
+    // In Learning Mode with auto-follow off, only explicit taps open the Aha Panel.
+    if (!focusMode) return;
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
@@ -1728,7 +1733,7 @@ function Index() {
     });
     ensureExplanation(s, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playingId, sentences, studyMode]);
+  }, [playingId, sentences, studyMode, focusMode]);
 
   // Fire `explanation_viewed` once per sentence when its explanation finishes
   // loading AND it is the currently selected sentence (i.e. actually visible).
@@ -1813,6 +1818,29 @@ function Index() {
     setCurrentTime(s.offset);
   }
 
+  // Learning Mode interaction: seek to the sentence and PAUSE so the learner can
+  // study without the video moving on. Resume is an explicit action.
+  function seekAndPause(s: TranscriptSentence) {
+    const p = playerRef.current;
+    if (p?.seekTo) {
+      p.seekTo(Math.max(0, s.offset), true);
+      p.pauseVideo?.();
+    }
+    pauseAtRef.current = null;
+    setManualActiveId(s.id);
+    manualUntilRef.current = performance.now() + 1200;
+    setCurrentTime(s.offset);
+  }
+
+  // Resume playback from the user's current transcript position (no seek),
+  // close the Aha Panel. Used by Resume button, sheet dismiss, and panel close.
+  function resumeFromHere() {
+    setSelected(null);
+    const p = playerRef.current;
+    p?.playVideo?.();
+    track("learning_resume", { video_id: videoId });
+  }
+
   const clickCountRef = useRef(0);
   const replayCountRef = useRef(0);
   const milestoneFiredRef = useRef(false);
@@ -1842,8 +1870,11 @@ function Index() {
     if (studyMode) {
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
+      // Learning Mode: pause on tap so the learner can study. Resume is explicit.
+      seekAndPause(s);
+    } else {
+      seekAndPlay(s);
     }
-    seekAndPlay(s);
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
@@ -2257,6 +2288,7 @@ function Index() {
                     if (!studyMode) return;
                     setStudyMode(false);
                     setSelected(null);
+                    setFocusMode(true); // Watch Mode: auto-follow on
                     track("study_mode_closed", { video_id: videoId });
                     track("watch_mode_opened", { video_id: videoId });
                   }}
@@ -2284,6 +2316,7 @@ function Index() {
                     if (studyMode) return;
                     if (transcriptStatus === "failed" || sentences.length === 0) return;
                     setStudyMode(true);
+                    setFocusMode(false); // Learning Mode: learner drives via taps
                     track("study_mode_opened", { video_id: videoId });
                   }}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
@@ -2297,7 +2330,7 @@ function Index() {
                 </button>
               </div>
               <label
-                className="hidden cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:inline-flex"
+                className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
                 title="Keep the active sentence in view automatically."
               >
                 <input
@@ -2666,16 +2699,19 @@ function Index() {
               </div>
               </div>
 
-              {/* Explanation panel — primary learning surface. On mobile it appears directly under the video (order-2); on desktop it sits in the right column. */}
+              {/* Aha Panel — primary learning surface.
+                  Desktop / tablet: side panel in the right column.
+                  Mobile: rendered below as a bottom Sheet so the transcript stays the primary interaction layer. */}
               {studyMode && (
-                <div className="min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+                <div className="hidden lg:block min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
                       selected ? explanationCache[selected.id] : undefined
                     }
-                    onClose={() => setSelected(null)}
+                    onClose={resumeFromHere}
                     onReplay={replaySelected}
+                    onResume={resumeFromHere}
                     onSave={() => handleSaveExpression(selected)}
                     isSaved={isSentenceSaved(selected)}
                     justSaved={!!selected && justSavedId === selected.id}
@@ -2685,6 +2721,40 @@ function Index() {
                     targetLangLabel={targetLang}
                   />
                 </div>
+              )}
+
+              {/* Mobile Aha Panel as a bottom Sheet. Closing or swiping down resumes playback. */}
+              {studyMode && isMobile && (
+                <Sheet
+                  open={!!selected}
+                  onOpenChange={(open) => {
+                    if (!open) resumeFromHere();
+                  }}
+                >
+                  <SheetContent
+                    side="bottom"
+                    className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-t p-0"
+                  >
+                    <div className="p-4 pt-8">
+                      <ExplanationPanel
+                        sentence={selected}
+                        entry={
+                          selected ? explanationCache[selected.id] : undefined
+                        }
+                        onClose={resumeFromHere}
+                        onReplay={replaySelected}
+                        onResume={resumeFromHere}
+                        onSave={() => handleSaveExpression(selected)}
+                        isSaved={isSentenceSaved(selected)}
+                        justSaved={!!selected && justSavedId === selected.id}
+                        saving={saveExpressionMutation.isPending}
+                        limitedMode={limitedMode}
+                        sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
+                        targetLangLabel={targetLang}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
               )}
 
             </div>
@@ -3225,6 +3295,7 @@ function ExplanationPanel({
   entry,
   onClose,
   onReplay,
+  onResume,
   onSave,
   isSaved,
   justSaved,
@@ -3237,6 +3308,7 @@ function ExplanationPanel({
   entry: ExplanationPanelEntry | undefined;
   onClose: () => void;
   onReplay: () => void;
+  onResume?: () => void;
   onSave: () => void;
   isSaved: boolean;
   justSaved: boolean;
@@ -3314,6 +3386,15 @@ function ExplanationPanel({
           {sentence.text}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
+          {onResume && (
+            <Button
+              size="sm"
+              onClick={onResume}
+              className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
+            >
+              <Play className="h-3.5 w-3.5" /> Resume
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
