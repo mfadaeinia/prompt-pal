@@ -2060,8 +2060,9 @@ function Index() {
             </div>
             <YouTubeDiscovery
               loading={loadMutation.isPending}
-              onPick={(u) => {
-                track("custom_video_attempted", { video_url: u, spoken_language: spokenLang || "auto" });
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
                 setUrl(u);
                 setView("demo");
                 submitLoad(u);
