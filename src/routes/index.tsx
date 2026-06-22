@@ -1730,6 +1730,11 @@ function Index() {
     container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
   }, [playingId, focusMode]);
 
+  const stickySentence = useMemo(() => {
+    if (!isMobile || !activeOutOfView || playingId == null) return null;
+    return sentences.find((x) => x.id === playingId) ?? null;
+  }, [isMobile, activeOutOfView, playingId, sentences]);
+
   function jumpToCurrentSentence() {
     if (playingId == null || !listRef.current) return;
     const container = listRef.current;
@@ -2701,6 +2706,19 @@ function Index() {
                       </div>
                     ) : (
                       <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
+                        {stickySentence && (
+                          <li className="sticky top-0 z-10 border-b border-primary/20 bg-card/95 backdrop-blur-sm shadow-sm">
+                            <button
+                              onClick={jumpToCurrentSentence}
+                              className="flex w-full cursor-pointer items-start gap-2 border-l-2 border-primary bg-primary/10 px-3 py-2 text-left text-[15px] leading-[1.7] font-medium text-foreground"
+                            >
+                              <span className="mt-0.5 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                                {formatTime(stickySentence.offset)}
+                              </span>
+                              <span className="min-w-0">{stickySentence.text}</span>
+                            </button>
+                          </li>
+                        )}
                         {sentences.map((s) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
