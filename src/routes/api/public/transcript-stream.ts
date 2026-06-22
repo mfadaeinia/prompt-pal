@@ -147,9 +147,9 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               try {
                 if (totalAudioBytes == null) {
                   const probe = await fetch(audioUrl, { headers: { Range: "bytes=0-0" } });
-                const cr = probe.headers.get("content-range"); // bytes 0-0/12345
-                const m = cr?.match(/\/(\d+)\s*$/);
-                if (m) totalAudioBytes = Number(m[1]);
+                  const cr = probe.headers.get("content-range"); // bytes 0-0/12345
+                  const m = cr?.match(/\/(\d+)\s*$/);
+                  if (m) totalAudioBytes = Number(m[1]);
                 }
               } catch {
                 /* ignore */
