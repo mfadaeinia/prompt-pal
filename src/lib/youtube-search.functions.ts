@@ -7,6 +7,10 @@ export type YouTubeSearchResult = {
   channel: string;
   thumbnail: string;
   durationSec: number | null;
+  /** Known spoken language (ISO-639-1) — set on curated examples so the
+   *  transcript fetcher requests the right caption track instead of letting
+   *  YouTube serve an auto-translated one. */
+  language?: string;
 };
 
 const PIPED_INSTANCES = [
