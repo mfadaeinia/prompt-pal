@@ -153,14 +153,14 @@ function ResultCard({
   loading,
 }: {
   item: YouTubeSearchResult;
-  onPick: (url: string) => void;
+  onPick: (url: string, language?: string) => void;
   loading?: boolean;
 }) {
   const dur = formatDuration(item.durationSec);
   return (
     <button
       type="button"
-      onClick={() => onPick(item.url)}
+      onClick={() => onPick(item.url, item.language)}
       disabled={loading}
       className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-2.5 text-left transition hover:border-primary/40 hover:bg-muted/50 sm:p-3"
     >
