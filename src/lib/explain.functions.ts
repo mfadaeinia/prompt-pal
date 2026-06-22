@@ -108,6 +108,7 @@ export const explainSentence = createServerFn({ method: "POST" })
           // keep first attempt if retry fails
         }
       }
+      text = fixKeyExpressionOrder(text, data.sentence);
       return { explanation: text };
     } catch (error: unknown) {
       const status =
