@@ -1815,6 +1815,29 @@ function Index() {
     setCurrentTime(s.offset);
   }
 
+  // Learning Mode interaction: seek to the sentence and PAUSE so the learner can
+  // study without the video moving on. Resume is an explicit action.
+  function seekAndPause(s: TranscriptSentence) {
+    const p = playerRef.current;
+    if (p?.seekTo) {
+      p.seekTo(Math.max(0, s.offset), true);
+      p.pauseVideo?.();
+    }
+    pauseAtRef.current = null;
+    setManualActiveId(s.id);
+    manualUntilRef.current = performance.now() + 1200;
+    setCurrentTime(s.offset);
+  }
+
+  // Resume playback from the user's current transcript position (no seek),
+  // close the Aha Panel. Used by Resume button, sheet dismiss, and panel close.
+  function resumeFromHere() {
+    setSelected(null);
+    const p = playerRef.current;
+    p?.playVideo?.();
+    track("learning_resume", { video_id: videoId });
+  }
+
   const clickCountRef = useRef(0);
   const replayCountRef = useRef(0);
   const milestoneFiredRef = useRef(false);
