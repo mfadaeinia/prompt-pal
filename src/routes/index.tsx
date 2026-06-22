@@ -175,6 +175,9 @@ function Index() {
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPlayNudge, setShowPlayNudge] = useState(false);
+  const hasInteractedWithSentenceRef = useRef(false);
+  const playNudgeTimerRef = useRef<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
