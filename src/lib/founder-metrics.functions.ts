@@ -87,7 +87,8 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     );
     const visitors = new Set<string>([...uniqueVideoSessionIds, ...uniqueFeedbackSessionIds]).size;
     const demoStarts = totalSessions;
-    const transcriptClicks = feedback.reduce((sum, f) => sum + (f.total_sentence_clicks ?? 0), 0);
+    const clickEventRows = ((le.data ?? []) as unknown) as Array<{ session_id: string | null }>;
+    const transcriptClicks = clickEventRows.length;
 
     const positive = feedback.filter((f) => f.feedback_type === "positive").length;
     const negative = feedback.filter((f) => f.feedback_type === "negative").length;
