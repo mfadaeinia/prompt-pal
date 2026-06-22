@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { Loader2, Mail } from "lucide-react";
+import { Check, Loader2, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { track } from "@/lib/analytics";
 
@@ -14,15 +12,19 @@ type Props = {
   description?: string;
 };
 
+const BENEFITS = [
+  "Save words and phrases automatically",
+  "Continue learning from any device",
+  "Track your learning progress",
+  "No credit card required",
+];
+
 export function AuthDialog({
   open,
   onOpenChange,
   title = "Create your free account",
-  description = "Save your vocabulary, videos, and learning progress so you can return anytime.",
+  description = "Save your vocabulary, track your progress, and continue learning across devices.",
 }: Props) {
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,94 +50,66 @@ export function AuthDialog({
     }
   }
 
-  async function handleMagicLink(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setError(null);
-    setSending(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: window.location.href },
-      });
-      if (error) {
-        setError(error.message);
-      } else {
-        setSent(true);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send link");
-    } finally {
-      setSending(false);
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
+        <div className="px-6 pt-8 pb-6 sm:px-8 sm:pt-10 sm:pb-8">
+          <DialogHeader className="space-y-3 text-center sm:text-center">
+            <DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
+              {title}
+            </DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground leading-relaxed">
+              {description}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-11"
-            onClick={handleGoogle}
-            disabled={googleLoading}
-          >
-            {googleLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <GoogleIcon /> Continue with Google
-              </>
-            )}
-          </Button>
+          <p className="mt-6 text-xs font-medium text-muted-foreground text-center">
+            Your learning progress is automatically saved to your account.
+          </p>
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" />
-            or
-            <div className="h-px flex-1 bg-border" />
-          </div>
+          <ul className="mt-5 space-y-3">
+            {BENEFITS.map((b) => (
+              <li key={b} className="flex items-start gap-3 text-sm text-foreground">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <Check className="h-3.5 w-3.5 text-primary" strokeWidth={3} />
+                </span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
 
-          {sent ? (
-            <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
-              <p className="font-medium">Check your inbox</p>
-              <p className="mt-1 text-muted-foreground">
-                We sent a magic sign-in link to <span className="font-medium">{email}</span>. Open it on this device to continue.
+          <div className="mt-7 space-y-3">
+            <Button
+              type="button"
+              className="w-full h-12 text-base font-medium"
+              onClick={handleGoogle}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <GoogleIcon /> Continue with Google
+                </>
+              )}
+            </Button>
+
+            <div className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2.5">
+              <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+              <p className="text-[11.5px] leading-relaxed text-muted-foreground">
+                We only use your Google account for authentication and basic profile information. We never access your emails.
               </p>
             </div>
-          ) : (
-            <form onSubmit={handleMagicLink} className="space-y-2">
-              <Input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Button type="submit" className="w-full h-11" disabled={sending || !email.trim()}>
-                {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Mail className="h-4 w-4 mr-2" /> Email me a sign-in link
-                  </>
-                )}
-              </Button>
-            </form>
-          )}
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p className="text-xs text-destructive text-center">{error}</p>}
 
-          <p className="text-[11px] text-muted-foreground text-center">
-            By continuing, you agree to use NativeFlow for personal language learning.
-          </p>
+            <p className="text-[11px] text-muted-foreground text-center pt-1">
+              By continuing, you agree to our{" "}
+              <a href="/terms" className="underline hover:text-foreground">Terms</a>
+              {" "}and{" "}
+              <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
