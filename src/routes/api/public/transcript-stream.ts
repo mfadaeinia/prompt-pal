@@ -35,7 +35,10 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
       GET: async ({ request }) => {
         const u = new URL(request.url);
         const url = u.searchParams.get("url");
-        const lang = u.searchParams.get("lang") ?? "nl";
+        // Default to auto-detect ("_any_"). Never bias Whisper to a concrete
+        // language here — the transcript must reflect the spoken language of
+        // the media, not the learner's translation/target language.
+        const lang = u.searchParams.get("lang") ?? "_any_";
         const chunkSeconds = Math.max(30, Math.min(180, Number(u.searchParams.get("chunk") ?? 90)));
         const kbps = Math.max(32, Math.min(320, Number(u.searchParams.get("kbps") ?? 128)));
         if (!url) {
