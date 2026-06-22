@@ -28,7 +28,7 @@ The MOST IMPORTANT field is "Key Expression". Everything else supports it. If th
 
 Output PLAIN TEXT only, in this EXACT format. Every field on its own line, in this exact order. Use "—" to OMIT a field that would not add real value.
 
-Key Expression: <The single most learning-worthy multi-word expression, collocation, separable verb, idiom, phrasal verb, or spoken/news-style phrasing from the sentence. Format: "<expression in original language> = <2–3 natural ${targetLanguage} equivalents separated by ', '>". If there is no genuinely strong expression worth teaching, write "—" (do NOT invent one).>
+Key Expression: <The single most learning-worthy multi-word expression, collocation, separable verb, idiom, phrasal verb, or spoken/news-style phrasing from the sentence. STRICT FORMAT: "<expression EXACTLY as it appears in the ORIGINAL sentence, in the ORIGINAL source language — never translated> = <2–3 natural ${targetLanguage} equivalents separated by ', '>". The left side of " = " MUST be the source-language phrase copied from the sentence. The right side MUST be the ${targetLanguage} meanings. NEVER swap the sides. NEVER put the ${targetLanguage} translation on the left. Example if source is Dutch and target is English: "ervoor kiezen = to choose to, to opt to" (CORRECT). "to choose to = ervoor kiezen" (WRONG — sides swapped). If there is no genuinely strong expression worth teaching, write "—" (do NOT invent one).>
 Natural Translation: <Translate the sentence into ${targetLanguage} the way a real native speaker would say it. Natural, idiomatic, NOT word-for-word. Never preserve awkward source-language word order.>
 Why Speakers Say It This Way: <1–2 short coaching sentences explaining native-speaker intuition — why this phrasing sounds natural here, the register (news / casual / formal), and what feeling or nuance it carries. Talk like a friend who lived in the country for 10 years. BAD: "This construction uses a dative object". GOOD: "Dutch often expresses success as something that happens to someone rather than something they actively do." Avoid linguistic jargon entirely (no "dative", "subjunctive", "valency", "transitive"). If there's no real intuition to teach, write "—".>
 What's Happening: <ONE short sentence of CONTEXT only — what is going on in this moment of the conversation. Not a language explanation. Not a restatement of the translation. Do NOT start with "The speaker", "The sentence", "This sentence", "In this sentence", "The narrator". Just describe the moment, like a friend whispering context.>
@@ -74,6 +74,39 @@ function validate(text: string) {
   return weak;
 }
 
+function normalize(s: string) {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function overlapScore(phrase: string, sentence: string) {
+  const sN = normalize(sentence);
+  const tokens = normalize(phrase).split(" ").filter((t) => t.length >= 2);
+  if (tokens.length === 0) return 0;
+  let hits = 0;
+  for (const t of tokens) if (sN.includes(t)) hits++;
+  return hits / tokens.length;
+}
+
+// If the model swapped sides (put the target-language translation on the left),
+// detect it by comparing overlap with the original sentence and flip back.
+function fixKeyExpressionOrder(text: string, sentence: string): string {
+  return text.replace(/^(\s*Key Expression\s*:\s*)(.+)$/im, (_m, label, val) => {
+    const v = String(val).trim();
+    if (!v || v === "—") return `${label}${v}`;
+    const idx = v.indexOf("=");
+    if (idx < 0) return `${label}${v}`;
+    const left = v.slice(0, idx).trim();
+    const right = v.slice(idx + 1).trim();
+    if (!left || !right) return `${label}${v}`;
+    const leftScore = overlapScore(left, sentence);
+    const rightScore = overlapScore(right.split(/\s*,\s*/)[0] || right, sentence);
+    if (rightScore > leftScore + 0.25) {
+      return `${label}${right} = ${left}`;
+    }
+    return `${label}${v}`;
+  });
+}
+
 export const explainSentence = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
@@ -108,6 +141,7 @@ export const explainSentence = createServerFn({ method: "POST" })
           // keep first attempt if retry fails
         }
       }
+      text = fixKeyExpressionOrder(text, data.sentence);
       return { explanation: text };
     } catch (error: unknown) {
       const status =
