@@ -1713,6 +1713,9 @@ function Index() {
   const lastAutoExplainedRef = useRef<number | null>(null);
   useEffect(() => {
     if (!studyMode) return;
+    // Auto-following the active sentence is gated on auto-follow (focusMode).
+    // In Learning Mode with auto-follow off, only explicit taps open the Aha Panel.
+    if (!focusMode) return;
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
