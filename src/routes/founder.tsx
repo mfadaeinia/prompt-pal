@@ -643,9 +643,9 @@ function UserRetentionSection({
                     ) : (
                       <span
                         className="text-slate-400"
-                        title={`Needs ≥1 video & ≥3 clicks. Has ${r.videos_loaded}v / ${r.sentence_clicks}c`}
+                        title={`Needs ≥1 video & ≥3 explanations (clicks+auto). Has ${r.videos_loaded}v / ${r.sentence_clicks}c / ${r.explanations_viewed}e. ${r.reason_not_activated ?? ""}`}
                       >
-                        No <span className="text-[10px] text-slate-400">({r.videos_loaded}v/{r.sentence_clicks}c)</span>
+                        No <span className="text-[10px] text-slate-400">({r.videos_loaded}v/{r.sentence_clicks}c/{r.explanations_viewed}e) — {r.reason_not_activated}</span>
                       </span>
                     )}
                   </td>
