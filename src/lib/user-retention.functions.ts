@@ -114,6 +114,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
     const userSessions = new Map<string, Set<string>>();
     const userVideos = new Map<string, Set<string>>();
     const userClicks = new Map<string, number>();
+    const userExplanations = new Map<string, number>();
     const userSaved = new Map<string, number>();
     const userSavedVideos = new Map<string, number>();
     const userLastSeen = new Map<string, string>();
