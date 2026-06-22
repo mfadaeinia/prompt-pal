@@ -155,6 +155,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 /* ignore */
               }
 
+              try {
               if (totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
                 const tFull = Date.now();
                 const dl = await fetch(audioUrl);
@@ -289,6 +290,12 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   controller.close();
                   return;
                 }
+              }
+              } catch (fullFileErr) {
+                console.warn("[sync-debug][server] full-file ASR failed; using chunked fallback", {
+                  videoId,
+                  error: fullFileErr instanceof Error ? fullFileErr.message : String(fullFileErr),
+                });
               }
 
               // --- Chunk loop
