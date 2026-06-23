@@ -509,3 +509,104 @@ function EmptyState({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
+
+function WordCard({ item, onDelete }: { item: any; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const generateFn = useServerFn(generateWordExamples);
+  const word: string = item.sentence_text ?? "";
+  const targetLanguage: string = item.target_language || "English";
+
+  const { data, isFetching, error, refetch } = useQuery({
+    queryKey: ["word-examples", item.id, word, targetLanguage],
+    queryFn: () =>
+      generateFn({
+        data: { word, targetLanguage, sourceLanguage: "Dutch" },
+      }),
+    enabled: open,
+    staleTime: 1000 * 60 * 60,
+    retry: 0,
+  });
+
+  const sourceSentence = (() => {
+    const notes: string = item.expression_notes ?? "";
+    const m = notes.match(/^From:\s*"?([^"]+)"?$/i);
+    return m ? m[1].trim() : "";
+  })();
+
+  return (
+    <li className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm ring-1 ring-primary/5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-lg font-semibold leading-snug text-foreground">{word}</p>
+          {item.meaning && (
+            <p className="mt-1 text-sm text-foreground/80">{item.meaning}</p>
+          )}
+          {sourceSentence && (
+            <p className="mt-2 text-xs italic text-muted-foreground line-clamp-2">
+              “{sourceSentence}”
+            </p>
+          )}
+          {item.video_title && (
+            <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Film className="h-3 w-3 text-primary" /> {item.video_title}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onDelete}
+          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          aria-label="Delete"
+          title="Delete"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <Button
+          size="sm"
+          variant={open ? "outline" : "default"}
+          onClick={() => setOpen((o) => !o)}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {open ? "Hide examples" : "Show examples"}
+          {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </Button>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {isFetching && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating example sentences…
+            </div>
+          )}
+          {error && !isFetching && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              Couldn’t generate examples.
+              <button onClick={() => refetch()} className="ml-2 underline">Try again</button>
+            </div>
+          )}
+          {data?.contexts?.map((ctx, ci) => (
+            <div key={ci} className="rounded-lg border border-border/60 bg-muted/30 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                {ctx.label}
+              </p>
+              <ul className="mt-2 space-y-2">
+                {ctx.sentences.map((s, si) => (
+                  <li key={si} className="text-sm">
+                    <p className="font-medium text-foreground">{s.source}</p>
+                    {s.translation && (
+                      <p className="text-xs text-muted-foreground">{s.translation}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
