@@ -3518,38 +3518,27 @@ function ExplanationPanel({
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-5">
-            {/* ⭐ HERO — Key Expression. Always first, visually dominant. */}
-            {ready.keyExpression && (
-              <KeyExpressionHero expression={ready.keyExpression} />
-            )}
-
+          <div className="space-y-4">
+            {/* ⭐ MEANING — the hero. Concise translation, max 1–2 lines. */}
             {ready.translation && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Natural translation · {tgtLabel}
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Meaning · {tgtLabel}
                 </h4>
-                <p className="mt-1 text-base leading-relaxed text-foreground">
+                <p className="mt-1 text-lg font-medium leading-snug text-foreground">
                   {ready.translation}
                 </p>
               </div>
             )}
 
-            {ready.whyThisWay && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Why speakers say it this way
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.whyThisWay}
-                </p>
-              </div>
-            )}
+            {/* Useful expressions — 2–4 curated items, scannable list. */}
+            {ready.vocabulary && <UsefulExpressions raw={ready.vocabulary} fallbackKey={ready.keyExpression} />}
 
+            {/* Quick context — optional, max 1 line. */}
             {ready.whatsHappening && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  What's happening
+                  Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                   {ready.whatsHappening}
@@ -3557,32 +3546,18 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary && <TieredVocabulary raw={ready.vocabulary} />}
+            {/* Grammar — collapsible, hidden by default. */}
+            {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
-            {ready.note && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Usage notes
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.note}
-                </p>
-              </div>
-            )}
-            {ready.grammar && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Grammar insight
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.grammar}
-                </p>
-              </div>
-            )}
-            {!ready.translation && !ready.keyExpression && !ready.whatsHappening && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+            {!ready.translation && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
+
+
+
+
 
 
 
