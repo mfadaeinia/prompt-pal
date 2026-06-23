@@ -349,6 +349,17 @@ function Index() {
     }
     return set;
   }, [savedQuery.data]);
+  // Lowercased heads of single-expression saves for the current video, so the
+  // explanation panel can mark each useful-expression row as "in library".
+  const savedExpressionHeads = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of (savedQuery.data?.items ?? []) as any[]) {
+      if (videoId && it.video_id !== videoId) continue;
+      const head = (it.sentence_text ?? "").trim().toLowerCase();
+      if (head) set.add(head);
+    }
+    return set;
+  }, [savedQuery.data, videoId]);
 
   // First-time onboarding tooltip for Saved items
   useEffect(() => {
@@ -479,6 +490,57 @@ function Index() {
   function handleSaveVideo() {
     if (!videoId) return;
     requireAuth(() => saveVideoMutation.mutate());
+  }
+
+  // Per-expression save (the bookmark icon inside Useful expressions).
+  const [savingExpressionHead, setSavingExpressionHead] = useState<string | null>(null);
+  const [justSavedExpressionHead, setJustSavedExpressionHead] = useState<string | null>(null);
+  function handleSaveSingleExpression(
+    sentence: TranscriptSentence | null,
+    head: string,
+    meaning: string,
+  ) {
+    if (!sentence || !head.trim()) return;
+    const headKey = head.trim().toLowerCase();
+    if (savedExpressionHeads.has(headKey)) return;
+    requireAuth(async () => {
+      setSavingExpressionHead(headKey);
+      try {
+        await saveExpressionFx({
+          data: {
+            sessionId: browserId,
+            sentenceText: head.trim(),
+            translation: meaning || null,
+            expressionNotes: `From: "${sentence.text}"`,
+            videoTitle: videoTitle,
+            videoUrl: url || null,
+            videoId: videoId,
+            timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+            targetLanguage: targetLang || null,
+          },
+        });
+        track("expression_saved", {
+          video_id: videoId,
+          timestamp_seconds: Math.round(sentence.offset),
+          target_language: targetLang,
+          source: "expression_row",
+        });
+        void logLibraryEventFx({
+          data: {
+            eventName: "expression_saved",
+            sessionId: browserId,
+            videoId: videoId ?? null,
+            userId,
+            metadata: { source: "expression_row" },
+          },
+        }).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        setJustSavedExpressionHead(headKey);
+        window.setTimeout(() => setJustSavedExpressionHead(null), 1400);
+      } finally {
+        setSavingExpressionHead(null);
+      }
+    });
   }
 
   // ── Selection-based "Save expression" floating menu ──────────────────────
@@ -2772,6 +2834,10 @@ function Index() {
                     limitedMode={limitedMode}
                     sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
                     targetLangLabel={targetLang}
+                    onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
+                    savedExpressionHeads={savedExpressionHeads}
+                    savingExpressionHead={savingExpressionHead}
+                    justSavedExpressionHead={justSavedExpressionHead}
                   />
                 </div>
               )}
@@ -2804,6 +2870,10 @@ function Index() {
                         limitedMode={limitedMode}
                         sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
                         targetLangLabel={targetLang}
+                        onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
+                        savedExpressionHeads={savedExpressionHeads}
+                        savingExpressionHead={savingExpressionHead}
+                        justSavedExpressionHead={justSavedExpressionHead}
                       />
                     </div>
                   </SheetContent>
@@ -3365,6 +3435,10 @@ function ExplanationPanel({
   limitedMode = false,
   sourceLangLabel,
   targetLangLabel,
+  onSaveExpression,
+  savedExpressionHeads,
+  savingExpressionHead,
+  justSavedExpressionHead,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -3378,6 +3452,10 @@ function ExplanationPanel({
   limitedMode?: boolean;
   sourceLangLabel?: string;
   targetLangLabel?: string;
+  onSaveExpression?: (head: string, meaning: string) => void;
+  savedExpressionHeads?: Set<string>;
+  savingExpressionHead?: string | null;
+  justSavedExpressionHead?: string | null;
 }) {
   // Active expression state — only one phrase highlighted at a time in the original sentence.
   // (Hoisted above the early empty-state return so hook order stays stable across renders.)
@@ -3539,6 +3617,10 @@ function ExplanationPanel({
                 model={model}
                 activePhrase={activePhrase}
                 onSelectPhrase={handleSelectPhrase}
+                onSaveExpression={onSaveExpression}
+                savedExpressionHeads={savedExpressionHeads}
+                savingExpressionHead={savingExpressionHead}
+                justSavedExpressionHead={justSavedExpressionHead}
               />
             );
           })()
@@ -3663,10 +3745,18 @@ function ExplanationSections({
   model,
   activePhrase,
   onSelectPhrase,
+  onSaveExpression,
+  savedExpressionHeads,
+  savingExpressionHead,
+  justSavedExpressionHead,
 }: {
   model: ExplanationModel;
   activePhrase?: string | null;
   onSelectPhrase?: (phrase: string) => void;
+  onSaveExpression?: (head: string, meaning: string) => void;
+  savedExpressionHeads?: Set<string>;
+  savingExpressionHead?: string | null;
+  justSavedExpressionHead?: string | null;
 }) {
   return (
     <div className="space-y-2.5">
@@ -3682,6 +3772,10 @@ function ExplanationSections({
             {model.keyExpressions.map((it, i) => {
               const isActive =
                 !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+              const headKey = it.head.trim().toLowerCase();
+              const isExprSaved = !!savedExpressionHeads?.has(headKey);
+              const isExprSaving = savingExpressionHead === headKey;
+              const isExprJustSaved = justSavedExpressionHead === headKey;
               const inner = (
                 <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                   <span
@@ -3706,18 +3800,40 @@ function ExplanationSections({
                 </div>
               );
               return (
-                <li key={i}>
+                <li key={i} className="flex items-start gap-1">
                   {onSelectPhrase ? (
                     <button
                       type="button"
                       onClick={() => onSelectPhrase(it.head)}
                       aria-pressed={isActive}
-                      className="block w-full rounded-md text-left transition-colors hover:bg-muted/40"
+                      className="block flex-1 min-w-0 rounded-md text-left transition-colors hover:bg-muted/40"
                     >
                       {inner}
                     </button>
                   ) : (
-                    inner
+                    <div className="flex-1 min-w-0">{inner}</div>
+                  )}
+                  {onSaveExpression && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isExprSaved || isExprSaving) return;
+                        onSaveExpression(it.head, it.meaning || "");
+                      }}
+                      disabled={isExprSaved || isExprSaving}
+                      aria-label={isExprSaved ? "Saved to My Library" : "Save expression"}
+                      title={isExprSaved ? "In Library" : "Save expression"}
+                      className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary disabled:opacity-70"
+                    >
+                      {isExprJustSaved ? (
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                      ) : isExprSaved ? (
+                        <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <Bookmark className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   )}
                 </li>
               );
