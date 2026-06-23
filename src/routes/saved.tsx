@@ -129,7 +129,7 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
   const [browserId, setBrowserId] = useState("");
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"videos" | "sentences">("videos");
+  const [tab, setTab] = useState<"videos" | "sentences" | "words">("videos");
 
   useEffect(() => {
     setBrowserId(getBrowserId());
