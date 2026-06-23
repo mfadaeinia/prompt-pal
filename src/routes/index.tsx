@@ -3435,6 +3435,10 @@ function ExplanationPanel({
   limitedMode = false,
   sourceLangLabel,
   targetLangLabel,
+  onSaveExpression,
+  savedExpressionHeads,
+  savingExpressionHead,
+  justSavedExpressionHead,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -3448,6 +3452,10 @@ function ExplanationPanel({
   limitedMode?: boolean;
   sourceLangLabel?: string;
   targetLangLabel?: string;
+  onSaveExpression?: (head: string, meaning: string) => void;
+  savedExpressionHeads?: Set<string>;
+  savingExpressionHead?: string | null;
+  justSavedExpressionHead?: string | null;
 }) {
   // Active expression state — only one phrase highlighted at a time in the original sentence.
   // (Hoisted above the early empty-state return so hook order stays stable across renders.)
