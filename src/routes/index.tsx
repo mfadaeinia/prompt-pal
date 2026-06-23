@@ -3528,11 +3528,11 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — the hero. Concise translation, max 1–2 lines. */}
+            {/* ⭐ MEANING — the hero. */}
             {ready.translation && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Meaning · {tgtLabel}
+                  Meaning
                 </h4>
                 <p className="mt-1 text-lg font-medium leading-snug text-foreground">
                   {ready.translation}
@@ -3540,17 +3540,28 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Useful expressions — 2–4 curated items, scannable list. */}
-            {ready.vocabulary && <UsefulExpressions raw={ready.vocabulary} fallbackKey={ready.keyExpression} />}
+            {/* Key expressions — max 2. Multi-word idioms / common phrases. */}
+            {(ready.keyExpressions || ready.keyExpression) && (
+              <ExpressionList
+                label="Key Expressions"
+                raw={ready.keyExpressions || ready.keyExpression}
+                max={2}
+              />
+            )}
 
-            {/* Quick context — optional, max 1 line. */}
+            {/* Vocabulary — max 2 high-value single words. */}
+            {ready.vocabulary && (
+              <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
+            )}
+
+            {/* Quick context — optional, max 1 line, capped. */}
             {ready.whatsHappening && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-                  {ready.whatsHappening}
+                  {truncateContext(ready.whatsHappening)}
                 </p>
               </div>
             )}
@@ -3558,10 +3569,11 @@ function ExplanationPanel({
             {/* Grammar — collapsible, hidden by default. */}
             {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
-            {!ready.translation && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
+            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
 
 
 
