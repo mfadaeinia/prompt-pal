@@ -1366,6 +1366,7 @@ function Index() {
         status: "ready";
         translation: string;
         keyExpression: string;
+        keyExpressions: string;
         whatsHappening: string;
         whyThisWay: string;
         vocabulary: string;
