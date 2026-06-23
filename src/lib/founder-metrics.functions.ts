@@ -47,6 +47,33 @@ export type FounderMetrics = {
     /** Sessions that saved at least one expression or video. */
     savedSomething: number;
   };
+  /**
+   * Discovery funnel — designed to answer "why are users watching but not
+   * clicking?" Every step is unique session_ids, monotonically clamped.
+   */
+  discovery: {
+    videoOpened: number;
+    watched30s: number;
+    /** Sessions whose transcript scrolled into the viewport. */
+    transcriptSeen: number;
+    /** Sessions where the user hovered any sentence (desktop only). */
+    hoveredSentence: number;
+    clickedSentence: number;
+    savedSomething: number;
+  };
+  /**
+   * Primary discoverability metric.
+   * firstClickRate = unique sessions with ≥1 sentence click / unique
+   *   sessions watched ≥30s.
+   */
+  firstClick: {
+    watched30s: number;
+    clickedSessions: number;
+    rate: number; // 0..1
+    /** Sessions watched ≥30s but never clicked a sentence. */
+    watchedNoClick: number;
+    watchedNoClickPct: number; // 0..1 share of watched30s
+  };
 };
 
 export const ACTIVATION_DURATION_SECONDS = 30;
