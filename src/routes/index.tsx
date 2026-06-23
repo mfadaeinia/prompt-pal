@@ -2978,7 +2978,7 @@ function Index() {
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
                                 onMouseEnter={onSentenceHover}
-                                className={`group block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition-all duration-150 hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.99] ${
+                                className={`group block w-full cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition-all duration-150 hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] active:bg-primary/20 ${
                                   active
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
