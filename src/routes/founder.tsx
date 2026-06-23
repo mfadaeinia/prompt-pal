@@ -667,6 +667,7 @@ function FunnelRow({
   pct,
   highlight,
   tooltip,
+  awaiting,
 }: {
   label: string;
   unit?: "session" | "user" | "row";
@@ -674,6 +675,7 @@ function FunnelRow({
   pct: number;
   highlight?: boolean;
   tooltip?: string;
+  awaiting?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3" title={tooltip}>
@@ -681,11 +683,13 @@ function FunnelRow({
         <span>{label}</span>
         {unit && <UnitBadge unit={unit} />}
       </div>
-      <div className="text-xl font-bold tabular-nums text-slate-900 w-16">{value}</div>
+      <div className="text-xl font-bold tabular-nums text-slate-400 w-16">
+        {awaiting ? "—" : value}
+      </div>
       <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
         <div
-          className={"h-full " + (highlight ? "bg-red-500" : "bg-slate-900")}
-          style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
+          className={"h-full " + (highlight ? "bg-red-500" : awaiting ? "bg-slate-200" : "bg-slate-900")}
+          style={{ width: awaiting ? "2%" : `${Math.max(2, Math.min(100, pct))}%` }}
         />
       </div>
     </div>
