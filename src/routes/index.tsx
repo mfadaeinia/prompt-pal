@@ -3945,20 +3945,24 @@ function InlineExplanation({
           <p className="mt-0.5 text-base leading-snug text-foreground">{translation}</p>
         </div>
       )}
-      {(keyExpressions || keyExpression) && (
-        <ExpressionList label="Key Expressions" raw={keyExpressions || keyExpression} max={2} />
+      {(keyExpressions || keyExpression || vocabulary) && (
+        <ExpressionList
+          label="Useful expressions"
+          raw={[keyExpressions || keyExpression, vocabulary].filter(Boolean).join(" · ")}
+          max={3}
+        />
       )}
-      {vocabulary && <ExpressionList label="Vocabulary" raw={vocabulary} max={2} />}
       {whatsHappening && shouldShowContext(whatsHappening, translation) && (
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Context</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick context</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
         </div>
       )}
-      {grammar && <GrammarDetails grammar={grammar} />}
+      <GrammarDetails grammar={grammar} />
     </div>
   );
 }
+
 
 
 
