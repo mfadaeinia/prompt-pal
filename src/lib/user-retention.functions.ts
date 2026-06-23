@@ -79,7 +79,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
         .in("user_id", userIds),
       supabaseAdmin
         .from("video_sessions" as any)
-        .select("user_id,session_id,video_id,last_seen_at")
+        .select("user_id,session_id,video_id,duration_seconds,last_seen_at")
         .in("user_id", userIds),
       supabaseAdmin
         .from("library_events" as any)
@@ -88,7 +88,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
       // Fallback: rows missing user_id but session_id is attributable
       supabaseAdmin
         .from("video_sessions" as any)
-        .select("session_id,video_id,last_seen_at")
+        .select("session_id,video_id,duration_seconds,last_seen_at")
         .is("user_id", null),
       supabaseAdmin
         .from("library_events" as any)
