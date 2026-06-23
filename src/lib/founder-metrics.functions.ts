@@ -98,7 +98,11 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       supabaseAdmin
         .from("library_events" as any)
         .select("session_id,event_name")
-        .eq("event_name", "sentence_clicked"),
+        .in("event_name", [
+          "sentence_clicked",
+          "transcript_seen",
+          "sentence_hovered",
+        ]),
     ]);
 
     const pageViewRows = ((pv.data ?? []) as unknown) as Array<{ session_id: string | null }>;
@@ -118,10 +122,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
     const savedExpr = ((sx.data ?? []) as unknown) as Array<{ session_id: string | null }>;
     const savedVids = ((svRows.data ?? []) as unknown) as Array<{ session_id: string | null }>;
-    const clickRows = ((le.data ?? []) as unknown) as Array<{
+    const allEventRows = ((le.data ?? []) as unknown) as Array<{
       session_id: string | null;
       event_name: string;
     }>;
+    const clickRows = allEventRows.filter((r) => r.event_name === "sentence_clicked");
+    const transcriptSeenRows = allEventRows.filter((r) => r.event_name === "transcript_seen");
+    const hoveredRows = allEventRows.filter((r) => r.event_name === "sentence_hovered");
 
     // -------- Per-session video stats --------
     const maxDurationBySession = new Map<string, number>();
