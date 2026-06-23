@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film, X, LogOut } from "lucide-react";
+import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film, X, LogOut, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import {
   listSavedExpressions,
   deleteSavedExpression,
 } from "@/lib/saved-expressions.functions";
 import { listSavedVideos, deleteSavedVideo } from "@/lib/saved-videos.functions";
+import { generateWordExamples } from "@/lib/word-examples.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
 import { track } from "@/lib/analytics";
@@ -17,6 +18,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { supabase } from "@/integrations/supabase/client";
+
+function isWordItem(item: any): boolean {
+  const notes = (item?.expression_notes ?? "").toString();
+  if (notes.trim().toLowerCase().startsWith("from:")) return true;
+  const text = (item?.sentence_text ?? "").toString().trim();
+  if (!text) return false;
+  // Treat short entries (1–4 tokens, no terminal punctuation) as words/expressions.
+  const wordCount = text.split(/\s+/).length;
+  return wordCount <= 4 && !/[.!?]$/.test(text);
+}
 
 export const Route = createFileRoute("/saved")({
   head: () => ({
@@ -118,7 +129,7 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
   const [browserId, setBrowserId] = useState("");
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"videos" | "sentences">("videos");
+  const [tab, setTab] = useState<"videos" | "sentences" | "words">("videos");
 
   useEffect(() => {
     setBrowserId(getBrowserId());
@@ -156,17 +167,29 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-videos"] }),
   });
 
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
   const videos = videosData?.items ?? [];
+
+  const sentenceItems = useMemo(() => allItems.filter((it: any) => !isWordItem(it)), [allItems]);
+  const wordItems = useMemo(() => allItems.filter((it: any) => isWordItem(it)), [allItems]);
+
+  function matchQuery(it: any, q: string) {
+    return [it.sentence_text, it.translation, it.meaning, it.expression_notes, it.video_title]
+      .filter(Boolean)
+      .some((v: string) => v.toLowerCase().includes(q));
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((it: any) =>
-      [it.sentence_text, it.translation, it.meaning, it.expression_notes, it.video_title]
-        .filter(Boolean)
-        .some((v: string) => v.toLowerCase().includes(q))
-    );
-  }, [items, query]);
+    if (!q) return sentenceItems;
+    return sentenceItems.filter((it: any) => matchQuery(it, q));
+  }, [sentenceItems, query]);
+
+  const filteredWords = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return wordItems;
+    return wordItems.filter((it: any) => matchQuery(it, q));
+  }, [wordItems, query]);
 
   const filteredVideos = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -232,13 +255,16 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
           />
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "videos" | "sentences")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "videos" | "sentences" | "words")}>
           <TabsList className="mb-5">
             <TabsTrigger value="videos">
               Videos{videos.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({videos.length})</span>}
             </TabsTrigger>
             <TabsTrigger value="sentences">
-              Sentences{items.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({items.length})</span>}
+              Sentences{sentenceItems.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({sentenceItems.length})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="words">
+              Words{wordItems.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({wordItems.length})</span>}
             </TabsTrigger>
           </TabsList>
 
@@ -309,9 +335,9 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState
-                title={items.length === 0 ? "No saved expressions yet" : "No matches"}
+                title={sentenceItems.length === 0 ? "No saved sentences yet" : "No matches"}
                 body={
-                  items.length === 0
+                  sentenceItems.length === 0
                     ? "Highlight any text in a transcript, or tap ★ Save on an explanation to bookmark it here."
                     : "Try a different search term."
                 }
@@ -399,6 +425,33 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
               </ul>
             )}
           </TabsContent>
+
+          <TabsContent value="words">
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading your words…
+              </div>
+            ) : filteredWords.length === 0 ? (
+              <EmptyState
+                title={wordItems.length === 0 ? "No saved words yet" : "No matches"}
+                body={
+                  wordItems.length === 0
+                    ? "Tap the bookmark next to any useful expression in an explanation to save it as a word."
+                    : "Try a different search term."
+                }
+              />
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {filteredWords.map((item: any) => (
+                  <WordCard
+                    key={item.id}
+                    item={item}
+                    onDelete={() => removeMutation.mutate(item.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -454,5 +507,106 @@ function EmptyState({ title, body }: { title: string; body: string }) {
         Browse videos
       </Link>
     </div>
+  );
+}
+
+function WordCard({ item, onDelete }: { item: any; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const generateFn = useServerFn(generateWordExamples);
+  const word: string = item.sentence_text ?? "";
+  const targetLanguage: string = item.target_language || "English";
+
+  const { data, isFetching, error, refetch } = useQuery({
+    queryKey: ["word-examples", item.id, word, targetLanguage],
+    queryFn: () =>
+      generateFn({
+        data: { word, targetLanguage, sourceLanguage: "Dutch" },
+      }),
+    enabled: open,
+    staleTime: 1000 * 60 * 60,
+    retry: 0,
+  });
+
+  const sourceSentence = (() => {
+    const notes: string = item.expression_notes ?? "";
+    const m = notes.match(/^From:\s*"?([^"]+)"?$/i);
+    return m ? m[1].trim() : "";
+  })();
+
+  return (
+    <li className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-sm ring-1 ring-primary/5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-lg font-semibold leading-snug text-foreground">{word}</p>
+          {item.meaning && (
+            <p className="mt-1 text-sm text-foreground/80">{item.meaning}</p>
+          )}
+          {sourceSentence && (
+            <p className="mt-2 text-xs italic text-muted-foreground line-clamp-2">
+              “{sourceSentence}”
+            </p>
+          )}
+          {item.video_title && (
+            <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Film className="h-3 w-3 text-primary" /> {item.video_title}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onDelete}
+          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          aria-label="Delete"
+          title="Delete"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <Button
+          size="sm"
+          variant={open ? "outline" : "default"}
+          onClick={() => setOpen((o) => !o)}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {open ? "Hide examples" : "Show examples"}
+          {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </Button>
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {isFetching && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Generating example sentences…
+            </div>
+          )}
+          {error && !isFetching && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              Couldn’t generate examples.
+              <button onClick={() => refetch()} className="ml-2 underline">Try again</button>
+            </div>
+          )}
+          {data?.contexts?.map((ctx, ci) => (
+            <div key={ci} className="rounded-lg border border-border/60 bg-muted/30 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                {ctx.label}
+              </p>
+              <ul className="mt-2 space-y-2">
+                {ctx.sentences.map((s, si) => (
+                  <li key={si} className="text-sm">
+                    <p className="font-medium text-foreground">{s.source}</p>
+                    {s.translation && (
+                      <p className="text-xs text-muted-foreground">{s.translation}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </li>
   );
 }
