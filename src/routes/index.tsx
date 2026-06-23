@@ -3749,8 +3749,8 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, vocabulary, grammar } = entry;
-  if (!translation && !keyExpression && !whatsHappening && !vocabulary && !grammar) {
+  const { translation, keyExpression, keyExpressions, whatsHappening, vocabulary, grammar } = entry;
+  if (!translation && !keyExpression && !keyExpressions && !whatsHappening && !vocabulary && !grammar) {
     return <FallbackHint />;
   }
   return (
@@ -3761,11 +3761,14 @@ function InlineExplanation({
           <p className="mt-0.5 text-base font-medium leading-snug text-foreground">{translation}</p>
         </div>
       )}
-      {vocabulary && <UsefulExpressions raw={vocabulary} fallbackKey={keyExpression} />}
+      {(keyExpressions || keyExpression) && (
+        <ExpressionList label="Key Expressions" raw={keyExpressions || keyExpression} max={2} />
+      )}
+      {vocabulary && <ExpressionList label="Vocabulary" raw={vocabulary} max={2} />}
       {whatsHappening && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Context</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
         </div>
       )}
       {grammar && <GrammarDetails grammar={grammar} />}
