@@ -3413,17 +3413,16 @@ function ExplanationPanel({
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Natural translation", "What's happening", "Key expression", "Why this way"].map((l) => (
+          {["Meaning", "Useful expressions", "Quick context"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Natural translation" sample="How a real speaker would say this idea in your language." />
-          <PreviewSection label="What's happening" sample="Intent and context — why this line matters in the conversation." />
-          <PreviewSection label="Key expression" sample="ervoor kiezen = to choose to, to opt to" mono />
-          <PreviewSection label="Why speakers say it this way" sample="Common in news and formal speech when describing decisions." />
+          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
+          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
+          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
         </div>
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
@@ -3519,38 +3518,27 @@ function ExplanationPanel({
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-5">
-            {/* ⭐ HERO — Key Expression. Always first, visually dominant. */}
-            {ready.keyExpression && (
-              <KeyExpressionHero expression={ready.keyExpression} />
-            )}
-
+          <div className="space-y-4">
+            {/* ⭐ MEANING — the hero. Concise translation, max 1–2 lines. */}
             {ready.translation && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Natural translation · {tgtLabel}
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Meaning · {tgtLabel}
                 </h4>
-                <p className="mt-1 text-base leading-relaxed text-foreground">
+                <p className="mt-1 text-lg font-medium leading-snug text-foreground">
                   {ready.translation}
                 </p>
               </div>
             )}
 
-            {ready.whyThisWay && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Why speakers say it this way
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.whyThisWay}
-                </p>
-              </div>
-            )}
+            {/* Useful expressions — 2–4 curated items, scannable list. */}
+            {ready.vocabulary && <UsefulExpressions raw={ready.vocabulary} fallbackKey={ready.keyExpression} />}
 
+            {/* Quick context — optional, max 1 line. */}
             {ready.whatsHappening && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  What's happening
+                  Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                   {ready.whatsHappening}
@@ -3558,32 +3546,18 @@ function ExplanationPanel({
               </div>
             )}
 
-            {ready.vocabulary && <TieredVocabulary raw={ready.vocabulary} />}
+            {/* Grammar — collapsible, hidden by default. */}
+            {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
-            {ready.note && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Usage notes
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.note}
-                </p>
-              </div>
-            )}
-            {ready.grammar && (
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Grammar insight
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">
-                  {ready.grammar}
-                </p>
-              </div>
-            )}
-            {!ready.translation && !ready.keyExpression && !ready.whatsHappening && !ready.whyThisWay && !ready.vocabulary && !ready.note && !ready.grammar && (
+            {!ready.translation && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
+
+
+
+
 
 
 
@@ -3631,35 +3605,9 @@ function PreviewSection({ label, sample, mono = false }: { label: string; sample
   );
 }
 
-function KeyExpressionHero({ expression }: { expression: string }) {
-  const [head, ...rest] = expression.split(/\s*=\s*/);
-  const tail = rest.join(" = ");
-  const meanings = tail
-    ? tail.split(/\s*,\s*/).map((m) => m.trim()).filter(Boolean)
-    : [];
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-4 shadow-sm ring-1 ring-primary/10 sm:p-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,oklch(0.55_0.22_265/0.12),transparent_70%)]"
-      />
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-          Key Expression
-        </p>
-      </div>
-      <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
-        {head}
-      </p>
-      {meanings.length > 0 && (
-        <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-          {meanings.join(" · ")}
-        </p>
-      )}
-    </div>
-  );
-}
+// KeyExpressionHero removed — the redesigned panel surfaces expressions inside UsefulExpressions instead.
+
+
 
 type VocabTier = "high" | "useful" | "basic";
 type VocabItem = { tier: VocabTier; head: string; meaning: string };
@@ -3690,6 +3638,7 @@ const TIER_META: Record<VocabTier, { label: string; dot: string; text: string }>
 };
 
 function TieredVocabulary({ raw }: { raw: string }) {
+  // Kept for backwards-compat (e.g. saved.tsx). New panel uses UsefulExpressions.
   const items = parseVocabulary(raw);
   if (items.length === 0) return null;
   return (
@@ -3714,6 +3663,46 @@ function TieredVocabulary({ raw }: { raw: string }) {
   );
 }
 
+// New: compact, scannable list. 2–4 items, source phrase + short meaning.
+function UsefulExpressions({ raw, fallbackKey }: { raw: string; fallbackKey?: string }) {
+  const items = parseVocabulary(raw).slice(0, 4);
+  // If model returned "—" for vocabulary but produced a key expression, surface it as one item.
+  if (items.length === 0 && fallbackKey) {
+    const [head, ...rest] = fallbackKey.split(/\s*=\s*/);
+    if (head) items.push({ tier: "useful", head: head.trim(), meaning: rest.join(" = ").trim() });
+  }
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        Useful expressions
+      </h4>
+      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+        {items.map((it, i) => (
+          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+            <span className="font-semibold text-foreground">{it.head}</span>
+            {it.meaning && (
+              <span className="text-sm text-muted-foreground">{it.meaning}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function GrammarDetails({ grammar }: { grammar: string }) {
+  return (
+    <details className="group rounded-lg border border-border/60 bg-background/40">
+      <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">
+        <span className="uppercase tracking-wider">Grammar</span>
+        <span className="text-[10px] font-normal text-muted-foreground/70 group-open:hidden">Show</span>
+        <span className="hidden text-[10px] font-normal text-muted-foreground/70 group-open:inline">Hide</span>
+      </summary>
+      <p className="px-3 pb-3 text-sm leading-relaxed text-foreground/90">{grammar}</p>
+    </details>
+  );
+}
 
 function InlineExplanation({
   entry,
@@ -3732,51 +3721,33 @@ function InlineExplanation({
   if (!entry || entry.status === "loading") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation &amp; vocabulary…
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation…
       </p>
     );
   }
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !keyExpression && !whatsHappening && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whatsHappening, vocabulary, grammar } = entry;
+  if (!translation && !keyExpression && !whatsHappening && !vocabulary && !grammar) {
     return <FallbackHint />;
   }
   return (
     <div className="space-y-3">
-      {keyExpression && <KeyExpressionHero expression={keyExpression} />}
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Natural translation</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
+          <p className="mt-0.5 text-base font-medium leading-snug text-foreground">{translation}</p>
         </div>
       )}
-      {whyThisWay && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Why speakers say it this way</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
-        </div>
-      )}
+      {vocabulary && <UsefulExpressions raw={vocabulary} fallbackKey={keyExpression} />}
       {whatsHappening && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">What's happening</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Context</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
         </div>
       )}
-      {vocabulary && <TieredVocabulary raw={vocabulary} />}
-      {note && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usage notes</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
-        </div>
-      )}
-      {grammar && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Grammar insight</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{grammar}</p>
-        </div>
-      )}
+      {grammar && <GrammarDetails grammar={grammar} />}
     </div>
   );
 }
