@@ -3664,6 +3664,7 @@ const TIER_META: Record<VocabTier, { label: string; dot: string; text: string }>
 };
 
 function TieredVocabulary({ raw }: { raw: string }) {
+  // Kept for backwards-compat (e.g. saved.tsx). New panel uses UsefulExpressions.
   const items = parseVocabulary(raw);
   if (items.length === 0) return null;
   return (
@@ -3688,6 +3689,46 @@ function TieredVocabulary({ raw }: { raw: string }) {
   );
 }
 
+// New: compact, scannable list. 2–4 items, source phrase + short meaning.
+function UsefulExpressions({ raw, fallbackKey }: { raw: string; fallbackKey?: string }) {
+  const items = parseVocabulary(raw).slice(0, 4);
+  // If model returned "—" for vocabulary but produced a key expression, surface it as one item.
+  if (items.length === 0 && fallbackKey) {
+    const [head, ...rest] = fallbackKey.split(/\s*=\s*/);
+    if (head) items.push({ tier: "useful", head: head.trim(), meaning: rest.join(" = ").trim() });
+  }
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        Useful expressions
+      </h4>
+      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+        {items.map((it, i) => (
+          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+            <span className="font-semibold text-foreground">{it.head}</span>
+            {it.meaning && (
+              <span className="text-sm text-muted-foreground">{it.meaning}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function GrammarDetails({ grammar }: { grammar: string }) {
+  return (
+    <details className="group rounded-lg border border-border/60 bg-background/40">
+      <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">
+        <span className="uppercase tracking-wider">Grammar</span>
+        <span className="text-[10px] font-normal text-muted-foreground/70 group-open:hidden">Show</span>
+        <span className="hidden text-[10px] font-normal text-muted-foreground/70 group-open:inline">Hide</span>
+      </summary>
+      <p className="px-3 pb-3 text-sm leading-relaxed text-foreground/90">{grammar}</p>
+    </details>
+  );
+}
 
 function InlineExplanation({
   entry,
@@ -3706,51 +3747,33 @@ function InlineExplanation({
   if (!entry || entry.status === "loading") {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation &amp; vocabulary…
+        <Loader2 className="h-3 w-3 animate-spin" /> Loading translation…
       </p>
     );
   }
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, whyThisWay, vocabulary, note, grammar } = entry;
-  if (!translation && !keyExpression && !whatsHappening && !whyThisWay && !vocabulary && !note && !grammar) {
+  const { translation, keyExpression, whatsHappening, vocabulary, grammar } = entry;
+  if (!translation && !keyExpression && !whatsHappening && !vocabulary && !grammar) {
     return <FallbackHint />;
   }
   return (
     <div className="space-y-3">
-      {keyExpression && <KeyExpressionHero expression={keyExpression} />}
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Natural translation</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground">{translation}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
+          <p className="mt-0.5 text-base font-medium leading-snug text-foreground">{translation}</p>
         </div>
       )}
-      {whyThisWay && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Why speakers say it this way</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{whyThisWay}</p>
-        </div>
-      )}
+      {vocabulary && <UsefulExpressions raw={vocabulary} fallbackKey={keyExpression} />}
       {whatsHappening && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">What's happening</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Context</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
         </div>
       )}
-      {vocabulary && <TieredVocabulary raw={vocabulary} />}
-      {note && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Usage notes</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{note}</p>
-        </div>
-      )}
-      {grammar && (
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Grammar insight</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/90">{grammar}</p>
-        </div>
-      )}
+      {grammar && <GrammarDetails grammar={grammar} />}
     </div>
   );
 }
