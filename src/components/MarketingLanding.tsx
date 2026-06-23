@@ -291,42 +291,41 @@ function ProductMock() {
             </div>
           </Field>
 
-          <Field label="Translation">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-slate-800">That makes no sense at all.</p>
-              <button className="text-slate-400 hover:text-slate-600">📋</button>
-            </div>
-          </Field>
-
           <Field label="Meaning">
-            <p className="text-sm leading-relaxed text-slate-600">
-              Used when something feels illogical or absurd.
+            <p className="text-sm leading-relaxed text-slate-800">
+              That makes no sense at all.
             </p>
           </Field>
 
-          <Field label="Vocabulary">
-            <div className="flex flex-wrap gap-1.5">
+          <Field label="Useful expressions">
+            <ul className="space-y-1.5">
               {[
-                ["slaat", "hits / strikes"],
-                ["nergens", "nowhere"],
-                ["op", "on / makes sense"],
+                ["slaat nergens op", "makes no sense"],
+                ["nergens", "nowhere / not at all"],
               ].map(([w, m]) => (
-                <span
+                <li
                   key={w}
-                  className="inline-flex items-baseline gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600"
+                  className="flex items-baseline justify-between gap-3 text-sm"
                 >
-                  <span className="font-semibold text-slate-900">{w}</span>
-                  <span className="text-slate-400">{m}</span>
-                </span>
+                  <span className="font-bold text-slate-900">{w}</span>
+                  <span className="font-normal text-slate-500">{m}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </Field>
 
-          <Field label="Expression note">
+          <Field label="Quick context">
             <p className="text-sm leading-relaxed text-slate-600">
-              Very common Dutch expression.
+              Very common Dutch expression for dismissing something as absurd.
             </p>
           </Field>
+
+          <Field label="Grammar ▼">
+            <p className="text-sm leading-relaxed text-slate-500">
+              Shown when relevant — tap to expand.
+            </p>
+          </Field>
+
         </div>
       </div>
     </div>
