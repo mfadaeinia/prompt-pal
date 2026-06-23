@@ -3694,12 +3694,8 @@ function ExplanationSections({
         </p>
       </SectionBox>
 
-      <SectionBox label="Useful expressions">
-        {model.keyExpressions.length === 0 ? (
-          <p className="text-sm font-normal text-muted-foreground">
-            No standout expressions in this line.
-          </p>
-        ) : (
+      {model.keyExpressions.length > 0 && (
+        <SectionBox label="Useful expressions">
           <ul className="space-y-1">
             {model.keyExpressions.map((it, i) => {
               const isActive =
@@ -3745,8 +3741,8 @@ function ExplanationSections({
               );
             })}
           </ul>
-        )}
-      </SectionBox>
+        </SectionBox>
+      )}
 
       {model.context && (
         <SectionBox label="Quick context">
@@ -3754,20 +3750,17 @@ function ExplanationSections({
         </SectionBox>
       )}
 
-      <SectionBox label="Grammar ▼" asDetails>
-        {model.grammar && model.grammar.trim().length > 0 ? (
+      {model.grammar && model.grammar.trim().length > 0 && (
+        <SectionBox label="Grammar ▼" asDetails>
           <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">
             {model.grammar}
           </p>
-        ) : (
-          <p className="text-sm leading-relaxed text-muted-foreground/80">
-            No notable grammar pattern in this sentence.
-          </p>
-        )}
-      </SectionBox>
+        </SectionBox>
+      )}
     </div>
   );
 }
+
 
 function PreviewSection({ label, sample, mono = false }: { label: string; sample: string; mono?: boolean }) {
   return (
