@@ -22,6 +22,7 @@ import {
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
+import productMock from "@/assets/product-mock.png.asset.json";
 import tedLogo from "@/assets/ted-logo.png.asset.json";
 
 /**
@@ -230,104 +231,13 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 function ProductMock() {
-  const transcript = [
-    { t: "0:38", text: "Ik begrijp het niet helemaal.", active: false },
-    { t: "0:42", text: "Dat slaat nergens op.", active: true },
-    { t: "0:45", text: "Kun je het nog eens uitleggen?", active: false },
-    { t: "0:48", text: "Ja, natuurlijk.", active: false },
-  ];
-
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
-      <div className="grid grid-cols-1 sm:grid-cols-[1.35fr_1fr]">
-        {/* LEFT: video + transcript */}
-        <div className="border-b border-slate-100 sm:border-b-0 sm:border-r">
-          {/* video */}
-          <img
-            src={youtubePlayer.url}
-            alt="YouTube video — Dat slaat nergens op."
-            className="block w-full"
-          />
-
-
-          {/* transcript */}
-          <ul className="divide-y divide-slate-100">
-            {transcript.map((s) => (
-              <li
-                key={s.t}
-                className={`flex items-start gap-3 px-4 py-2.5 text-sm ${
-                  s.active ? "bg-blue-50/70" : ""
-                }`}
-              >
-                <span
-                  className={`shrink-0 text-[11px] font-semibold tabular-nums ${
-                    s.active ? "text-blue-600" : "text-slate-400"
-                  }`}
-                  style={heading}
-                >
-                  {s.t}
-                </span>
-                <span
-                  className={`leading-snug ${
-                    s.active ? "font-semibold text-slate-900" : "text-slate-600"
-                  }`}
-                >
-                  {s.text}
-                </span>
-                {s.active && (
-                  <MousePointerClick className="ml-auto h-4 w-4 shrink-0 text-blue-500" />
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* RIGHT: translation / meaning / vocab panel */}
-        <div className="space-y-4 p-5">
-          <Field label="Dutch">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[15px] font-semibold text-slate-900">Dat slaat nergens op.</p>
-              <button className="text-slate-400 hover:text-slate-600">🔊</button>
-            </div>
-          </Field>
-
-          <Field label="Meaning">
-            <p className="text-sm leading-relaxed text-slate-800">
-              That makes no sense at all.
-            </p>
-          </Field>
-
-          <Field label="Useful expressions">
-            <ul className="space-y-1.5">
-              {[
-                ["slaat nergens op", "makes no sense"],
-                ["nergens", "nowhere / not at all"],
-              ].map(([w, m]) => (
-                <li
-                  key={w}
-                  className="flex items-baseline justify-between gap-3 text-sm"
-                >
-                  <span className="font-bold text-slate-900">{w}</span>
-                  <span className="font-normal text-slate-500">{m}</span>
-                </li>
-              ))}
-            </ul>
-          </Field>
-
-          <Field label="Quick context">
-            <p className="text-sm leading-relaxed text-slate-600">
-              Very common Dutch expression for dismissing something as absurd.
-            </p>
-          </Field>
-
-          <Field label="Grammar ▼">
-            <p className="text-sm leading-relaxed text-slate-500">
-              Shown when relevant — tap to expand.
-            </p>
-          </Field>
-
-        </div>
-      </div>
+      <img
+        src={productMock.url}
+        alt="NativeFlow product preview — Dutch sentence explanation"
+        className="block w-full h-auto"
+      />
     </div>
   );
 }
