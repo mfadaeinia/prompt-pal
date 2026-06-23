@@ -3443,6 +3443,10 @@ function ExplanationPanel({
   const saveDisabled = saving || isSaved || !ready;
   const srcLabel = sourceLangLabel || "Original";
   const tgtLabel = targetLangLabel || "English";
+  void tgtLabel;
+  const highlightPhrases = ready
+    ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
+    : [];
 
   return (
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
