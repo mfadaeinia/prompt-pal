@@ -1972,6 +1972,25 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingId, sentences, studyMode, focusMode]);
 
+  // Auto pre-select the first sentence when the transcript first loads so users
+  // immediately see what tapping a subtitle does. Desktop/tablet only — on phones
+  // this would auto-open the bottom Sheet and cover the freshly loaded video.
+  const autoPreselectedForVideoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!studyMode) return;
+    if (isMobile) return;
+    if (!videoId) return;
+    if (sentences.length === 0) return;
+    if (selected) return;
+    if (playingId != null) return;
+    if (autoPreselectedForVideoRef.current === videoId) return;
+    autoPreselectedForVideoRef.current = videoId;
+    const first = sentences[0];
+    setSelected(first);
+    ensureExplanation(first, sentences);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyMode, isMobile, videoId, sentences, selected, playingId]);
+
   // Fire `explanation_viewed` once per sentence when its explanation finishes
   // loading AND it is the currently selected sentence (i.e. actually visible).
   const viewedExplanationRef = useRef<Set<number>>(new Set());
