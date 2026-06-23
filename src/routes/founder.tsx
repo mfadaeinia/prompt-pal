@@ -281,8 +281,38 @@ function OverviewSection({
   const returningUsers = retention?.totals.returning ?? 0;
   const totalSignups = retention?.totals.new_users ?? 0;
   const videosProcessed = tx?.totalVideos ?? m.video.totalSessions;
+  const fc = m.firstClick;
+  const firstClickPct = Math.round((fc.rate ?? 0) * 1000) / 10;
+  const noClickPct = Math.round((fc.watchedNoClickPct ?? 0) * 1000) / 10;
   return (
     <div className="space-y-6">
+      <div className="space-y-3">
+        <SectionHeader
+          title="Discoverability (primary)"
+          subtitle="Are users who watch the video actually finding the click-a-sentence feature?"
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <BigKpi
+            label="First Click Rate"
+            unit="session"
+            value={`${firstClickPct}%`}
+            tooltip={`Unique sessions with ≥1 sentence click ÷ unique sessions that watched ≥30s. ${fc.clickedSessions} / ${fc.watched30s}.`}
+          />
+          <BigKpi
+            label="Watched, Never Clicked"
+            unit="session"
+            value={fc.watchedNoClick}
+            tooltip={`Sessions that watched ≥30s but never clicked a sentence. ${noClickPct}% of sessions that crossed the 30s mark.`}
+          />
+          <BigKpi
+            label="Watched 30s+"
+            unit="session"
+            value={fc.watched30s}
+            tooltip="Denominator for First Click Rate."
+          />
+        </div>
+      </div>
+
       <div className="space-y-3">
         <SectionHeader
           title="Session Metrics"
@@ -315,6 +345,7 @@ function OverviewSection({
           />
         </div>
       </div>
+
 
       <div className="space-y-3">
         <SectionHeader
