@@ -50,21 +50,19 @@ function validate(text: string) {
     const m = text.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
     return m ? m[1].trim() : "";
   };
-  const translation = get("Natural Translation");
-  const whats = get("What's Happening").toLowerCase();
-  const why = get("Why Speakers Say It This Way").toLowerCase();
+  const translation = get("Meaning") || get("Natural Translation");
+  const ctx = get("Context").toLowerCase();
 
   const weak: string[] = [];
   if (!translation || translation === "—") weak.push("missing-translation");
   for (const opener of BANNED_OPENERS) {
-    if (whats.startsWith(opener) || why.startsWith(opener)) {
+    if (ctx.startsWith(opener)) {
       weak.push(`banned-opener:${opener}`);
       break;
     }
   }
-  // "What's Happening" should not just repeat the translation.
-  if (whats && translation && whats === translation.toLowerCase()) {
-    weak.push("whats-equals-translation");
+  if (ctx && translation && ctx === translation.toLowerCase()) {
+    weak.push("context-equals-translation");
   }
   return weak;
 }
@@ -82,23 +80,26 @@ function overlapScore(phrase: string, sentence: string) {
   return hits / tokens.length;
 }
 
-// If the model swapped sides (put the target-language translation on the left),
-// detect it by comparing overlap with the original sentence and flip back.
-function fixKeyExpressionOrder(text: string, sentence: string): string {
-  return text.replace(/^(\s*Key Expression\s*:\s*)(.+)$/im, (_m, label, val) => {
+// Flip "<target> = <source>" back to "<source> = <target>" when the model swapped sides.
+function fixItemListOrder(text: string, label: string, sentence: string): string {
+  return text.replace(new RegExp(`^(\\s*${label}\\s*:\\s*)(.+)$`, "im"), (_m, prefix, val) => {
     const v = String(val).trim();
-    if (!v || v === "—") return `${label}${v}`;
-    const idx = v.indexOf("=");
-    if (idx < 0) return `${label}${v}`;
-    const left = v.slice(0, idx).trim();
-    const right = v.slice(idx + 1).trim();
-    if (!left || !right) return `${label}${v}`;
-    const leftScore = overlapScore(left, sentence);
-    const rightScore = overlapScore(right.split(/\s*,\s*/)[0] || right, sentence);
-    if (rightScore > leftScore + 0.25) {
-      return `${label}${right} = ${left}`;
-    }
-    return `${label}${v}`;
+    if (!v || v === "—") return `${prefix}${v}`;
+    const items = v.split(/\s*·\s*/).map((item: string) => {
+      const tagMatch = item.match(/^(.*?)(\s*\[[^\]]+\])\s*$/);
+      const tag = tagMatch ? tagMatch[2] : "";
+      const core = (tagMatch ? tagMatch[1] : item).trim();
+      const idx = core.indexOf("=");
+      if (idx < 0) return item;
+      const left = core.slice(0, idx).trim();
+      const right = core.slice(idx + 1).trim();
+      if (!left || !right) return item;
+      const leftScore = overlapScore(left, sentence);
+      const rightScore = overlapScore(right, sentence);
+      if (rightScore > leftScore + 0.25) return `${right} = ${left}${tag}`;
+      return `${left} = ${right}${tag}`;
+    });
+    return `${prefix}${items.join(" · ")}`;
   });
 }
 
