@@ -301,7 +301,18 @@ function FunnelSection({
   const f = m.funnel;
   const sessionStages = [
     { label: "Visitors", value: f.visitors, kind: "session" as const },
-    { label: "Started Learning", value: f.startedLearning, kind: "session" as const },
+    {
+      label: "Video Session Started",
+      value: f.videoSessionStarted,
+      kind: "session" as const,
+      hint: "Video page loaded — derived from video_sessions row, NOT a deliberate learning intent.",
+    },
+    {
+      label: "Activated",
+      value: f.activated,
+      kind: "session" as const,
+      hint: "True engagement: clicked a sentence, opened an explanation, or saved a word.",
+    },
     { label: "Clicked Sentence", value: f.clickedSentence, kind: "session" as const },
     { label: "Saved Word", value: f.savedWord, kind: "session" as const },
   ];
