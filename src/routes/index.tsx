@@ -3465,7 +3465,7 @@ function ExplanationPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-1.5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
+        <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
           <SentenceWithHighlights text={sentence.text} phrases={highlightPhrases} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -3528,13 +3528,13 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — the hero. */}
+            {/* ⭐ MEANING — readable but not visually dominant. */}
             {ready.translation && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Meaning
                 </h4>
-                <p className="mt-1 text-lg font-medium leading-snug text-foreground">
+                <p className="mt-1 text-base leading-snug text-foreground sm:text-lg">
                   {ready.translation}
                 </p>
               </div>
@@ -3554,10 +3554,10 @@ function ExplanationPanel({
               <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
             )}
 
-            {/* Quick context — optional, max 1 line, capped. */}
-            {ready.whatsHappening && (
+            {/* Context — only when it adds info beyond the translation. */}
+            {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
@@ -3566,7 +3566,7 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Grammar — collapsible, hidden by default. */}
+            {/* Grammar — always rendered as a collapsed section when present. */}
             {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
             {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
@@ -3741,19 +3741,22 @@ function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; m
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </h4>
-      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+      <ul className="mt-2 space-y-1.5">
         {items.map((it, i) => (
-          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-            <span className="font-semibold text-foreground">{it.head}</span>
+          <li
+            key={i}
+            className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+          >
+            <span className="font-bold text-foreground">{it.head}</span>
             <span className="flex items-baseline gap-2">
               {it.meaning && (
-                <span className="text-sm text-muted-foreground">{it.meaning}</span>
+                <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
               )}
               {it.tag && (
-                <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
                   {it.tag}
                 </span>
               )}
@@ -3770,6 +3773,28 @@ function truncateContext(s: string, limit = 140) {
   if (t.length <= limit) return t;
   return t.slice(0, limit - 1).replace(/\s+\S*$/, "") + "…";
 }
+
+// Hide Context when it's empty, a dash, or essentially restates the translation.
+function shouldShowContext(ctx: string | undefined, translation: string | undefined): boolean {
+  const c = (ctx || "").trim();
+  if (!c || c === "—") return false;
+  if (c.length < 12) return false;
+  if (!translation) return true;
+  const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  const cN = norm(c);
+  const tN = norm(translation);
+  if (!cN || !tN) return true;
+  if (cN === tN || cN.includes(tN) || tN.includes(cN)) return false;
+  // token-overlap heuristic — if context mostly re-uses translation words, skip it.
+  const tTokens = new Set(tN.split(" ").filter((w) => w.length >= 4));
+  if (tTokens.size === 0) return true;
+  const cTokens = cN.split(" ").filter((w) => w.length >= 4);
+  if (cTokens.length === 0) return true;
+  let overlap = 0;
+  for (const w of cTokens) if (tTokens.has(w)) overlap++;
+  return overlap / cTokens.length < 0.7;
+}
+
 
 // Pull source-language phrases out of the expression/vocab lines so we can highlight them in-sentence.
 function collectHighlightPhrases(...raws: string[]): string[] {
@@ -3815,13 +3840,12 @@ function SentenceWithHighlights({ text, phrases }: { text: string; phrases: stri
 
 function GrammarDetails({ grammar }: { grammar: string }) {
   return (
-    <details className="group rounded-lg border border-border/60 bg-background/40">
-      <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">
-        <span className="uppercase tracking-wider">Grammar</span>
-        <span className="text-[10px] font-normal text-muted-foreground/70 group-open:hidden">Show</span>
-        <span className="hidden text-[10px] font-normal text-muted-foreground/70 group-open:inline">Hide</span>
+    <details className="group">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground">
+        <span>Grammar</span>
+        <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
       </summary>
-      <p className="px-3 pb-3 text-sm leading-relaxed text-foreground/90">{grammar}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{grammar}</p>
     </details>
   );
 }
@@ -3858,17 +3882,17 @@ function InlineExplanation({
     <div className="space-y-3">
       {translation && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Meaning</p>
-          <p className="mt-0.5 text-base font-medium leading-snug text-foreground">{translation}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Meaning</p>
+          <p className="mt-0.5 text-base leading-snug text-foreground">{translation}</p>
         </div>
       )}
       {(keyExpressions || keyExpression) && (
         <ExpressionList label="Key Expressions" raw={keyExpressions || keyExpression} max={2} />
       )}
       {vocabulary && <ExpressionList label="Vocabulary" raw={vocabulary} max={2} />}
-      {whatsHappening && (
+      {whatsHappening && shouldShowContext(whatsHappening, translation) && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Context</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Context</p>
           <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
         </div>
       )}
@@ -3876,6 +3900,7 @@ function InlineExplanation({
     </div>
   );
 }
+
 
 
 
