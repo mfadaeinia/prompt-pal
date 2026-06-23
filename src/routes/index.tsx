@@ -2885,6 +2885,7 @@ function Index() {
                         {transcriptSource && (
                           <SourceBadge source={transcriptSource} cachedFrom={cachedFromProvider} />
                         )}
+                      </div>
                     </div>
 
                     {/* Mobile/tablet onboarding card — desktop already shows the full ExplanationPanel
@@ -2910,7 +2911,6 @@ function Index() {
                       </div>
                     )}
 
-                    </div>
 
                     {showSentenceHint && sentences.length > 0 && (
                       <div
