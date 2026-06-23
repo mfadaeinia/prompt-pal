@@ -3397,7 +3397,26 @@ function ExplanationPanel({
   sourceLangLabel?: string;
   targetLangLabel?: string;
 }) {
+  // Active expression state — only one phrase highlighted at a time in the original sentence.
+  // (Hoisted above the early empty-state return so hook order stays stable across renders.)
+  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  useEffect(() => {
+    setActivePhrase(null);
+  }, [sentence?.id]);
+
   if (!sentence) {
+    // Onboarding/empty state — uses the SAME ExplanationSections renderer as the real panel,
+    // just with example placeholder content. This guarantees the preview can never drift from
+    // the actual experience.
+    const sampleModel: ExplanationModel = {
+      meaning: "More and more roads are now limited to 30 km/h.",
+      keyExpressions: [
+        { head: "steeds meer", meaning: "more and more" },
+        { head: "nog maar", meaning: "only" },
+      ],
+      context: "Optional — only shown when it actually helps.",
+      grammar: "", // collapsed; renders the fallback message inside the boxed section
+    };
     return (
       <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-4 shadow-md ring-1 ring-primary/10 sm:p-6">
         <div
@@ -3414,31 +3433,18 @@ function ExplanationPanel({
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence unlocks a natural translation, useful expressions, optional context, and grammar insights when relevant.
+          One natural translation, 1–3 useful expressions, and grammar when it helps. Stay in the flow.
         </p>
-        {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
-        <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Meaning", "Useful expressions", "Quick context", "Grammar"].map((l) => (
-            <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
-              ✓ {l}
-            </span>
-          ))}
+        <div className="mt-4">
+          <ExplanationSections model={sampleModel} />
         </div>
-        <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
-          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
-          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
-          <PreviewSection label="Grammar ▼" sample="Shown when relevant — tap to expand." />
-        </div>
-
-        <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
+        <p className="mt-4 text-center text-xs font-medium text-primary">
           👆 Tap a sentence below to see the real thing
         </p>
       </div>
     );
-
-
   }
+
 
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
