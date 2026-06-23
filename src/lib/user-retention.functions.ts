@@ -242,7 +242,7 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
 
       let reason: string | null = null;
       if (!activated) {
-        if (videosOpened === 0) reason = "never opened a video";
+        if (videosOpenedCount === 0) reason = "never opened a video";
         else if (videosWatched30 === 0) reason = "no video watched ≥30s";
         else if (totalClicks === 0) reason = "watched but never clicked a sentence";
         else reason = "watch & clicks in different sessions";
