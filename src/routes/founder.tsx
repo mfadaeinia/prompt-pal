@@ -261,62 +261,197 @@ function OverviewSection({
   lib,
   tx,
   cohort,
+  retention,
 }: {
   m: FounderMetrics;
   lib?: LibraryMetrics;
   tx?: TranscriptQualityMetrics;
   cohort?: TesterCohortMetrics;
+  retention?: UserRetentionCohort;
 }) {
-  const activated = cohort?.totals.activated ?? 0;
-  const returned = cohort?.totals.returned7d ?? 0;
+  const f = m.funnel;
+  const activatedUsers = retention?.totals.activated ?? 0;
+  const returningUsers = retention?.totals.returning ?? 0;
+  const totalSignups = retention?.totals.new_users ?? 0;
   const videosProcessed = tx?.totalVideos ?? m.video.totalSessions;
   return (
-    <div className="space-y-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Founder Overview
-      </h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <BigKpi label="Visitors" value={m.visitors} hint="unique sessions" />
-        <BigKpi label="Activated Users" value={activated} hint="≥1 video & ≥3 clicks" />
-        <BigKpi label="Returning Users" value={returned} hint="day 6–10 after first seen" />
-        <BigKpi label="Videos Processed" value={videosProcessed} />
-        <BigKpi label="Sentence Clicks" value={m.transcriptClicks} />
-        <BigKpi label="Words Saved" value={lib?.totalSaves ?? 0} />
-        <BigKpi label="Average Session" value={fmtDur(m.video.avgDurationSeconds)} />
-        <BigKpi label="Feedback Received" value={m.feedbackCount} />
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <SectionHeader
+          title="Session Metrics"
+          subtitle="One row per browser session. Anonymous and authed users included."
+        />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <BigKpi
+            label="Visitors"
+            unit="session"
+            value={f.visitors}
+            tooltip="Unique sessions that arrived on the site (one page_views row, plus any historical sessions known from downstream events)."
+          />
+          <BigKpi
+            label="Video Opened"
+            unit="session"
+            value={f.videoOpened}
+            tooltip="Unique sessions that loaded a video page. Does NOT mean they watched it."
+          />
+          <BigKpi
+            label="Engaged Sessions"
+            unit="session"
+            value={f.clickedSentence}
+            tooltip="A session where the user clicked at least one subtitle sentence. First moment a user experiences NativeFlow's core value."
+          />
+          <BigKpi
+            label="Saved Sessions"
+            unit="session"
+            value={f.savedSomething}
+            tooltip="Unique sessions that saved at least one expression or video."
+          />
+        </div>
       </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          title="User Metrics"
+          subtitle="Authenticated users only. One row per auth.users record."
+        />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <BigKpi
+            label="Total Signups"
+            unit="user"
+            value={totalSignups}
+            tooltip="Total authenticated users that have ever signed up."
+          />
+          <BigKpi
+            label="Activated Users"
+            unit="user"
+            value={activatedUsers}
+            tooltip="A registered user with at least one session that watched ≥30s of a video AND clicked ≥1 subtitle sentence."
+          />
+          <BigKpi
+            label="Returning Users"
+            unit="user"
+            value={returningUsers}
+            tooltip="Authenticated users last seen ≥1 day after signup."
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          title="Content Metrics"
+          subtitle="Raw counts of recorded items (rows in the database)."
+        />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <BigKpi
+            label="Sentence Clicks"
+            unit="row"
+            value={m.transcriptClicks}
+            tooltip="Total sentence_clicked events recorded in library_events (not deduplicated by session)."
+          />
+          <BigKpi
+            label="Words Saved"
+            unit="row"
+            value={lib?.totalSaves ?? 0}
+            tooltip="Total rows in saved_expressions across all users and sessions."
+          />
+          <BigKpi
+            label="Videos Processed"
+            unit="row"
+            value={videosProcessed}
+            tooltip="Distinct videos processed (from transcript pipeline)."
+          />
+          <BigKpi
+            label="Feedback Received"
+            unit="row"
+            value={m.feedbackCount}
+            tooltip="Total feedback submissions across all users."
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          title="Session Quality"
+          subtitle="Average behavior across recorded video sessions."
+        />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <BigKpi
+            label="Average Session"
+            unit="session"
+            value={fmtDur(m.video.avgDurationSeconds)}
+            tooltip="Mean of duration_seconds across all video_sessions rows."
+          />
+          <BigKpi
+            label="Sessions ≥60s"
+            unit="session"
+            value={m.video.sessionsOver60s}
+            tooltip="Video sessions whose duration_seconds > 60."
+          />
+          <BigKpi
+            label="Sessions ≥5min"
+            unit="session"
+            value={m.video.sessionsOver5min}
+            tooltip="Video sessions whose duration_seconds > 300."
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
+      <p className="text-xs text-slate-400">{subtitle}</p>
     </div>
   );
 }
 
 function FunnelSection({
   m,
-  cohort,
+  retention,
 }: {
   m: FounderMetrics;
   lib?: LibraryMetrics;
   tx?: TranscriptQualityMetrics;
   cohort?: TesterCohortMetrics;
+  retention?: UserRetentionCohort;
 }) {
   const f = m.funnel;
-  const sessionStages = [
-    { label: "Visitors", value: f.visitors, kind: "session" as const },
+  const sessionStages: Array<{
+    label: string;
+    value: number;
+    tooltip: string;
+  }> = [
     {
-      label: "Video Session Started",
-      value: f.videoSessionStarted,
-      kind: "session" as const,
-      hint: "Video page loaded — derived from video_sessions row, NOT a deliberate learning intent.",
+      label: "Visitors",
+      value: f.visitors,
+      tooltip: "Unique sessions that arrived on the site (page_views row, or any downstream data).",
     },
     {
-      label: "Activated",
-      value: f.activated,
-      kind: "session" as const,
-      hint: "True engagement: clicked a sentence, opened an explanation, or saved a word.",
+      label: "Video Opened",
+      value: f.videoOpened,
+      tooltip: "Unique sessions that loaded a video page (video_sessions row created).",
     },
-    { label: "Clicked Sentence", value: f.clickedSentence, kind: "session" as const },
-    { label: "Saved Word", value: f.savedWord, kind: "session" as const },
+    {
+      label: "Watched 30s+",
+      value: f.watched30s,
+      tooltip: "Unique sessions whose max video duration_seconds ≥ 30.",
+    },
+    {
+      label: "Clicked Sentence",
+      value: f.clickedSentence,
+      tooltip: "Unique sessions with ≥1 deliberate sentence_clicked event (auto-explanations excluded).",
+    },
+    {
+      label: "Saved Something",
+      value: f.savedSomething,
+      tooltip: "Unique sessions that saved an expression or a video.",
+    },
   ];
-  const returnedUsers = cohort?.totals.returned7d ?? 0;
+  const returningUsers = retention?.totals.returning ?? 0;
+  const activatedUsers = retention?.totals.activated ?? 0;
 
   const drops = sessionStages.slice(1).map((s, i) => {
     const prev = sessionStages[i].value;
@@ -333,21 +468,19 @@ function FunnelSection({
     : -1;
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Activation Funnel
-      </h2>
-      <p className="text-xs text-slate-500">
-        User funnel only. Internal validation runs, benchmarks, and transcript probes are
-        excluded. Cohort:{" "}
-        <span className="font-medium text-slate-700">{f.cohortLabel}</span>.
-      </p>
+    <div className="space-y-4">
+      <SectionHeader
+        title="Activation Funnel"
+        subtitle={`Session-based funnel. Every step counts unique session_ids — not users, not rows. Cohort: ${f.cohortLabel}.`}
+      />
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="space-y-2">
           <FunnelRow
-            label={`${sessionStages[0].label} (unique sessions)`}
+            label={sessionStages[0].label}
+            unit="session"
             value={sessionStages[0].value}
             pct={100}
+            tooltip={sessionStages[0].tooltip}
           />
           {drops.map((s, i) => {
             const isWorst = i === worstIdx && (s.dropPct ?? 0) > 0;
@@ -373,35 +506,38 @@ function FunnelSection({
                   )}
                 </div>
                 <FunnelRow
-                  label={`${s.label} (unique sessions)`}
+                  label={s.label}
+                  unit="session"
                   value={s.value}
                   pct={s.continuePct ?? 0}
                   highlight={isWorst}
+                  tooltip={s.tooltip}
                 />
-                {s.hint && (
-                  <div className="ml-4 mt-0.5 text-[11px] italic text-slate-500">
-                    {s.hint}
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <div className="text-xs uppercase tracking-wide text-slate-500 mb-2">
-          Retention (separate cohort — unique users)
-        </div>
-        <FunnelRow
-          label="Returned User (unique users)"
-          value={returnedUsers}
-          pct={100}
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
+        <SectionHeader
+          title="User Metrics (separate cohort)"
+          subtitle="Authenticated users only. Not comparable to the session funnel above."
         />
-        <p className="mt-2 text-xs text-slate-500">
-          Users who returned 6–10 days after first seen. Tracked per-user, not per-session,
-          so it isn't comparable to the session funnel above.
-        </p>
+        <FunnelRow
+          label="Activated Users"
+          unit="user"
+          value={activatedUsers}
+          pct={100}
+          tooltip="A registered user with at least one session that watched ≥30s of a video AND clicked ≥1 subtitle sentence."
+        />
+        <FunnelRow
+          label="Returning Users"
+          unit="user"
+          value={returningUsers}
+          pct={100}
+          tooltip="Authenticated users last seen ≥1 day after signup."
+        />
       </div>
     </div>
   );
@@ -410,18 +546,25 @@ function FunnelSection({
 
 function FunnelRow({
   label,
+  unit,
   value,
   pct,
   highlight,
+  tooltip,
 }: {
   label: string;
+  unit?: "session" | "user" | "row";
   value: number;
   pct: number;
   highlight?: boolean;
+  tooltip?: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-40 text-sm font-medium text-slate-800">{label}</div>
+    <div className="flex items-center gap-3" title={tooltip}>
+      <div className="w-48 text-sm font-medium text-slate-800 flex items-center gap-1.5">
+        <span>{label}</span>
+        {unit && <UnitBadge unit={unit} />}
+      </div>
       <div className="text-xl font-bold tabular-nums text-slate-900 w-16">{value}</div>
       <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
         <div
@@ -430,6 +573,20 @@ function FunnelRow({
         />
       </div>
     </div>
+  );
+}
+
+function UnitBadge({ unit }: { unit: "session" | "user" | "row" }) {
+  const color =
+    unit === "session"
+      ? "bg-blue-100 text-blue-700"
+      : unit === "user"
+        ? "bg-violet-100 text-violet-700"
+        : "bg-slate-200 text-slate-700";
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${color}`}>
+      {unit}
+    </span>
   );
 }
 
