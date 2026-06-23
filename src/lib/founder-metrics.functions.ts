@@ -182,6 +182,31 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const fClicked = Math.min(clickedSessions.size, fWatched30);
     const fSaved = Math.min(savedSessions.size, fClicked);
 
+    // -------- Discovery funnel --------
+    const transcriptSeenSessions = new Set(
+      transcriptSeenRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+    const hoveredSessions = new Set(
+      hoveredRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+    const dTranscriptSeen = Math.min(transcriptSeenSessions.size, fWatched30);
+    const dHovered = Math.min(hoveredSessions.size, dTranscriptSeen);
+    // Clicked is bound by hovered on desktop, but mobile has no hover — so
+    // clamp only against the higher of (transcriptSeen, hovered) to avoid
+    // visually hiding mobile clicks.
+    const dClicked = Math.min(clickedSessions.size, fWatched30);
+    const dSaved = Math.min(savedSessions.size, dClicked);
+
+    // -------- First-click rate --------
+    let watchedNoClick = 0;
+    for (const sid of watched30Sessions) {
+      if (!clickedSessions.has(sid)) watchedNoClick += 1;
+    }
+    const firstClickRate =
+      watched30Sessions.size > 0 ? clickedSessions.size / watched30Sessions.size : 0;
+    const watchedNoClickPct =
+      watched30Sessions.size > 0 ? watchedNoClick / watched30Sessions.size : 0;
+
     const positive = feedback.filter((f) => f.feedback_type === "positive").length;
     const negative = feedback.filter((f) => f.feedback_type === "negative").length;
     const wouldUseAgain = {
