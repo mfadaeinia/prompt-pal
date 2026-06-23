@@ -349,6 +349,17 @@ function Index() {
     }
     return set;
   }, [savedQuery.data]);
+  // Lowercased heads of single-expression saves for the current video, so the
+  // explanation panel can mark each useful-expression row as "in library".
+  const savedExpressionHeads = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of (savedQuery.data?.items ?? []) as any[]) {
+      if (videoId && it.video_id !== videoId) continue;
+      const head = (it.sentence_text ?? "").trim().toLowerCase();
+      if (head) set.add(head);
+    }
+    return set;
+  }, [savedQuery.data, videoId]);
 
   // First-time onboarding tooltip for Saved items
   useEffect(() => {
