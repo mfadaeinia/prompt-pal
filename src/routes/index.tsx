@@ -3849,19 +3849,18 @@ function escapeRegExp(s: string) {
 
 function SentenceWithHighlights({ text, phrases }: { text: string; phrases: string[] }) {
   if (!phrases.length) return <>{text}</>;
-  // Build a single regex that matches any phrase, case-insensitive.
   const pattern = new RegExp(`(${phrases.map(escapeRegExp).join("|")})`, "gi");
   const parts = text.split(pattern);
   return (
     <>
       {parts.map((part, i) => {
         if (!part) return null;
-        const isMatch = i % 2 === 1; // odd indices are captured groups
+        const isMatch = i % 2 === 1;
         if (!isMatch) return <span key={i}>{part}</span>;
         return (
           <mark
             key={i}
-            className="rounded bg-primary/15 px-0.5 text-foreground decoration-primary/60 decoration-2 underline-offset-2"
+            className="rounded bg-primary/20 px-0.5 text-foreground"
           >
             {part}
           </mark>
@@ -3872,17 +3871,25 @@ function SentenceWithHighlights({ text, phrases }: { text: string; phrases: stri
 }
 
 
-function GrammarDetails({ grammar }: { grammar: string }) {
+function GrammarDetails({ grammar }: { grammar?: string }) {
+  const hasGrammar = !!grammar && grammar.trim().length > 0;
   return (
     <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground">
         <span>Grammar</span>
         <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
       </summary>
-      <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{grammar}</p>
+      {hasGrammar ? (
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground/80">{grammar}</p>
+      ) : (
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground/80">
+          No notable grammar pattern in this sentence.
+        </p>
+      )}
     </details>
   );
 }
+
 
 function InlineExplanation({
   entry,
