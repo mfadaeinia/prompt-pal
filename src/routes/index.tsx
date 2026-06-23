@@ -3741,19 +3741,22 @@ function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; m
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+      <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </h4>
-      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+      <ul className="mt-2 space-y-1.5">
         {items.map((it, i) => (
-          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-            <span className="font-semibold text-foreground">{it.head}</span>
+          <li
+            key={i}
+            className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+          >
+            <span className="font-bold text-foreground">{it.head}</span>
             <span className="flex items-baseline gap-2">
               {it.meaning && (
-                <span className="text-sm text-muted-foreground">{it.meaning}</span>
+                <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
               )}
               {it.tag && (
-                <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
                   {it.tag}
                 </span>
               )}
@@ -3770,6 +3773,28 @@ function truncateContext(s: string, limit = 140) {
   if (t.length <= limit) return t;
   return t.slice(0, limit - 1).replace(/\s+\S*$/, "") + "…";
 }
+
+// Hide Context when it's empty, a dash, or essentially restates the translation.
+function shouldShowContext(ctx: string | undefined, translation: string | undefined): boolean {
+  const c = (ctx || "").trim();
+  if (!c || c === "—") return false;
+  if (c.length < 12) return false;
+  if (!translation) return true;
+  const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  const cN = norm(c);
+  const tN = norm(translation);
+  if (!cN || !tN) return true;
+  if (cN === tN || cN.includes(tN) || tN.includes(cN)) return false;
+  // token-overlap heuristic — if context mostly re-uses translation words, skip it.
+  const tTokens = new Set(tN.split(" ").filter((w) => w.length >= 4));
+  if (tTokens.size === 0) return true;
+  const cTokens = cN.split(" ").filter((w) => w.length >= 4);
+  if (cTokens.length === 0) return true;
+  let overlap = 0;
+  for (const w of cTokens) if (tTokens.has(w)) overlap++;
+  return overlap / cTokens.length < 0.7;
+}
+
 
 // Pull source-language phrases out of the expression/vocab lines so we can highlight them in-sentence.
 function collectHighlightPhrases(...raws: string[]): string[] {
