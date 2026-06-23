@@ -137,7 +137,8 @@ export const explainSentence = createServerFn({ method: "POST" })
           // keep first attempt if retry fails
         }
       }
-      text = fixKeyExpressionOrder(text, data.sentence);
+      text = fixItemListOrder(text, "Key Expressions", data.sentence);
+      text = fixItemListOrder(text, "Vocabulary", data.sentence);
       return { explanation: text };
     } catch (error: unknown) {
       const status =
