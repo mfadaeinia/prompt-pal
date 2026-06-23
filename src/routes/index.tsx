@@ -3466,7 +3466,7 @@ function ExplanationPanel({
           </button>
         </div>
         <p className="mt-1.5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
-          {sentence.text}
+          <SentenceWithHighlights text={sentence.text} phrases={highlightPhrases} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {onResume && (
