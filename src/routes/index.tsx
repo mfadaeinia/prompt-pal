@@ -1366,6 +1366,7 @@ function Index() {
         status: "ready";
         translation: string;
         keyExpression: string;
+        keyExpressions: string;
         whatsHappening: string;
         whyThisWay: string;
         vocabulary: string;
@@ -1414,6 +1415,7 @@ function Index() {
             status: "ready",
             translation: parsed.translation,
             keyExpression: parsed.keyExpression,
+            keyExpressions: parsed.keyExpressions,
             whatsHappening: parsed.whatsHappening,
             whyThisWay: parsed.whyThisWay,
             vocabulary: parsed.vocabulary,
@@ -3324,6 +3326,7 @@ function parseExplanation(text: string | null) {
   const empty = {
     translation: "",
     keyExpression: "",
+    keyExpressions: "",
     whatsHappening: "",
     whyThisWay: "",
     vocabulary: "",
@@ -3341,9 +3344,10 @@ function parseExplanation(text: string | null) {
   };
   const clean = (v: string) => (v === "—" || v === "-" ? "" : v);
   return {
-    translation: clean(get("Natural Translation", "Translation")),
+    translation: clean(get("Meaning", "Natural Translation", "Translation")),
     keyExpression: clean(get("Key Expression", "Expression")),
-    whatsHappening: clean(get("What's Happening", "Whats Happening", "What is Happening", "Context")),
+    keyExpressions: clean(get("Key Expressions")),
+    whatsHappening: clean(get("Context", "What's Happening", "Whats Happening", "What is Happening")),
     whyThisWay: clean(get("Why Speakers Say It This Way", "Why Native Speakers Say It This Way", "Why This Way")),
     vocabulary: clean(get("Vocabulary", "Vocab")),
     note: clean(get("Usage Notes", "Usage Note", "Note", "Notes", "Expression Notes")),
@@ -3357,6 +3361,7 @@ type ExplanationPanelEntry =
       status: "ready";
       translation: string;
       keyExpression: string;
+      keyExpressions: string;
       whatsHappening: string;
       whyThisWay: string;
       vocabulary: string;
@@ -3438,6 +3443,10 @@ function ExplanationPanel({
   const saveDisabled = saving || isSaved || !ready;
   const srcLabel = sourceLangLabel || "Original";
   const tgtLabel = targetLangLabel || "English";
+  void tgtLabel;
+  const highlightPhrases = ready
+    ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
+    : [];
 
   return (
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
@@ -3457,7 +3466,7 @@ function ExplanationPanel({
           </button>
         </div>
         <p className="mt-1.5 text-base font-medium leading-relaxed text-foreground sm:text-lg">
-          {sentence.text}
+          <SentenceWithHighlights text={sentence.text} phrases={highlightPhrases} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {onResume && (
@@ -3519,11 +3528,11 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — the hero. Concise translation, max 1–2 lines. */}
+            {/* ⭐ MEANING — the hero. */}
             {ready.translation && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  Meaning · {tgtLabel}
+                  Meaning
                 </h4>
                 <p className="mt-1 text-lg font-medium leading-snug text-foreground">
                   {ready.translation}
@@ -3531,17 +3540,28 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Useful expressions — 2–4 curated items, scannable list. */}
-            {ready.vocabulary && <UsefulExpressions raw={ready.vocabulary} fallbackKey={ready.keyExpression} />}
+            {/* Key expressions — max 2. Multi-word idioms / common phrases. */}
+            {(ready.keyExpressions || ready.keyExpression) && (
+              <ExpressionList
+                label="Key Expressions"
+                raw={ready.keyExpressions || ready.keyExpression}
+                max={2}
+              />
+            )}
 
-            {/* Quick context — optional, max 1 line. */}
+            {/* Vocabulary — max 2 high-value single words. */}
+            {ready.vocabulary && (
+              <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
+            )}
+
+            {/* Quick context — optional, max 1 line, capped. */}
             {ready.whatsHappening && (
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-                  {ready.whatsHappening}
+                  {truncateContext(ready.whatsHappening)}
                 </p>
               </div>
             )}
@@ -3549,10 +3569,11 @@ function ExplanationPanel({
             {/* Grammar — collapsible, hidden by default. */}
             {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
-            {!ready.translation && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
+            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
               <FallbackHint />
             )}
           </div>
+
 
 
 
@@ -3691,6 +3712,107 @@ function UsefulExpressions({ raw, fallbackKey }: { raw: string; fallbackKey?: st
   );
 }
 
+// ---- New compact expression list with optional [tag] badges. ----
+
+type ExpressionItem = { head: string; meaning: string; tag?: string };
+
+function parseExpressionItems(raw: string): ExpressionItem[] {
+  return raw
+    .split(/\s*(?:·|•|;|\|)\s*/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map<ExpressionItem>((item) => {
+      // Optional trailing [Tag]
+      const tagMatch = item.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+      let tag: string | undefined;
+      let rest = item;
+      if (tagMatch) {
+        tag = tagMatch[2].trim();
+        rest = tagMatch[1].trim();
+      }
+      const [head, ...tailParts] = rest.split(/\s*=\s*/);
+      return { head: (head || "").trim(), meaning: tailParts.join(" = ").trim(), tag };
+    })
+    .filter((it) => it.head.length > 0);
+}
+
+function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; max?: number }) {
+  const items = parseExpressionItems(raw).slice(0, max);
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </h4>
+      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+        {items.map((it, i) => (
+          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+            <span className="font-semibold text-foreground">{it.head}</span>
+            <span className="flex items-baseline gap-2">
+              {it.meaning && (
+                <span className="text-sm text-muted-foreground">{it.meaning}</span>
+              )}
+              {it.tag && (
+                <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {it.tag}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function truncateContext(s: string, limit = 140) {
+  const t = s.trim();
+  if (t.length <= limit) return t;
+  return t.slice(0, limit - 1).replace(/\s+\S*$/, "") + "…";
+}
+
+// Pull source-language phrases out of the expression/vocab lines so we can highlight them in-sentence.
+function collectHighlightPhrases(...raws: string[]): string[] {
+  const phrases: string[] = [];
+  for (const raw of raws) {
+    if (!raw) continue;
+    for (const it of parseExpressionItems(raw)) {
+      if (it.head) phrases.push(it.head);
+    }
+  }
+  // De-dup, prefer longer matches first so they take precedence in the highlighter.
+  return Array.from(new Set(phrases)).sort((a, b) => b.length - a.length);
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function SentenceWithHighlights({ text, phrases }: { text: string; phrases: string[] }) {
+  if (!phrases.length) return <>{text}</>;
+  // Build a single regex that matches any phrase, case-insensitive.
+  const pattern = new RegExp(`(${phrases.map(escapeRegExp).join("|")})`, "gi");
+  const parts = text.split(pattern);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part) return null;
+        const isMatch = i % 2 === 1; // odd indices are captured groups
+        if (!isMatch) return <span key={i}>{part}</span>;
+        return (
+          <mark
+            key={i}
+            className="rounded bg-primary/15 px-0.5 text-foreground decoration-primary/60 decoration-2 underline-offset-2"
+          >
+            {part}
+          </mark>
+        );
+      })}
+    </>
+  );
+}
+
+
 function GrammarDetails({ grammar }: { grammar: string }) {
   return (
     <details className="group rounded-lg border border-border/60 bg-background/40">
@@ -3728,8 +3850,8 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, whatsHappening, vocabulary, grammar } = entry;
-  if (!translation && !keyExpression && !whatsHappening && !vocabulary && !grammar) {
+  const { translation, keyExpression, keyExpressions, whatsHappening, vocabulary, grammar } = entry;
+  if (!translation && !keyExpression && !keyExpressions && !whatsHappening && !vocabulary && !grammar) {
     return <FallbackHint />;
   }
   return (
@@ -3740,11 +3862,14 @@ function InlineExplanation({
           <p className="mt-0.5 text-base font-medium leading-snug text-foreground">{translation}</p>
         </div>
       )}
-      {vocabulary && <UsefulExpressions raw={vocabulary} fallbackKey={keyExpression} />}
+      {(keyExpressions || keyExpression) && (
+        <ExpressionList label="Key Expressions" raw={keyExpressions || keyExpression} max={2} />
+      )}
+      {vocabulary && <ExpressionList label="Vocabulary" raw={vocabulary} max={2} />}
       {whatsHappening && (
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Context</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{whatsHappening}</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
         </div>
       )}
       {grammar && <GrammarDetails grammar={grammar} />}

@@ -21,27 +21,28 @@ const BANNED_OPENERS = [
 ];
 
 function buildSystem(targetLanguage: string, retry: boolean) {
-  return `You are NativeFlow, a fast comprehension coach for an intermediate language learner watching a video.
-Your job is INSTANT UNDERSTANDING — the learner should read your output in under 10 seconds and return to the video. You are NOT a teacher, NOT a translator, NOT a dictionary. No lessons, no essays.
+  return `You are NativeFlow, an instant comprehension companion for a language learner watching a video.
+Goal: the learner reads your output in UNDER 5 SECONDS and returns to the video. You are NOT a teacher, NOT a translator, NOT a dictionary. No lessons, no essays.
 
-Output PLAIN TEXT only, in this EXACT format. Every field on its own line, in this exact order. Use "—" to OMIT a field that would not add real value. PREFER "—" over filler.
+Output PLAIN TEXT only, in this EXACT format. Every field on its own line, in this exact order. Use "—" to OMIT a field. PREFER "—" over filler.
 
-Natural Translation: <ONE concise, idiomatic ${targetLanguage} rendering of the sentence — how a real speaker would say this idea. Max 1–2 lines. Never word-for-word. Never add commentary.>
-Vocabulary: <2–4 of the MOST useful expressions or vocabulary items from the sentence for comprehension. Prioritize idioms, common expressions, frequent vocabulary, phrasal/collocation patterns. AVOID function words (the, and, is, of, a, to, in, on, that) unless they ARE the meaning. Format: "<phrase EXACTLY as it appears in the ORIGINAL source language> = <short ${targetLanguage} meaning>" separated by " · ". Example: "steeds meer = more and more · nog maar = only, no more than · worden gereden = are driven, are allowed". Source on the LEFT, ${targetLanguage} on the RIGHT — never swap. If fewer than 2 qualify, write "—".>
-What's Happening: <OPTIONAL. ONE short sentence of CONTEXT only when it genuinely helps understanding (cultural reference, who/what is being discussed). If the translation alone is enough, write "—". Do NOT restate the translation. Do NOT start with "The speaker", "The sentence", "This sentence", "In this sentence", "The narrator".>
-Grammar Insight: <OPTIONAL. ONLY if there is a genuinely interesting, practical pattern worth flagging (separable-verb split, V2 word order, modal stacking, etc.). One short plain-${targetLanguage} sentence, no jargon. Otherwise write "—". Prefer "—".>
+Meaning: <ONE natural, idiomatic ${targetLanguage} sentence — how a real speaker would say this. Max 1–2 lines. Readability > literalness. Never word-for-word. No commentary. No quotes.>
+Key Expressions: <0–2 of the MOST useful idioms / common expressions / phrasal constructions from the sentence. Format: "<phrase EXACTLY as in source> = <short ${targetLanguage} meaning> [<tag>]" separated by " · ". Tags (OPTIONAL, pick ONE per item): Idiom, Common, Very Common, Phrasal, News, Informal, Formal. Source on LEFT, ${targetLanguage} on RIGHT. If nothing qualifies, write "—". PREFER "—" over weak items.>
+Vocabulary: <0–2 individual high-value vocabulary items (frequent or topic-essential words). Same format and tags as Key Expressions. NEVER function words (the, and, is, of, a, to, in, on, that). Skip if no standout vocabulary — write "—".>
+Context: <OPTIONAL. ONE short sentence (≤120 chars) ONLY if a cultural reference or who/what is essential for comprehension. Otherwise "—". Do NOT restate the meaning. Do NOT start with "The speaker", "The sentence", "This sentence", "In this sentence", "The narrator".>
+Grammar Insight: <OPTIONAL. ONLY when there is a genuinely useful, practical pattern (separable-verb split, V2, modal stacking, etc.). One short plain-${targetLanguage} sentence, no jargon. Otherwise "—". Default to "—".>
 
 HARD RULES — failure means rejection:
-- OPTIMIZE FOR SPEED OF READING. Shorter is always better.
-- Translation is the hero. Everything else is optional support.
-- Vocabulary is 2–4 curated items, never exhaustive, never function words.
-- NEVER restate the translation in other fields.
+- OPTIMIZE FOR SPEED. The explanation must NEVER feel longer than the original sentence.
+- Meaning is the hero. Everything else is optional.
+- Key Expressions = multi-word phrases/idioms. Vocabulary = single high-value words. Keep them SEPARATE.
+- Max 2 items in each. Skip rather than pad. "—" is a valid and preferred answer.
+- NEVER restate the meaning in other fields.
 - NEVER use linguistic jargon ("dative", "subjunctive", "transitive", "auxiliary").
 - NEVER use banned openers: "The speaker is discussing/explaining", "The sentence refers to/means", "In this sentence", "This sentence is about", "The narrator".
 - NO bullet points, NO markdown, NO extra headings.
 - Each label appears exactly once, in the exact order above.
-- Prefer "—" over weak filler. Empty is better than generic.
-${retry ? "\nIMPORTANT: Your previous output was too long or generic. Rewrite shorter and tighter. Translation first, then 2–4 vocabulary items. Skip context and grammar unless truly useful." : ""}`;
+${retry ? "\nIMPORTANT: Your previous output was too long or generic. Rewrite shorter. Meaning, then trim Key Expressions and Vocabulary to the strongest 1–2 each. Use \"—\" for Context and Grammar unless truly essential." : ""}`;
 }
 
 function validate(text: string) {
@@ -49,21 +50,19 @@ function validate(text: string) {
     const m = text.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
     return m ? m[1].trim() : "";
   };
-  const translation = get("Natural Translation");
-  const whats = get("What's Happening").toLowerCase();
-  const why = get("Why Speakers Say It This Way").toLowerCase();
+  const translation = get("Meaning") || get("Natural Translation");
+  const ctx = get("Context").toLowerCase();
 
   const weak: string[] = [];
   if (!translation || translation === "—") weak.push("missing-translation");
   for (const opener of BANNED_OPENERS) {
-    if (whats.startsWith(opener) || why.startsWith(opener)) {
+    if (ctx.startsWith(opener)) {
       weak.push(`banned-opener:${opener}`);
       break;
     }
   }
-  // "What's Happening" should not just repeat the translation.
-  if (whats && translation && whats === translation.toLowerCase()) {
-    weak.push("whats-equals-translation");
+  if (ctx && translation && ctx === translation.toLowerCase()) {
+    weak.push("context-equals-translation");
   }
   return weak;
 }
@@ -81,23 +80,26 @@ function overlapScore(phrase: string, sentence: string) {
   return hits / tokens.length;
 }
 
-// If the model swapped sides (put the target-language translation on the left),
-// detect it by comparing overlap with the original sentence and flip back.
-function fixKeyExpressionOrder(text: string, sentence: string): string {
-  return text.replace(/^(\s*Key Expression\s*:\s*)(.+)$/im, (_m, label, val) => {
+// Flip "<target> = <source>" back to "<source> = <target>" when the model swapped sides.
+function fixItemListOrder(text: string, label: string, sentence: string): string {
+  return text.replace(new RegExp(`^(\\s*${label}\\s*:\\s*)(.+)$`, "im"), (_m, prefix, val) => {
     const v = String(val).trim();
-    if (!v || v === "—") return `${label}${v}`;
-    const idx = v.indexOf("=");
-    if (idx < 0) return `${label}${v}`;
-    const left = v.slice(0, idx).trim();
-    const right = v.slice(idx + 1).trim();
-    if (!left || !right) return `${label}${v}`;
-    const leftScore = overlapScore(left, sentence);
-    const rightScore = overlapScore(right.split(/\s*,\s*/)[0] || right, sentence);
-    if (rightScore > leftScore + 0.25) {
-      return `${label}${right} = ${left}`;
-    }
-    return `${label}${v}`;
+    if (!v || v === "—") return `${prefix}${v}`;
+    const items = v.split(/\s*·\s*/).map((item: string) => {
+      const tagMatch = item.match(/^(.*?)(\s*\[[^\]]+\])\s*$/);
+      const tag = tagMatch ? tagMatch[2] : "";
+      const core = (tagMatch ? tagMatch[1] : item).trim();
+      const idx = core.indexOf("=");
+      if (idx < 0) return item;
+      const left = core.slice(0, idx).trim();
+      const right = core.slice(idx + 1).trim();
+      if (!left || !right) return item;
+      const leftScore = overlapScore(left, sentence);
+      const rightScore = overlapScore(right, sentence);
+      if (rightScore > leftScore + 0.25) return `${right} = ${left}${tag}`;
+      return `${left} = ${right}${tag}`;
+    });
+    return `${prefix}${items.join(" · ")}`;
   });
 }
 
@@ -135,7 +137,8 @@ export const explainSentence = createServerFn({ method: "POST" })
           // keep first attempt if retry fails
         }
       }
-      text = fixKeyExpressionOrder(text, data.sentence);
+      text = fixItemListOrder(text, "Key Expressions", data.sentence);
+      text = fixItemListOrder(text, "Vocabulary", data.sentence);
       return { explanation: text };
     } catch (error: unknown) {
       const status =
@@ -146,7 +149,7 @@ export const explainSentence = createServerFn({ method: "POST" })
       const isCredits = status === 402 || /payment required|credit/i.test(message);
       console.error("[explain] generation failed", { status, message });
 
-      const fallback = `Natural Translation: —\nVocabulary: —\nWhat's Happening: —\nGrammar Insight: —`;
+      const fallback = `Meaning: —\nKey Expressions: —\nVocabulary: —\nContext: —\nGrammar Insight: —`;
 
       if (isRateLimit) {
         return { explanation: fallback, error: "rate_limited" as const };
