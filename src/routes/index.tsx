@@ -3547,51 +3547,20 @@ function ExplanationPanel({
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-4">
-            {/* MEANING — readable but not visually dominant (normal weight). */}
-            {ready.translation && (
-              <div>
-                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Meaning
-                </h4>
-                <p className="mt-1 text-base font-normal leading-snug text-foreground sm:text-lg">
-                  {ready.translation}
-                </p>
-              </div>
-            )}
-
-            {/* USEFUL EXPRESSIONS — merged key expressions + vocabulary. Tap to highlight in the original sentence. Max 3. */}
-            {(ready.keyExpressions || ready.keyExpression || ready.vocabulary) && (
-              <ExpressionList
-                label="Useful expressions"
-                raw={[ready.keyExpressions || ready.keyExpression, ready.vocabulary]
-                  .filter(Boolean)
-                  .join(" · ")}
-                max={3}
+          (() => {
+            const model = buildExplanationModel(ready);
+            const hasAny =
+              !!model.meaning || model.keyExpressions.length > 0 || !!model.context || !!model.grammar;
+            if (!hasAny) return <FallbackHint />;
+            return (
+              <ExplanationSections
+                model={model}
                 activePhrase={activePhrase}
-                onSelect={handleSelectPhrase}
+                onSelectPhrase={handleSelectPhrase}
               />
-            )}
+            );
+          })()
 
-            {/* QUICK CONTEXT — only when it adds info beyond the translation. */}
-            {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
-              <div>
-                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Quick context
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-                  {truncateContext(ready.whatsHappening)}
-                </p>
-              </div>
-            )}
-
-            {/* GRAMMAR — always rendered, collapsed by default, with fallback when empty. */}
-            <GrammarDetails grammar={ready.grammar} />
-
-            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && (
-              <FallbackHint />
-            )}
-          </div>
 
 
 
