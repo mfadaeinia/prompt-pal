@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   fetchTranscript,
   fetchTranscriptFast,
@@ -3397,7 +3397,26 @@ function ExplanationPanel({
   sourceLangLabel?: string;
   targetLangLabel?: string;
 }) {
+  // Active expression state — only one phrase highlighted at a time in the original sentence.
+  // (Hoisted above the early empty-state return so hook order stays stable across renders.)
+  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  useEffect(() => {
+    setActivePhrase(null);
+  }, [sentence?.id]);
+
   if (!sentence) {
+    // Onboarding/empty state — uses the SAME ExplanationSections renderer as the real panel,
+    // just with example placeholder content. This guarantees the preview can never drift from
+    // the actual experience.
+    const sampleModel: ExplanationModel = {
+      meaning: "More and more roads are now limited to 30 km/h.",
+      keyExpressions: [
+        { head: "steeds meer", meaning: "more and more" },
+        { head: "nog maar", meaning: "only" },
+      ],
+      context: "Optional — only shown when it actually helps.",
+      grammar: "", // collapsed; renders the fallback message inside the boxed section
+    };
     return (
       <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card p-4 shadow-md ring-1 ring-primary/10 sm:p-6">
         <div
@@ -3414,31 +3433,18 @@ function ExplanationPanel({
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence unlocks a natural translation, useful expressions, optional context, and grammar insights when relevant.
+          One natural translation, 1–3 useful expressions, and grammar when it helps. Stay in the flow.
         </p>
-        {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
-        <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Meaning", "Useful expressions", "Quick context", "Grammar"].map((l) => (
-            <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
-              ✓ {l}
-            </span>
-          ))}
+        <div className="mt-4">
+          <ExplanationSections model={sampleModel} />
         </div>
-        <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
-          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
-          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
-          <PreviewSection label="Grammar ▼" sample="Shown when relevant — tap to expand." />
-        </div>
-
-        <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
+        <p className="mt-4 text-center text-xs font-medium text-primary">
           👆 Tap a sentence below to see the real thing
         </p>
       </div>
     );
-
-
   }
+
 
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
@@ -3451,12 +3457,7 @@ function ExplanationPanel({
     ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
     : [];
 
-  // Active expression state — only one phrase highlighted at a time in the original sentence.
-  const [activePhrase, setActivePhrase] = useState<string | null>(null);
-  // Reset highlight when the sentence changes.
-  useEffect(() => {
-    setActivePhrase(null);
-  }, [sentence?.id]);
+  // (activePhrase state hoisted above the empty-state return.)
 
   const handleSelectPhrase = (phrase: string) => {
     setActivePhrase((prev) => (prev && prev.toLowerCase() === phrase.toLowerCase() ? null : phrase));
@@ -3465,6 +3466,7 @@ function ExplanationPanel({
   const sentenceHighlights = activePhrase
     ? highlightPhrases.filter((p) => p.toLowerCase() === activePhrase.toLowerCase())
     : [];
+
 
   return (
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
@@ -3545,51 +3547,20 @@ function ExplanationPanel({
             Sentence explanations are not available for this video, but you can still use the transcript while watching.
           </div>
         ) : ready ? (
-          <div className="space-y-4">
-            {/* MEANING — readable but not visually dominant (normal weight). */}
-            {ready.translation && (
-              <div>
-                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Meaning
-                </h4>
-                <p className="mt-1 text-base font-normal leading-snug text-foreground sm:text-lg">
-                  {ready.translation}
-                </p>
-              </div>
-            )}
-
-            {/* USEFUL EXPRESSIONS — merged key expressions + vocabulary. Tap to highlight in the original sentence. Max 3. */}
-            {(ready.keyExpressions || ready.keyExpression || ready.vocabulary) && (
-              <ExpressionList
-                label="Useful expressions"
-                raw={[ready.keyExpressions || ready.keyExpression, ready.vocabulary]
-                  .filter(Boolean)
-                  .join(" · ")}
-                max={3}
+          (() => {
+            const model = buildExplanationModel(ready);
+            const hasAny =
+              !!model.meaning || model.keyExpressions.length > 0 || !!model.context || !!model.grammar;
+            if (!hasAny) return <FallbackHint />;
+            return (
+              <ExplanationSections
+                model={model}
                 activePhrase={activePhrase}
-                onSelect={handleSelectPhrase}
+                onSelectPhrase={handleSelectPhrase}
               />
-            )}
+            );
+          })()
 
-            {/* QUICK CONTEXT — only when it adds info beyond the translation. */}
-            {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
-              <div>
-                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Quick context
-                </h4>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-                  {truncateContext(ready.whatsHappening)}
-                </p>
-              </div>
-            )}
-
-            {/* GRAMMAR — always rendered, collapsed by default, with fallback when empty. */}
-            <GrammarDetails grammar={ready.grammar} />
-
-            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && (
-              <FallbackHint />
-            )}
-          </div>
 
 
 
@@ -3631,6 +3602,170 @@ function FallbackHint() {
       Explanation not available for this line — pause the video to read the
       original sentence above, or click another line.
     </p>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Canonical sentence-explanation model + renderer.
+// Both the onboarding preview card and the live explanation panel render from
+// this exact shape so they cannot drift apart. Section order is fixed:
+//   1. Meaning  2. Useful expressions  3. Quick context (optional)  4. Grammar ▼
+// ---------------------------------------------------------------------------
+
+export type ExplanationExpression = { head: string; meaning: string; tag?: string };
+
+export type ExplanationModel = {
+  meaning: string;
+  keyExpressions: ExplanationExpression[];
+  context?: string;
+  /** Empty => Grammar row still renders with a "no notable pattern" fallback. */
+  grammar?: string;
+};
+
+function buildExplanationModel(ready: {
+  translation: string;
+  keyExpression: string;
+  keyExpressions: string;
+  vocabulary: string;
+  whatsHappening: string;
+  grammar: string;
+}): ExplanationModel {
+  const rawExpr = [ready.keyExpressions || ready.keyExpression, ready.vocabulary]
+    .filter(Boolean)
+    .join(" · ");
+  const keyExpressions = parseExpressionItems(rawExpr).slice(0, 3);
+  const context =
+    ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation)
+      ? truncateContext(ready.whatsHappening)
+      : undefined;
+  return {
+    meaning: ready.translation || "",
+    keyExpressions,
+    context,
+    grammar: ready.grammar || "",
+  };
+}
+
+function SectionBox({
+  label,
+  children,
+  asDetails = false,
+}: {
+  label: string;
+  children: ReactNode;
+  asDetails?: boolean;
+}) {
+  const labelEl = (
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/80">{label}</p>
+  );
+  if (asDetails) {
+    return (
+      <details className="group rounded-xl border border-border/70 bg-background/60 px-3 py-2.5">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+          {labelEl}
+          <ChevronDown className="h-3 w-3 text-primary/70 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-1.5">{children}</div>
+      </details>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/60 px-3 py-2.5">
+      {labelEl}
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}
+
+function ExplanationSections({
+  model,
+  activePhrase,
+  onSelectPhrase,
+}: {
+  model: ExplanationModel;
+  activePhrase?: string | null;
+  onSelectPhrase?: (phrase: string) => void;
+}) {
+  return (
+    <div className="space-y-2.5">
+      <SectionBox label="Meaning">
+        <p className="text-sm font-normal leading-snug text-foreground">
+          {model.meaning || "—"}
+        </p>
+      </SectionBox>
+
+      <SectionBox label="Useful expressions">
+        {model.keyExpressions.length === 0 ? (
+          <p className="text-sm font-normal text-muted-foreground">
+            No standout expressions in this line.
+          </p>
+        ) : (
+          <ul className="space-y-1">
+            {model.keyExpressions.map((it, i) => {
+              const isActive =
+                !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+              const inner = (
+                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                  <span
+                    className={`font-bold text-foreground ${
+                      isActive ? "rounded bg-primary/15 px-1 -mx-1" : ""
+                    }`}
+                  >
+                    {it.head}
+                  </span>
+                  <span className="flex items-baseline gap-2">
+                    {it.meaning && (
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {it.meaning}
+                      </span>
+                    )}
+                    {it.tag && (
+                      <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
+                        {it.tag}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+              return (
+                <li key={i}>
+                  {onSelectPhrase ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectPhrase(it.head)}
+                      aria-pressed={isActive}
+                      className="block w-full rounded-md text-left transition-colors hover:bg-muted/40"
+                    >
+                      {inner}
+                    </button>
+                  ) : (
+                    inner
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionBox>
+
+      {model.context && (
+        <SectionBox label="Quick context">
+          <p className="text-sm leading-relaxed text-foreground/80">{model.context}</p>
+        </SectionBox>
+      )}
+
+      <SectionBox label="Grammar ▼" asDetails>
+        {model.grammar && model.grammar.trim().length > 0 ? (
+          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">
+            {model.grammar}
+          </p>
+        ) : (
+          <p className="text-sm leading-relaxed text-muted-foreground/80">
+            No notable grammar pattern in this sentence.
+          </p>
+        )}
+      </SectionBox>
+    </div>
   );
 }
 
@@ -3934,35 +4069,15 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, keyExpressions, whatsHappening, vocabulary, grammar } = entry;
-  if (!translation && !keyExpression && !keyExpressions && !whatsHappening && !vocabulary && !grammar) {
+  const model = buildExplanationModel(entry);
+  const hasAny =
+    !!model.meaning || model.keyExpressions.length > 0 || !!model.context || !!model.grammar;
+  if (!hasAny) {
     return <FallbackHint />;
   }
-  return (
-    <div className="space-y-3">
-      {translation && (
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Meaning</p>
-          <p className="mt-0.5 text-base leading-snug text-foreground">{translation}</p>
-        </div>
-      )}
-      {(keyExpressions || keyExpression || vocabulary) && (
-        <ExpressionList
-          label="Useful expressions"
-          raw={[keyExpressions || keyExpression, vocabulary].filter(Boolean).join(" · ")}
-          max={3}
-        />
-      )}
-      {whatsHappening && shouldShowContext(whatsHappening, translation) && (
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick context</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
-        </div>
-      )}
-      <GrammarDetails grammar={grammar} />
-    </div>
-  );
+  return <ExplanationSections model={model} />;
 }
+
 
 
 
