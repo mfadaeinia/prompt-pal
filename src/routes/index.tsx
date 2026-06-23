@@ -2151,8 +2151,18 @@ function Index() {
     } else {
       console.warn("sentence_click_skipped: no browserId yet");
     }
+    // First click of the session — separate funnel event.
+    if (!firstClickFiredRef.current) {
+      firstClickFiredRef.current = true;
+      logDiscovery("first_sentence_click", {
+        sentence_index: idx,
+        mode: studyMode ? "learning" : "watch",
+      });
+    }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
+    // Dismiss the sentence hint as a "click" if it was on screen.
+    if (showSentenceHint) dismissSentenceHint(true);
     if (!hasInteractedWithSentenceRef.current) {
       hasInteractedWithSentenceRef.current = true;
       try {
