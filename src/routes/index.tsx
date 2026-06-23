@@ -2885,7 +2885,31 @@ function Index() {
                         {transcriptSource && (
                           <SourceBadge source={transcriptSource} cachedFrom={cachedFromProvider} />
                         )}
+                    </div>
+
+                    {/* Mobile/tablet onboarding card — desktop already shows the full ExplanationPanel
+                        in the right column. Hidden once the user opens their first explanation. */}
+                    {studyMode && sentences.length > 0 && !selected && (
+                      <div className="mx-3 mb-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm lg:hidden">
+                        <div className="flex items-start gap-2">
+                          <span className="select-none text-lg leading-none" aria-hidden>💡</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold leading-tight text-foreground">
+                              Tap any subtitle to instantly understand it
+                            </p>
+                            <ul className="mt-2 space-y-0.5 text-[12.5px] leading-snug text-muted-foreground">
+                              <li>• Natural translation</li>
+                              <li>• Useful expressions</li>
+                              <li>• Grammar when relevant</li>
+                            </ul>
+                            <p className="mt-2.5 text-[12.5px] font-semibold text-primary">
+                              Try a sentence below ↓
+                            </p>
+                          </div>
+                        </div>
                       </div>
+                    )}
+
                     </div>
 
                     {showSentenceHint && sentences.length > 0 && (
