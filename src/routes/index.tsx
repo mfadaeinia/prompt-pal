@@ -3413,17 +3413,16 @@ function ExplanationPanel({
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Natural translation", "What's happening", "Key expression", "Why this way"].map((l) => (
+          {["Meaning", "Useful expressions", "Quick context"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Natural translation" sample="How a real speaker would say this idea in your language." />
-          <PreviewSection label="What's happening" sample="Intent and context — why this line matters in the conversation." />
-          <PreviewSection label="Key expression" sample="ervoor kiezen = to choose to, to opt to" mono />
-          <PreviewSection label="Why speakers say it this way" sample="Common in news and formal speech when describing decisions." />
+          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
+          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
+          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
         </div>
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
