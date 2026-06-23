@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film, X, LogOut } from "lucide-react";
+import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film, X, LogOut, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import {
   listSavedExpressions,
   deleteSavedExpression,
 } from "@/lib/saved-expressions.functions";
 import { listSavedVideos, deleteSavedVideo } from "@/lib/saved-videos.functions";
+import { generateWordExamples } from "@/lib/word-examples.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
 import { track } from "@/lib/analytics";
@@ -17,6 +18,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { supabase } from "@/integrations/supabase/client";
+
+function isWordItem(item: any): boolean {
+  const notes = (item?.expression_notes ?? "").toString();
+  if (notes.trim().toLowerCase().startsWith("from:")) return true;
+  const text = (item?.sentence_text ?? "").toString().trim();
+  if (!text) return false;
+  // Treat short entries (1–4 tokens, no terminal punctuation) as words/expressions.
+  const wordCount = text.split(/\s+/).length;
+  return wordCount <= 4 && !/[.!?]$/.test(text);
+}
 
 export const Route = createFileRoute("/saved")({
   head: () => ({
