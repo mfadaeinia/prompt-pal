@@ -2869,6 +2869,28 @@ function Index() {
                       </div>
                     </div>
 
+                    {showSentenceHint && sentences.length > 0 && (
+                      <div
+                        role="note"
+                        className="mx-3 mb-2 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-[12.5px] leading-snug text-foreground shadow-sm animate-in fade-in slide-in-from-top-1"
+                      >
+                        <span className="select-none text-base leading-none" aria-hidden>💡</span>
+                        <span className="min-w-0 flex-1">
+                          Click any subtitle to instantly understand expressions, meaning, and context.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => dismissSentenceHint(false)}
+                          aria-label="Dismiss hint"
+                          className="ml-1 -mr-1 -mt-0.5 shrink-0 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+
+
+
 
                     {loadMutation.isSuccess && sentences.length === 0 ? (
                       <div className="flex-1 overflow-y-auto p-6 text-sm">
