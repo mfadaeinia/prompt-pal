@@ -1757,6 +1757,134 @@ function Index() {
     };
   }, [videoId]);
 
+  // ── Discovery instrumentation ──────────────────────────────────────────
+  // Answers "why are users watching but not clicking?". Each event fires at
+  // most once per session so the funnel math stays clean.
+  const transcriptVisibleFiredRef = useRef(false);
+  const transcriptSeenFiredRef = useRef(false);
+  const sentenceHoveredFiredRef = useRef(false);
+  const firstClickFiredRef = useRef(false);
+  const hintShownFiredRef = useRef(false);
+  const videoOpenedAtRef = useRef<number | null>(null);
+  const [showSentenceHint, setShowSentenceHint] = useState(false);
+
+  // Mark when a video is opened so seconds_since_video_open is meaningful.
+  useEffect(() => {
+    if (videoId) {
+      videoOpenedAtRef.current = performance.now();
+      // New video → reset per-video discovery flags but keep per-session
+      // ones (transcript_visible, transcript_seen, sentence_hovered,
+      // first_sentence_click, hint_shown all stay session-scoped).
+    } else {
+      videoOpenedAtRef.current = null;
+    }
+  }, [videoId]);
+
+  const secondsSinceOpen = () =>
+    videoOpenedAtRef.current == null
+      ? null
+      : Math.round((performance.now() - videoOpenedAtRef.current) / 1000);
+
+  const logDiscovery = (
+    eventName:
+      | "transcript_visible"
+      | "transcript_seen"
+      | "sentence_hovered"
+      | "first_sentence_click"
+      | "hint_shown"
+      | "hint_dismissed"
+      | "hint_clicked",
+    extra: Record<string, unknown> = {},
+  ) => {
+    const sid = browserId;
+    if (!sid) return;
+    const meta = {
+      seconds_since_video_open: secondsSinceOpen(),
+      ts: new Date().toISOString(),
+      ...extra,
+    };
+    track(eventName, { video_id: videoId, ...meta });
+    void logLibraryEventFx({
+      data: {
+        eventName,
+        sessionId: sid,
+        videoId: videoId ?? null,
+        userId,
+        metadata: meta,
+      },
+    }).catch(() => {});
+  };
+
+  // Fire `transcript_visible` once per session when the transcript first
+  // becomes visible (i.e. sentences are rendered in the DOM).
+  useEffect(() => {
+    if (transcriptVisibleFiredRef.current) return;
+    if (sentences.length === 0) return;
+    if (!browserId) return;
+    transcriptVisibleFiredRef.current = true;
+    logDiscovery("transcript_visible", { sentence_count: sentences.length });
+
+    // First-time-this-session hint: show once, dismissible. Use sessionStorage
+    // so it shows again in a brand-new browser session.
+    try {
+      const seen = sessionStorage.getItem("nf_sentence_hint_seen");
+      if (!seen && !hasInteractedWithSentenceRef.current) {
+        setShowSentenceHint(true);
+      }
+    } catch {
+      setShowSentenceHint(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences.length, browserId]);
+
+  // Fire `transcript_seen` once when the transcript scrolls into the viewport.
+  useEffect(() => {
+    if (transcriptSeenFiredRef.current) return;
+    const el = listRef.current;
+    if (!el || sentences.length === 0 || !browserId) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !transcriptSeenFiredRef.current) {
+            transcriptSeenFiredRef.current = true;
+            logDiscovery("transcript_seen");
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences.length, browserId]);
+
+  // Fire `hint_shown` once when the hint becomes visible.
+  useEffect(() => {
+    if (!showSentenceHint || hintShownFiredRef.current || !browserId) return;
+    hintShownFiredRef.current = true;
+    logDiscovery("hint_shown");
+    try {
+      sessionStorage.setItem("nf_sentence_hint_seen", "1");
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSentenceHint, browserId]);
+
+  const onSentenceHover = () => {
+    if (sentenceHoveredFiredRef.current) return;
+    if (isMobile) return; // desktop only
+    sentenceHoveredFiredRef.current = true;
+    logDiscovery("sentence_hovered");
+  };
+
+  const dismissSentenceHint = (viaClick: boolean) => {
+    if (!showSentenceHint) return;
+    setShowSentenceHint(false);
+    logDiscovery(viaClick ? "hint_clicked" : "hint_dismissed");
+  };
+
+
   const [activeOutOfView, setActiveOutOfView] = useState(false);
   useEffect(() => {
     if (playingId == null || !listRef.current) {
