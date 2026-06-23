@@ -1972,6 +1972,25 @@ function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingId, sentences, studyMode, focusMode]);
 
+  // Auto pre-select the first sentence when the transcript first loads so users
+  // immediately see what tapping a subtitle does. Desktop/tablet only — on phones
+  // this would auto-open the bottom Sheet and cover the freshly loaded video.
+  const autoPreselectedForVideoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!studyMode) return;
+    if (isMobile) return;
+    if (!videoId) return;
+    if (sentences.length === 0) return;
+    if (selected) return;
+    if (playingId != null) return;
+    if (autoPreselectedForVideoRef.current === videoId) return;
+    autoPreselectedForVideoRef.current = videoId;
+    const first = sentences[0];
+    setSelected(first);
+    ensureExplanation(first, sentences);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyMode, isMobile, videoId, sentences, selected, playingId]);
+
   // Fire `explanation_viewed` once per sentence when its explanation finishes
   // loading AND it is the currently selected sentence (i.e. actually visible).
   const viewedExplanationRef = useRef<Set<number>>(new Set());
@@ -2869,6 +2888,30 @@ function Index() {
                       </div>
                     </div>
 
+                    {/* Mobile/tablet onboarding card — desktop already shows the full ExplanationPanel
+                        in the right column. Hidden once the user opens their first explanation. */}
+                    {studyMode && sentences.length > 0 && !selected && (
+                      <div className="mx-3 mb-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm lg:hidden">
+                        <div className="flex items-start gap-2">
+                          <span className="select-none text-lg leading-none" aria-hidden>💡</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold leading-tight text-foreground">
+                              Tap any subtitle to instantly understand it
+                            </p>
+                            <ul className="mt-2 space-y-0.5 text-[12.5px] leading-snug text-muted-foreground">
+                              <li>• Natural translation</li>
+                              <li>• Useful expressions</li>
+                              <li>• Grammar when relevant</li>
+                            </ul>
+                            <p className="mt-2.5 text-[12.5px] font-semibold text-primary">
+                              Try a sentence below ↓
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+
                     {showSentenceHint && sentences.length > 0 && (
                       <div
                         role="note"
@@ -2935,7 +2978,7 @@ function Index() {
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
                                 onMouseEnter={onSentenceHover}
-                                className={`group block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition-all duration-150 hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.99] ${
+                                className={`group block w-full cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition-all duration-150 hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] active:bg-primary/20 ${
                                   active
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
