@@ -3736,7 +3736,19 @@ function parseExpressionItems(raw: string): ExpressionItem[] {
     .filter((it) => it.head.length > 0);
 }
 
-function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; max?: number }) {
+function ExpressionList({
+  label,
+  raw,
+  max = 2,
+  activePhrase,
+  onSelect,
+}: {
+  label: string;
+  raw: string;
+  max?: number;
+  activePhrase?: string | null;
+  onSelect?: (phrase: string) => void;
+}) {
   const items = parseExpressionItems(raw).slice(0, max);
   if (items.length === 0) return null;
   return (
@@ -3745,28 +3757,50 @@ function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; m
         {label}
       </h4>
       <ul className="mt-2 space-y-1.5">
-        {items.map((it, i) => (
-          <li
-            key={i}
-            className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
-          >
-            <span className="font-bold text-foreground">{it.head}</span>
-            <span className="flex items-baseline gap-2">
-              {it.meaning && (
-                <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
+        {items.map((it, i) => {
+          const isActive = !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+          const clickable = !!onSelect;
+          const Inner = (
+            <>
+              <span className={`font-bold text-foreground ${isActive ? "bg-primary/15 rounded px-1 -mx-1" : ""}`}>
+                {it.head}
+              </span>
+              <span className="flex items-baseline gap-2">
+                {it.meaning && (
+                  <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
+                )}
+                {it.tag && (
+                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
+                    {it.tag}
+                  </span>
+                )}
+              </span>
+            </>
+          );
+          return (
+            <li key={i}>
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect?.(it.head)}
+                  className="flex w-full flex-col gap-0 rounded-md text-left transition-colors hover:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+                  aria-pressed={isActive}
+                >
+                  {Inner}
+                </button>
+              ) : (
+                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                  {Inner}
+                </div>
               )}
-              {it.tag && (
-                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
-                  {it.tag}
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
+
 
 function truncateContext(s: string, limit = 140) {
   const t = s.trim();
