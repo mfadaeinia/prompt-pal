@@ -378,6 +378,11 @@ function FunnelSection({
                   pct={s.continuePct ?? 0}
                   highlight={isWorst}
                 />
+                {s.hint && (
+                  <div className="ml-4 mt-0.5 text-[11px] italic text-slate-500">
+                    {s.hint}
+                  </div>
+                )}
               </div>
             );
           })}
