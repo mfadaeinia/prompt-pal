@@ -252,6 +252,21 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         clickedSentence: fClicked,
         savedSomething: fSaved,
       },
+      discovery: {
+        videoOpened: fVideoOpened,
+        watched30s: fWatched30,
+        transcriptSeen: dTranscriptSeen,
+        hoveredSentence: dHovered,
+        clickedSentence: dClicked,
+        savedSomething: dSaved,
+      },
+      firstClick: {
+        watched30s: watched30Sessions.size,
+        clickedSessions: clickedSessions.size,
+        rate: firstClickRate,
+        watchedNoClick,
+        watchedNoClickPct,
+      },
     };
   },
 );
