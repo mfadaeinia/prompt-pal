@@ -3418,18 +3418,19 @@ function ExplanationPanel({
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Meaning", "Key expressions", "Context", "Grammar"].map((l) => (
+          {["Meaning", "Useful expressions", "Quick context", "Grammar"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Meaning" sample="Natural, easy-to-understand translation." />
-          <PreviewSection label="Key expressions" sample="Useful phrases worth learning." />
-          <PreviewSection label="Context" sample="Only shown when it actually helps." />
+          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
+          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
+          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
           <PreviewSection label="Grammar ▼" sample="Shown when relevant — tap to expand." />
         </div>
+
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
         </p>
