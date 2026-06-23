@@ -32,7 +32,18 @@ export type FounderMetrics = {
   funnel: {
     cohortLabel: string;
     visitors: number;
-    startedLearning: number;
+    /**
+     * Unique sessions that loaded a video page. Derived from the first
+     * `video_sessions` row written on mount — NOT a deliberate "started
+     * learning" intent. Surface this as "Video Session Started".
+     */
+    videoSessionStarted: number;
+    /**
+     * Unique sessions that took a real engagement action: clicked a
+     * sentence, opened an explanation, or saved a word/expression.
+     * This is the true activation metric.
+     */
+    activated: number;
     clickedSentence: number;
     savedWord: number;
   };
