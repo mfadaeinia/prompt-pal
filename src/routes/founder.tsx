@@ -585,18 +585,21 @@ function FunnelSection({
 
 function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
   const d = m.discovery;
-  const stages: Array<{ label: string; value: number; tooltip: string }> = [
+  const awaitingData = d.transcriptSeen === 0;
+  const stages: Array<{ label: string; value: number; tooltip: string; awaiting?: boolean }> = [
     { label: "Video Opened", value: d.videoOpened, tooltip: "Sessions that loaded a video page." },
     { label: "Watched 30s+", value: d.watched30s, tooltip: "Sessions whose max duration ≥30s." },
     {
       label: "Transcript Seen",
       value: d.transcriptSeen,
       tooltip: "Sessions whose transcript scrolled into the viewport (transcript_seen event).",
+      awaiting: awaitingData,
     },
     {
       label: "Hovered Sentence",
       value: d.hoveredSentence,
       tooltip: "Desktop sessions that hovered any sentence (sentence_hovered event). Mobile sessions cannot register hover.",
+      awaiting: awaitingData,
     },
     {
       label: "Clicked Sentence",
@@ -610,9 +613,11 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
     },
   ];
   const drops = stages.slice(1).map((s, i) => {
-    const prev = stages[i].value;
-    const continuePct = prev > 0 ? Math.round((s.value / prev) * 100) : null;
-    return { ...s, continuePct, dropPct: continuePct === null ? null : 100 - continuePct };
+    const prev = stages[i];
+    const prevVal = prev.value;
+    const invalid = prev.awaiting || (s.awaiting ?? false);
+    const continuePct = !invalid && prevVal > 0 ? Math.round((s.value / prevVal) * 100) : null;
+    return { ...s, continuePct, dropPct: continuePct === null ? null : 100 - continuePct, invalid };
   });
   return (
     <div className="space-y-3">
@@ -631,7 +636,13 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
         {drops.map((s) => (
           <div key={s.label}>
             <div className="ml-4 text-xs text-slate-400">
-              ↓ {s.continuePct ?? 0}% continue ({s.dropPct ?? 0}% drop-off)
+              {s.invalid ? (
+                <span className="text-amber-600">↓ awaiting data</span>
+              ) : (
+                <>
+                  ↓ {s.continuePct}% continue ({s.dropPct}% drop-off)
+                </>
+              )}
             </div>
             <FunnelRow
               label={s.label}
@@ -639,6 +650,7 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
               value={s.value}
               pct={s.continuePct ?? 0}
               tooltip={s.tooltip}
+              awaiting={s.awaiting}
             />
           </div>
         ))}
@@ -655,6 +667,7 @@ function FunnelRow({
   pct,
   highlight,
   tooltip,
+  awaiting,
 }: {
   label: string;
   unit?: "session" | "user" | "row";
@@ -662,6 +675,7 @@ function FunnelRow({
   pct: number;
   highlight?: boolean;
   tooltip?: string;
+  awaiting?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3" title={tooltip}>
@@ -669,11 +683,13 @@ function FunnelRow({
         <span>{label}</span>
         {unit && <UnitBadge unit={unit} />}
       </div>
-      <div className="text-xl font-bold tabular-nums text-slate-900 w-16">{value}</div>
+      <div className="text-xl font-bold tabular-nums text-slate-400 w-16">
+        {awaiting ? "—" : value}
+      </div>
       <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
         <div
-          className={"h-full " + (highlight ? "bg-red-500" : "bg-slate-900")}
-          style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
+          className={"h-full " + (highlight ? "bg-red-500" : awaiting ? "bg-slate-200" : "bg-slate-900")}
+          style={{ width: awaiting ? "2%" : `${Math.max(2, Math.min(100, pct))}%` }}
         />
       </div>
     </div>
