@@ -425,6 +425,33 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
               </ul>
             )}
           </TabsContent>
+
+          <TabsContent value="words">
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading your words…
+              </div>
+            ) : filteredWords.length === 0 ? (
+              <EmptyState
+                title={wordItems.length === 0 ? "No saved words yet" : "No matches"}
+                body={
+                  wordItems.length === 0
+                    ? "Tap the bookmark next to any useful expression in an explanation to save it as a word."
+                    : "Try a different search term."
+                }
+              />
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {filteredWords.map((item: any) => (
+                  <WordCard
+                    key={item.id}
+                    item={item}
+                    onDelete={() => removeMutation.mutate(item.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </TabsContent>
         </Tabs>
       </main>
     </div>
