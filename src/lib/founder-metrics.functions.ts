@@ -32,7 +32,18 @@ export type FounderMetrics = {
   funnel: {
     cohortLabel: string;
     visitors: number;
-    startedLearning: number;
+    /**
+     * Unique sessions that loaded a video page. Derived from the first
+     * `video_sessions` row written on mount — NOT a deliberate "started
+     * learning" intent. Surface this as "Video Session Started".
+     */
+    videoSessionStarted: number;
+    /**
+     * Unique sessions that took a real engagement action: clicked a
+     * sentence, opened an explanation, or saved a word/expression.
+     * This is the true activation metric.
+     */
+    activated: number;
     clickedSentence: number;
     savedWord: number;
   };
@@ -56,7 +67,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       supabaseAdmin
         .from("library_events" as any)
         .select("session_id,event_name")
-        .eq("event_name", "sentence_clicked"),
+        .in("event_name", ["sentence_clicked", "explanation_viewed", "expression_saved"]),
     ]);
 
     const sessions = ((vs.data ?? []) as unknown) as Array<{ session_id: string; duration_seconds: number }>;
@@ -87,7 +98,9 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     );
     const visitors = new Set<string>([...uniqueVideoSessionIds, ...uniqueFeedbackSessionIds]).size;
     const demoStarts = totalSessions;
-    const clickEventRows = ((le.data ?? []) as unknown) as Array<{ session_id: string | null }>;
+    const libRows = ((le.data ?? []) as unknown) as Array<{ session_id: string | null; event_name: string }>;
+    const clickEventRows = libRows.filter((r) => r.event_name === "sentence_clicked");
+    const explanationEventRows = libRows.filter((r) => r.event_name === "explanation_viewed");
     const transcriptClicks = clickEventRows.length;
 
     const positive = feedback.filter((f) => f.feedback_type === "positive").length;
@@ -104,13 +117,23 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const clickedSessions = new Set(
       clickEventRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
+    const explanationSessions = new Set(
+      explanationEventRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
     const savedSessions = new Set(
       savedRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
+    // True activation: any deliberate engagement signal.
+    const activatedSessions = new Set<string>([
+      ...clickedSessions,
+      ...explanationSessions,
+      ...savedSessions,
+    ]);
 
     const fVisitors = visitors;
     const fStarted = Math.min(startedSessions.size, fVisitors);
-    const fClicked = Math.min(clickedSessions.size, fStarted);
+    const fActivated = Math.min(activatedSessions.size, fStarted);
+    const fClicked = Math.min(clickedSessions.size, fActivated);
     const fSaved = Math.min(savedSessions.size, fClicked);
 
     return {
@@ -145,7 +168,8 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       funnel: {
         cohortLabel: "unique sessions",
         visitors: fVisitors,
-        startedLearning: fStarted,
+        videoSessionStarted: fStarted,
+        activated: fActivated,
         clickedSentence: fClicked,
         savedWord: fSaved,
       },
