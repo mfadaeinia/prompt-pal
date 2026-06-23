@@ -2387,24 +2387,6 @@ function Index() {
                   Learning
                 </button>
               </div>
-              <label
-                className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
-                title="Keep the active sentence in view automatically."
-              >
-                <input
-                  type="checkbox"
-                  checked={focusMode}
-                  onChange={(e) => {
-                    const next = e.target.checked;
-                    setFocusMode(next);
-                    track(next ? "focus_mode_enabled" : "focus_mode_disabled", {
-                      video_id: videoId,
-                    });
-                  }}
-                  className="h-3.5 w-3.5 cursor-pointer accent-primary"
-                />
-                Auto-follow
-              </label>
             </div>
 
 
