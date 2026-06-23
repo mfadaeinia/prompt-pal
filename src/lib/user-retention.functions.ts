@@ -202,18 +202,22 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
     const rows: UserRetentionRow[] = users.map((u) => {
       const bySid = userSessionStats.get(u.id);
       let totalSessions = 0;
-      let videosOpened = 0;
-      let videosWatched30 = 0;
       let totalClicks = 0;
       let totalWatch = 0;
       let activatedSessionCount = 0;
       const allVideoIds = new Set<string>();
+      // Per video, track the max duration reached across all of this user's sessions.
+      // This ensures videos_watched_30s counts UNIQUE videos (same unit as videos_opened),
+      // so it can never exceed videos_opened for the same user.
+      const videoMaxDuration = new Map<string, number>();
       if (bySid) {
         for (const s of bySid.values()) {
           totalSessions += 1;
-          videosOpened += s.videoIds.size;
-          for (const v of s.videoIds) allVideoIds.add(v);
-          if (s.maxDuration >= ACTIVATION_DURATION_SECONDS) videosWatched30 += 1;
+          for (const v of s.videoIds) {
+            allVideoIds.add(v);
+            const prev = videoMaxDuration.get(v) ?? 0;
+            if (s.maxDuration > prev) videoMaxDuration.set(v, s.maxDuration);
+          }
           totalClicks += s.clicks;
           totalWatch += s.maxDuration;
           if (s.maxDuration >= ACTIVATION_DURATION_SECONDS && s.clicks >= 1) {
@@ -221,6 +225,13 @@ export const getUserRetentionCohort = createServerFn({ method: "GET" }).handler(
           }
         }
       }
+      let videosWatched30 = 0;
+      for (const dur of videoMaxDuration.values()) {
+        if (dur >= ACTIVATION_DURATION_SECONDS) videosWatched30 += 1;
+      }
+      // Defensive clamp: invariant videos_watched_30s ≤ videos_opened.
+      const videosOpenedCount = allVideoIds.size;
+      if (videosWatched30 > videosOpenedCount) videosWatched30 = videosOpenedCount;
       const saved = userSaved.get(u.id) ?? 0;
       const savedVideos = userSavedVideos.get(u.id) ?? 0;
       const lastSeen = userLastSeen.get(u.id) ?? u.created_at;
