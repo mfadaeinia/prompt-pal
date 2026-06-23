@@ -3414,26 +3414,28 @@ function ExplanationPanel({
           </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Every sentence unlocks a coach-style breakdown — natural translation, the key expression, and why native speakers say it this way.
+          Every sentence unlocks a natural translation, useful expressions, optional context, and grammar insights when relevant.
         </p>
         {/* Compact preview chips on mobile so the transcript stays close; full previews on desktop. */}
         <div className="mt-3 flex flex-wrap gap-1.5 sm:hidden">
-          {["Meaning", "Useful expressions", "Quick context"].map((l) => (
+          {["Meaning", "Key expressions", "Context", "Grammar"].map((l) => (
             <span key={l} className="rounded-full border border-primary/20 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-primary">
               ✓ {l}
             </span>
           ))}
         </div>
         <div className="mt-5 hidden space-y-3 sm:block">
-          <PreviewSection label="Meaning" sample="More and more roads are now limited to 30 km/h." />
-          <PreviewSection label="Useful expressions" sample="steeds meer = more and more · nog maar = only" mono />
-          <PreviewSection label="Quick context" sample="Optional — only shown when it actually helps." />
+          <PreviewSection label="Meaning" sample="Natural, easy-to-understand translation." />
+          <PreviewSection label="Key expressions" sample="Useful phrases worth learning." />
+          <PreviewSection label="Context" sample="Only shown when it actually helps." />
+          <PreviewSection label="Grammar ▼" sample="Shown when relevant — tap to expand." />
         </div>
         <p className="mt-4 text-center text-xs font-medium text-primary sm:mt-5">
           👆 Tap a sentence below to see the real thing
         </p>
       </div>
     );
+
 
   }
 
@@ -3446,6 +3448,21 @@ function ExplanationPanel({
   void tgtLabel;
   const highlightPhrases = ready
     ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
+    : [];
+
+  // Active expression state — only one phrase highlighted at a time in the original sentence.
+  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  // Reset highlight when the sentence changes.
+  useEffect(() => {
+    setActivePhrase(null);
+  }, [sentence?.id]);
+
+  const handleSelectPhrase = (phrase: string) => {
+    setActivePhrase((prev) => (prev && prev.toLowerCase() === phrase.toLowerCase() ? null : phrase));
+  };
+
+  const sentenceHighlights = activePhrase
+    ? highlightPhrases.filter((p) => p.toLowerCase() === activePhrase.toLowerCase())
     : [];
 
   return (
@@ -3466,7 +3483,7 @@ function ExplanationPanel({
           </button>
         </div>
         <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
-          <SentenceWithHighlights text={sentence.text} phrases={highlightPhrases} />
+          <SentenceWithHighlights text={sentence.text} phrases={sentenceHighlights} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {onResume && (
@@ -3528,33 +3545,41 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — readable but not visually dominant. */}
+            {/* MEANING — readable but not visually dominant (normal weight). */}
             {ready.translation && (
               <div>
                 <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Meaning
                 </h4>
-                <p className="mt-1 text-base leading-snug text-foreground sm:text-lg">
+                <p className="mt-1 text-base font-normal leading-snug text-foreground sm:text-lg">
                   {ready.translation}
                 </p>
               </div>
             )}
 
-            {/* Key expressions — max 2. Multi-word idioms / common phrases. */}
+            {/* KEY EXPRESSIONS — tap to highlight inside the original sentence. Max 2. */}
             {(ready.keyExpressions || ready.keyExpression) && (
               <ExpressionList
                 label="Key Expressions"
                 raw={ready.keyExpressions || ready.keyExpression}
                 max={2}
+                activePhrase={activePhrase}
+                onSelect={handleSelectPhrase}
               />
             )}
 
-            {/* Vocabulary — max 2 high-value single words. */}
+            {/* Vocabulary — max 2 high-value single words. Also tappable. */}
             {ready.vocabulary && (
-              <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
+              <ExpressionList
+                label="Vocabulary"
+                raw={ready.vocabulary}
+                max={2}
+                activePhrase={activePhrase}
+                onSelect={handleSelectPhrase}
+              />
             )}
 
-            {/* Context — only when it adds info beyond the translation. */}
+            {/* CONTEXT — only when it adds info beyond the translation. */}
             {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
               <div>
                 <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -3566,13 +3591,14 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Grammar — always rendered as a collapsed section when present. */}
-            {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
+            {/* GRAMMAR — always rendered, collapsed by default, with fallback when empty. */}
+            <GrammarDetails grammar={ready.grammar} />
 
-            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
+            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && (
               <FallbackHint />
             )}
           </div>
+
 
 
 
@@ -3736,7 +3762,19 @@ function parseExpressionItems(raw: string): ExpressionItem[] {
     .filter((it) => it.head.length > 0);
 }
 
-function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; max?: number }) {
+function ExpressionList({
+  label,
+  raw,
+  max = 2,
+  activePhrase,
+  onSelect,
+}: {
+  label: string;
+  raw: string;
+  max?: number;
+  activePhrase?: string | null;
+  onSelect?: (phrase: string) => void;
+}) {
   const items = parseExpressionItems(raw).slice(0, max);
   if (items.length === 0) return null;
   return (
@@ -3745,28 +3783,50 @@ function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; m
         {label}
       </h4>
       <ul className="mt-2 space-y-1.5">
-        {items.map((it, i) => (
-          <li
-            key={i}
-            className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
-          >
-            <span className="font-bold text-foreground">{it.head}</span>
-            <span className="flex items-baseline gap-2">
-              {it.meaning && (
-                <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
+        {items.map((it, i) => {
+          const isActive = !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+          const clickable = !!onSelect;
+          const Inner = (
+            <>
+              <span className={`font-bold text-foreground ${isActive ? "bg-primary/15 rounded px-1 -mx-1" : ""}`}>
+                {it.head}
+              </span>
+              <span className="flex items-baseline gap-2">
+                {it.meaning && (
+                  <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
+                )}
+                {it.tag && (
+                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
+                    {it.tag}
+                  </span>
+                )}
+              </span>
+            </>
+          );
+          return (
+            <li key={i}>
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => onSelect?.(it.head)}
+                  className="flex w-full flex-col gap-0 rounded-md text-left transition-colors hover:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+                  aria-pressed={isActive}
+                >
+                  {Inner}
+                </button>
+              ) : (
+                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                  {Inner}
+                </div>
               )}
-              {it.tag && (
-                <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
-                  {it.tag}
-                </span>
-              )}
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
+
 
 function truncateContext(s: string, limit = 140) {
   const t = s.trim();
@@ -3815,19 +3875,18 @@ function escapeRegExp(s: string) {
 
 function SentenceWithHighlights({ text, phrases }: { text: string; phrases: string[] }) {
   if (!phrases.length) return <>{text}</>;
-  // Build a single regex that matches any phrase, case-insensitive.
   const pattern = new RegExp(`(${phrases.map(escapeRegExp).join("|")})`, "gi");
   const parts = text.split(pattern);
   return (
     <>
       {parts.map((part, i) => {
         if (!part) return null;
-        const isMatch = i % 2 === 1; // odd indices are captured groups
+        const isMatch = i % 2 === 1;
         if (!isMatch) return <span key={i}>{part}</span>;
         return (
           <mark
             key={i}
-            className="rounded bg-primary/15 px-0.5 text-foreground decoration-primary/60 decoration-2 underline-offset-2"
+            className="rounded bg-primary/20 px-0.5 text-foreground"
           >
             {part}
           </mark>
@@ -3838,17 +3897,25 @@ function SentenceWithHighlights({ text, phrases }: { text: string; phrases: stri
 }
 
 
-function GrammarDetails({ grammar }: { grammar: string }) {
+function GrammarDetails({ grammar }: { grammar?: string }) {
+  const hasGrammar = !!grammar && grammar.trim().length > 0;
   return (
     <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground">
         <span>Grammar</span>
         <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
       </summary>
-      <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{grammar}</p>
+      {hasGrammar ? (
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground/80">{grammar}</p>
+      ) : (
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground/80">
+          No notable grammar pattern in this sentence.
+        </p>
+      )}
     </details>
   );
 }
+
 
 function InlineExplanation({
   entry,
