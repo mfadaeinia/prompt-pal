@@ -3745,10 +3745,18 @@ function ExplanationSections({
   model,
   activePhrase,
   onSelectPhrase,
+  onSaveExpression,
+  savedExpressionHeads,
+  savingExpressionHead,
+  justSavedExpressionHead,
 }: {
   model: ExplanationModel;
   activePhrase?: string | null;
   onSelectPhrase?: (phrase: string) => void;
+  onSaveExpression?: (head: string, meaning: string) => void;
+  savedExpressionHeads?: Set<string>;
+  savingExpressionHead?: string | null;
+  justSavedExpressionHead?: string | null;
 }) {
   return (
     <div className="space-y-2.5">
@@ -3764,6 +3772,10 @@ function ExplanationSections({
             {model.keyExpressions.map((it, i) => {
               const isActive =
                 !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+              const headKey = it.head.trim().toLowerCase();
+              const isExprSaved = !!savedExpressionHeads?.has(headKey);
+              const isExprSaving = savingExpressionHead === headKey;
+              const isExprJustSaved = justSavedExpressionHead === headKey;
               const inner = (
                 <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                   <span
@@ -3788,18 +3800,40 @@ function ExplanationSections({
                 </div>
               );
               return (
-                <li key={i}>
+                <li key={i} className="flex items-start gap-1">
                   {onSelectPhrase ? (
                     <button
                       type="button"
                       onClick={() => onSelectPhrase(it.head)}
                       aria-pressed={isActive}
-                      className="block w-full rounded-md text-left transition-colors hover:bg-muted/40"
+                      className="block flex-1 min-w-0 rounded-md text-left transition-colors hover:bg-muted/40"
                     >
                       {inner}
                     </button>
                   ) : (
-                    inner
+                    <div className="flex-1 min-w-0">{inner}</div>
+                  )}
+                  {onSaveExpression && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isExprSaved || isExprSaving) return;
+                        onSaveExpression(it.head, it.meaning || "");
+                      }}
+                      disabled={isExprSaved || isExprSaving}
+                      aria-label={isExprSaved ? "Saved to My Library" : "Save expression"}
+                      title={isExprSaved ? "In Library" : "Save expression"}
+                      className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary disabled:opacity-70"
+                    >
+                      {isExprJustSaved ? (
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                      ) : isExprSaved ? (
+                        <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <Bookmark className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   )}
                 </li>
               );
