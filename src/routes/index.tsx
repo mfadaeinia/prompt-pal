@@ -4069,35 +4069,15 @@ function InlineExplanation({
   if (entry.status === "error") {
     return <p className="text-xs text-destructive">{entry.error}</p>;
   }
-  const { translation, keyExpression, keyExpressions, whatsHappening, vocabulary, grammar } = entry;
-  if (!translation && !keyExpression && !keyExpressions && !whatsHappening && !vocabulary && !grammar) {
+  const model = buildExplanationModel(entry);
+  const hasAny =
+    !!model.meaning || model.keyExpressions.length > 0 || !!model.context || !!model.grammar;
+  if (!hasAny) {
     return <FallbackHint />;
   }
-  return (
-    <div className="space-y-3">
-      {translation && (
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Meaning</p>
-          <p className="mt-0.5 text-base leading-snug text-foreground">{translation}</p>
-        </div>
-      )}
-      {(keyExpressions || keyExpression || vocabulary) && (
-        <ExpressionList
-          label="Useful expressions"
-          raw={[keyExpressions || keyExpression, vocabulary].filter(Boolean).join(" · ")}
-          max={3}
-        />
-      )}
-      {whatsHappening && shouldShowContext(whatsHappening, translation) && (
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick context</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-foreground/80">{truncateContext(whatsHappening)}</p>
-        </div>
-      )}
-      <GrammarDetails grammar={grammar} />
-    </div>
-  );
+  return <ExplanationSections model={model} />;
 }
+
 
 
 
