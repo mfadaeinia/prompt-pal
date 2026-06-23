@@ -3712,6 +3712,107 @@ function UsefulExpressions({ raw, fallbackKey }: { raw: string; fallbackKey?: st
   );
 }
 
+// ---- New compact expression list with optional [tag] badges. ----
+
+type ExpressionItem = { head: string; meaning: string; tag?: string };
+
+function parseExpressionItems(raw: string): ExpressionItem[] {
+  return raw
+    .split(/\s*(?:·|•|;|\|)\s*/)
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map<ExpressionItem>((item) => {
+      // Optional trailing [Tag]
+      const tagMatch = item.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+      let tag: string | undefined;
+      let rest = item;
+      if (tagMatch) {
+        tag = tagMatch[2].trim();
+        rest = tagMatch[1].trim();
+      }
+      const [head, ...tailParts] = rest.split(/\s*=\s*/);
+      return { head: (head || "").trim(), meaning: tailParts.join(" = ").trim(), tag };
+    })
+    .filter((it) => it.head.length > 0);
+}
+
+function ExpressionList({ label, raw, max = 2 }: { label: string; raw: string; max?: number }) {
+  const items = parseExpressionItems(raw).slice(0, max);
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </h4>
+      <ul className="mt-2 divide-y divide-border/60 rounded-lg border border-border/60 bg-background/60">
+        {items.map((it, i) => (
+          <li key={i} className="flex flex-col gap-0.5 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+            <span className="font-semibold text-foreground">{it.head}</span>
+            <span className="flex items-baseline gap-2">
+              {it.meaning && (
+                <span className="text-sm text-muted-foreground">{it.meaning}</span>
+              )}
+              {it.tag && (
+                <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {it.tag}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function truncateContext(s: string, limit = 140) {
+  const t = s.trim();
+  if (t.length <= limit) return t;
+  return t.slice(0, limit - 1).replace(/\s+\S*$/, "") + "…";
+}
+
+// Pull source-language phrases out of the expression/vocab lines so we can highlight them in-sentence.
+function collectHighlightPhrases(...raws: string[]): string[] {
+  const phrases: string[] = [];
+  for (const raw of raws) {
+    if (!raw) continue;
+    for (const it of parseExpressionItems(raw)) {
+      if (it.head) phrases.push(it.head);
+    }
+  }
+  // De-dup, prefer longer matches first so they take precedence in the highlighter.
+  return Array.from(new Set(phrases)).sort((a, b) => b.length - a.length);
+}
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function SentenceWithHighlights({ text, phrases }: { text: string; phrases: string[] }) {
+  if (!phrases.length) return <>{text}</>;
+  // Build a single regex that matches any phrase, case-insensitive.
+  const pattern = new RegExp(`(${phrases.map(escapeRegExp).join("|")})`, "gi");
+  const parts = text.split(pattern);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part) return null;
+        const isMatch = i % 2 === 1; // odd indices are captured groups
+        if (!isMatch) return <span key={i}>{part}</span>;
+        return (
+          <mark
+            key={i}
+            className="rounded bg-primary/15 px-0.5 text-foreground decoration-primary/60 decoration-2 underline-offset-2"
+          >
+            {part}
+          </mark>
+        );
+      })}
+    </>
+  );
+}
+
+
 function GrammarDetails({ grammar }: { grammar: string }) {
   return (
     <details className="group rounded-lg border border-border/60 bg-background/40">
