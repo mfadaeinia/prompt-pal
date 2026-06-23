@@ -3605,6 +3605,170 @@ function FallbackHint() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Canonical sentence-explanation model + renderer.
+// Both the onboarding preview card and the live explanation panel render from
+// this exact shape so they cannot drift apart. Section order is fixed:
+//   1. Meaning  2. Useful expressions  3. Quick context (optional)  4. Grammar ▼
+// ---------------------------------------------------------------------------
+
+export type ExplanationExpression = { head: string; meaning: string; tag?: string };
+
+export type ExplanationModel = {
+  meaning: string;
+  keyExpressions: ExplanationExpression[];
+  context?: string;
+  /** Empty => Grammar row still renders with a "no notable pattern" fallback. */
+  grammar?: string;
+};
+
+function buildExplanationModel(ready: {
+  translation: string;
+  keyExpression: string;
+  keyExpressions: string;
+  vocabulary: string;
+  whatsHappening: string;
+  grammar: string;
+}): ExplanationModel {
+  const rawExpr = [ready.keyExpressions || ready.keyExpression, ready.vocabulary]
+    .filter(Boolean)
+    .join(" · ");
+  const keyExpressions = parseExpressionItems(rawExpr).slice(0, 3);
+  const context =
+    ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation)
+      ? truncateContext(ready.whatsHappening)
+      : undefined;
+  return {
+    meaning: ready.translation || "",
+    keyExpressions,
+    context,
+    grammar: ready.grammar || "",
+  };
+}
+
+function SectionBox({
+  label,
+  children,
+  asDetails = false,
+}: {
+  label: string;
+  children: ReactNode;
+  asDetails?: boolean;
+}) {
+  const labelEl = (
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/80">{label}</p>
+  );
+  if (asDetails) {
+    return (
+      <details className="group rounded-xl border border-border/70 bg-background/60 px-3 py-2.5">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+          {labelEl}
+          <ChevronDown className="h-3 w-3 text-primary/70 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-1.5">{children}</div>
+      </details>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/60 px-3 py-2.5">
+      {labelEl}
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}
+
+function ExplanationSections({
+  model,
+  activePhrase,
+  onSelectPhrase,
+}: {
+  model: ExplanationModel;
+  activePhrase?: string | null;
+  onSelectPhrase?: (phrase: string) => void;
+}) {
+  return (
+    <div className="space-y-2.5">
+      <SectionBox label="Meaning">
+        <p className="text-sm font-normal leading-snug text-foreground">
+          {model.meaning || "—"}
+        </p>
+      </SectionBox>
+
+      <SectionBox label="Useful expressions">
+        {model.keyExpressions.length === 0 ? (
+          <p className="text-sm font-normal text-muted-foreground">
+            No standout expressions in this line.
+          </p>
+        ) : (
+          <ul className="space-y-1">
+            {model.keyExpressions.map((it, i) => {
+              const isActive =
+                !!activePhrase && activePhrase.toLowerCase() === it.head.toLowerCase();
+              const inner = (
+                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                  <span
+                    className={`font-bold text-foreground ${
+                      isActive ? "rounded bg-primary/15 px-1 -mx-1" : ""
+                    }`}
+                  >
+                    {it.head}
+                  </span>
+                  <span className="flex items-baseline gap-2">
+                    {it.meaning && (
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {it.meaning}
+                      </span>
+                    )}
+                    {it.tag && (
+                      <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
+                        {it.tag}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+              return (
+                <li key={i}>
+                  {onSelectPhrase ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectPhrase(it.head)}
+                      aria-pressed={isActive}
+                      className="block w-full rounded-md text-left transition-colors hover:bg-muted/40"
+                    >
+                      {inner}
+                    </button>
+                  ) : (
+                    inner
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </SectionBox>
+
+      {model.context && (
+        <SectionBox label="Quick context">
+          <p className="text-sm leading-relaxed text-foreground/80">{model.context}</p>
+        </SectionBox>
+      )}
+
+      <SectionBox label="Grammar ▼" asDetails>
+        {model.grammar && model.grammar.trim().length > 0 ? (
+          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/80">
+            {model.grammar}
+          </p>
+        ) : (
+          <p className="text-sm leading-relaxed text-muted-foreground/80">
+            No notable grammar pattern in this sentence.
+          </p>
+        )}
+      </SectionBox>
+    </div>
+  );
+}
+
 function PreviewSection({ label, sample, mono = false }: { label: string; sample: string; mono?: boolean }) {
   return (
     <div className="rounded-lg border border-border/70 bg-background/60 px-3 py-2">
