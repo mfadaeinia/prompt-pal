@@ -335,9 +335,9 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState
-                title={items.length === 0 ? "No saved expressions yet" : "No matches"}
+                title={sentenceItems.length === 0 ? "No saved sentences yet" : "No matches"}
                 body={
-                  items.length === 0
+                  sentenceItems.length === 0
                     ? "Highlight any text in a transcript, or tap ★ Save on an explanation to bookmark it here."
                     : "Try a different search term."
                 }
