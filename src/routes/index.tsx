@@ -3450,6 +3450,21 @@ function ExplanationPanel({
     ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
     : [];
 
+  // Active expression state — only one phrase highlighted at a time in the original sentence.
+  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  // Reset highlight when the sentence changes.
+  useEffect(() => {
+    setActivePhrase(null);
+  }, [sentence?.id]);
+
+  const handleSelectPhrase = (phrase: string) => {
+    setActivePhrase((prev) => (prev && prev.toLowerCase() === phrase.toLowerCase() ? null : phrase));
+  };
+
+  const sentenceHighlights = activePhrase
+    ? highlightPhrases.filter((p) => p.toLowerCase() === activePhrase.toLowerCase())
+    : [];
+
   return (
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
       {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
@@ -3468,7 +3483,7 @@ function ExplanationPanel({
           </button>
         </div>
         <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
-          <SentenceWithHighlights text={sentence.text} phrases={highlightPhrases} />
+          <SentenceWithHighlights text={sentence.text} phrases={sentenceHighlights} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {onResume && (
@@ -3530,33 +3545,41 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — readable but not visually dominant. */}
+            {/* MEANING — readable but not visually dominant (normal weight). */}
             {ready.translation && (
               <div>
                 <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Meaning
                 </h4>
-                <p className="mt-1 text-base leading-snug text-foreground sm:text-lg">
+                <p className="mt-1 text-base font-normal leading-snug text-foreground sm:text-lg">
                   {ready.translation}
                 </p>
               </div>
             )}
 
-            {/* Key expressions — max 2. Multi-word idioms / common phrases. */}
+            {/* KEY EXPRESSIONS — tap to highlight inside the original sentence. Max 2. */}
             {(ready.keyExpressions || ready.keyExpression) && (
               <ExpressionList
                 label="Key Expressions"
                 raw={ready.keyExpressions || ready.keyExpression}
                 max={2}
+                activePhrase={activePhrase}
+                onSelect={handleSelectPhrase}
               />
             )}
 
-            {/* Vocabulary — max 2 high-value single words. */}
+            {/* Vocabulary — max 2 high-value single words. Also tappable. */}
             {ready.vocabulary && (
-              <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
+              <ExpressionList
+                label="Vocabulary"
+                raw={ready.vocabulary}
+                max={2}
+                activePhrase={activePhrase}
+                onSelect={handleSelectPhrase}
+              />
             )}
 
-            {/* Context — only when it adds info beyond the translation. */}
+            {/* CONTEXT — only when it adds info beyond the translation. */}
             {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
               <div>
                 <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -3568,13 +3591,14 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Grammar — always rendered as a collapsed section when present. */}
-            {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
+            {/* GRAMMAR — always rendered, collapsed by default, with fallback when empty. */}
+            <GrammarDetails grammar={ready.grammar} />
 
-            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
+            {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && (
               <FallbackHint />
             )}
           </div>
+
 
 
 
