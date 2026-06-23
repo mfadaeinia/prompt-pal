@@ -3457,12 +3457,7 @@ function ExplanationPanel({
     ? collectHighlightPhrases(ready.keyExpressions, ready.vocabulary, ready.keyExpression)
     : [];
 
-  // Active expression state — only one phrase highlighted at a time in the original sentence.
-  const [activePhrase, setActivePhrase] = useState<string | null>(null);
-  // Reset highlight when the sentence changes.
-  useEffect(() => {
-    setActivePhrase(null);
-  }, [sentence?.id]);
+  // (activePhrase state hoisted above the empty-state return.)
 
   const handleSelectPhrase = (phrase: string) => {
     setActivePhrase((prev) => (prev && prev.toLowerCase() === phrase.toLowerCase() ? null : phrase));
@@ -3471,6 +3466,7 @@ function ExplanationPanel({
   const sentenceHighlights = activePhrase
     ? highlightPhrases.filter((p) => p.toLowerCase() === activePhrase.toLowerCase())
     : [];
+
 
   return (
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
