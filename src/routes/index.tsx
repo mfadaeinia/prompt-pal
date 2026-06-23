@@ -3617,6 +3617,10 @@ function ExplanationPanel({
                 model={model}
                 activePhrase={activePhrase}
                 onSelectPhrase={handleSelectPhrase}
+                onSaveExpression={onSaveExpression}
+                savedExpressionHeads={savedExpressionHeads}
+                savingExpressionHead={savingExpressionHead}
+                justSavedExpressionHead={justSavedExpressionHead}
               />
             );
           })()
