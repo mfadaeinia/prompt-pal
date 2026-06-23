@@ -2870,6 +2870,10 @@ function Index() {
                         limitedMode={limitedMode}
                         sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
                         targetLangLabel={targetLang}
+                        onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
+                        savedExpressionHeads={savedExpressionHeads}
+                        savingExpressionHead={savingExpressionHead}
+                        justSavedExpressionHead={justSavedExpressionHead}
                       />
                     </div>
                   </SheetContent>
