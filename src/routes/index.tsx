@@ -3605,35 +3605,9 @@ function PreviewSection({ label, sample, mono = false }: { label: string; sample
   );
 }
 
-function KeyExpressionHero({ expression }: { expression: string }) {
-  const [head, ...rest] = expression.split(/\s*=\s*/);
-  const tail = rest.join(" = ");
-  const meanings = tail
-    ? tail.split(/\s*,\s*/).map((m) => m.trim()).filter(Boolean)
-    : [];
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-4 shadow-sm ring-1 ring-primary/10 sm:p-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,oklch(0.55_0.22_265/0.12),transparent_70%)]"
-      />
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">
-          Key Expression
-        </p>
-      </div>
-      <p className="mt-2 text-xl font-semibold leading-tight tracking-tight text-foreground sm:text-2xl">
-        {head}
-      </p>
-      {meanings.length > 0 && (
-        <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-          {meanings.join(" · ")}
-        </p>
-      )}
-    </div>
-  );
-}
+// KeyExpressionHero removed — the redesigned panel surfaces expressions inside UsefulExpressions instead.
+
+
 
 type VocabTier = "high" | "useful" | "basic";
 type VocabItem = { tier: VocabTier; head: string; meaning: string };
