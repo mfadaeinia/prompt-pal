@@ -167,17 +167,29 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["saved-videos"] }),
   });
 
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
   const videos = videosData?.items ?? [];
+
+  const sentenceItems = useMemo(() => allItems.filter((it: any) => !isWordItem(it)), [allItems]);
+  const wordItems = useMemo(() => allItems.filter((it: any) => isWordItem(it)), [allItems]);
+
+  function matchQuery(it: any, q: string) {
+    return [it.sentence_text, it.translation, it.meaning, it.expression_notes, it.video_title]
+      .filter(Boolean)
+      .some((v: string) => v.toLowerCase().includes(q));
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((it: any) =>
-      [it.sentence_text, it.translation, it.meaning, it.expression_notes, it.video_title]
-        .filter(Boolean)
-        .some((v: string) => v.toLowerCase().includes(q))
-    );
-  }, [items, query]);
+    if (!q) return sentenceItems;
+    return sentenceItems.filter((it: any) => matchQuery(it, q));
+  }, [sentenceItems, query]);
+
+  const filteredWords = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return wordItems;
+    return wordItems.filter((it: any) => matchQuery(it, q));
+  }, [wordItems, query]);
 
   const filteredVideos = useMemo(() => {
     const q = query.trim().toLowerCase();
