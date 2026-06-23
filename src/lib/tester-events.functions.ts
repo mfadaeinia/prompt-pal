@@ -189,7 +189,8 @@ export const getTesterCohort = createServerFn({ method: "GET" }).handler(
         }
       }
 
-      const activated = videosLoaded >= 1 && sentenceClicks >= 3;
+      // Activation: at least one video loaded AND at least one deliberate sentence click.
+      const activated = videosLoaded >= 1 && sentenceClicks >= 1;
       testers.push({
         tester_id: testerId,
         email: testerToEmail.get(testerId) ?? null,
@@ -210,7 +211,7 @@ export const getTesterCohort = createServerFn({ method: "GET" }).handler(
     const totals = {
       activated: testers.filter((t) => t.activated).length,
       loadedVideo: testers.filter((t) => t.videos_loaded >= 1).length,
-      clickedThreeSentences: testers.filter((t) => t.sentence_clicks >= 3).length,
+      clickedThreeSentences: testers.filter((t) => t.sentence_clicks >= 1).length,
       returned7d: testers.filter((t) => t.returned_7d).length,
     };
 

@@ -160,6 +160,20 @@ function RootComponent() {
       initAnalytics();
       track("page_view", { path: window.location.pathname });
     });
+    // True visitor signal: write a page_views row keyed by browser session id.
+    // Fire-and-forget; never block UI on analytics.
+    Promise.all([
+      import("../lib/page-views.functions"),
+      import("../lib/browser-id"),
+    ])
+      .then(([{ logPageView }, { getBrowserId }]) => {
+        const sid = getBrowserId();
+        if (!sid) return;
+        return logPageView({
+          data: { sessionId: sid, path: window.location.pathname },
+        });
+      })
+      .catch(() => {});
   }, []);
 
   return (
