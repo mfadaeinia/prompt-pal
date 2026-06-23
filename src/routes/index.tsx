@@ -3557,33 +3557,24 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* KEY EXPRESSIONS — tap to highlight inside the original sentence. Max 2. */}
-            {(ready.keyExpressions || ready.keyExpression) && (
+            {/* USEFUL EXPRESSIONS — merged key expressions + vocabulary. Tap to highlight in the original sentence. Max 3. */}
+            {(ready.keyExpressions || ready.keyExpression || ready.vocabulary) && (
               <ExpressionList
-                label="Key Expressions"
-                raw={ready.keyExpressions || ready.keyExpression}
-                max={2}
+                label="Useful expressions"
+                raw={[ready.keyExpressions || ready.keyExpression, ready.vocabulary]
+                  .filter(Boolean)
+                  .join(" · ")}
+                max={3}
                 activePhrase={activePhrase}
                 onSelect={handleSelectPhrase}
               />
             )}
 
-            {/* Vocabulary — max 2 high-value single words. Also tappable. */}
-            {ready.vocabulary && (
-              <ExpressionList
-                label="Vocabulary"
-                raw={ready.vocabulary}
-                max={2}
-                activePhrase={activePhrase}
-                onSelect={handleSelectPhrase}
-              />
-            )}
-
-            {/* CONTEXT — only when it adds info beyond the translation. */}
+            {/* QUICK CONTEXT — only when it adds info beyond the translation. */}
             {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
               <div>
                 <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Context
+                  Quick context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
                   {truncateContext(ready.whatsHappening)}
@@ -3598,6 +3589,7 @@ function ExplanationPanel({
               <FallbackHint />
             )}
           </div>
+
 
 
 
