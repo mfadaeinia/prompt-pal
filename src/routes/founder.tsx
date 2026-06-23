@@ -585,18 +585,21 @@ function FunnelSection({
 
 function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
   const d = m.discovery;
-  const stages: Array<{ label: string; value: number; tooltip: string }> = [
+  const awaitingData = d.transcriptSeen === 0;
+  const stages: Array<{ label: string; value: number; tooltip: string; awaiting?: boolean }> = [
     { label: "Video Opened", value: d.videoOpened, tooltip: "Sessions that loaded a video page." },
     { label: "Watched 30s+", value: d.watched30s, tooltip: "Sessions whose max duration ≥30s." },
     {
       label: "Transcript Seen",
       value: d.transcriptSeen,
       tooltip: "Sessions whose transcript scrolled into the viewport (transcript_seen event).",
+      awaiting: awaitingData,
     },
     {
       label: "Hovered Sentence",
       value: d.hoveredSentence,
       tooltip: "Desktop sessions that hovered any sentence (sentence_hovered event). Mobile sessions cannot register hover.",
+      awaiting: awaitingData,
     },
     {
       label: "Clicked Sentence",
@@ -610,9 +613,11 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
     },
   ];
   const drops = stages.slice(1).map((s, i) => {
-    const prev = stages[i].value;
-    const continuePct = prev > 0 ? Math.round((s.value / prev) * 100) : null;
-    return { ...s, continuePct, dropPct: continuePct === null ? null : 100 - continuePct };
+    const prev = stages[i];
+    const prevVal = prev.value;
+    const invalid = prev.awaiting || (s.awaiting ?? false);
+    const continuePct = !invalid && prevVal > 0 ? Math.round((s.value / prevVal) * 100) : null;
+    return { ...s, continuePct, dropPct: continuePct === null ? null : 100 - continuePct, invalid };
   });
   return (
     <div className="space-y-3">
@@ -631,7 +636,13 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
         {drops.map((s) => (
           <div key={s.label}>
             <div className="ml-4 text-xs text-slate-400">
-              ↓ {s.continuePct ?? 0}% continue ({s.dropPct ?? 0}% drop-off)
+              {s.invalid ? (
+                <span className="text-amber-600">↓ awaiting data</span>
+              ) : (
+                <>
+                  ↓ {s.continuePct}% continue ({s.dropPct}% drop-off)
+                </>
+              )}
             </div>
             <FunnelRow
               label={s.label}
@@ -639,6 +650,7 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
               value={s.value}
               pct={s.continuePct ?? 0}
               tooltip={s.tooltip}
+              awaiting={s.awaiting}
             />
           </div>
         ))}
