@@ -3528,13 +3528,13 @@ function ExplanationPanel({
           </div>
         ) : ready ? (
           <div className="space-y-4">
-            {/* ⭐ MEANING — the hero. */}
+            {/* ⭐ MEANING — readable but not visually dominant. */}
             {ready.translation && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Meaning
                 </h4>
-                <p className="mt-1 text-lg font-medium leading-snug text-foreground">
+                <p className="mt-1 text-base leading-snug text-foreground sm:text-lg">
                   {ready.translation}
                 </p>
               </div>
@@ -3554,10 +3554,10 @@ function ExplanationPanel({
               <ExpressionList label="Vocabulary" raw={ready.vocabulary} max={2} />
             )}
 
-            {/* Quick context — optional, max 1 line, capped. */}
-            {ready.whatsHappening && (
+            {/* Context — only when it adds info beyond the translation. */}
+            {ready.whatsHappening && shouldShowContext(ready.whatsHappening, ready.translation) && (
               <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <h4 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Context
                 </h4>
                 <p className="mt-1 text-sm leading-relaxed text-foreground/80">
@@ -3566,7 +3566,7 @@ function ExplanationPanel({
               </div>
             )}
 
-            {/* Grammar — collapsible, hidden by default. */}
+            {/* Grammar — always rendered as a collapsed section when present. */}
             {ready.grammar && <GrammarDetails grammar={ready.grammar} />}
 
             {!ready.translation && !ready.keyExpressions && !ready.keyExpression && !ready.vocabulary && !ready.whatsHappening && !ready.grammar && (
