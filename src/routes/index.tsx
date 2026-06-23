@@ -492,6 +492,57 @@ function Index() {
     requireAuth(() => saveVideoMutation.mutate());
   }
 
+  // Per-expression save (the bookmark icon inside Useful expressions).
+  const [savingExpressionHead, setSavingExpressionHead] = useState<string | null>(null);
+  const [justSavedExpressionHead, setJustSavedExpressionHead] = useState<string | null>(null);
+  function handleSaveSingleExpression(
+    sentence: TranscriptSentence | null,
+    head: string,
+    meaning: string,
+  ) {
+    if (!sentence || !head.trim()) return;
+    const headKey = head.trim().toLowerCase();
+    if (savedExpressionHeads.has(headKey)) return;
+    requireAuth(async () => {
+      setSavingExpressionHead(headKey);
+      try {
+        await saveExpressionFx({
+          data: {
+            sessionId: browserId,
+            sentenceText: head.trim(),
+            translation: meaning || null,
+            expressionNotes: `From: "${sentence.text}"`,
+            videoTitle: videoTitle,
+            videoUrl: url || null,
+            videoId: videoId,
+            timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+            targetLanguage: targetLang || null,
+          },
+        });
+        track("expression_saved", {
+          video_id: videoId,
+          timestamp_seconds: Math.round(sentence.offset),
+          target_language: targetLang,
+          source: "expression_row",
+        });
+        void logLibraryEventFx({
+          data: {
+            eventName: "expression_saved",
+            sessionId: browserId,
+            videoId: videoId ?? null,
+            userId,
+            metadata: { source: "expression_row" },
+          },
+        }).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        setJustSavedExpressionHead(headKey);
+        window.setTimeout(() => setJustSavedExpressionHead(null), 1400);
+      } finally {
+        setSavingExpressionHead(null);
+      }
+    });
+  }
+
   // ── Selection-based "Save expression" floating menu ──────────────────────
   // When the user highlights text inside the transcript, show a contextual
   // action to save just the selected text (not the whole sentence).
