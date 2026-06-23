@@ -47,6 +47,33 @@ export type FounderMetrics = {
     /** Sessions that saved at least one expression or video. */
     savedSomething: number;
   };
+  /**
+   * Discovery funnel — designed to answer "why are users watching but not
+   * clicking?" Every step is unique session_ids, monotonically clamped.
+   */
+  discovery: {
+    videoOpened: number;
+    watched30s: number;
+    /** Sessions whose transcript scrolled into the viewport. */
+    transcriptSeen: number;
+    /** Sessions where the user hovered any sentence (desktop only). */
+    hoveredSentence: number;
+    clickedSentence: number;
+    savedSomething: number;
+  };
+  /**
+   * Primary discoverability metric.
+   * firstClickRate = unique sessions with ≥1 sentence click / unique
+   *   sessions watched ≥30s.
+   */
+  firstClick: {
+    watched30s: number;
+    clickedSessions: number;
+    rate: number; // 0..1
+    /** Sessions watched ≥30s but never clicked a sentence. */
+    watchedNoClick: number;
+    watchedNoClickPct: number; // 0..1 share of watched30s
+  };
 };
 
 export const ACTIVATION_DURATION_SECONDS = 30;
@@ -71,7 +98,11 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       supabaseAdmin
         .from("library_events" as any)
         .select("session_id,event_name")
-        .eq("event_name", "sentence_clicked"),
+        .in("event_name", [
+          "sentence_clicked",
+          "transcript_seen",
+          "sentence_hovered",
+        ]),
     ]);
 
     const pageViewRows = ((pv.data ?? []) as unknown) as Array<{ session_id: string | null }>;
@@ -91,10 +122,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
     const savedExpr = ((sx.data ?? []) as unknown) as Array<{ session_id: string | null }>;
     const savedVids = ((svRows.data ?? []) as unknown) as Array<{ session_id: string | null }>;
-    const clickRows = ((le.data ?? []) as unknown) as Array<{
+    const allEventRows = ((le.data ?? []) as unknown) as Array<{
       session_id: string | null;
       event_name: string;
     }>;
+    const clickRows = allEventRows.filter((r) => r.event_name === "sentence_clicked");
+    const transcriptSeenRows = allEventRows.filter((r) => r.event_name === "transcript_seen");
+    const hoveredRows = allEventRows.filter((r) => r.event_name === "sentence_hovered");
 
     // -------- Per-session video stats --------
     const maxDurationBySession = new Map<string, number>();
@@ -148,6 +182,31 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const fClicked = Math.min(clickedSessions.size, fWatched30);
     const fSaved = Math.min(savedSessions.size, fClicked);
 
+    // -------- Discovery funnel --------
+    const transcriptSeenSessions = new Set(
+      transcriptSeenRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+    const hoveredSessions = new Set(
+      hoveredRows.map((r) => r.session_id).filter(Boolean) as string[],
+    );
+    const dTranscriptSeen = Math.min(transcriptSeenSessions.size, fWatched30);
+    const dHovered = Math.min(hoveredSessions.size, dTranscriptSeen);
+    // Clicked is bound by hovered on desktop, but mobile has no hover — so
+    // clamp only against the higher of (transcriptSeen, hovered) to avoid
+    // visually hiding mobile clicks.
+    const dClicked = Math.min(clickedSessions.size, fWatched30);
+    const dSaved = Math.min(savedSessions.size, dClicked);
+
+    // -------- First-click rate --------
+    let watchedNoClick = 0;
+    for (const sid of watched30Sessions) {
+      if (!clickedSessions.has(sid)) watchedNoClick += 1;
+    }
+    const firstClickRate =
+      watched30Sessions.size > 0 ? clickedSessions.size / watched30Sessions.size : 0;
+    const watchedNoClickPct =
+      watched30Sessions.size > 0 ? watchedNoClick / watched30Sessions.size : 0;
+
     const positive = feedback.filter((f) => f.feedback_type === "positive").length;
     const negative = feedback.filter((f) => f.feedback_type === "negative").length;
     const wouldUseAgain = {
@@ -192,6 +251,21 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         watched30s: fWatched30,
         clickedSentence: fClicked,
         savedSomething: fSaved,
+      },
+      discovery: {
+        videoOpened: fVideoOpened,
+        watched30s: fWatched30,
+        transcriptSeen: dTranscriptSeen,
+        hoveredSentence: dHovered,
+        clickedSentence: dClicked,
+        savedSomething: dSaved,
+      },
+      firstClick: {
+        watched30s: watched30Sessions.size,
+        clickedSessions: clickedSessions.size,
+        rate: firstClickRate,
+        watchedNoClick,
+        watchedNoClickPct,
       },
     };
   },

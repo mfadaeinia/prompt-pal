@@ -1757,6 +1757,134 @@ function Index() {
     };
   }, [videoId]);
 
+  // ── Discovery instrumentation ──────────────────────────────────────────
+  // Answers "why are users watching but not clicking?". Each event fires at
+  // most once per session so the funnel math stays clean.
+  const transcriptVisibleFiredRef = useRef(false);
+  const transcriptSeenFiredRef = useRef(false);
+  const sentenceHoveredFiredRef = useRef(false);
+  const firstClickFiredRef = useRef(false);
+  const hintShownFiredRef = useRef(false);
+  const videoOpenedAtRef = useRef<number | null>(null);
+  const [showSentenceHint, setShowSentenceHint] = useState(false);
+
+  // Mark when a video is opened so seconds_since_video_open is meaningful.
+  useEffect(() => {
+    if (videoId) {
+      videoOpenedAtRef.current = performance.now();
+      // New video → reset per-video discovery flags but keep per-session
+      // ones (transcript_visible, transcript_seen, sentence_hovered,
+      // first_sentence_click, hint_shown all stay session-scoped).
+    } else {
+      videoOpenedAtRef.current = null;
+    }
+  }, [videoId]);
+
+  const secondsSinceOpen = () =>
+    videoOpenedAtRef.current == null
+      ? null
+      : Math.round((performance.now() - videoOpenedAtRef.current) / 1000);
+
+  const logDiscovery = (
+    eventName:
+      | "transcript_visible"
+      | "transcript_seen"
+      | "sentence_hovered"
+      | "first_sentence_click"
+      | "hint_shown"
+      | "hint_dismissed"
+      | "hint_clicked",
+    extra: Record<string, unknown> = {},
+  ) => {
+    const sid = browserId;
+    if (!sid) return;
+    const meta = {
+      seconds_since_video_open: secondsSinceOpen(),
+      ts: new Date().toISOString(),
+      ...extra,
+    };
+    track(eventName, { video_id: videoId, ...meta });
+    void logLibraryEventFx({
+      data: {
+        eventName,
+        sessionId: sid,
+        videoId: videoId ?? null,
+        userId,
+        metadata: meta,
+      },
+    }).catch(() => {});
+  };
+
+  // Fire `transcript_visible` once per session when the transcript first
+  // becomes visible (i.e. sentences are rendered in the DOM).
+  useEffect(() => {
+    if (transcriptVisibleFiredRef.current) return;
+    if (sentences.length === 0) return;
+    if (!browserId) return;
+    transcriptVisibleFiredRef.current = true;
+    logDiscovery("transcript_visible", { sentence_count: sentences.length });
+
+    // First-time-this-session hint: show once, dismissible. Use sessionStorage
+    // so it shows again in a brand-new browser session.
+    try {
+      const seen = sessionStorage.getItem("nf_sentence_hint_seen");
+      if (!seen && !hasInteractedWithSentenceRef.current) {
+        setShowSentenceHint(true);
+      }
+    } catch {
+      setShowSentenceHint(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences.length, browserId]);
+
+  // Fire `transcript_seen` once when the transcript scrolls into the viewport.
+  useEffect(() => {
+    if (transcriptSeenFiredRef.current) return;
+    const el = listRef.current;
+    if (!el || sentences.length === 0 || !browserId) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !transcriptSeenFiredRef.current) {
+            transcriptSeenFiredRef.current = true;
+            logDiscovery("transcript_seen");
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentences.length, browserId]);
+
+  // Fire `hint_shown` once when the hint becomes visible.
+  useEffect(() => {
+    if (!showSentenceHint || hintShownFiredRef.current || !browserId) return;
+    hintShownFiredRef.current = true;
+    logDiscovery("hint_shown");
+    try {
+      sessionStorage.setItem("nf_sentence_hint_seen", "1");
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSentenceHint, browserId]);
+
+  const onSentenceHover = () => {
+    if (sentenceHoveredFiredRef.current) return;
+    if (isMobile) return; // desktop only
+    sentenceHoveredFiredRef.current = true;
+    logDiscovery("sentence_hovered");
+  };
+
+  const dismissSentenceHint = (viaClick: boolean) => {
+    if (!showSentenceHint) return;
+    setShowSentenceHint(false);
+    logDiscovery(viaClick ? "hint_clicked" : "hint_dismissed");
+  };
+
+
   const [activeOutOfView, setActiveOutOfView] = useState(false);
   useEffect(() => {
     if (playingId == null || !listRef.current) {
@@ -2023,8 +2151,18 @@ function Index() {
     } else {
       console.warn("sentence_click_skipped: no browserId yet");
     }
+    // First click of the session — separate funnel event.
+    if (!firstClickFiredRef.current) {
+      firstClickFiredRef.current = true;
+      logDiscovery("first_sentence_click", {
+        sentence_index: idx,
+        mode: studyMode ? "learning" : "watch",
+      });
+    }
     // Dismiss onboarding on first interaction
     if (showOnboarding) dismissOnboarding(true);
+    // Dismiss the sentence hint as a "click" if it was on screen.
+    if (showSentenceHint) dismissSentenceHint(true);
     if (!hasInteractedWithSentenceRef.current) {
       hasInteractedWithSentenceRef.current = true;
       try {
@@ -2731,6 +2869,28 @@ function Index() {
                       </div>
                     </div>
 
+                    {showSentenceHint && sentences.length > 0 && (
+                      <div
+                        role="note"
+                        className="mx-3 mb-2 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-[12.5px] leading-snug text-foreground shadow-sm animate-in fade-in slide-in-from-top-1"
+                      >
+                        <span className="select-none text-base leading-none" aria-hidden>💡</span>
+                        <span className="min-w-0 flex-1">
+                          Click any subtitle to instantly understand expressions, meaning, and context.
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => dismissSentenceHint(false)}
+                          aria-label="Dismiss hint"
+                          className="ml-1 -mr-1 -mt-0.5 shrink-0 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+
+
+
 
                     {loadMutation.isSuccess && sentences.length === 0 ? (
                       <div className="flex-1 overflow-y-auto p-6 text-sm">
@@ -2774,7 +2934,8 @@ function Index() {
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
-                                className={`block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition hover:bg-accent/60 hover:border-primary/60 ${
+                                onMouseEnter={onSentenceHover}
+                                className={`group block w-full cursor-pointer rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] transition-all duration-150 hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.99] ${
                                   active
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing

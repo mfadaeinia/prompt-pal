@@ -281,8 +281,38 @@ function OverviewSection({
   const returningUsers = retention?.totals.returning ?? 0;
   const totalSignups = retention?.totals.new_users ?? 0;
   const videosProcessed = tx?.totalVideos ?? m.video.totalSessions;
+  const fc = m.firstClick;
+  const firstClickPct = Math.round((fc.rate ?? 0) * 1000) / 10;
+  const noClickPct = Math.round((fc.watchedNoClickPct ?? 0) * 1000) / 10;
   return (
     <div className="space-y-6">
+      <div className="space-y-3">
+        <SectionHeader
+          title="Discoverability (primary)"
+          subtitle="Are users who watch the video actually finding the click-a-sentence feature?"
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <BigKpi
+            label="First Click Rate"
+            unit="session"
+            value={`${firstClickPct}%`}
+            tooltip={`Unique sessions with ≥1 sentence click ÷ unique sessions that watched ≥30s. ${fc.clickedSessions} / ${fc.watched30s}.`}
+          />
+          <BigKpi
+            label="Watched, Never Clicked"
+            unit="session"
+            value={fc.watchedNoClick}
+            tooltip={`Sessions that watched ≥30s but never clicked a sentence. ${noClickPct}% of sessions that crossed the 30s mark.`}
+          />
+          <BigKpi
+            label="Watched 30s+"
+            unit="session"
+            value={fc.watched30s}
+            tooltip="Denominator for First Click Rate."
+          />
+        </div>
+      </div>
+
       <div className="space-y-3">
         <SectionHeader
           title="Session Metrics"
@@ -315,6 +345,7 @@ function OverviewSection({
           />
         </div>
       </div>
+
 
       <div className="space-y-3">
         <SectionHeader
@@ -545,6 +576,72 @@ function FunnelSection({
           pct={100}
           tooltip="Authenticated users last seen ≥1 day after signup."
         />
+      </div>
+
+      <DiscoveryFunnel m={m} />
+    </div>
+  );
+}
+
+function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
+  const d = m.discovery;
+  const stages: Array<{ label: string; value: number; tooltip: string }> = [
+    { label: "Video Opened", value: d.videoOpened, tooltip: "Sessions that loaded a video page." },
+    { label: "Watched 30s+", value: d.watched30s, tooltip: "Sessions whose max duration ≥30s." },
+    {
+      label: "Transcript Seen",
+      value: d.transcriptSeen,
+      tooltip: "Sessions whose transcript scrolled into the viewport (transcript_seen event).",
+    },
+    {
+      label: "Hovered Sentence",
+      value: d.hoveredSentence,
+      tooltip: "Desktop sessions that hovered any sentence (sentence_hovered event). Mobile sessions cannot register hover.",
+    },
+    {
+      label: "Clicked Sentence",
+      value: d.clickedSentence,
+      tooltip: "Sessions with ≥1 deliberate sentence_clicked event.",
+    },
+    {
+      label: "Saved Something",
+      value: d.savedSomething,
+      tooltip: "Sessions that saved an expression or video.",
+    },
+  ];
+  const drops = stages.slice(1).map((s, i) => {
+    const prev = stages[i].value;
+    const continuePct = prev > 0 ? Math.round((s.value / prev) * 100) : null;
+    return { ...s, continuePct, dropPct: continuePct === null ? null : 100 - continuePct };
+  });
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        title="Discovery Funnel"
+        subtitle="Where do users drop off before discovering the click-a-sentence feature?"
+      />
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-2">
+        <FunnelRow
+          label={stages[0].label}
+          unit="session"
+          value={stages[0].value}
+          pct={100}
+          tooltip={stages[0].tooltip}
+        />
+        {drops.map((s) => (
+          <div key={s.label}>
+            <div className="ml-4 text-xs text-slate-400">
+              ↓ {s.continuePct ?? 0}% continue ({s.dropPct ?? 0}% drop-off)
+            </div>
+            <FunnelRow
+              label={s.label}
+              unit="session"
+              value={s.value}
+              pct={s.continuePct ?? 0}
+              tooltip={s.tooltip}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
