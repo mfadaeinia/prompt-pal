@@ -255,13 +255,16 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
           />
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "videos" | "sentences")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "videos" | "sentences" | "words")}>
           <TabsList className="mb-5">
             <TabsTrigger value="videos">
               Videos{videos.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({videos.length})</span>}
             </TabsTrigger>
             <TabsTrigger value="sentences">
-              Sentences{items.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({items.length})</span>}
+              Sentences{sentenceItems.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({sentenceItems.length})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="words">
+              Words{wordItems.length > 0 && <span className="ml-1.5 text-xs text-muted-foreground">({wordItems.length})</span>}
             </TabsTrigger>
           </TabsList>
 
