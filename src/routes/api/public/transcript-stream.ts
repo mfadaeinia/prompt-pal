@@ -456,6 +456,30 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   wordsCount: words.length,
                 });
 
+                // Per-chunk raw-text audit: dump first/last words of THIS
+                // chunk with absolute timestamps so we can diff raw ASR vs the
+                // final rendered transcript when chunked stitching corrupts
+                // text past chunk 0.
+                const rawJoined = newRawChunks.map((c) => c.text).join(" ");
+                console.log("[transcript-audit][server] chunk_raw", {
+                  videoId,
+                  chunkIndex,
+                  chunkStartSec: Number(chunkStartSec.toFixed(3)),
+                  chunkEndSec: Number(
+                    (chunkStartSec + (whisperReportedDuration || chunkSeconds)).toFixed(3),
+                  ),
+                  rawItemCount: newRawChunks.length,
+                  rawFirst: newRawChunks.slice(0, 12).map((c) => ({
+                    t: Number(c.offset.toFixed(2)),
+                    text: c.text,
+                  })),
+                  rawLast: newRawChunks.slice(-12).map((c) => ({
+                    t: Number(c.offset.toFixed(2)),
+                    text: c.text,
+                  })),
+                  rawTextPreview: rawJoined.slice(0, 300),
+                });
+
                 // Advance the cumulative clock for the NEXT chunk.
                 cumulativePriorDurationSec += whisperReportedDuration || chunkSeconds;
 
