@@ -1704,12 +1704,13 @@ function Index() {
                 setCurrentTime(0);
               }
             } catch {}
+            // Poll at ~25fps for tight highlight sync with speech.
             pollId = window.setInterval(() => {
               const p = playerRef.current;
               if (p && typeof p.getCurrentTime === "function") {
                 setCurrentTime(p.getCurrentTime() || 0);
               }
-            }, 80);
+            }, 40);
 
           },
           onStateChange: (e: any) => {
@@ -1765,10 +1766,10 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
-  // Server-side timestamps are now derived from Whisper's true decoded
-  // duration per chunk (see transcript-stream.ts), so no client-side fudge
-  // factor is needed. Keep at 0 — do NOT use this to mask drift bugs.
-  const SYNC_OFFSET_SECONDS = 0;
+  // Slight positive lookahead so the highlight switches a hair BEFORE the
+  // speaker reaches the next sentence — feels tighter than a late switch.
+  // Combined with the 40ms poll, perceived lag should be < ~80ms.
+  const SYNC_OFFSET_SECONDS = 0.12;
 
 
   const playingId = useMemo(() => {
@@ -1777,15 +1778,15 @@ function Index() {
       return manualActiveId;
     }
     const adjustedTime = currentTime + SYNC_OFFSET_SECONDS;
-    // Strict range match: only highlight a sentence once playback has actually
-    // reached its startTime, and stop highlighting at the next sentence's start.
+    // Pick the last sentence whose start time has been reached. This avoids
+    // brief "no active sentence" gaps between sentences when endTime < next
+    // sentence's offset.
+    let candidate: number | null = null;
     for (const s of sentences) {
-      if (adjustedTime >= s.offset && adjustedTime < s.endTime) {
-        return s.id;
-      }
       if (s.offset > adjustedTime) break;
+      candidate = s.id;
     }
-    return null;
+    return candidate;
   }, [currentTime, sentences, manualActiveId]);
 
   // Auto-scroll active sentence into view, but pause while the user scrolls.
@@ -2101,15 +2102,27 @@ function Index() {
     }
   }, [currentTime]);
 
-  // Sync diagnostics: once every ~2s, log the active sentence vs. video
-  // currentTime so drift is visible without spamming the console.
+  // Sync diagnostics: log every transition between active sentences with the
+  // perceived highlight delay (video currentTime vs. sentence start).
   const lastSyncLogRef = useRef(0);
+  const lastPlayingIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (!sentences.length) return;
+    const active = sentences.find((s) => s.id === playingId) ?? null;
     const now = performance.now();
+    const transitioned = playingId !== lastPlayingIdRef.current;
+    if (transitioned && active) {
+      const delayMs = Math.round((currentTime - active.offset) * 1000);
+      console.log("[sync-transition]", {
+        videoCurrentTime: Number(currentTime.toFixed(3)),
+        sentenceStart: Number(active.offset.toFixed(3)),
+        highlightDelayMs: delayMs,
+        sentenceId: active.id,
+      });
+      lastPlayingIdRef.current = playingId;
+    }
     if (now - lastSyncLogRef.current < 2000) return;
     lastSyncLogRef.current = now;
-    const active = sentences.find((s) => s.id === playingId) ?? null;
     const expected = active
       ? currentTime < active.offset
         ? active.offset - currentTime
@@ -2966,28 +2979,12 @@ function Index() {
                       </div>
                     </div>
 
-                    {/* Compact inline onboarding hint — single line, low height.
-                        Shown once per device; permanently dismissed after the first
-                        successful sentence click (persisted in localStorage). */}
-                    {showSentenceHint && sentences.length > 0 && (
-                      <div
-                        role="note"
-                        className="mx-3 mb-2 flex items-center gap-1.5 px-1 text-[12px] leading-tight text-muted-foreground animate-in fade-in"
-                      >
-                        <span className="select-none" aria-hidden>👆</span>
-                        <span className="min-w-0 flex-1 truncate">
-                          Tap any sentence to understand it instantly
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => dismissSentenceHint(false)}
-                          aria-label="Dismiss hint"
-                          className="ml-1 shrink-0 rounded-full p-0.5 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
+                    {/* Hint moved inline above the active sentence (see list below). */}
+
+
+
+
+
 
 
 
@@ -3020,9 +3017,21 @@ function Index() {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
                           const inlineEntry = active ? explanationCache[s.id] : undefined;
-                          const isOnboardingTarget = showSentenceHint && idx === 0;
+                          // Attach the onboarding hint to the currently-playing
+                          // sentence; before playback starts, attach to the first.
+                          const hintTargetId = playingId ?? sentences[0]?.id ?? null;
+                          const isOnboardingTarget = showSentenceHint && s.id === hintTargetId;
                           return (
                             <li key={s.id}>
+                              {isOnboardingTarget && (
+                                <div
+                                  role="note"
+                                  className="mx-1 mb-1 flex items-center gap-1 px-2 text-[11px] leading-tight text-primary/90 animate-in fade-in"
+                                >
+                                  <span aria-hidden>✨</span>
+                                  <span>Tap this sentence to understand it</span>
+                                </div>
+                              )}
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
