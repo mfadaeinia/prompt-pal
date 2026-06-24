@@ -3022,20 +3022,30 @@ function Index() {
                         )}
 
                         {sentences.map((s, idx) => {
-                          const active = studyMode && selected?.id === s.id;
+                          const selectedRow = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
-                          const inlineEntry = active ? explanationCache[s.id] : undefined;
+                          // Visual states are mutually exclusive and prioritized:
+                          // 1. playing  → strong primary fill (the single live sentence)
+                          // 2. selected → subtle left border only (user pick, not playback)
+                          // 3. default  → no decoration
+                          const visualState: "playing" | "selected" | "default" = playing
+                            ? "playing"
+                            : selectedRow
+                            ? "selected"
+                            : "default";
+                          const inlineEntry = selectedRow ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
                               <button
                                 data-sid={s.id}
+                                data-state={visualState}
                                 onClick={() => jumpTo(s)}
                                 onMouseEnter={onSentenceHover}
-                                className={`group block w-full cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] active:bg-primary/20 transition-transform duration-150 ${
-                                  active
+                                className={`group block w-full cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] transition-transform duration-150 ${
+                                  visualState === "playing"
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
-                                    : playing
-                                    ? "border-primary/70 bg-primary/15 text-foreground"
+                                    : visualState === "selected"
+                                    ? "border-primary/60 bg-transparent text-foreground/90"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
