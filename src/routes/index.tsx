@@ -2987,9 +2987,9 @@ function Index() {
                             Basic Transcript Mode
                           </span>
                         )}
-                        {transcriptSource && (
-                          <SourceBadge source={transcriptSource} cachedFrom={cachedFromProvider} />
-                        )}
+                       </div>
+                     </div>
+
                       </div>
                     </div>
 
