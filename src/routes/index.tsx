@@ -53,7 +53,7 @@ import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { BookOpen, ChevronDown, ArrowDownToLine, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
@@ -2987,11 +2987,9 @@ function Index() {
                             Basic Transcript Mode
                           </span>
                         )}
-                        {transcriptSource && (
-                          <SourceBadge source={transcriptSource} cachedFrom={cachedFromProvider} />
-                        )}
                       </div>
                     </div>
+
 
                     {/* Hint moved inline above the active sentence (see list below). */}
 
@@ -3055,7 +3053,9 @@ function Index() {
                                 data-state={visualState}
                                 onClick={() => jumpTo(s)}
                                 onMouseEnter={onSentenceHover}
-                                className={`group block w-full cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] transition-transform duration-150 ${
+                                title="Tap to see the meaning"
+                                aria-label={`Explain: ${s.text}`}
+                                className={`group flex w-full items-start gap-2 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] transition-transform duration-150 ${
                                   visualState === "playing"
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : visualState === "selected"
@@ -3063,10 +3063,14 @@ function Index() {
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
-                                <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
+                                <span className="mt-[3px] shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
-                                {s.text}
+                                <span className="flex-1">{s.text}</span>
+                                <ChevronRight
+                                  aria-hidden
+                                  className="mt-[3px] h-4 w-4 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:text-primary"
+                                />
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
                               {false && selectedRow && studyMode && inlineEntry && (
