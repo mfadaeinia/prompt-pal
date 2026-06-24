@@ -2852,7 +2852,7 @@ function Index() {
                         <button
                           type="button"
                           onClick={() => jumpTo(currentSentence)}
-                          className="min-w-0 flex-1 cursor-pointer truncate text-left text-[14px] leading-snug text-foreground hover:text-primary"
+                          className="min-w-0 flex-1 cursor-pointer text-left text-[14px] leading-snug text-foreground hover:text-primary"
                           title={currentSentence.text}
                         >
                           {currentSentence.text}
