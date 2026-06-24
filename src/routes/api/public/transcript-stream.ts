@@ -45,8 +45,16 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
         // Smaller default chunk = faster first visible text.
         const chunkSeconds = Math.max(20, Math.min(180, Number(u.searchParams.get("chunk") ?? 45)));
         const kbps = Math.max(32, Math.min(320, Number(u.searchParams.get("kbps") ?? 128)));
-        // Prefer chunked path (first-chunk-first) unless caller explicitly asks for full-file.
-        const preferChunked = (u.searchParams.get("mode") ?? "chunked") !== "full";
+        // CORRECTNESS DEFAULT: full-file ASR whenever the audio fits OpenAI's
+        // 25 MB limit. The chunked path byte-slices raw MP3 at arbitrary
+        // offsets — any chunk after the first starts mid-frame with no valid
+        // MPEG/ID3 header, and Whisper hallucinates content from the malformed
+        // bytes (symptom: transcript becomes semantically unrelated after the
+        // first chunk boundary, e.g. ~0:37–0:45). Chunked is only used as a
+        // fallback for oversized audio. Callers can force chunked with
+        // ?mode=chunked for benchmarking; full-file is the safe default.
+        const modeParam = u.searchParams.get("mode");
+        const preferChunked = modeParam === "chunked";
         if (!url) {
           return new Response("missing ?url", { status: 400 });
         }
