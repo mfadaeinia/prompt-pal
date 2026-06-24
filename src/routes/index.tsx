@@ -3025,21 +3025,8 @@ function Index() {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
                           const inlineEntry = active ? explanationCache[s.id] : undefined;
-                          // Attach the onboarding hint to the currently-playing
-                          // sentence; before playback starts, attach to the first.
-                          const hintTargetId = playingId ?? sentences[0]?.id ?? null;
-                          const isOnboardingTarget = showSentenceHint && s.id === hintTargetId;
                           return (
                             <li key={s.id}>
-                              {isOnboardingTarget && (
-                                <div
-                                  role="note"
-                                  className="mx-1 mb-1 flex items-center gap-1 px-2 text-[11px] leading-tight text-primary/90 animate-in fade-in"
-                                >
-                                  <span aria-hidden>✨</span>
-                                  <span>Tap this sentence to understand it</span>
-                                </div>
-                              )}
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
