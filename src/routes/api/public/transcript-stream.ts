@@ -42,8 +42,11 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
         // language here — the transcript must reflect the spoken language of
         // the media, not the learner's translation/target language.
         const lang = u.searchParams.get("lang") ?? "_any_";
-        const chunkSeconds = Math.max(30, Math.min(180, Number(u.searchParams.get("chunk") ?? 90)));
+        // Smaller default chunk = faster first visible text.
+        const chunkSeconds = Math.max(20, Math.min(180, Number(u.searchParams.get("chunk") ?? 45)));
         const kbps = Math.max(32, Math.min(320, Number(u.searchParams.get("kbps") ?? 128)));
+        // Prefer chunked path (first-chunk-first) unless caller explicitly asks for full-file.
+        const preferChunked = (u.searchParams.get("mode") ?? "chunked") !== "full";
         if (!url) {
           return new Response("missing ?url", { status: 400 });
         }
