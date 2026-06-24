@@ -1022,6 +1022,12 @@ function Index() {
         };
 
         es.addEventListener("job", (ev) => {
+          if (!perfFirstByteLoggedRef.current) {
+            perfFirstByteLoggedRef.current = true;
+            const startedAt = loadStartedAtRef.current ?? 0;
+            const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            perfLog("first_byte", { path: "sse", event: "job", elapsed_ms: Math.round(now - startedAt) });
+          }
           try {
             const d = JSON.parse((ev as MessageEvent).data);
             if (d?.videoId) lastVideoId = d.videoId;
