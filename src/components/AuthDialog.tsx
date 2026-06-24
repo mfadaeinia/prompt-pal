@@ -23,7 +23,7 @@ export function AuthDialog({
   open,
   onOpenChange,
   title = "Create your free account",
-  description = "Save your vocabulary, track your progress, and continue learning across devices.",
+  description = "Save vocabulary, track your progress, and continue learning across devices.",
 }: Props) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -2443,16 +2443,9 @@ function Index() {
         <MarketingLanding
           onStartDemo={startDemo}
           onSignUp={() => {
-            const enterApp = () => setView("app");
-            if (isAuthenticated) {
-              enterApp();
-            } else {
-              pendingActionRef.current = enterApp;
-              if (typeof window !== "undefined") {
-                sessionStorage.setItem("nativeflow_post_auth_intent", "enter_app");
-              }
-              setAuthOpen(true);
-            }
+            // Activation-first: let anyone enter the app. Auth is only
+            // required when they try to save something.
+            setView("app");
           }}
 
           conversionSlot={
@@ -2467,17 +2460,10 @@ function Index() {
               onSubmit={(u, lang) => {
                 if (lang) setSpokenLang(lang);
                 track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
-                const go = () => {
-                  setUrl(u);
-                  setView("demo");
-                  submitLoad(u, lang);
-                };
-                if (isAuthenticated) {
-                  go();
-                } else {
-                  pendingActionRef.current = go;
-                  setAuthOpen(true);
-                }
+                // Activation-first: no auth required to load and explore a video.
+                setUrl(u);
+                setView("demo");
+                submitLoad(u, lang);
               }}
               onStartDemo={startDemo}
             />
