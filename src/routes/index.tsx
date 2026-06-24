@@ -3811,8 +3811,7 @@ function ExplanationPanel({
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
       {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
       <div>
-        <div className="flex items-center justify-end gap-2">
-        <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
+        <p className="text-base leading-relaxed text-foreground sm:text-lg">
           <SentenceWithHighlights text={sentence.text} phrases={sentenceHighlights} />
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-1">
