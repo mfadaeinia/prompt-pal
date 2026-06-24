@@ -53,7 +53,7 @@ import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { BookOpen, ChevronDown, ArrowDownToLine, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
