@@ -3025,13 +3025,6 @@ function Index() {
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
 
-                        {sentences.length > 0 && !selected && (
-                          <li className="px-3 py-2">
-                            <p className="text-center text-xs font-medium text-primary">
-                              👆 Tap a sentence below to see the real thing
-                            </p>
-                          </li>
-                        )}
 
                         {sentences.map((s, idx) => {
                           const selectedRow = studyMode && selected?.id === s.id;
@@ -3067,9 +3060,13 @@ function Index() {
                                   {formatTime(s.offset)}
                                 </span>
                                 <span className="flex-1">{s.text}</span>
-                                <ChevronRight
+                                <Sparkles
                                   aria-hidden
-                                  className="mt-[3px] h-4 w-4 shrink-0 text-muted-foreground/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:text-primary"
+                                  className={`mt-[3px] h-4 w-4 shrink-0 transition-opacity duration-150 ${
+                                    playing
+                                      ? "text-primary opacity-100"
+                                      : "text-muted-foreground/30 opacity-0 group-hover:opacity-100 group-hover:text-primary"
+                                  }`}
                                 />
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
