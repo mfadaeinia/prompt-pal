@@ -2827,19 +2827,42 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black sticky top-[68px] z-10 lg:static">
-                  {embedSrc && (
-                    <iframe
-                      ref={iframeRef}
-                      src={embedSrc}
-                      title="YouTube video"
-                      className="h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                <div className="sticky top-[68px] z-10 lg:static">
+                  <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
+                    {embedSrc && (
+                      <iframe
+                        ref={iframeRef}
+                        src={embedSrc}
+                        title="YouTube video"
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
+                  {studyMode && sentences.length > 0 && currentSentence && (
+                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-primary/30 bg-card/95 px-3 py-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                      <div className="flex items-baseline gap-2">
+                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-primary/80">
+                          Now
+                        </span>
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                          {formatTime(currentSentence.offset)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => jumpTo(currentSentence)}
+                          className="min-w-0 flex-1 cursor-pointer truncate text-left text-[14px] leading-snug text-foreground hover:text-primary"
+                          title={currentSentence.text}
+                        >
+                          {currentSentence.text}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
+
 
               {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
               <div className="min-w-0 order-3 lg:order-2">
