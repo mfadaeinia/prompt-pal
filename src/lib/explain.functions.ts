@@ -106,11 +106,44 @@ function fixItemListOrder(text: string, label: string, sentence: string): string
   });
 }
 
+// Tiny in-memory LRU cache for repeat sentence clicks within a server
+// instance. Keyed by sentence+targetLanguage+model so the same sentence in
+// different help-languages stays distinct. Bounded to avoid leaks.
+const MODEL_VERSION = "google/gemini-3-flash-preview@v1";
+const EXPLAIN_CACHE = new Map<string, string>();
+const EXPLAIN_CACHE_MAX = 500;
+function cacheKey(sentence: string, targetLanguage: string) {
+  return `${MODEL_VERSION}::${targetLanguage}::${sentence}`;
+}
+function cacheGet(k: string): string | undefined {
+  const v = EXPLAIN_CACHE.get(k);
+  if (v !== undefined) {
+    // Touch for LRU.
+    EXPLAIN_CACHE.delete(k);
+    EXPLAIN_CACHE.set(k, v);
+  }
+  return v;
+}
+function cacheSet(k: string, v: string) {
+  if (EXPLAIN_CACHE.size >= EXPLAIN_CACHE_MAX) {
+    const first = EXPLAIN_CACHE.keys().next().value;
+    if (first !== undefined) EXPLAIN_CACHE.delete(first);
+  }
+  EXPLAIN_CACHE.set(k, v);
+}
+
 export const explainSentence = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI is not configured.");
+
+    const ck = cacheKey(data.sentence, data.targetLanguage);
+    const cached = cacheGet(ck);
+    if (cached) {
+      console.log("[perf][server] explain_cache_hit");
+      return { explanation: cached, cached: true as const };
+    }
 
     const gateway = createLovableAiGatewayProvider(key);
     const model = gateway("google/gemini-3-flash-preview");
@@ -129,19 +162,18 @@ export const explainSentence = createServerFn({ method: "POST" })
     };
 
     try {
+      const tGen = Date.now();
+      // Single attempt — return immediately. Weak outputs degrade gracefully
+      // instead of doubling latency with a synchronous retry round-trip.
       let text = await run(false);
+      console.log("[perf][server] explain_generated", { ms: Date.now() - tGen });
       const issues = validate(text);
       if (issues.length > 0) {
-        console.warn("[explain] weak output, regenerating", { issues });
-        try {
-          const retried = await run(true);
-          if (validate(retried).length <= issues.length) text = retried;
-        } catch {
-          // keep first attempt if retry fails
-        }
+        console.warn("[explain] weak output (no retry, returning anyway)", { issues });
       }
       text = fixItemListOrder(text, "Key Expressions", data.sentence);
       text = fixItemListOrder(text, "Vocabulary", data.sentence);
+      cacheSet(ck, text);
       return { explanation: text };
     } catch (error: unknown) {
       const status =
