@@ -930,9 +930,13 @@ function Index() {
       // The Demo button always opens the same fixed video. If we have a
       // previously-stored transcript for it, hydrate from there with zero
       // network — the Demo should feel like a preloaded showcase.
+      perfFirstByteLoggedRef.current = false;
+      perfFirstChunkLoggedRef.current = false;
+      perfLog("request_start", { url: vars.url, seq: vars.seq, videoId: vars.requestedVideoId });
       if (vars.url === DEMO_VIDEO_URL) {
         const cached = readDemoTranscriptCache(DEMO_VIDEO_ID);
         if (cached) {
+          perfLog("first_chunk_rendered", { path: "demo-cache", sentence_count: cached.sentences.length });
           return { res: cached, vars, viaSlowPath: false };
         }
       }
