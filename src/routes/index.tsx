@@ -1878,10 +1878,10 @@ function Index() {
     transcriptVisibleFiredRef.current = true;
     logDiscovery("transcript_visible", { sentence_count: sentences.length });
 
-    // First-time-this-session hint: show once, dismissible. Use sessionStorage
-    // so it shows again in a brand-new browser session.
+    // First-time-only inline hint. Persisted in localStorage so once the user
+    // performs their first successful sentence click, it never shows again.
     try {
-      const seen = sessionStorage.getItem("nf_sentence_hint_seen");
+      const seen = localStorage.getItem("nativeflow_sentence_hinted");
       if (!seen && !hasInteractedWithSentenceRef.current) {
         setShowSentenceHint(true);
       }
