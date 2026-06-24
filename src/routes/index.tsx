@@ -1704,6 +1704,11 @@ function Index() {
                 setCurrentTime(0);
               }
             } catch {}
+            // Initial rate (in case the user has a non-1× default).
+            try {
+              const r = playerRef.current?.getPlaybackRate?.();
+              if (typeof r === "number" && r > 0) setPlaybackRate(r);
+            } catch {}
             // Poll at ~25fps for tight highlight sync with speech.
             pollId = window.setInterval(() => {
               const p = playerRef.current;
@@ -1712,6 +1717,10 @@ function Index() {
               }
             }, 40);
 
+          },
+          onPlaybackRateChange: (e: any) => {
+            const r = typeof e?.data === "number" ? e.data : playerRef.current?.getPlaybackRate?.();
+            if (typeof r === "number" && r > 0) setPlaybackRate(r);
           },
           onStateChange: (e: any) => {
             const p = playerRef.current;
