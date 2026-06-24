@@ -1985,6 +1985,15 @@ function Index() {
     return sentences.find((x) => x.id === playingId) ?? null;
   }, [isMobile, activeOutOfView, playingId, sentences]);
 
+  // Sentence shown in the persistent "Current sentence" bar under the video.
+  // Prefers the user's selection (when they tapped a sentence in study mode),
+  // otherwise falls back to whatever is currently playing.
+  const currentSentence = useMemo(() => {
+    if (selected) return selected;
+    if (playingId == null) return null;
+    return sentences.find((x) => x.id === playingId) ?? null;
+  }, [selected, playingId, sentences]);
+
   function jumpToCurrentSentence() {
     if (playingId == null || !listRef.current) return;
     const container = listRef.current;
@@ -2818,19 +2827,42 @@ function Index() {
                     )}
                   </div>
                 )}
-                <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black sticky top-[68px] z-10 lg:static">
-                  {embedSrc && (
-                    <iframe
-                      ref={iframeRef}
-                      src={embedSrc}
-                      title="YouTube video"
-                      className="h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                <div className="sticky top-[68px] z-10 lg:static">
+                  <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
+                    {embedSrc && (
+                      <iframe
+                        ref={iframeRef}
+                        src={embedSrc}
+                        title="YouTube video"
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
+                  {studyMode && sentences.length > 0 && currentSentence && (
+                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-primary/30 bg-card/95 px-3 py-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                      <div className="flex items-baseline gap-2">
+                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-primary/80">
+                          Now
+                        </span>
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                          {formatTime(currentSentence.offset)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => jumpTo(currentSentence)}
+                          className="min-w-0 flex-1 cursor-pointer truncate text-left text-[14px] leading-snug text-foreground hover:text-primary"
+                          title={currentSentence.text}
+                        >
+                          {currentSentence.text}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
+
 
               {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
               <div className="min-w-0 order-3 lg:order-2">
@@ -2997,19 +3029,10 @@ function Index() {
                       </div>
                     ) : (
                       <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
-                        {stickySentence && (
-                          <li className="sticky top-0 z-10 border-b border-primary/20 bg-card/95 backdrop-blur-sm shadow-sm">
-                            <button
-                              onClick={() => jumpTo(stickySentence)}
-                              className="flex w-full cursor-pointer items-start gap-2 border-l-2 border-primary bg-primary/10 px-3 py-2 text-left text-[15px] leading-[1.7] font-medium text-foreground"
-                            >
-                              <span className="mt-0.5 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
-                                {formatTime(stickySentence.offset)}
-                              </span>
-                              <span className="min-w-0">{stickySentence.text}</span>
-                            </button>
-                          </li>
-                        )}
+                        {/* In-list sticky row removed — the persistent
+                            "Now playing" bar below the video already keeps the
+                            current sentence visible. */}
+
                         {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
