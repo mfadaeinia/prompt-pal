@@ -1766,10 +1766,10 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
-  // Server-side timestamps are now derived from Whisper's true decoded
-  // duration per chunk (see transcript-stream.ts), so no client-side fudge
-  // factor is needed. Keep at 0 — do NOT use this to mask drift bugs.
-  const SYNC_OFFSET_SECONDS = 0;
+  // Slight positive lookahead so the highlight switches a hair BEFORE the
+  // speaker reaches the next sentence — feels tighter than a late switch.
+  // Combined with the 40ms poll, perceived lag should be < ~80ms.
+  const SYNC_OFFSET_SECONDS = 0.12;
 
 
   const playingId = useMemo(() => {
@@ -1778,15 +1778,15 @@ function Index() {
       return manualActiveId;
     }
     const adjustedTime = currentTime + SYNC_OFFSET_SECONDS;
-    // Strict range match: only highlight a sentence once playback has actually
-    // reached its startTime, and stop highlighting at the next sentence's start.
+    // Pick the last sentence whose start time has been reached. This avoids
+    // brief "no active sentence" gaps between sentences when endTime < next
+    // sentence's offset.
+    let candidate: number | null = null;
     for (const s of sentences) {
-      if (adjustedTime >= s.offset && adjustedTime < s.endTime) {
-        return s.id;
-      }
       if (s.offset > adjustedTime) break;
+      candidate = s.id;
     }
-    return null;
+    return candidate;
   }, [currentTime, sentences, manualActiveId]);
 
   // Auto-scroll active sentence into view, but pause while the user scrolls.
