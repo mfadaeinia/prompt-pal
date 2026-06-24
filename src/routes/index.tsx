@@ -1964,16 +1964,16 @@ function Index() {
     const fullyVisible = visibleTop >= 0 && visibleBottom <= cHeight;
     setActiveOutOfView(!fullyVisible);
 
-    // Transcript Mode: user owns the scroll. Never auto-scroll.
-    if (!focusMode) return;
     // Never fight a user who is actively scrolling the transcript.
+    // When they scroll away, the floating "Jump to Current" affordance appears
+    // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Keep the active sentence just below the video / near the top of the
-    // transcript viewport so it is always clearly visible under the player.
-    const targetVisibleTop = cHeight * 0.02;
+    // Lyrics-style auto-follow: keep the active sentence ~35% from the top of
+    // the transcript viewport so previous + upcoming sentences stay visible.
+    const targetVisibleTop = cHeight * 0.35;
     const drift = visibleTop - targetVisibleTop;
-    const band = cHeight * 0.18; // dead-zone around the target
+    const band = cHeight * 0.18; // dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
@@ -1999,7 +1999,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = container.clientHeight * 0.02;
+      const targetVisibleTop = container.clientHeight * 0.35;
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
@@ -2840,26 +2840,9 @@ function Index() {
                       />
                     )}
                   </div>
-                  {studyMode && sentences.length > 0 && currentSentence && (
-                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-primary/30 bg-card/95 px-3 py-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-                      <div className="flex items-baseline gap-2">
-                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-primary/80">
-                          Now
-                        </span>
-                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
-                          {formatTime(currentSentence.offset)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => jumpTo(currentSentence)}
-                          className="min-w-0 flex-1 cursor-pointer text-left text-[14px] leading-snug text-foreground hover:text-primary"
-                          title={currentSentence.text}
-                        >
-                          {currentSentence.text}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* The duplicate "Now playing" sentence card was removed.
+                      The active sentence now stays in-context inside the
+                      transcript list via lyrics-style auto-follow. */}
                 </div>
               </div>
 
@@ -3080,10 +3063,10 @@ function Index() {
                     {activeOutOfView && playingId !== null && (
                       <button
                         onClick={jumpToCurrentSentence}
-                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-md ring-1 ring-border backdrop-blur hover:bg-background"
+                        className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg ring-1 ring-primary/40 hover:bg-primary/90"
                       >
-                        <ArrowDownToLine className="h-3 w-3" />
-                        Current
+                        <ArrowDownToLine className="h-3.5 w-3.5" />
+                        Jump to current
                       </button>
                     )}
 
