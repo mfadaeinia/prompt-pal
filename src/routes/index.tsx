@@ -1878,10 +1878,10 @@ function Index() {
     transcriptVisibleFiredRef.current = true;
     logDiscovery("transcript_visible", { sentence_count: sentences.length });
 
-    // First-time-this-session hint: show once, dismissible. Use sessionStorage
-    // so it shows again in a brand-new browser session.
+    // First-time-only inline hint. Persisted in localStorage so once the user
+    // performs their first successful sentence click, it never shows again.
     try {
-      const seen = sessionStorage.getItem("nf_sentence_hint_seen");
+      const seen = localStorage.getItem("nativeflow_sentence_hinted");
       if (!seen && !hasInteractedWithSentenceRef.current) {
         setShowSentenceHint(true);
       }
@@ -1920,6 +1920,7 @@ function Index() {
     hintShownFiredRef.current = true;
     logDiscovery("hint_shown");
     try {
+      // Mark as shown so subsequent renders won't re-trigger logging this session.
       sessionStorage.setItem("nf_sentence_hint_seen", "1");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1935,6 +1936,9 @@ function Index() {
   const dismissSentenceHint = (viaClick: boolean) => {
     if (!showSentenceHint) return;
     setShowSentenceHint(false);
+    try {
+      localStorage.setItem("nativeflow_sentence_hinted", "1");
+    } catch {}
     logDiscovery(viaClick ? "hint_clicked" : "hint_dismissed");
   };
 
@@ -2947,44 +2951,23 @@ function Index() {
                       </div>
                     </div>
 
-                    {/* Mobile/tablet onboarding card — desktop already shows the full ExplanationPanel
-                        in the right column. Hidden once the user opens their first explanation. */}
-                    {studyMode && sentences.length > 0 && !selected && (
-                      <div className="mx-3 mb-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm lg:hidden">
-                        <div className="flex items-start gap-2">
-                          <span className="select-none text-lg leading-none" aria-hidden>💡</span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold leading-tight text-foreground">
-                              Tap any subtitle to instantly understand it
-                            </p>
-                            <ul className="mt-2 space-y-0.5 text-[12.5px] leading-snug text-muted-foreground">
-                              <li>• Natural translation</li>
-                              <li>• Useful expressions</li>
-                              <li>• Grammar when relevant</li>
-                            </ul>
-                            <p className="mt-2.5 text-[12.5px] font-semibold text-primary">
-                              Try a sentence below ↓
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-
+                    {/* Compact inline onboarding hint — single line, low height.
+                        Shown once per device; permanently dismissed after the first
+                        successful sentence click (persisted in localStorage). */}
                     {showSentenceHint && sentences.length > 0 && (
                       <div
                         role="note"
-                        className="mx-3 mb-2 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-[12.5px] leading-snug text-foreground shadow-sm animate-in fade-in slide-in-from-top-1"
+                        className="mx-3 mb-2 flex items-center gap-1.5 px-1 text-[12px] leading-tight text-muted-foreground animate-in fade-in"
                       >
-                        <span className="select-none text-base leading-none" aria-hidden>💡</span>
-                        <span className="min-w-0 flex-1">
-                          Click any subtitle to instantly understand expressions, meaning, and context.
+                        <span className="select-none" aria-hidden>👆</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          Tap any sentence to understand it instantly
                         </span>
                         <button
                           type="button"
                           onClick={() => dismissSentenceHint(false)}
                           aria-label="Dismiss hint"
-                          className="ml-1 -mr-1 -mt-0.5 shrink-0 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                          className="ml-1 shrink-0 rounded-full p-0.5 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
                         >
                           ×
                         </button>
@@ -3027,10 +3010,11 @@ function Index() {
                             </button>
                           </li>
                         )}
-                        {sentences.map((s) => {
+                        {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
                           const inlineEntry = active ? explanationCache[s.id] : undefined;
+                          const isOnboardingTarget = showSentenceHint && idx === 0;
                           return (
                             <li key={s.id}>
                               <button
@@ -3042,12 +3026,19 @@ function Index() {
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
                                     ? "border-primary/70 bg-primary/15 text-foreground"
+                                    : isOnboardingTarget
+                                    ? "border-primary/60 bg-primary/10 text-foreground animate-pulse-soft"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
+                                {isOnboardingTarget && (
+                                  <span className="mr-1.5 inline-flex items-center rounded-full bg-primary px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
+                                    Try this
+                                  </span>
+                                )}
                                 {s.text}
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
