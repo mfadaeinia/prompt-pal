@@ -2987,11 +2987,9 @@ function Index() {
                             Basic Transcript Mode
                           </span>
                         )}
-                       </div>
-                     </div>
-
                       </div>
                     </div>
+
 
                     {/* Hint moved inline above the active sentence (see list below). */}
 
