@@ -3036,8 +3036,6 @@ function Index() {
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
                                     ? "border-primary/70 bg-primary/15 text-foreground"
-                                    : isOnboardingTarget
-                                    ? "border-primary/60 bg-primary/10 text-foreground animate-pulse-soft"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
