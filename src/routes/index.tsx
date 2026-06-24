@@ -2836,7 +2836,7 @@ function Index() {
               <div className="min-w-0 order-3 lg:order-2">
                 <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[calc(100vh-96px)]">
 
-                    {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && (
+                    {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
                       <TranscriptQualityBanner
                         quality={transcriptQuality}
                         onContinue={() => {
