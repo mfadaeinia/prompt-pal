@@ -45,8 +45,16 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
         // Smaller default chunk = faster first visible text.
         const chunkSeconds = Math.max(20, Math.min(180, Number(u.searchParams.get("chunk") ?? 45)));
         const kbps = Math.max(32, Math.min(320, Number(u.searchParams.get("kbps") ?? 128)));
-        // Prefer chunked path (first-chunk-first) unless caller explicitly asks for full-file.
-        const preferChunked = (u.searchParams.get("mode") ?? "chunked") !== "full";
+        // CORRECTNESS DEFAULT: full-file ASR whenever the audio fits OpenAI's
+        // 25 MB limit. The chunked path byte-slices raw MP3 at arbitrary
+        // offsets — any chunk after the first starts mid-frame with no valid
+        // MPEG/ID3 header, and Whisper hallucinates content from the malformed
+        // bytes (symptom: transcript becomes semantically unrelated after the
+        // first chunk boundary, e.g. ~0:37–0:45). Chunked is only used as a
+        // fallback for oversized audio. Callers can force chunked with
+        // ?mode=chunked for benchmarking; full-file is the safe default.
+        const modeParam = u.searchParams.get("mode");
+        const preferChunked = modeParam === "chunked";
         if (!url) {
           return new Response("missing ?url", { status: 400 });
         }
@@ -169,7 +177,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               }
 
               try {
-              if (preferChunked === false && totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
+              if (!preferChunked && totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
                 const tFull = Date.now();
                 const dl = await fetch(audioUrl);
                 if (!dl.ok) throw new Error(`full audio fetch: HTTP ${dl.status}`);
@@ -312,7 +320,22 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 });
               }
 
-              // --- Chunk loop
+              // --- Chunk loop (FALLBACK ONLY — used when audio > 25 MB so
+              // full-file ASR is impossible). Byte-slicing raw MP3 is known
+              // to corrupt Whisper output past chunk 0 because slices after
+              // the first start mid-frame with no MPEG header. We keep this
+              // path so very long videos still produce *some* transcript,
+              // but log loudly so we know when correctness is at risk.
+              console.warn("[sync-debug][server] using chunked MP3 fallback — transcript past chunk 0 may be unreliable", {
+                videoId,
+                totalAudioBytes,
+                chunkSeconds,
+                reason: preferChunked
+                  ? "caller requested ?mode=chunked"
+                  : totalAudioBytes == null
+                    ? "could not determine audio size"
+                    : "audio exceeds OpenAI 25 MB limit",
+              });
               const allRawChunks: RawChunk[] = [];
               let measuredBytesPerSec = (kbps * 1000) / 8; // refined after chunk 0
               let totalChunks: number | null = null;
@@ -431,6 +454,30 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   whisperReportedDuration,
                   segmentsCount: segments.length,
                   wordsCount: words.length,
+                });
+
+                // Per-chunk raw-text audit: dump first/last words of THIS
+                // chunk with absolute timestamps so we can diff raw ASR vs the
+                // final rendered transcript when chunked stitching corrupts
+                // text past chunk 0.
+                const rawJoined = newRawChunks.map((c) => c.text).join(" ");
+                console.log("[transcript-audit][server] chunk_raw", {
+                  videoId,
+                  chunkIndex,
+                  chunkStartSec: Number(chunkStartSec.toFixed(3)),
+                  chunkEndSec: Number(
+                    (chunkStartSec + (whisperReportedDuration || chunkSeconds)).toFixed(3),
+                  ),
+                  rawItemCount: newRawChunks.length,
+                  rawFirst: newRawChunks.slice(0, 12).map((c) => ({
+                    t: Number(c.offset.toFixed(2)),
+                    text: c.text,
+                  })),
+                  rawLast: newRawChunks.slice(-12).map((c) => ({
+                    t: Number(c.offset.toFixed(2)),
+                    text: c.text,
+                  })),
+                  rawTextPreview: rawJoined.slice(0, 300),
                 });
 
                 // Advance the cumulative clock for the NEXT chunk.
