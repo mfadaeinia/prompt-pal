@@ -3757,7 +3757,7 @@ function ExplanationPanel({
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">AI Explanation</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">EXPLANATION</p>
             <p className="text-base font-semibold leading-tight text-foreground">Tap any sentence to understand it</p>
           </div>
         </div>
@@ -3808,10 +3808,10 @@ function ExplanationPanel({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="-mr-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="OK"
+            className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
           >
-            <X className="h-4 w-4" />
+            OK
           </button>
         </div>
         <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
