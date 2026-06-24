@@ -2979,28 +2979,12 @@ function Index() {
                       </div>
                     </div>
 
-                    {/* Compact inline onboarding hint — single line, low height.
-                        Shown once per device; permanently dismissed after the first
-                        successful sentence click (persisted in localStorage). */}
-                    {showSentenceHint && sentences.length > 0 && (
-                      <div
-                        role="note"
-                        className="mx-3 mb-2 flex items-center gap-1.5 px-1 text-[12px] leading-tight text-muted-foreground animate-in fade-in"
-                      >
-                        <span className="select-none" aria-hidden>👆</span>
-                        <span className="min-w-0 flex-1 truncate">
-                          Tap any sentence to understand it instantly
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => dismissSentenceHint(false)}
-                          aria-label="Dismiss hint"
-                          className="ml-1 shrink-0 rounded-full p-0.5 text-muted-foreground/70 hover:bg-muted hover:text-foreground"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
+                    {/* Hint moved inline above the active sentence (see list below). */}
+
+
+
+
+
 
 
 
