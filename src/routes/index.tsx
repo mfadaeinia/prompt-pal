@@ -259,6 +259,17 @@ function Index() {
   } | null>(null);
   const [reactStateUpdateMs, setReactStateUpdateMs] = useState<number | null>(null);
   const firstExplanationClickAtRef = useRef<number | null>(null);
+  // [perf] Per-sentence click → first-hint timing map. Key: sentence id.
+  const sentenceClickAtRef = useRef<Map<number, number>>(new Map());
+  // [perf] One-shot guard so we only log first-byte / first-chunk once per load.
+  const perfFirstByteLoggedRef = useRef(false);
+  const perfFirstChunkLoggedRef = useRef(false);
+  function perfLog(label: string, data: Record<string, unknown> = {}) {
+    try {
+      const t = typeof performance !== "undefined" ? performance.now() : Date.now();
+      console.log(`[perf] ${label}`, { t_ms: Math.round(t), ...data });
+    } catch {}
+  }
   // Open SSE connection for in-flight progressive transcription. We hold a
   // ref so submitLoad() can close any prior stream before starting a new one.
   const streamRef = useRef<EventSource | null>(null);
@@ -919,9 +930,13 @@ function Index() {
       // The Demo button always opens the same fixed video. If we have a
       // previously-stored transcript for it, hydrate from there with zero
       // network — the Demo should feel like a preloaded showcase.
+      perfFirstByteLoggedRef.current = false;
+      perfFirstChunkLoggedRef.current = false;
+      perfLog("request_start", { url: vars.url, seq: vars.seq, videoId: vars.requestedVideoId });
       if (vars.url === DEMO_VIDEO_URL) {
         const cached = readDemoTranscriptCache(DEMO_VIDEO_ID);
         if (cached) {
+          perfLog("first_chunk_rendered", { path: "demo-cache", sentence_count: cached.sentences.length });
           return { res: cached, vars, viaSlowPath: false };
         }
       }
@@ -942,6 +957,16 @@ function Index() {
       });
 
       if (fast.status === "ready") {
+        const startedAt = loadStartedAtRef.current ?? 0;
+        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+        perfLog("first_chunk_rendered", {
+          path: "fast",
+          source: fast.result.source,
+          cache_hit: !!fast.result.cacheHit,
+          sentence_count: fast.result.sentences.length,
+          elapsed_ms: Math.round(now - startedAt),
+        });
+        perfFirstChunkLoggedRef.current = true;
         return { res: fast.result, vars, viaSlowPath: false };
       }
 
@@ -997,6 +1022,12 @@ function Index() {
         };
 
         es.addEventListener("job", (ev) => {
+          if (!perfFirstByteLoggedRef.current) {
+            perfFirstByteLoggedRef.current = true;
+            const startedAt = loadStartedAtRef.current ?? 0;
+            const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            perfLog("first_byte", { path: "sse", event: "job", elapsed_ms: Math.round(now - startedAt) });
+          }
           try {
             const d = JSON.parse((ev as MessageEvent).data);
             if (d?.videoId) lastVideoId = d.videoId;
@@ -1015,6 +1046,17 @@ function Index() {
 
           if (!resolved) {
             resolved = true;
+            if (!perfFirstChunkLoggedRef.current) {
+              perfFirstChunkLoggedRef.current = true;
+              const startedAt = loadStartedAtRef.current ?? 0;
+              const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+              perfLog("first_chunk_rendered", {
+                path: "sse",
+                sentence_count: sentences.length,
+                detected_language: detected,
+                elapsed_ms: Math.round(now - startedAt),
+              });
+            }
             const synthetic: FetchTranscriptResult = {
               videoId: String(lastVideoId ?? ""),
               sentences,
@@ -1485,6 +1527,18 @@ function Index() {
             grammar: parsed.grammar,
           },
         }));
+        {
+          const clickedAt = sentenceClickAtRef.current.get(s.id);
+          if (clickedAt != null) {
+            const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            perfLog("first_hint_shown", {
+              sentence_id: s.id,
+              is_prefetch: !!opts.isPrefetch,
+              elapsed_ms_since_click: Math.round(now - clickedAt),
+            });
+            sentenceClickAtRef.current.delete(s.id);
+          }
+        }
         if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
           const now =
             typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -2123,6 +2177,11 @@ function Index() {
   const isDemo = videoId === DEMO_VIDEO_ID;
 
   function jumpTo(s: TranscriptSentence) {
+    {
+      const t = typeof performance !== "undefined" ? performance.now() : Date.now();
+      sentenceClickAtRef.current.set(s.id, t);
+      perfLog("sentence_clicked", { sentence_id: s.id, mode: studyMode ? "learning" : "watch" });
+    }
     if (studyMode) {
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
