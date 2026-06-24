@@ -259,6 +259,17 @@ function Index() {
   } | null>(null);
   const [reactStateUpdateMs, setReactStateUpdateMs] = useState<number | null>(null);
   const firstExplanationClickAtRef = useRef<number | null>(null);
+  // [perf] Per-sentence click → first-hint timing map. Key: sentence id.
+  const sentenceClickAtRef = useRef<Map<number, number>>(new Map());
+  // [perf] One-shot guard so we only log first-byte / first-chunk once per load.
+  const perfFirstByteLoggedRef = useRef(false);
+  const perfFirstChunkLoggedRef = useRef(false);
+  function perfLog(label: string, data: Record<string, unknown> = {}) {
+    try {
+      const t = typeof performance !== "undefined" ? performance.now() : Date.now();
+      console.log(`[perf] ${label}`, { t_ms: Math.round(t), ...data });
+    } catch {}
+  }
   // Open SSE connection for in-flight progressive transcription. We hold a
   // ref so submitLoad() can close any prior stream before starting a new one.
   const streamRef = useRef<EventSource | null>(null);
