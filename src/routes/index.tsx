@@ -3007,10 +3007,11 @@ function Index() {
                             </button>
                           </li>
                         )}
-                        {sentences.map((s) => {
+                        {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
                           const inlineEntry = active ? explanationCache[s.id] : undefined;
+                          const isOnboardingTarget = showSentenceHint && idx === 0;
                           return (
                             <li key={s.id}>
                               <button
@@ -3022,12 +3023,19 @@ function Index() {
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
                                     ? "border-primary/70 bg-primary/15 text-foreground"
+                                    : isOnboardingTarget
+                                    ? "border-primary/60 bg-primary/10 text-foreground animate-pulse-soft"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
+                                {isOnboardingTarget && (
+                                  <span className="mr-1.5 inline-flex items-center rounded-full bg-primary px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
+                                    Try this
+                                  </span>
+                                )}
                                 {s.text}
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
