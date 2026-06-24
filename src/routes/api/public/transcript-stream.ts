@@ -320,7 +320,22 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 });
               }
 
-              // --- Chunk loop
+              // --- Chunk loop (FALLBACK ONLY — used when audio > 25 MB so
+              // full-file ASR is impossible). Byte-slicing raw MP3 is known
+              // to corrupt Whisper output past chunk 0 because slices after
+              // the first start mid-frame with no MPEG header. We keep this
+              // path so very long videos still produce *some* transcript,
+              // but log loudly so we know when correctness is at risk.
+              console.warn("[sync-debug][server] using chunked MP3 fallback — transcript past chunk 0 may be unreliable", {
+                videoId,
+                totalAudioBytes,
+                chunkSeconds,
+                reason: preferChunked
+                  ? "caller requested ?mode=chunked"
+                  : totalAudioBytes == null
+                    ? "could not determine audio size"
+                    : "audio exceeds OpenAI 25 MB limit",
+              });
               const allRawChunks: RawChunk[] = [];
               let measuredBytesPerSec = (kbps * 1000) / 8; // refined after chunk 0
               let totalChunks: number | null = null;
