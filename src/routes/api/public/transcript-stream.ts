@@ -169,7 +169,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               }
 
               try {
-              if (totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
+              if (preferChunked === false && totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
                 const tFull = Date.now();
                 const dl = await fetch(audioUrl);
                 if (!dl.ok) throw new Error(`full audio fetch: HTTP ${dl.status}`);
