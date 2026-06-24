@@ -1704,6 +1704,11 @@ function Index() {
                 setCurrentTime(0);
               }
             } catch {}
+            // Initial rate (in case the user has a non-1× default).
+            try {
+              const r = playerRef.current?.getPlaybackRate?.();
+              if (typeof r === "number" && r > 0) setPlaybackRate(r);
+            } catch {}
             // Poll at ~25fps for tight highlight sync with speech.
             pollId = window.setInterval(() => {
               const p = playerRef.current;
@@ -1712,6 +1717,10 @@ function Index() {
               }
             }, 40);
 
+          },
+          onPlaybackRateChange: (e: any) => {
+            const r = typeof e?.data === "number" ? e.data : playerRef.current?.getPlaybackRate?.();
+            if (typeof r === "number" && r > 0) setPlaybackRate(r);
           },
           onStateChange: (e: any) => {
             const p = playerRef.current;
@@ -1766,18 +1775,23 @@ function Index() {
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
 
-  // Slight positive lookahead so the highlight switches a hair BEFORE the
-  // speaker reaches the next sentence — feels tighter than a late switch.
-  // Combined with the 40ms poll, perceived lag should be < ~80ms.
-  const SYNC_OFFSET_SECONDS = 0.12;
+  // Track YouTube playback rate so we can keep the highlight lookahead
+  // constant in wall-clock time across 0.25×–2× speeds.
+  const [playbackRate, setPlaybackRate] = useState(1);
 
+  // Wall-clock lookahead: the highlight switches ~120ms before the speaker
+  // reaches the next sentence at any playback rate. Convert to video-time by
+  // multiplying by the current rate (slower playback → smaller video-time
+  // lookahead, faster → larger, so perceived earliness stays the same).
+  const SYNC_OFFSET_WALL_SECONDS = 0.12;
 
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
     if (manualActiveId !== null && performance.now() < manualUntilRef.current) {
       return manualActiveId;
     }
-    const adjustedTime = currentTime + SYNC_OFFSET_SECONDS;
+    const rate = playbackRate > 0 ? playbackRate : 1;
+    const adjustedTime = currentTime + SYNC_OFFSET_WALL_SECONDS * rate;
     // Pick the last sentence whose start time has been reached. This avoids
     // brief "no active sentence" gaps between sentences when endTime < next
     // sentence's offset.
@@ -1787,7 +1801,7 @@ function Index() {
       candidate = s.id;
     }
     return candidate;
-  }, [currentTime, sentences, manualActiveId]);
+  }, [currentTime, sentences, manualActiveId, playbackRate]);
 
   // Auto-scroll active sentence into view, but pause while the user scrolls.
   const listRef = useRef<HTMLOListElement>(null);
