@@ -3013,6 +3013,14 @@ function Index() {
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
 
+                        {sentences.length > 0 && !selected && (
+                          <li className="px-3 py-2">
+                            <p className="text-center text-xs font-medium text-primary">
+                              👆 Tap a sentence below to see the real thing
+                            </p>
+                          </li>
+                        )}
+
                         {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
