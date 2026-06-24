@@ -100,13 +100,17 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               const jobId = jobRow.id as string;
               send("job", { jobId, videoId });
 
-              // --- Extract audio URL (RapidAPI)
+              // --- Extract audio URL (RapidAPI) with client heartbeats
               const host = process.env.RAPIDAPI_AUDIO_HOST || "youtube-mp36.p.rapidapi.com";
               const endpoint = `https://${host}/dl?id=${encodeURIComponent(videoId)}`;
               const tExtract = Date.now();
+              console.log("[perf][server] extractor_wait_start", { videoId, ts: tExtract });
               let audioUrl: string | null = null;
               let polls = 0;
               const extractDeadline = tExtract + 45_000;
+              // Send a heartbeat immediately so client sees activity.
+              send("extract_progress", { elapsed_ms: 0, polls: 0, status: "starting" });
+              const POLL_INTERVAL_MS = 1500; // tighter than before (was 3000)
               while (Date.now() < extractDeadline) {
                 polls += 1;
                 const r = await fetch(endpoint, {
@@ -128,10 +132,16 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   break;
                 }
                 if (status === "fail") throw new Error(`extractor fail: ${j?.msg ?? ""}`);
-                await new Promise((res) => setTimeout(res, 3000));
+                send("extract_progress", {
+                  elapsed_ms: Date.now() - tExtract,
+                  polls,
+                  status: status || "polling",
+                });
+                await new Promise((res) => setTimeout(res, POLL_INTERVAL_MS));
               }
               if (!audioUrl) throw new Error("extractor timeout");
               const extractMs = Date.now() - tExtract;
+              console.log("[perf][server] extractor_wait_end", { videoId, extractMs, polls });
               await supabaseAdmin
                 .from("transcript_jobs")
                 .update({ audio_url: audioUrl, audio_url_fetched_at: new Date().toISOString() })
