@@ -2165,6 +2165,11 @@ function Index() {
   const isDemo = videoId === DEMO_VIDEO_ID;
 
   function jumpTo(s: TranscriptSentence) {
+    {
+      const t = typeof performance !== "undefined" ? performance.now() : Date.now();
+      sentenceClickAtRef.current.set(s.id, t);
+      perfLog("sentence_clicked", { sentence_id: s.id, mode: studyMode ? "learning" : "watch" });
+    }
     if (studyMode) {
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
