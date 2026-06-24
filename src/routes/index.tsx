@@ -3029,19 +3029,10 @@ function Index() {
                       </div>
                     ) : (
                       <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
-                        {stickySentence && (
-                          <li className="sticky top-0 z-10 border-b border-primary/20 bg-card/95 backdrop-blur-sm shadow-sm">
-                            <button
-                              onClick={() => jumpTo(stickySentence)}
-                              className="flex w-full cursor-pointer items-start gap-2 border-l-2 border-primary bg-primary/10 px-3 py-2 text-left text-[15px] leading-[1.7] font-medium text-foreground"
-                            >
-                              <span className="mt-0.5 shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
-                                {formatTime(stickySentence.offset)}
-                              </span>
-                              <span className="min-w-0">{stickySentence.text}</span>
-                            </button>
-                          </li>
-                        )}
+                        {/* In-list sticky row removed — the persistent
+                            "Now playing" bar below the video already keeps the
+                            current sentence visible. */}
+
                         {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
