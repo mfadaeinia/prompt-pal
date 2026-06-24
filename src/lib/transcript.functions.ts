@@ -1803,30 +1803,45 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
     let lastErr: string | null = null;
     let blocked = false;
     const tYt = Date.now();
-    for (const lang of langCandidates) {
-      try {
-        const r = await YoutubeTranscript.fetchTranscript(
-          videoId,
-          lang ? { lang } : undefined,
-        );
-        if (r && r.length) {
-          const tMap = Date.now();
-          raw = r.map((x) => ({
-            text: x.text,
-            offset: x.offset / 1000,
-            duration: x.duration / 1000,
-          }));
-          timings.chunk_mapping_ms = Date.now() - tMap;
-          usedLang = lang ?? spokenLanguage ?? null;
-          break;
-        }
-      } catch (e) {
-        lastErr = e instanceof Error ? e.message : String(e);
-        if (classifyError(e) === "rate_limited") {
-          blocked = true;
-          break;
-        }
-      }
+    console.log("[perf][server] caption_probe_start", {
+      videoId,
+      variants: langCandidates.length,
+      ts: tYt,
+    });
+    // PARALLEL probe — race all language variants, take the first success.
+    // Promise.any rejects only when ALL fail; on success it resolves with the
+    // first fulfilled value. We swallow individual errors but track the most
+    // recent one for diagnostics.
+    const probes = langCandidates.map((lang) =>
+      YoutubeTranscript.fetchTranscript(videoId, lang ? { lang } : undefined)
+        .then((r) => {
+          if (!r || !r.length) throw new Error("empty");
+          return { r, lang: lang ?? spokenLanguage ?? null };
+        })
+        .catch((e) => {
+          lastErr = e instanceof Error ? e.message : String(e);
+          if (classifyError(e) === "rate_limited") blocked = true;
+          throw e;
+        }),
+    );
+    try {
+      const winner = await Promise.any(probes);
+      const tMap = Date.now();
+      raw = winner.r.map((x) => ({
+        text: x.text,
+        offset: x.offset / 1000,
+        duration: x.duration / 1000,
+      }));
+      timings.chunk_mapping_ms = Date.now() - tMap;
+      usedLang = winner.lang;
+      console.log("[perf][server] caption_probe_success", {
+        videoId,
+        lang: usedLang,
+        elapsed_ms: Date.now() - tYt,
+        chunks: raw.length,
+      });
+    } catch {
+      // all failed — `lastErr` / `blocked` populated by per-variant catches
     }
     timings.youtube_caption_attempt_ms = Date.now() - tYt;
 
