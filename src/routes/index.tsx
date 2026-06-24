@@ -3063,10 +3063,10 @@ function Index() {
                     {activeOutOfView && playingId !== null && (
                       <button
                         onClick={jumpToCurrentSentence}
-                        className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-md ring-1 ring-border backdrop-blur hover:bg-background"
+                        className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg ring-1 ring-primary/40 hover:bg-primary/90"
                       >
-                        <ArrowDownToLine className="h-3 w-3" />
-                        Current
+                        <ArrowDownToLine className="h-3.5 w-3.5" />
+                        Jump to current
                       </button>
                     )}
 
