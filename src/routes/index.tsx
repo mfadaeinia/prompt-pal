@@ -2102,15 +2102,27 @@ function Index() {
     }
   }, [currentTime]);
 
-  // Sync diagnostics: once every ~2s, log the active sentence vs. video
-  // currentTime so drift is visible without spamming the console.
+  // Sync diagnostics: log every transition between active sentences with the
+  // perceived highlight delay (video currentTime vs. sentence start).
   const lastSyncLogRef = useRef(0);
+  const lastPlayingIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (!sentences.length) return;
+    const active = sentences.find((s) => s.id === playingId) ?? null;
     const now = performance.now();
+    const transitioned = playingId !== lastPlayingIdRef.current;
+    if (transitioned && active) {
+      const delayMs = Math.round((currentTime - active.offset) * 1000);
+      console.log("[sync-transition]", {
+        videoCurrentTime: Number(currentTime.toFixed(3)),
+        sentenceStart: Number(active.offset.toFixed(3)),
+        highlightDelayMs: delayMs,
+        sentenceId: active.id,
+      });
+      lastPlayingIdRef.current = playingId;
+    }
     if (now - lastSyncLogRef.current < 2000) return;
     lastSyncLogRef.current = now;
-    const active = sentences.find((s) => s.id === playingId) ?? null;
     const expected = active
       ? currentTime < active.offset
         ? active.offset - currentTime
