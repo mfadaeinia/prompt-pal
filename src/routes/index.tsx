@@ -3013,25 +3013,20 @@ function Index() {
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
 
+                        {sentences.length > 0 && !selected && (
+                          <li className="px-3 py-2">
+                            <p className="text-center text-xs font-medium text-primary">
+                              👆 Tap a sentence below to see the real thing
+                            </p>
+                          </li>
+                        )}
+
                         {sentences.map((s, idx) => {
                           const active = studyMode && selected?.id === s.id;
                           const playing = playingId === s.id;
                           const inlineEntry = active ? explanationCache[s.id] : undefined;
-                          // Attach the onboarding hint to the currently-playing
-                          // sentence; before playback starts, attach to the first.
-                          const hintTargetId = playingId ?? sentences[0]?.id ?? null;
-                          const isOnboardingTarget = showSentenceHint && s.id === hintTargetId;
                           return (
                             <li key={s.id}>
-                              {isOnboardingTarget && (
-                                <div
-                                  role="note"
-                                  className="mx-1 mb-1 flex items-center gap-1 px-2 text-[11px] leading-tight text-primary/90 animate-in fade-in"
-                                >
-                                  <span aria-hidden>✨</span>
-                                  <span>Tap this sentence to understand it</span>
-                                </div>
-                              )}
                               <button
                                 data-sid={s.id}
                                 onClick={() => jumpTo(s)}
@@ -3041,19 +3036,12 @@ function Index() {
                                     ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
                                     : playing
                                     ? "border-primary/70 bg-primary/15 text-foreground"
-                                    : isOnboardingTarget
-                                    ? "border-primary/60 bg-primary/10 text-foreground animate-pulse-soft"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
-                                {isOnboardingTarget && (
-                                  <span className="mr-1.5 inline-flex items-center rounded-full bg-primary px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
-                                    Try this
-                                  </span>
-                                )}
                                 {s.text}
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
@@ -3767,9 +3755,6 @@ function ExplanationPanel({
         <div className="mt-4">
           <ExplanationSections model={sampleModel} />
         </div>
-        <p className="mt-4 text-center text-xs font-medium text-primary">
-          👆 Tap a sentence below to see the real thing
-        </p>
       </div>
     );
   }
