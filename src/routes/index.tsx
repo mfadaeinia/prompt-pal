@@ -1964,16 +1964,16 @@ function Index() {
     const fullyVisible = visibleTop >= 0 && visibleBottom <= cHeight;
     setActiveOutOfView(!fullyVisible);
 
-    // Transcript Mode: user owns the scroll. Never auto-scroll.
-    if (!focusMode) return;
     // Never fight a user who is actively scrolling the transcript.
+    // When they scroll away, the floating "Jump to Current" affordance appears
+    // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Keep the active sentence just below the video / near the top of the
-    // transcript viewport so it is always clearly visible under the player.
-    const targetVisibleTop = cHeight * 0.02;
+    // Lyrics-style auto-follow: keep the active sentence ~35% from the top of
+    // the transcript viewport so previous + upcoming sentences stay visible.
+    const targetVisibleTop = cHeight * 0.35;
     const drift = visibleTop - targetVisibleTop;
-    const band = cHeight * 0.18; // dead-zone around the target
+    const band = cHeight * 0.18; // dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
