@@ -3060,7 +3060,7 @@ function Index() {
                                   {formatTime(s.offset)}
                                 </span>
                                 <span className="flex-1">{s.text}</span>
-                                <Sparkles
+                                <MousePointerClick
                                   aria-hidden
                                   className={`mt-[3px] h-4 w-4 shrink-0 transition-opacity duration-150 ${
                                     playing
