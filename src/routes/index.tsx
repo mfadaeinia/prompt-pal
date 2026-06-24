@@ -3042,11 +3042,6 @@ function Index() {
                                 <span className="mr-2 text-[10px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
-                                {isOnboardingTarget && (
-                                  <span className="mr-1.5 inline-flex items-center rounded-full bg-primary px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
-                                    Try this
-                                  </span>
-                                )}
                                 {s.text}
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
