@@ -1920,6 +1920,7 @@ function Index() {
     hintShownFiredRef.current = true;
     logDiscovery("hint_shown");
     try {
+      // Mark as shown so subsequent renders won't re-trigger logging this session.
       sessionStorage.setItem("nf_sentence_hint_seen", "1");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
