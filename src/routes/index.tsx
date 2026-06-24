@@ -2000,7 +2000,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = container.clientHeight * 0.35;
+      const targetVisibleTop = 48; // px — align with auto-follow target
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
