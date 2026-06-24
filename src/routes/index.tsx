@@ -3055,7 +3055,7 @@ function Index() {
                                 {s.text}
                               </button>
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
-                              {false && active && studyMode && inlineEntry && (
+                              {false && selectedRow && studyMode && inlineEntry && (
                                 <div className="hidden">
                                   <InlineExplanation entry={inlineEntry} limitedMode={limitedMode} />
                                 </div>
