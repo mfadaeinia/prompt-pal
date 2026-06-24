@@ -42,8 +42,11 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
         // language here — the transcript must reflect the spoken language of
         // the media, not the learner's translation/target language.
         const lang = u.searchParams.get("lang") ?? "_any_";
-        const chunkSeconds = Math.max(30, Math.min(180, Number(u.searchParams.get("chunk") ?? 90)));
+        // Smaller default chunk = faster first visible text.
+        const chunkSeconds = Math.max(20, Math.min(180, Number(u.searchParams.get("chunk") ?? 45)));
         const kbps = Math.max(32, Math.min(320, Number(u.searchParams.get("kbps") ?? 128)));
+        // Prefer chunked path (first-chunk-first) unless caller explicitly asks for full-file.
+        const preferChunked = (u.searchParams.get("mode") ?? "chunked") !== "full";
         if (!url) {
           return new Response("missing ?url", { status: 400 });
         }
@@ -97,13 +100,17 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               const jobId = jobRow.id as string;
               send("job", { jobId, videoId });
 
-              // --- Extract audio URL (RapidAPI)
+              // --- Extract audio URL (RapidAPI) with client heartbeats
               const host = process.env.RAPIDAPI_AUDIO_HOST || "youtube-mp36.p.rapidapi.com";
               const endpoint = `https://${host}/dl?id=${encodeURIComponent(videoId)}`;
               const tExtract = Date.now();
+              console.log("[perf][server] extractor_wait_start", { videoId, ts: tExtract });
               let audioUrl: string | null = null;
               let polls = 0;
               const extractDeadline = tExtract + 45_000;
+              // Send a heartbeat immediately so client sees activity.
+              send("extract_progress", { elapsed_ms: 0, polls: 0, status: "starting" });
+              const POLL_INTERVAL_MS = 1500; // tighter than before (was 3000)
               while (Date.now() < extractDeadline) {
                 polls += 1;
                 const r = await fetch(endpoint, {
@@ -125,10 +132,16 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   break;
                 }
                 if (status === "fail") throw new Error(`extractor fail: ${j?.msg ?? ""}`);
-                await new Promise((res) => setTimeout(res, 3000));
+                send("extract_progress", {
+                  elapsed_ms: Date.now() - tExtract,
+                  polls,
+                  status: status || "polling",
+                });
+                await new Promise((res) => setTimeout(res, POLL_INTERVAL_MS));
               }
               if (!audioUrl) throw new Error("extractor timeout");
               const extractMs = Date.now() - tExtract;
+              console.log("[perf][server] extractor_wait_end", { videoId, extractMs, polls });
               await supabaseAdmin
                 .from("transcript_jobs")
                 .update({ audio_url: audioUrl, audio_url_fetched_at: new Date().toISOString() })
@@ -156,7 +169,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               }
 
               try {
-              if (totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
+              if (preferChunked === false && totalAudioBytes != null && totalAudioBytes <= OPENAI_AUDIO_LIMIT_BYTES) {
                 const tFull = Date.now();
                 const dl = await fetch(audioUrl);
                 if (!dl.ok) throw new Error(`full audio fetch: HTTP ${dl.status}`);
@@ -347,6 +360,10 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
 
                 const ctrl = new AbortController();
                 const timer = setTimeout(() => ctrl.abort(), 90_000);
+                const tWhisper = Date.now();
+                console.log("[perf][server] whisper_start", { videoId, chunkIndex, bytes: buf.byteLength });
+                // Tell the client we're actively transcribing this chunk.
+                send("chunk_progress", { chunkIndex, stage: "whisper_start", elapsed_ms: Date.now() - t0 });
                 let res: Response;
                 try {
                   res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -358,6 +375,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 } finally {
                   clearTimeout(timer);
                 }
+                console.log("[perf][server] whisper_end", { videoId, chunkIndex, ms: Date.now() - tWhisper, ok: res.ok });
                 if (!res.ok) {
                   const body = await res.text().catch(() => "");
                   throw new Error(`whisper chunk ${chunkIndex}: ${res.status} ${body.slice(0, 200)}`);
