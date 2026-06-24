@@ -2840,26 +2840,9 @@ function Index() {
                       />
                     )}
                   </div>
-                  {studyMode && sentences.length > 0 && currentSentence && (
-                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-primary/30 bg-card/95 px-3 py-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-                      <div className="flex items-baseline gap-2">
-                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-primary/80">
-                          Now
-                        </span>
-                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
-                          {formatTime(currentSentence.offset)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => jumpTo(currentSentence)}
-                          className="min-w-0 flex-1 cursor-pointer text-left text-[14px] leading-snug text-foreground hover:text-primary"
-                          title={currentSentence.text}
-                        >
-                          {currentSentence.text}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* The duplicate "Now playing" sentence card was removed.
+                      The active sentence now stays in-context inside the
+                      transcript list via lyrics-style auto-follow. */}
                 </div>
               </div>
 
