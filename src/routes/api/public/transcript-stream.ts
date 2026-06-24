@@ -360,6 +360,10 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
 
                 const ctrl = new AbortController();
                 const timer = setTimeout(() => ctrl.abort(), 90_000);
+                const tWhisper = Date.now();
+                console.log("[perf][server] whisper_start", { videoId, chunkIndex, bytes: buf.byteLength });
+                // Tell the client we're actively transcribing this chunk.
+                send("chunk_progress", { chunkIndex, stage: "whisper_start", elapsed_ms: Date.now() - t0 });
                 let res: Response;
                 try {
                   res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -371,6 +375,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                 } finally {
                   clearTimeout(timer);
                 }
+                console.log("[perf][server] whisper_end", { videoId, chunkIndex, ms: Date.now() - tWhisper, ok: res.ok });
                 if (!res.ok) {
                   const body = await res.text().catch(() => "");
                   throw new Error(`whisper chunk ${chunkIndex}: ${res.status} ${body.slice(0, 200)}`);
