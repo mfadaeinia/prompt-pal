@@ -1936,6 +1936,9 @@ function Index() {
   const dismissSentenceHint = (viaClick: boolean) => {
     if (!showSentenceHint) return;
     setShowSentenceHint(false);
+    try {
+      localStorage.setItem("nativeflow_sentence_hinted", "1");
+    } catch {}
     logDiscovery(viaClick ? "hint_clicked" : "hint_dismissed");
   };
 
