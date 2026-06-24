@@ -1046,6 +1046,17 @@ function Index() {
 
           if (!resolved) {
             resolved = true;
+            if (!perfFirstChunkLoggedRef.current) {
+              perfFirstChunkLoggedRef.current = true;
+              const startedAt = loadStartedAtRef.current ?? 0;
+              const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+              perfLog("first_chunk_rendered", {
+                path: "sse",
+                sentence_count: sentences.length,
+                detected_language: detected,
+                elapsed_ms: Math.round(now - startedAt),
+              });
+            }
             const synthetic: FetchTranscriptResult = {
               videoId: String(lastVideoId ?? ""),
               sentences,
