@@ -1985,6 +1985,15 @@ function Index() {
     return sentences.find((x) => x.id === playingId) ?? null;
   }, [isMobile, activeOutOfView, playingId, sentences]);
 
+  // Sentence shown in the persistent "Current sentence" bar under the video.
+  // Prefers the user's selection (when they tapped a sentence in study mode),
+  // otherwise falls back to whatever is currently playing.
+  const currentSentence = useMemo(() => {
+    if (selected) return selected;
+    if (playingId == null) return null;
+    return sentences.find((x) => x.id === playingId) ?? null;
+  }, [selected, playingId, sentences]);
+
   function jumpToCurrentSentence() {
     if (playingId == null || !listRef.current) return;
     const container = listRef.current;
