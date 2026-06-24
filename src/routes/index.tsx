@@ -957,6 +957,16 @@ function Index() {
       });
 
       if (fast.status === "ready") {
+        const startedAt = loadStartedAtRef.current ?? 0;
+        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+        perfLog("first_chunk_rendered", {
+          path: "fast",
+          source: fast.result.source,
+          cache_hit: !!fast.result.cacheHit,
+          sentence_count: fast.result.sentences.length,
+          elapsed_ms: Math.round(now - startedAt),
+        });
+        perfFirstChunkLoggedRef.current = true;
         return { res: fast.result, vars, viaSlowPath: false };
       }
 
