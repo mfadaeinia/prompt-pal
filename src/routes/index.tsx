@@ -1704,12 +1704,13 @@ function Index() {
                 setCurrentTime(0);
               }
             } catch {}
+            // Poll at ~25fps for tight highlight sync with speech.
             pollId = window.setInterval(() => {
               const p = playerRef.current;
               if (p && typeof p.getCurrentTime === "function") {
                 setCurrentTime(p.getCurrentTime() || 0);
               }
-            }, 80);
+            }, 40);
 
           },
           onStateChange: (e: any) => {
