@@ -1970,11 +1970,11 @@ function Index() {
     // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Lyrics-style auto-follow: keep the active sentence ~35% from the top of
-    // the transcript viewport so previous + upcoming sentences stay visible.
-    const targetVisibleTop = cHeight * 0.35;
+    // Keep the active sentence near the top of the transcript viewport
+    // (second visible row) so users always see what is playing now.
+    const targetVisibleTop = 48; // px — roughly one sentence below the top edge
     const drift = visibleTop - targetVisibleTop;
-    const band = cHeight * 0.18; // dead-zone — don't jitter on tiny drifts
+    const band = 24; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
