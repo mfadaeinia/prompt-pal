@@ -3767,9 +3767,6 @@ function ExplanationPanel({
         <div className="mt-4">
           <ExplanationSections model={sampleModel} />
         </div>
-        <p className="mt-4 text-center text-xs font-medium text-primary">
-          👆 Tap a sentence below to see the real thing
-        </p>
       </div>
     );
   }
