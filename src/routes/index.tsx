@@ -3811,19 +3811,7 @@ function ExplanationPanel({
     <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
       {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
       <div>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            {srcLabel}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="OK"
-            className="rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
-          >
-            OK
-          </button>
-        </div>
+        <div className="flex items-center justify-end gap-2">
         <p className="mt-1.5 text-base leading-relaxed text-foreground sm:text-lg">
           <SentenceWithHighlights text={sentence.text} phrases={sentenceHighlights} />
         </p>
