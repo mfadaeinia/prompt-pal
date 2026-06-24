@@ -1527,6 +1527,18 @@ function Index() {
             grammar: parsed.grammar,
           },
         }));
+        {
+          const clickedAt = sentenceClickAtRef.current.get(s.id);
+          if (clickedAt != null) {
+            const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            perfLog("first_hint_shown", {
+              sentence_id: s.id,
+              is_prefetch: !!opts.isPrefetch,
+              elapsed_ms_since_click: Math.round(now - clickedAt),
+            });
+            sentenceClickAtRef.current.delete(s.id);
+          }
+        }
         if (!opts.isPrefetch && firstExplanationClickAtRef.current != null) {
           const now =
             typeof performance !== "undefined" ? performance.now() : Date.now();
