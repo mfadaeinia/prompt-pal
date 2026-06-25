@@ -719,7 +719,7 @@ export const getReconciliationReport = createServerFn({ method: "POST" })
     if (untilIso) q = q.lte("created_at", untilIso);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const all = (rows ?? []) as Array<{
+    const all = ((rows ?? []) as unknown) as Array<{
       session_id: string | null;
       created_at: string;
       release_cohort_id: string | null;
