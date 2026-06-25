@@ -30,8 +30,6 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LogInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getActiveCohortId } = await import("@/lib/active-cohort.server");
-    const cohortId = await getActiveCohortId();
     const { error } = await supabaseAdmin.from("library_events" as any).insert({
       event_name: data.eventName,
       session_id: data.sessionId,
@@ -39,7 +37,6 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
       expression_id: data.expressionId ?? null,
       user_id: data.userId ?? null,
       metadata: data.metadata ?? null,
-      release_cohort_id: cohortId,
     });
     if (error) {
       // Don't fail UI flows for analytics — log and return ok

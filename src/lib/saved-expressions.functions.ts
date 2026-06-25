@@ -20,8 +20,6 @@ export const saveExpression = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SaveInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { getActiveCohortId } = await import("@/lib/active-cohort.server");
-    const cohortId = await getActiveCohortId();
     const { data: row, error } = await supabase
       .from("saved_expressions")
       .insert({
@@ -36,8 +34,7 @@ export const saveExpression = createServerFn({ method: "POST" })
         video_id: data.videoId ?? null,
         timestamp_seconds: data.timestampSeconds,
         target_language: data.targetLanguage ?? null,
-        release_cohort_id: cohortId,
-      } as any)
+      })
       .select("*")
       .single();
     if (error) throw new Error(error.message);

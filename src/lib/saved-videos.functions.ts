@@ -16,8 +16,6 @@ export const saveVideo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SaveInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { getActiveCohortId } = await import("@/lib/active-cohort.server");
-    const cohortId = await getActiveCohortId();
     const { data: row, error } = await supabase
       .from("saved_videos")
       .upsert(
@@ -30,8 +28,7 @@ export const saveVideo = createServerFn({ method: "POST" })
             data.thumbnailUrl ?? `https://i.ytimg.com/vi/${data.videoId}/hqdefault.jpg`,
           target_language: data.targetLanguage ?? null,
           session_id: data.sessionId ?? null,
-          release_cohort_id: cohortId,
-        } as any,
+        },
         { onConflict: "user_id,video_id" },
       )
       .select("*")
