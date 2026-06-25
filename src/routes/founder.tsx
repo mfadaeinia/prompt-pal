@@ -131,6 +131,192 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "engineering", label: "Engineering" },
 ];
 
+type DatePreset =
+  | "today"
+  | "yesterday"
+  | "last24h"
+  | "last3d"
+  | "last7d"
+  | "last14d"
+  | "last30d"
+  | "thisMonth"
+  | "all"
+  | "custom";
+
+const PRESETS: Array<{ id: DatePreset; label: string }> = [
+  { id: "today", label: "Today" },
+  { id: "yesterday", label: "Yesterday" },
+  { id: "last24h", label: "Last 24 hours" },
+  { id: "last3d", label: "Last 3 days" },
+  { id: "last7d", label: "Last 7 days" },
+  { id: "last14d", label: "Last 14 days" },
+  { id: "last30d", label: "Last 30 days" },
+  { id: "thisMonth", label: "This month" },
+  { id: "all", label: "All time" },
+];
+
+type DateRange = { from: string | null; to: string | null };
+
+function presetToRange(preset: DatePreset, now: Date = new Date()): DateRange {
+  const end = now.toISOString();
+  const startOfDay = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const endOfDay = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
+  };
+  switch (preset) {
+    case "today": {
+      return { from: startOfDay(now).toISOString(), to: end };
+    }
+    case "yesterday": {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      return { from: startOfDay(y).toISOString(), to: endOfDay(y).toISOString() };
+    }
+    case "last24h":
+      return { from: new Date(now.getTime() - 24 * 3600_000).toISOString(), to: end };
+    case "last3d":
+      return { from: new Date(now.getTime() - 3 * 86400_000).toISOString(), to: end };
+    case "last7d":
+      return { from: new Date(now.getTime() - 7 * 86400_000).toISOString(), to: end };
+    case "last14d":
+      return { from: new Date(now.getTime() - 14 * 86400_000).toISOString(), to: end };
+    case "last30d":
+      return { from: new Date(now.getTime() - 30 * 86400_000).toISOString(), to: end };
+    case "thisMonth": {
+      const x = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: x.toISOString(), to: end };
+    }
+    case "all":
+    case "custom":
+    default:
+      return { from: null, to: null };
+  }
+}
+
+function previousRange(r: DateRange): DateRange {
+  if (!r.from || !r.to) return { from: null, to: null };
+  const fromMs = new Date(r.from).getTime();
+  const toMs = new Date(r.to).getTime();
+  const span = toMs - fromMs;
+  if (span <= 0) return { from: null, to: null };
+  return {
+    from: new Date(fromMs - span).toISOString(),
+    to: new Date(fromMs).toISOString(),
+  };
+}
+
+function formatDelta(curr: number, prev: number): { text: string; dir: "up" | "down" | "flat" } {
+  if (prev === 0 && curr === 0) return { text: "—", dir: "flat" };
+  if (prev === 0) return { text: "new", dir: "up" };
+  const pct = ((curr - prev) / prev) * 100;
+  const dir = pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat";
+  const sign = pct > 0 ? "+" : "";
+  return { text: `${sign}${pct.toFixed(0)}%`, dir };
+}
+
+function FilterBar({
+  preset,
+  source,
+  range,
+  onPresetChange,
+  onSourceChange,
+  onCustomChange,
+}: {
+  preset: DatePreset;
+  source: SourceBucket;
+  range: DateRange;
+  onPresetChange: (p: DatePreset) => void;
+  onSourceChange: (s: SourceBucket) => void;
+  onCustomChange: (r: DateRange) => void;
+}) {
+  const fromDate = range.from ? range.from.slice(0, 10) : "";
+  const toDate = range.to ? range.to.slice(0, 10) : "";
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Period
+      </label>
+      <select
+        value={preset}
+        onChange={(e) => onPresetChange(e.target.value as DatePreset)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        {PRESETS.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+        <option value="custom">Custom…</option>
+      </select>
+      {preset === "custom" && (
+        <>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) =>
+              onCustomChange({
+                from: e.target.value ? new Date(e.target.value + "T00:00:00").toISOString() : null,
+                to: range.to,
+              })
+            }
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <span className="text-slate-400">→</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) =>
+              onCustomChange({
+                from: range.from,
+                to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : null,
+              })
+            }
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+        </>
+      )}
+      <div className="mx-2 h-5 w-px bg-slate-200" />
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</label>
+      <select
+        value={source}
+        onChange={(e) => onSourceChange(e.target.value as SourceBucket)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        {SOURCE_BUCKETS.map((s) => (
+          <option key={s} value={s}>
+            {SOURCE_LABELS[s]}
+          </option>
+        ))}
+      </select>
+      <span className="ml-auto text-xs text-slate-400">
+        {range.from ? `${range.from.slice(0, 10)} → ${(range.to ?? "now").slice(0, 10)}` : "all time"}
+      </span>
+    </div>
+  );
+}
+
+function DeltaBadge({ curr, prev }: { curr: number; prev: number }) {
+  const d = formatDelta(curr, prev);
+  const cls =
+    d.dir === "up"
+      ? "text-emerald-600 bg-emerald-50"
+      : d.dir === "down"
+        ? "text-red-600 bg-red-50"
+        : "text-slate-500 bg-slate-100";
+  const arrow = d.dir === "up" ? "↑" : d.dir === "down" ? "↓" : "·";
+  return (
+    <span className={`ml-2 inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
+      {arrow} {d.text}
+    </span>
+  );
+}
+
 
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
