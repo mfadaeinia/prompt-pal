@@ -18,6 +18,7 @@ import { Route as ApiPublicProductProbeRouteImport } from './routes/api/public/p
 import { Route as ApiPublicAsrProbeProgressiveRouteImport } from './routes/api/public/asr-probe-progressive'
 import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
 import { Route as ApiPublicAsrBenchmarkRunRouteImport } from './routes/api/public/asr-benchmark-run'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -67,6 +68,12 @@ const ApiPublicAsrBenchmarkRunRoute =
     path: '/api/public/asr-benchmark-run',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -89,6 +97,7 @@ export interface FileRoutesByTo {
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,6 +110,7 @@ export interface FileRoutesById {
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-probe-progressive'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +161,7 @@ export interface RootRouteChildren {
   ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
   ApiPublicProductProbeRoute: typeof ApiPublicProductProbeRoute
   ApiPublicTranscriptStreamRoute: typeof ApiPublicTranscriptStreamRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -215,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsrBenchmarkRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -228,17 +249,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
   ApiPublicProductProbeRoute: ApiPublicProductProbeRoute,
   ApiPublicTranscriptStreamRoute: ApiPublicTranscriptStreamRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
