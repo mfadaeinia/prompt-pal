@@ -1293,6 +1293,49 @@ function UserRetentionSection({
   );
 }
 
+function KpiWithDelta({
+  label,
+  value,
+  unit,
+  tooltip,
+  currNum,
+  prevNum,
+  invertDelta,
+}: {
+  label: string;
+  value: string | number;
+  unit?: "session" | "user" | "row";
+  tooltip?: string;
+  currNum: number;
+  prevNum?: number;
+  invertDelta?: boolean;
+}) {
+  const showDelta = typeof prevNum === "number";
+  // For "bad" metrics (e.g., Watched-Never-Clicked), invert so down = good (green).
+  const c = invertDelta ? -currNum : currNum;
+  const p = invertDelta && typeof prevNum === "number" ? -prevNum : (prevNum ?? 0);
+  return (
+    <div
+      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      title={tooltip}
+    >
+      <div className="flex items-center gap-1.5">
+        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
+        {unit && <UnitBadge unit={unit} />}
+      </div>
+      <div className="mt-2 flex items-baseline">
+        <div className="text-3xl font-bold tabular-nums text-slate-900">{value}</div>
+        {showDelta && <DeltaBadge curr={c} prev={p} />}
+      </div>
+      {showDelta && (
+        <div className="mt-1 text-[11px] text-slate-400">
+          prev: <span className="tabular-nums">{Math.abs(invertDelta ? -p : p).toFixed(0)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BigKpi({
   label,
   value,
