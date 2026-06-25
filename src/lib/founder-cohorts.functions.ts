@@ -642,3 +642,152 @@ export const listAcquisitionSources = createServerFn({ method: "GET" }).handler(
   }
   return Array.from(set).sort();
 });
+
+// ============================================================
+// Reconciliation / debug
+//
+// For the same filter the dashboard uses, report:
+//   - raw page_view rows in the [since, until] window (NO cohort/source filter)
+//   - distinct visitor sessions in that window
+//   - sessions actually included by the dashboard query
+//   - sessions excluded, with a reason per session
+//
+// This is the source of truth when the founder dashboard disagrees with
+// Lovable Analytics. Excluded reasons mirror the filter clauses we apply.
+// ============================================================
+
+export type ReconciliationReason =
+  | "included"
+  | "missing_session_id"
+  | "missing_release_cohort"
+  | "cohort_mismatch"
+  | "source_mismatch"
+  | "before_since"
+  | "after_until";
+
+export type ReconciliationReport = {
+  label: string;
+  window: { since: string | null; until: string | null };
+  filter: {
+    cohortId: string | null;
+    cohortName: string | null;
+    source: string | null;
+  };
+  raw: {
+    pageViewRows: number;
+    distinctSessions: number;
+  };
+  dashboard: {
+    sessionsIncluded: number;
+  };
+  excluded: {
+    total: number;
+    reasons: Record<ReconciliationReason, number>;
+    samples: Array<{
+      session_id: string | null;
+      created_at: string;
+      reason: ReconciliationReason;
+      release_cohort_id: string | null;
+      acquisition_source: string | null;
+    }>;
+  };
+};
+
+export const getReconciliationReport = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => FilterInput.parse(d))
+  .handler(async ({ data }): Promise<ReconciliationReport> => {
+    const f = await resolveFilter(data as AnalyticsFilter);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Use the same time window the dashboard would scan. If the filter has no
+    // since/until (e.g. "All time / cohort window of an all-time cohort"),
+    // default to "last 7 days" so the report is bounded and meaningful.
+    const sinceIso =
+      f.since ?? new Date(Date.now() - 7 * 86400_000).toISOString();
+    const untilIso = f.until;
+
+    // Pull every page_view in the window, WITHOUT applying cohort/source.
+    // That is the raw stream the dashboard is supposed to reconcile against.
+    let q = supabaseAdmin
+      .from("page_views" as any)
+      .select(
+        "session_id,created_at,release_cohort_id,acquisition_source",
+      )
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(10000);
+    if (untilIso) q = q.lte("created_at", untilIso);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const all = (rows ?? []) as Array<{
+      session_id: string | null;
+      created_at: string;
+      release_cohort_id: string | null;
+      acquisition_source: string | null;
+    }>;
+
+    const reasons: Record<ReconciliationReason, number> = {
+      included: 0,
+      missing_session_id: 0,
+      missing_release_cohort: 0,
+      cohort_mismatch: 0,
+      source_mismatch: 0,
+      before_since: 0,
+      after_until: 0,
+    };
+    const includedSessions = new Set<string>();
+    const distinctSessions = new Set<string>();
+    const samples: ReconciliationReport["excluded"]["samples"] = [];
+    const sampleCap = 25;
+
+    const sinceMs = new Date(sinceIso).getTime();
+    const untilMs = untilIso ? new Date(untilIso).getTime() : null;
+
+    for (const r of all) {
+      if (r.session_id) distinctSessions.add(r.session_id);
+      let reason: ReconciliationReason = "included";
+      const t = new Date(r.created_at).getTime();
+      if (!r.session_id) reason = "missing_session_id";
+      else if (t < sinceMs) reason = "before_since";
+      else if (untilMs !== null && t > untilMs) reason = "after_until";
+      else if (f.cohort && r.release_cohort_id == null) reason = "missing_release_cohort";
+      else if (f.cohort && r.release_cohort_id !== f.cohort.id) reason = "cohort_mismatch";
+      else if (f.source && r.acquisition_source !== f.source) reason = "source_mismatch";
+
+      reasons[reason]++;
+      if (reason === "included" && r.session_id) includedSessions.add(r.session_id);
+      else if (reason !== "included" && samples.length < sampleCap) {
+        samples.push({
+          session_id: r.session_id,
+          created_at: r.created_at,
+          reason,
+          release_cohort_id: r.release_cohort_id,
+          acquisition_source: r.acquisition_source,
+        });
+      }
+    }
+
+    const excludedTotal = all.length - reasons.included;
+    return {
+      label: f.label,
+      window: { since: sinceIso, until: untilIso },
+      filter: {
+        cohortId: f.cohort?.id ?? null,
+        cohortName: f.cohort?.name ?? null,
+        source: f.source,
+      },
+      raw: {
+        pageViewRows: all.length,
+        distinctSessions: distinctSessions.size,
+      },
+      dashboard: {
+        sessionsIncluded: includedSessions.size,
+      },
+      excluded: {
+        total: excludedTotal,
+        reasons,
+        samples,
+      },
+    };
+  });
+
