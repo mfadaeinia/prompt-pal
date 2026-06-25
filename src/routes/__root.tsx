@@ -169,8 +169,16 @@ function RootComponent() {
       .then(([{ logPageView }, { getBrowserId }]) => {
         const sid = getBrowserId();
         if (!sid) return;
+        const params = new URLSearchParams(window.location.search);
         return logPageView({
-          data: { sessionId: sid, path: window.location.pathname },
+          data: {
+            sessionId: sid,
+            path: window.location.pathname,
+            referrer: document.referrer || null,
+            utmSource: params.get("utm_source"),
+            utmMedium: params.get("utm_medium"),
+            utmCampaign: params.get("utm_campaign"),
+          },
         });
       })
       .catch(() => {});
