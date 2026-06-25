@@ -17,9 +17,13 @@ export type DashboardFilterValue = {
   source: string | null;
 };
 
+// Default to "All time / Last 7 days" so the dashboard reconciles with
+// Lovable Analytics out-of-the-box. Switching to "Current Release" is an
+// explicit choice the founder makes — it intentionally hides data from
+// before the active cohort's start.
 export const DEFAULT_FILTER: DashboardFilterValue = {
-  scope: { kind: "current" },
-  range: { kind: "cohort" },
+  scope: { kind: "all" },
+  range: { kind: "last_7d" },
   source: null,
 };
 
