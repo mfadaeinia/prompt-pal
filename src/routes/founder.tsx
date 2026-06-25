@@ -327,10 +327,35 @@ function FounderPage() {
   const retentionFetcher = useServerFn(getUserRetentionCohort);
   const [tab, setTab] = useState<FounderTab>("overview");
 
+  // Global filter state — defaults: Last 7 Days + All Sources.
+  const [preset, setPreset] = useState<DatePreset>("last7d");
+  const [customRange, setCustomRange] = useState<DateRange>({ from: null, to: null });
+  const [source, setSource] = useState<SourceBucket>("all");
+
+  const range = useMemo<DateRange>(
+    () => (preset === "custom" ? customRange : presetToRange(preset)),
+    [preset, customRange],
+  );
+  const prevRange = useMemo<DateRange>(() => previousRange(range), [range]);
+  const filterPayload = useMemo(
+    () => ({ data: { from: range.from, to: range.to, source } }),
+    [range, source],
+  );
+  const prevFilterPayload = useMemo(
+    () => ({ data: { from: prevRange.from, to: prevRange.to, source } }),
+    [prevRange, source],
+  );
+
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["founder-metrics"],
-    queryFn: () => fetcher(),
+    queryKey: ["founder-metrics", range.from, range.to, source],
+    queryFn: () => fetcher(filterPayload),
     refetchInterval: 30_000,
+  });
+  const prevQ = useQuery({
+    queryKey: ["founder-metrics-prev", prevRange.from, prevRange.to, source],
+    queryFn: () => fetcher(prevFilterPayload),
+    enabled: !!prevRange.from && !!prevRange.to,
+    refetchInterval: 60_000,
   });
   const libQ = useQuery({
     queryKey: ["library-metrics"],
@@ -360,6 +385,7 @@ function FounderPage() {
 
   const refreshAll = () => {
     refetch();
+    prevQ.refetch();
     libQ.refetch();
     clickDebugQ.refetch();
     txQ.refetch();
@@ -375,7 +401,7 @@ function FounderPage() {
           <div>
             <h1 className="text-2xl font-bold">Founder Dashboard</h1>
             <p className="text-sm text-slate-500">
-              Live metrics from the database. Auto-refresh every 30s.
+              Time-filtered metrics. Auto-refresh every 30s.
             </p>
           </div>
           <button
@@ -387,6 +413,18 @@ function FounderPage() {
               : "Refresh"}
           </button>
         </header>
+
+        <FilterBar
+          preset={preset}
+          source={source}
+          range={range}
+          onPresetChange={(p) => setPreset(p)}
+          onSourceChange={(s) => setSource(s)}
+          onCustomChange={(r) => {
+            setPreset("custom");
+            setCustomRange(r);
+          }}
+        />
 
         <nav className="flex flex-wrap gap-1 border-b border-slate-200">
           {TABS.map((t) => (
@@ -411,6 +449,7 @@ function FounderPage() {
         {tab === "overview" && data && (
           <OverviewSection
             m={data}
+            prev={prevQ.data}
             lib={libQ.data}
             tx={txQ.data}
             cohort={cohortQ.data}
