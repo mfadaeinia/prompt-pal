@@ -125,9 +125,18 @@ function FounderGate() {
   );
 }
 
-type FounderTab = "overview" | "users" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
+type FounderTab =
+  | "release"
+  | "overview"
+  | "users"
+  | "funnel"
+  | "cohort"
+  | "health"
+  | "feedback"
+  | "engineering";
 
 const TABS: Array<{ id: FounderTab; label: string }> = [
+  { id: "release", label: "Release ⭐" },
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
   { id: "funnel", label: "Activation Funnel" },
@@ -145,7 +154,9 @@ function FounderPage() {
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
   const retentionFetcher = useServerFn(getUserRetentionCohort);
-  const [tab, setTab] = useState<FounderTab>("overview");
+  const [tab, setTab] = useState<FounderTab>("release");
+  const [filter, setFilter] = useState<DashboardFilterValue>(DEFAULT_FILTER);
+  const analyticsFilter = useMemo(() => toAnalyticsFilter(filter), [filter]);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["founder-metrics"],
@@ -208,6 +219,8 @@ function FounderPage() {
           </button>
         </header>
 
+        <DashboardFilters value={filter} onChange={setFilter} />
+
         <nav className="flex flex-wrap gap-1 border-b border-slate-200">
           {TABS.map((t) => (
             <button
@@ -228,26 +241,44 @@ function FounderPage() {
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
 
+        {tab === "release" && <ReleaseAnalyticsBlock filter={analyticsFilter} />}
+
         {tab === "overview" && data && (
-          <OverviewSection
-            m={data}
-            lib={libQ.data}
-            tx={txQ.data}
-            cohort={cohortQ.data}
-            retention={retentionQ.data}
-          />
+          <>
+            <ReleaseAnalyticsBlock filter={analyticsFilter} />
+            <div className="mt-6 border-t border-slate-200 pt-6">
+              <p className="mb-3 text-[11px] uppercase tracking-wide text-slate-400">
+                Lifetime metrics (unfiltered)
+              </p>
+              <OverviewSection
+                m={data}
+                lib={libQ.data}
+                tx={txQ.data}
+                cohort={cohortQ.data}
+                retention={retentionQ.data}
+              />
+            </div>
+          </>
         )}
         {tab === "users" && (
           <UserRetentionSection q={retentionQ.data} loading={retentionQ.isLoading} />
         )}
         {tab === "funnel" && data && (
-          <FunnelSection
-            m={data}
-            lib={libQ.data}
-            tx={txQ.data}
-            cohort={cohortQ.data}
-            retention={retentionQ.data}
-          />
+          <>
+            <ReleaseAnalyticsBlock filter={analyticsFilter} />
+            <div className="mt-6 border-t border-slate-200 pt-6">
+              <p className="mb-3 text-[11px] uppercase tracking-wide text-slate-400">
+                Lifetime funnel (unfiltered)
+              </p>
+              <FunnelSection
+                m={data}
+                lib={libQ.data}
+                tx={txQ.data}
+                cohort={cohortQ.data}
+                retention={retentionQ.data}
+              />
+            </div>
+          </>
         )}
 
         {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
@@ -269,6 +300,8 @@ function FounderPage() {
     </div>
   );
 }
+
+
 
 function OverviewSection({
   m,
