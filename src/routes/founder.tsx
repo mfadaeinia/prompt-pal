@@ -148,7 +148,7 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
 ];
 
 
-function FounderPage() {
+export function FounderDebugPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const clickDebugFetcher = useServerFn(getSentenceClickDebug);
