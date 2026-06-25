@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
+import { SOURCE_BUCKETS, SOURCE_LABELS, type SourceBucket } from "@/lib/source-bucket";
 import {
   getLibraryMetrics,
   getSentenceClickDebug,
@@ -130,6 +131,192 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "engineering", label: "Engineering" },
 ];
 
+type DatePreset =
+  | "today"
+  | "yesterday"
+  | "last24h"
+  | "last3d"
+  | "last7d"
+  | "last14d"
+  | "last30d"
+  | "thisMonth"
+  | "all"
+  | "custom";
+
+const PRESETS: Array<{ id: DatePreset; label: string }> = [
+  { id: "today", label: "Today" },
+  { id: "yesterday", label: "Yesterday" },
+  { id: "last24h", label: "Last 24 hours" },
+  { id: "last3d", label: "Last 3 days" },
+  { id: "last7d", label: "Last 7 days" },
+  { id: "last14d", label: "Last 14 days" },
+  { id: "last30d", label: "Last 30 days" },
+  { id: "thisMonth", label: "This month" },
+  { id: "all", label: "All time" },
+];
+
+type DateRange = { from: string | null; to: string | null };
+
+function presetToRange(preset: DatePreset, now: Date = new Date()): DateRange {
+  const end = now.toISOString();
+  const startOfDay = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const endOfDay = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
+  };
+  switch (preset) {
+    case "today": {
+      return { from: startOfDay(now).toISOString(), to: end };
+    }
+    case "yesterday": {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      return { from: startOfDay(y).toISOString(), to: endOfDay(y).toISOString() };
+    }
+    case "last24h":
+      return { from: new Date(now.getTime() - 24 * 3600_000).toISOString(), to: end };
+    case "last3d":
+      return { from: new Date(now.getTime() - 3 * 86400_000).toISOString(), to: end };
+    case "last7d":
+      return { from: new Date(now.getTime() - 7 * 86400_000).toISOString(), to: end };
+    case "last14d":
+      return { from: new Date(now.getTime() - 14 * 86400_000).toISOString(), to: end };
+    case "last30d":
+      return { from: new Date(now.getTime() - 30 * 86400_000).toISOString(), to: end };
+    case "thisMonth": {
+      const x = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { from: x.toISOString(), to: end };
+    }
+    case "all":
+    case "custom":
+    default:
+      return { from: null, to: null };
+  }
+}
+
+function previousRange(r: DateRange): DateRange {
+  if (!r.from || !r.to) return { from: null, to: null };
+  const fromMs = new Date(r.from).getTime();
+  const toMs = new Date(r.to).getTime();
+  const span = toMs - fromMs;
+  if (span <= 0) return { from: null, to: null };
+  return {
+    from: new Date(fromMs - span).toISOString(),
+    to: new Date(fromMs).toISOString(),
+  };
+}
+
+function formatDelta(curr: number, prev: number): { text: string; dir: "up" | "down" | "flat" } {
+  if (prev === 0 && curr === 0) return { text: "—", dir: "flat" };
+  if (prev === 0) return { text: "new", dir: "up" };
+  const pct = ((curr - prev) / prev) * 100;
+  const dir = pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat";
+  const sign = pct > 0 ? "+" : "";
+  return { text: `${sign}${pct.toFixed(0)}%`, dir };
+}
+
+function FilterBar({
+  preset,
+  source,
+  range,
+  onPresetChange,
+  onSourceChange,
+  onCustomChange,
+}: {
+  preset: DatePreset;
+  source: SourceBucket;
+  range: DateRange;
+  onPresetChange: (p: DatePreset) => void;
+  onSourceChange: (s: SourceBucket) => void;
+  onCustomChange: (r: DateRange) => void;
+}) {
+  const fromDate = range.from ? range.from.slice(0, 10) : "";
+  const toDate = range.to ? range.to.slice(0, 10) : "";
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Period
+      </label>
+      <select
+        value={preset}
+        onChange={(e) => onPresetChange(e.target.value as DatePreset)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        {PRESETS.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.label}
+          </option>
+        ))}
+        <option value="custom">Custom…</option>
+      </select>
+      {preset === "custom" && (
+        <>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) =>
+              onCustomChange({
+                from: e.target.value ? new Date(e.target.value + "T00:00:00").toISOString() : null,
+                to: range.to,
+              })
+            }
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <span className="text-slate-400">→</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) =>
+              onCustomChange({
+                from: range.from,
+                to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : null,
+              })
+            }
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+        </>
+      )}
+      <div className="mx-2 h-5 w-px bg-slate-200" />
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Source</label>
+      <select
+        value={source}
+        onChange={(e) => onSourceChange(e.target.value as SourceBucket)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        {SOURCE_BUCKETS.map((s) => (
+          <option key={s} value={s}>
+            {SOURCE_LABELS[s]}
+          </option>
+        ))}
+      </select>
+      <span className="ml-auto text-xs text-slate-400">
+        {range.from ? `${range.from.slice(0, 10)} → ${(range.to ?? "now").slice(0, 10)}` : "all time"}
+      </span>
+    </div>
+  );
+}
+
+function DeltaBadge({ curr, prev }: { curr: number; prev: number }) {
+  const d = formatDelta(curr, prev);
+  const cls =
+    d.dir === "up"
+      ? "text-emerald-600 bg-emerald-50"
+      : d.dir === "down"
+        ? "text-red-600 bg-red-50"
+        : "text-slate-500 bg-slate-100";
+  const arrow = d.dir === "up" ? "↑" : d.dir === "down" ? "↓" : "·";
+  return (
+    <span className={`ml-2 inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
+      {arrow} {d.text}
+    </span>
+  );
+}
+
 
 function FounderPage() {
   const fetcher = useServerFn(getFounderMetrics);
@@ -140,10 +327,35 @@ function FounderPage() {
   const retentionFetcher = useServerFn(getUserRetentionCohort);
   const [tab, setTab] = useState<FounderTab>("overview");
 
+  // Global filter state — defaults: Last 7 Days + All Sources.
+  const [preset, setPreset] = useState<DatePreset>("last7d");
+  const [customRange, setCustomRange] = useState<DateRange>({ from: null, to: null });
+  const [source, setSource] = useState<SourceBucket>("all");
+
+  const range = useMemo<DateRange>(
+    () => (preset === "custom" ? customRange : presetToRange(preset)),
+    [preset, customRange],
+  );
+  const prevRange = useMemo<DateRange>(() => previousRange(range), [range]);
+  const filterPayload = useMemo(
+    () => ({ data: { from: range.from, to: range.to, source } }),
+    [range, source],
+  );
+  const prevFilterPayload = useMemo(
+    () => ({ data: { from: prevRange.from, to: prevRange.to, source } }),
+    [prevRange, source],
+  );
+
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["founder-metrics"],
-    queryFn: () => fetcher(),
+    queryKey: ["founder-metrics", range.from, range.to, source],
+    queryFn: () => fetcher(filterPayload),
     refetchInterval: 30_000,
+  });
+  const prevQ = useQuery({
+    queryKey: ["founder-metrics-prev", prevRange.from, prevRange.to, source],
+    queryFn: () => fetcher(prevFilterPayload),
+    enabled: !!prevRange.from && !!prevRange.to,
+    refetchInterval: 60_000,
   });
   const libQ = useQuery({
     queryKey: ["library-metrics"],
@@ -173,6 +385,7 @@ function FounderPage() {
 
   const refreshAll = () => {
     refetch();
+    prevQ.refetch();
     libQ.refetch();
     clickDebugQ.refetch();
     txQ.refetch();
@@ -188,7 +401,7 @@ function FounderPage() {
           <div>
             <h1 className="text-2xl font-bold">Founder Dashboard</h1>
             <p className="text-sm text-slate-500">
-              Live metrics from the database. Auto-refresh every 30s.
+              Time-filtered metrics. Auto-refresh every 30s.
             </p>
           </div>
           <button
@@ -200,6 +413,18 @@ function FounderPage() {
               : "Refresh"}
           </button>
         </header>
+
+        <FilterBar
+          preset={preset}
+          source={source}
+          range={range}
+          onPresetChange={(p) => setPreset(p)}
+          onSourceChange={(s) => setSource(s)}
+          onCustomChange={(r) => {
+            setPreset("custom");
+            setCustomRange(r);
+          }}
+        />
 
         <nav className="flex flex-wrap gap-1 border-b border-slate-200">
           {TABS.map((t) => (
@@ -224,6 +449,7 @@ function FounderPage() {
         {tab === "overview" && data && (
           <OverviewSection
             m={data}
+            prev={prevQ.data}
             lib={libQ.data}
             tx={txQ.data}
             cohort={cohortQ.data}
@@ -265,12 +491,14 @@ function FounderPage() {
 
 function OverviewSection({
   m,
+  prev,
   lib,
   tx,
   cohort,
   retention,
 }: {
   m: FounderMetrics;
+  prev?: FounderMetrics;
   lib?: LibraryMetrics;
   tx?: TranscriptQualityMetrics;
   cohort?: TesterCohortMetrics;
@@ -284,30 +512,50 @@ function OverviewSection({
   const fc = m.firstClick;
   const firstClickPct = Math.round((fc.rate ?? 0) * 1000) / 10;
   const noClickPct = Math.round((fc.watchedNoClickPct ?? 0) * 1000) / 10;
+  const act = m.activationSession;
+  const actPct = Math.round(act.rate * 1000) / 10;
   return (
     <div className="space-y-6">
+      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+        Window: <span className="font-medium text-slate-700">{m.windowLabel}</span>
+        {" · "}Source: <span className="font-medium text-slate-700">{m.range.source}</span>
+        {" · "}Raw page_views rows: <span className="font-mono text-slate-700">{m.rawPageViewRows}</span>
+        {prev && (
+          <span className="ml-2 text-slate-400">
+            (vs previous: visitors {prev.visitors}, engaged {prev.funnel.clickedSentence})
+          </span>
+        )}
+      </div>
+
       <div className="space-y-3">
         <SectionHeader
           title="Discoverability (primary)"
           subtitle="Are users who watch the video actually finding the click-a-sentence feature?"
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <BigKpi
+          <KpiWithDelta
             label="First Click Rate"
             unit="session"
             value={`${firstClickPct}%`}
+            currNum={fc.rate * 100}
+            prevNum={prev ? prev.firstClick.rate * 100 : undefined}
             tooltip={`Unique sessions with ≥1 sentence click ÷ unique sessions that watched ≥30s. ${fc.clickedSessions} / ${fc.watched30s}.`}
           />
-          <BigKpi
+          <KpiWithDelta
             label="Watched, Never Clicked"
             unit="session"
             value={fc.watchedNoClick}
+            currNum={fc.watchedNoClick}
+            prevNum={prev?.firstClick.watchedNoClick}
+            invertDelta
             tooltip={`Sessions that watched ≥30s but never clicked a sentence. ${noClickPct}% of sessions that crossed the 30s mark.`}
           />
-          <BigKpi
+          <KpiWithDelta
             label="Watched 30s+"
             unit="session"
             value={fc.watched30s}
+            currNum={fc.watched30s}
+            prevNum={prev?.firstClick.watched30s}
             tooltip="Denominator for First Click Rate."
           />
         </div>
@@ -319,32 +567,67 @@ function OverviewSection({
           subtitle="One row per browser session. Anonymous and authed users included."
         />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <BigKpi
+          <KpiWithDelta
             label="Visitors"
             unit="session"
             value={f.visitors}
-            tooltip="Unique sessions that arrived on the site (one page_views row, plus any historical sessions known from downstream events)."
+            currNum={f.visitors}
+            prevNum={prev?.funnel.visitors}
+            tooltip="Unique sessions that arrived on the site (page_views row + any session known from downstream events)."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Video Opened"
             unit="session"
             value={f.videoOpened}
-            tooltip="Unique sessions that loaded a video page. Does NOT mean they watched it."
+            currNum={f.videoOpened}
+            prevNum={prev?.funnel.videoOpened}
+            tooltip="Unique sessions that loaded a video page."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Engaged Sessions"
             unit="session"
             value={f.clickedSentence}
-            tooltip="A session where the user clicked at least one subtitle sentence. First moment a user experiences NativeFlow's core value."
+            currNum={f.clickedSentence}
+            prevNum={prev?.funnel.clickedSentence}
+            tooltip="Sessions that clicked at least one subtitle sentence."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Saved Sessions"
             unit="session"
             value={f.savedSomething}
+            currNum={f.savedSomething}
+            prevNum={prev?.funnel.savedSomething}
             tooltip="Unique sessions that saved at least one expression or video."
           />
         </div>
       </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          title="Activation"
+          subtitle="Two definitions, shown separately. Both are within the selected window."
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <KpiWithDelta
+            label="Activated (session)"
+            unit="session"
+            value={`${act.activated} (${actPct}%)`}
+            currNum={act.rate * 100}
+            prevNum={prev ? prev.activationSession.rate * 100 : undefined}
+            tooltip="Same-session ≥30s watched AND clicked ≥1 sentence. Pure session-level definition."
+          />
+          <KpiWithDelta
+            label="Activated (user)"
+            unit="user"
+            value={activatedUsers}
+            currNum={activatedUsers}
+            prevNum={undefined}
+            tooltip="Authenticated user who, across any sessions within 7 days of signup, watched ≥30s AND clicked ≥1 sentence. Lifetime metric — not time-filtered."
+          />
+        </div>
+      </div>
+
+
 
 
       <div className="space-y-3">
@@ -1006,6 +1289,49 @@ function UserRetentionSection({
         All counts are per-user aggregates across their sessions. Sentence click data only
         includes clicks logged after that feature shipped.
       </p>
+    </div>
+  );
+}
+
+function KpiWithDelta({
+  label,
+  value,
+  unit,
+  tooltip,
+  currNum,
+  prevNum,
+  invertDelta,
+}: {
+  label: string;
+  value: string | number;
+  unit?: "session" | "user" | "row";
+  tooltip?: string;
+  currNum: number;
+  prevNum?: number;
+  invertDelta?: boolean;
+}) {
+  const showDelta = typeof prevNum === "number";
+  // For "bad" metrics (e.g., Watched-Never-Clicked), invert so down = good (green).
+  const c = invertDelta ? -currNum : currNum;
+  const p = invertDelta && typeof prevNum === "number" ? -prevNum : (prevNum ?? 0);
+  return (
+    <div
+      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      title={tooltip}
+    >
+      <div className="flex items-center gap-1.5">
+        <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
+        {unit && <UnitBadge unit={unit} />}
+      </div>
+      <div className="mt-2 flex items-baseline">
+        <div className="text-3xl font-bold tabular-nums text-slate-900">{value}</div>
+        {showDelta && <DeltaBadge curr={c} prev={p} />}
+      </div>
+      {showDelta && (
+        <div className="mt-1 text-[11px] text-slate-400">
+          prev: <span className="tabular-nums">{Math.abs(invertDelta ? -p : p).toFixed(0)}</span>
+        </div>
+      )}
     </div>
   );
 }

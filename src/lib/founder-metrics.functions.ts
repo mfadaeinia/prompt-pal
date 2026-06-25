@@ -1,11 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { bucketSource, matchesSource, type SourceBucket } from "./source-bucket";
 
 export type FounderMetrics = {
+  windowLabel: string;
+  range: { from: string | null; to: string | null; source: SourceBucket };
   visitors: number;
   demoStarts: number;
   transcriptClicks: number;
   feedbackCount: number;
   waitlistCount: number;
+  /** Reconciliation: raw page_views rows in window (matches analytics). */
+  rawPageViewRows: number;
+  /** Bucket breakdown for current window (informational). */
+  sourceBreakdown: Array<{ bucket: string; sessions: number }>;
   video: {
     avgDurationSeconds: number;
     longestDurationSeconds: number;
@@ -29,87 +37,149 @@ export type FounderMetrics = {
     mostRecentAt: string | null;
     mostRecentEmail: string | null;
   };
-  /**
-   * Session-based funnel. Every step is a count of unique session_ids; no rows,
-   * no users mixed in. Steps are monotonically clamped so a downstream step
-   * can never exceed its upstream step.
-   */
   funnel: {
     cohortLabel: string;
-    /** Sessions that arrived (have at least one page_views row, or any downstream data). */
     visitors: number;
-    /** Sessions that opened a video (have a video_sessions row). */
     videoOpened: number;
-    /** Sessions whose max video duration_seconds >= 30. */
     watched30s: number;
-    /** Sessions with at least one deliberate sentence_clicked event. */
     clickedSentence: number;
-    /** Sessions that saved at least one expression or video. */
     savedSomething: number;
   };
-  /**
-   * Discovery funnel — designed to answer "why are users watching but not
-   * clicking?" Every step is unique session_ids, monotonically clamped.
-   */
   discovery: {
     videoOpened: number;
     watched30s: number;
-    /** Sessions whose transcript scrolled into the viewport. */
     transcriptSeen: number;
-    /** Sessions where the user hovered any sentence (desktop only). */
     hoveredSentence: number;
     clickedSentence: number;
     savedSomething: number;
   };
-  /**
-   * Primary discoverability metric.
-   * firstClickRate = unique sessions with ≥1 sentence click / unique
-   *   sessions watched ≥30s.
-   */
   firstClick: {
     watched30s: number;
     clickedSessions: number;
-    rate: number; // 0..1
-    /** Sessions watched ≥30s but never clicked a sentence. */
+    rate: number;
     watchedNoClick: number;
-    watchedNoClickPct: number; // 0..1 share of watched30s
+    watchedNoClickPct: number;
+  };
+  /** Activation (session): sessions that BOTH watched ≥30s AND clicked a sentence (same session). */
+  activationSession: {
+    eligible: number; // sessions with any activity in window
+    activated: number;
+    rate: number;
   };
 };
 
 export const ACTIVATION_DURATION_SECONDS = 30;
 
-export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
-  async (): Promise<FounderMetrics> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+const FilterInput = z.object({
+  from: z.string().datetime().nullable().optional(),
+  to: z.string().datetime().nullable().optional(),
+  source: z
+    .enum(["all", "instagram", "facebook", "reddit", "google", "direct", "unknown"])
+    .default("all"),
+});
 
+type SourceRow = { acquisition_source?: string | null; utm_source?: string | null };
+
+function applyDateRange<T extends { gte: any; lte: any }>(
+  q: T,
+  from: string | null | undefined,
+  to: string | null | undefined,
+  col = "created_at",
+): T {
+  let out: any = q;
+  if (from) out = out.gte(col, from);
+  if (to) out = out.lte(col, to);
+  return out;
+}
+
+function windowLabelFor(from: string | null | undefined, to: string | null | undefined): string {
+  if (!from && !to) return "all time";
+  if (from && to) return `${from.slice(0, 10)} → ${to.slice(0, 10)}`;
+  if (from) return `since ${from.slice(0, 10)}`;
+  return `until ${to!.slice(0, 10)}`;
+}
+
+export const getFounderMetrics = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => FilterInput.parse(d ?? {}))
+  .handler(async ({ data }): Promise<FounderMetrics> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { from, to, source } = data;
+
+    // Pull rows with source columns; date-filter at DB level.
     const [pv, vs, fb, ea, sx, svRows, le] = await Promise.all([
-      supabaseAdmin.from("page_views" as any).select("session_id"),
-      supabaseAdmin.from("video_sessions" as any).select("session_id,duration_seconds"),
-      supabaseAdmin
-        .from("user_feedback" as any)
-        .select("created_at,feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id,feedback_text")
-        .order("created_at", { ascending: false }),
-      supabaseAdmin
-        .from("early_access_signups" as any)
-        .select("email,created_at")
-        .order("created_at", { ascending: false }),
-      supabaseAdmin.from("saved_expressions" as any).select("session_id"),
-      supabaseAdmin.from("saved_videos" as any).select("session_id"),
-      supabaseAdmin
-        .from("library_events" as any)
-        .select("session_id,event_name")
-        .in("event_name", [
-          "sentence_clicked",
-          "transcript_seen",
-          "sentence_hovered",
-        ]),
+      applyDateRange(
+        supabaseAdmin
+          .from("page_views" as any)
+          .select("session_id,acquisition_source,utm_source,created_at"),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("video_sessions" as any)
+          .select(
+            "session_id,duration_seconds,acquisition_source,utm_source,created_at",
+          ),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("user_feedback" as any)
+          .select(
+            "created_at,feedback_type,would_use_again,total_sentence_clicks,demo_started,session_id,feedback_text",
+          )
+          .order("created_at", { ascending: false }),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("early_access_signups" as any)
+          .select("email,created_at")
+          .order("created_at", { ascending: false }),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("saved_expressions" as any)
+          .select("session_id,acquisition_source,utm_source,created_at"),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("saved_videos" as any)
+          .select("session_id,acquisition_source,utm_source,created_at"),
+        from,
+        to,
+      ),
+      applyDateRange(
+        supabaseAdmin
+          .from("library_events" as any)
+          .select("session_id,event_name,acquisition_source,utm_source,created_at")
+          .in("event_name", [
+            "sentence_clicked",
+            "transcript_seen",
+            "sentence_hovered",
+          ]),
+        from,
+        to,
+      ),
     ]);
 
-    const pageViewRows = ((pv.data ?? []) as unknown) as Array<{ session_id: string | null }>;
-    const sessions = ((vs.data ?? []) as unknown) as Array<{
+    type Row<T> = T & SourceRow;
+    const filter = <T extends SourceRow>(rows: T[]): T[] =>
+      source === "all" ? rows : rows.filter((r) => matchesSource(r, source));
+
+    const pageViewRows = filter(((pv.data ?? []) as unknown) as Row<{
+      session_id: string | null;
+    }>[]);
+    const sessions = filter(((vs.data ?? []) as unknown) as Row<{
       session_id: string;
       duration_seconds: number;
-    }>;
+    }>[]);
     const feedback = ((fb.data ?? []) as unknown) as Array<{
       created_at: string;
       feedback_type: string;
@@ -119,18 +189,26 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       session_id: string | null;
       feedback_text: string | null;
     }>;
-    const signups = ((ea.data ?? []) as unknown) as Array<{ email: string; created_at: string }>;
-    const savedExpr = ((sx.data ?? []) as unknown) as Array<{ session_id: string | null }>;
-    const savedVids = ((svRows.data ?? []) as unknown) as Array<{ session_id: string | null }>;
-    const allEventRows = ((le.data ?? []) as unknown) as Array<{
+    const signups = ((ea.data ?? []) as unknown) as Array<{
+      email: string;
+      created_at: string;
+    }>;
+    const savedExpr = filter(((sx.data ?? []) as unknown) as Row<{
+      session_id: string | null;
+    }>[]);
+    const savedVids = filter(((svRows.data ?? []) as unknown) as Row<{
+      session_id: string | null;
+    }>[]);
+    const allEventRows = filter(((le.data ?? []) as unknown) as Row<{
       session_id: string | null;
       event_name: string;
-    }>;
+    }>[]);
+
     const clickRows = allEventRows.filter((r) => r.event_name === "sentence_clicked");
     const transcriptSeenRows = allEventRows.filter((r) => r.event_name === "transcript_seen");
     const hoveredRows = allEventRows.filter((r) => r.event_name === "sentence_hovered");
 
-    // -------- Per-session video stats --------
+    // Per-session video stats
     const maxDurationBySession = new Map<string, number>();
     for (const s of sessions) {
       const prev = maxDurationBySession.get(s.session_id) ?? 0;
@@ -147,7 +225,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const sessionsOver60s = durations.filter((d) => d > 60).length;
     const sessionsOver5min = durations.filter((d) => d > 300).length;
 
-    // -------- Funnel session sets --------
+    // Funnel session sets
     const pageViewSessions = new Set(
       pageViewRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
@@ -159,16 +237,11 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const clickedSessions = new Set(
       clickRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
-    const savedExprSessions = new Set(
-      savedExpr.map((r) => r.session_id).filter(Boolean) as string[],
-    );
-    const savedVidSessions = new Set(
-      savedVids.map((r) => r.session_id).filter(Boolean) as string[],
-    );
-    const savedSessions = new Set<string>([...savedExprSessions, ...savedVidSessions]);
+    const savedSessions = new Set<string>([
+      ...(savedExpr.map((r) => r.session_id).filter(Boolean) as string[]),
+      ...(savedVids.map((r) => r.session_id).filter(Boolean) as string[]),
+    ]);
 
-    // Backfill visitor count: any session that has data downstream but no
-    // page_views row still counts as a visitor (pre-page_views history).
     const allKnownSessions = new Set<string>([
       ...pageViewSessions,
       ...videoSessionIds,
@@ -179,10 +252,13 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     const fVisitors = allKnownSessions.size;
     const fVideoOpened = Math.min(videoSessionIds.size, fVisitors);
     const fWatched30 = Math.min(watched30Sessions.size, fVideoOpened);
+    // True intersection (was previously just clamped)
+    let activatedSessions = 0;
+    for (const sid of watched30Sessions) if (clickedSessions.has(sid)) activatedSessions += 1;
     const fClicked = Math.min(clickedSessions.size, fWatched30);
     const fSaved = Math.min(savedSessions.size, fClicked);
 
-    // -------- Discovery funnel --------
+    // Discovery
     const transcriptSeenSessions = new Set(
       transcriptSeenRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
@@ -191,13 +267,9 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
     );
     const dTranscriptSeen = Math.min(transcriptSeenSessions.size, fWatched30);
     const dHovered = Math.min(hoveredSessions.size, dTranscriptSeen);
-    // Clicked is bound by hovered on desktop, but mobile has no hover — so
-    // clamp only against the higher of (transcriptSeen, hovered) to avoid
-    // visually hiding mobile clicks.
     const dClicked = Math.min(clickedSessions.size, fWatched30);
     const dSaved = Math.min(savedSessions.size, dClicked);
 
-    // -------- First-click rate --------
     let watchedNoClick = 0;
     for (const sid of watched30Sessions) {
       if (!clickedSessions.has(sid)) watchedNoClick += 1;
@@ -215,12 +287,29 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
       probably_not: feedback.filter((f) => f.would_use_again === "probably_not").length,
     };
 
+    // Source breakdown (informational; computed against UNFILTERED rows for the window)
+    const allPv = ((pv.data ?? []) as unknown) as Row<{ session_id: string | null }>[];
+    const breakdown = new Map<string, Set<string>>();
+    for (const r of allPv) {
+      if (!r.session_id) continue;
+      const b = bucketSource(r);
+      if (!breakdown.has(b)) breakdown.set(b, new Set());
+      breakdown.get(b)!.add(r.session_id);
+    }
+    const sourceBreakdown = Array.from(breakdown.entries())
+      .map(([bucket, set]) => ({ bucket, sessions: set.size }))
+      .sort((a, b) => b.sessions - a.sessions);
+
     return {
+      windowLabel: windowLabelFor(from, to),
+      range: { from: from ?? null, to: to ?? null, source },
       visitors: fVisitors,
       demoStarts: totalSessions,
       transcriptClicks: clickRows.length,
       feedbackCount: feedback.length,
       waitlistCount: signups.length,
+      rawPageViewRows: allPv.length,
+      sourceBreakdown,
       video: {
         avgDurationSeconds,
         longestDurationSeconds,
@@ -245,7 +334,7 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         mostRecentEmail: signups[0]?.email ?? null,
       },
       funnel: {
-        cohortLabel: "unique sessions (all-time)",
+        cohortLabel: `unique sessions (${windowLabelFor(from, to)})`,
         visitors: fVisitors,
         videoOpened: fVideoOpened,
         watched30s: fWatched30,
@@ -267,6 +356,10 @@ export const getFounderMetrics = createServerFn({ method: "GET" }).handler(
         watchedNoClick,
         watchedNoClickPct,
       },
+      activationSession: {
+        eligible: fVisitors,
+        activated: activatedSessions,
+        rate: fVisitors > 0 ? activatedSessions / fVisitors : 0,
+      },
     };
-  },
-);
+  });
