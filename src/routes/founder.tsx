@@ -51,7 +51,7 @@ import { ReconciliationPanel } from "@/components/founder/ReconciliationPanel";
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
   ssr: false,
-  component: FounderGate,
+  component: () => <FounderGate Page={FounderPage} />,
   errorComponent: ({ error }) => (
     <div className="p-6 text-red-600">Error: {error.message}</div>
   ),
