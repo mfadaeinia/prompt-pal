@@ -20,12 +20,15 @@ export const recordTesterEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RecordInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getActiveCohortId } = await import("@/lib/active-cohort.server");
+    const cohortId = await getActiveCohortId();
     const { error } = await supabaseAdmin.from("tester_events" as any).insert({
       tester_id: data.testerId,
       event_name: data.eventName,
       session_id: data.sessionId ?? null,
       video_id: data.videoId ?? null,
       metadata: data.metadata ?? null,
+      release_cohort_id: cohortId,
     });
     if (error) {
       console.error("tester_event_insert_failed", error.message);

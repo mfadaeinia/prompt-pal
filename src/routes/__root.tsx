@@ -165,12 +165,21 @@ function RootComponent() {
     Promise.all([
       import("../lib/page-views.functions"),
       import("../lib/browser-id"),
+      import("../lib/acquisition"),
     ])
-      .then(([{ logPageView }, { getBrowserId }]) => {
+      .then(([{ logPageView }, { getBrowserId }, { detectAcquisition }]) => {
         const sid = getBrowserId();
         if (!sid) return;
+        const acq = detectAcquisition();
         return logPageView({
-          data: { sessionId: sid, path: window.location.pathname },
+          data: {
+            sessionId: sid,
+            path: window.location.pathname,
+            acquisitionSource: acq.source,
+            utmSource: acq.utm_source,
+            utmMedium: acq.utm_medium,
+            utmCampaign: acq.utm_campaign,
+          },
         });
       })
       .catch(() => {});

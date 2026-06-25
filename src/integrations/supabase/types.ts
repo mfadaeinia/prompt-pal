@@ -439,174 +439,319 @@ export type Database = {
       }
       library_events: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           event_name: string
           expression_id: string | null
           id: string
           metadata: Json | null
+          release_cohort_id: string | null
           session_id: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           video_id: string | null
         }
         Insert: {
+          acquisition_source?: string | null
           created_at?: string
           event_name: string
           expression_id?: string | null
           id?: string
           metadata?: Json | null
+          release_cohort_id?: string | null
           session_id?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
         }
         Update: {
+          acquisition_source?: string | null
           created_at?: string
           event_name?: string
           expression_id?: string | null
           id?: string
           metadata?: Json | null
+          release_cohort_id?: string | null
           session_id?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "library_events_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_views: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           id: string
           path: string | null
+          release_cohort_id: string | null
           session_id: string
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          acquisition_source?: string | null
+          created_at?: string
+          id?: string
+          path?: string | null
+          release_cohort_id?: string | null
+          session_id: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          acquisition_source?: string | null
+          created_at?: string
+          id?: string
+          path?: string | null
+          release_cohort_id?: string | null
+          session_id?: string
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_cohorts: {
+        Row: {
+          created_at: string
+          description: string | null
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          started_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
+          ended_at?: string | null
           id?: string
-          path?: string | null
-          session_id: string
-          user_id?: string | null
+          is_active?: boolean
+          name: string
+          started_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
+          ended_at?: string | null
           id?: string
-          path?: string | null
-          session_id?: string
-          user_id?: string | null
+          is_active?: boolean
+          name?: string
+          started_at?: string
         }
         Relationships: []
       }
       saved_expressions: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           expression_notes: string | null
           id: string
           meaning: string | null
+          release_cohort_id: string | null
           sentence_text: string
           session_id: string
           target_language: string | null
           timestamp_seconds: number
           translation: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           video_id: string | null
           video_title: string | null
           video_url: string | null
         }
         Insert: {
+          acquisition_source?: string | null
           created_at?: string
           expression_notes?: string | null
           id?: string
           meaning?: string | null
+          release_cohort_id?: string | null
           sentence_text: string
           session_id: string
           target_language?: string | null
           timestamp_seconds?: number
           translation?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
           video_title?: string | null
           video_url?: string | null
         }
         Update: {
+          acquisition_source?: string | null
           created_at?: string
           expression_notes?: string | null
           id?: string
           meaning?: string | null
+          release_cohort_id?: string | null
           sentence_text?: string
           session_id?: string
           target_language?: string | null
           timestamp_seconds?: number
           translation?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
           video_title?: string | null
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_expressions_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_videos: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           id: string
+          release_cohort_id: string | null
           session_id: string | null
           target_language: string | null
           thumbnail_url: string | null
           user_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           video_id: string
           video_title: string | null
           video_url: string
         }
         Insert: {
+          acquisition_source?: string | null
           created_at?: string
           id?: string
+          release_cohort_id?: string | null
           session_id?: string | null
           target_language?: string | null
           thumbnail_url?: string | null
           user_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id: string
           video_title?: string | null
           video_url: string
         }
         Update: {
+          acquisition_source?: string | null
           created_at?: string
           id?: string
+          release_cohort_id?: string | null
           session_id?: string | null
           target_language?: string | null
           thumbnail_url?: string | null
           user_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string
           video_title?: string | null
           video_url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_videos_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tester_events: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           event_name: string
           id: string
           metadata: Json | null
+          release_cohort_id: string | null
           session_id: string | null
           tester_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           video_id: string | null
         }
         Insert: {
+          acquisition_source?: string | null
           created_at?: string
           event_name: string
           id?: string
           metadata?: Json | null
+          release_cohort_id?: string | null
           session_id?: string | null
           tester_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
         }
         Update: {
+          acquisition_source?: string | null
           created_at?: string
           event_name?: string
           id?: string
           metadata?: Json | null
+          release_cohort_id?: string | null
           session_id?: string | null
           tester_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tester_events_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transcript_jobs: {
         Row: {
@@ -757,6 +902,7 @@ export type Database = {
       }
       video_sessions: {
         Row: {
+          acquisition_source: string | null
           created_at: string
           duration_seconds: number
           ended: boolean
@@ -764,16 +910,21 @@ export type Database = {
           ip_address: string | null
           last_seen_at: string
           page_url: string | null
+          release_cohort_id: string | null
           session_id: string
           started_at: string
           target_language: string | null
           updated_at: string
           user_agent: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           video_id: string
           video_url: string | null
         }
         Insert: {
+          acquisition_source?: string | null
           created_at?: string
           duration_seconds?: number
           ended?: boolean
@@ -781,16 +932,21 @@ export type Database = {
           ip_address?: string | null
           last_seen_at?: string
           page_url?: string | null
+          release_cohort_id?: string | null
           session_id: string
           started_at?: string
           target_language?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id: string
           video_url?: string | null
         }
         Update: {
+          acquisition_source?: string | null
           created_at?: string
           duration_seconds?: number
           ended?: boolean
@@ -798,16 +954,28 @@ export type Database = {
           ip_address?: string | null
           last_seen_at?: string
           page_url?: string | null
+          release_cohort_id?: string | null
           session_id?: string
           started_at?: string
           target_language?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           video_id?: string
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "video_sessions_release_cohort_id_fkey"
+            columns: ["release_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "release_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       video_transcript_reports: {
         Row: {
