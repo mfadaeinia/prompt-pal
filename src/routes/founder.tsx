@@ -45,6 +45,7 @@ import {
   type DashboardFilterValue,
 } from "@/components/founder/DashboardFilters";
 import { ReleaseAnalyticsBlock } from "@/components/founder/ReleaseAnalyticsBlock";
+import { ReconciliationPanel } from "@/components/founder/ReconciliationPanel";
 
 
 export const Route = createFileRoute("/founder")({
@@ -220,6 +221,7 @@ function FounderPage() {
         </header>
 
         <DashboardFilters value={filter} onChange={setFilter} />
+        <ReconciliationPanel filter={analyticsFilter} />
 
         <nav className="flex flex-wrap gap-1 border-b border-slate-200">
           {TABS.map((t) => (
