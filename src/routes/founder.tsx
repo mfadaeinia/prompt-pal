@@ -38,6 +38,13 @@ import {
   type UserRetentionCohort,
   type UserRetentionRow,
 } from "@/lib/user-retention.functions";
+import {
+  DashboardFilters,
+  DEFAULT_FILTER,
+  toAnalyticsFilter,
+  type DashboardFilterValue,
+} from "@/components/founder/DashboardFilters";
+import { ReleaseAnalyticsBlock } from "@/components/founder/ReleaseAnalyticsBlock";
 
 
 export const Route = createFileRoute("/founder")({
