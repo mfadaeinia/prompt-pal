@@ -76,7 +76,7 @@ export function FounderGate({ Page = FounderPage }: { Page?: React.ComponentType
   }, []);
 
   if (!checked) return null;
-  if (authed) return <FounderPage />;
+  if (authed) return <Page />;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
