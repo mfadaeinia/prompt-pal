@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -51,7 +51,7 @@ import { ReconciliationPanel } from "@/components/founder/ReconciliationPanel";
 export const Route = createFileRoute("/founder")({
   head: () => ({ meta: [{ title: "Founder Dashboard" }, { name: "robots", content: "noindex" }] }),
   ssr: false,
-  component: FounderGate,
+  component: () => <FounderGate Page={FounderPage} />,
   errorComponent: ({ error }) => (
     <div className="p-6 text-red-600">Error: {error.message}</div>
   ),
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/founder")({
 
 const AUTH_KEY = "founder-auth-v1";
 
-function FounderGate() {
+export function FounderGate({ Page = FounderPage }: { Page?: React.ComponentType } = {}) {
   const [authed, setAuthed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [password, setPassword] = useState("");
@@ -76,7 +76,7 @@ function FounderGate() {
   }, []);
 
   if (!checked) return null;
-  if (authed) return <FounderPage />;
+  if (authed) return <Page />;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -146,9 +146,131 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "feedback", label: "Feedback" },
   { id: "engineering", label: "Engineering" },
 ];
+// ============================================================
+// FounderPage — clean default dashboard
+// Answers 5 questions in 30s: Growth · Activation · Retention · Health · Anything broken?
+// Engineering / reconciliation / raw analytics live at /founder-debug.
+// ============================================================
 
+export function FounderPage() {
+  const txFetcher = useServerFn(getTranscriptQualityMetrics);
+  const retentionFetcher = useServerFn(getUserRetentionCohort);
+  const [filter, setFilter] = useState<DashboardFilterValue>(DEFAULT_FILTER);
+  const analyticsFilter = useMemo(() => toAnalyticsFilter(filter), [filter]);
 
-function FounderPage() {
+  const txQ = useQuery({
+    queryKey: ["transcript-quality-metrics"],
+    queryFn: () => txFetcher(),
+    refetchInterval: 60_000,
+  });
+  const retentionQ = useQuery({
+    queryKey: ["user-retention"],
+    queryFn: () => retentionFetcher(),
+    refetchInterval: 60_000,
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <header className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Founder Dashboard</h1>
+            <p className="text-sm text-slate-500">
+              Is NativeFlow healthier than yesterday? Auto-refresh every 30s.
+            </p>
+          </div>
+          <Link
+            to="/founder-debug"
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
+          >
+            Debug ⚙
+          </Link>
+        </header>
+
+        <DashboardFilters value={filter} onChange={setFilter} />
+
+        {/* GROWTH + FUNNEL + ACQUISITION (current vs previous window) */}
+        <section className="space-y-3">
+          <SectionHeader
+            title="Growth & Activation"
+            subtitle="Headline trends, full activation funnel, and where users drop off — within the selected window vs. the previous one."
+          />
+          <ReleaseAnalyticsBlock filter={analyticsFilter} />
+        </section>
+
+        {/* RETENTION */}
+        <section className="space-y-3">
+          <SectionHeader
+            title="Retention"
+            subtitle="Authenticated users — are they coming back?"
+          />
+          <RetentionSummary q={retentionQ.data} loading={retentionQ.isLoading} />
+        </section>
+
+        {/* HEALTH */}
+        <section className="space-y-3">
+          <SectionHeader
+            title="Product Health"
+            subtitle="User-facing reliability. Anything red means users are hitting failures."
+          />
+          <ProductHealthSection tx={txQ.data} />
+        </section>
+
+        <footer className="pt-4 text-center text-[11px] text-slate-400">
+          Need raw analytics, cohort reconciliation, transcript truth labelling or other engineering tools?{" "}
+          <Link to="/founder-debug" className="underline hover:text-slate-600">
+            Open the debug dashboard →
+          </Link>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function RetentionSummary({
+  q,
+  loading,
+}: {
+  q: UserRetentionCohort | undefined;
+  loading: boolean;
+}) {
+  if (loading && !q) return <p className="text-sm text-slate-500">Loading retention…</p>;
+  if (!q) return <p className="text-sm text-slate-500">No retention data yet.</p>;
+  const t = q.totals;
+  const activationPct = Math.round(t.activation_rate * 100);
+  const sessionsPerUser =
+    t.new_users > 0
+      ? Math.round(
+          (q.users.reduce((s, u) => s + u.total_sessions, 0) / t.new_users) * 10,
+        ) / 10
+      : 0;
+  const clicksPerSession =
+    q.users.reduce((s, u) => s + u.total_sessions, 0) > 0
+      ? Math.round(
+          (q.users.reduce((s, u) => s + u.sentence_clicks, 0) /
+            q.users.reduce((s, u) => s + u.total_sessions, 0)) * 10,
+        ) / 10
+      : 0;
+  const savesPerSession =
+    q.users.reduce((s, u) => s + u.total_sessions, 0) > 0
+      ? Math.round(
+          (q.users.reduce((s, u) => s + u.expressions_saved + u.videos_saved, 0) /
+            q.users.reduce((s, u) => s + u.total_sessions, 0)) * 10,
+        ) / 10
+      : 0;
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <BigKpi label="Returning Users" unit="user" value={t.returning} tooltip="Users active ≥1 day after signup." />
+      <BigKpi label="Day-1 Retention" unit="user" value={t.returned_1d} tooltip="Users still active 1+ day after signup." />
+      <BigKpi label="Day-7 Retention" unit="user" value={t.returned_7d} tooltip="Users still active 7+ days after signup." />
+      <BigKpi label="Sessions / User" value={sessionsPerUser} tooltip="Mean total_sessions across all users." />
+      <BigKpi label="Clicks / Session" value={clicksPerSession} tooltip="Total sentence clicks ÷ total sessions." />
+      <BigKpi label="Saves / Session" value={savesPerSession} tooltip="Total saves ÷ total sessions." />
+    </div>
+  );
+}
+
+export function FounderDebugPage() {
   const fetcher = useServerFn(getFounderMetrics);
   const libFetcher = useServerFn(getLibraryMetrics);
   const clickDebugFetcher = useServerFn(getSentenceClickDebug);
@@ -203,21 +325,29 @@ function FounderPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-6 text-slate-900">
       <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Founder Dashboard</h1>
+            <h1 className="text-2xl font-bold">Debug Dashboard</h1>
             <p className="text-sm text-slate-500">
-              Live metrics from the database. Auto-refresh every 30s.
+              Raw analytics, reconciliation, cohort debugging and engineering tools.
             </p>
           </div>
-          <button
-            onClick={refreshAll}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
-          >
-            {isFetching || libQ.isFetching || txQ.isFetching || cohortQ.isFetching
-              ? "Refreshing…"
-              : "Refresh"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/founder"
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
+            >
+              ← Back to dashboard
+            </Link>
+            <button
+              onClick={refreshAll}
+              className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+            >
+              {isFetching || libQ.isFetching || txQ.isFetching || cohortQ.isFetching
+                ? "Refreshing…"
+                : "Refresh"}
+            </button>
+          </div>
         </header>
 
         <DashboardFilters value={filter} onChange={setFilter} />
