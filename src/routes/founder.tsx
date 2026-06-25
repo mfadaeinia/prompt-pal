@@ -491,12 +491,14 @@ function FounderPage() {
 
 function OverviewSection({
   m,
+  prev,
   lib,
   tx,
   cohort,
   retention,
 }: {
   m: FounderMetrics;
+  prev?: FounderMetrics;
   lib?: LibraryMetrics;
   tx?: TranscriptQualityMetrics;
   cohort?: TesterCohortMetrics;
@@ -510,30 +512,50 @@ function OverviewSection({
   const fc = m.firstClick;
   const firstClickPct = Math.round((fc.rate ?? 0) * 1000) / 10;
   const noClickPct = Math.round((fc.watchedNoClickPct ?? 0) * 1000) / 10;
+  const act = m.activationSession;
+  const actPct = Math.round(act.rate * 1000) / 10;
   return (
     <div className="space-y-6">
+      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+        Window: <span className="font-medium text-slate-700">{m.windowLabel}</span>
+        {" · "}Source: <span className="font-medium text-slate-700">{m.range.source}</span>
+        {" · "}Raw page_views rows: <span className="font-mono text-slate-700">{m.rawPageViewRows}</span>
+        {prev && (
+          <span className="ml-2 text-slate-400">
+            (vs previous: visitors {prev.visitors}, engaged {prev.funnel.clickedSentence})
+          </span>
+        )}
+      </div>
+
       <div className="space-y-3">
         <SectionHeader
           title="Discoverability (primary)"
           subtitle="Are users who watch the video actually finding the click-a-sentence feature?"
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <BigKpi
+          <KpiWithDelta
             label="First Click Rate"
             unit="session"
             value={`${firstClickPct}%`}
+            currNum={fc.rate * 100}
+            prevNum={prev ? prev.firstClick.rate * 100 : undefined}
             tooltip={`Unique sessions with ≥1 sentence click ÷ unique sessions that watched ≥30s. ${fc.clickedSessions} / ${fc.watched30s}.`}
           />
-          <BigKpi
+          <KpiWithDelta
             label="Watched, Never Clicked"
             unit="session"
             value={fc.watchedNoClick}
+            currNum={fc.watchedNoClick}
+            prevNum={prev?.firstClick.watchedNoClick}
+            invertDelta
             tooltip={`Sessions that watched ≥30s but never clicked a sentence. ${noClickPct}% of sessions that crossed the 30s mark.`}
           />
-          <BigKpi
+          <KpiWithDelta
             label="Watched 30s+"
             unit="session"
             value={fc.watched30s}
+            currNum={fc.watched30s}
+            prevNum={prev?.firstClick.watched30s}
             tooltip="Denominator for First Click Rate."
           />
         </div>
@@ -545,32 +567,67 @@ function OverviewSection({
           subtitle="One row per browser session. Anonymous and authed users included."
         />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <BigKpi
+          <KpiWithDelta
             label="Visitors"
             unit="session"
             value={f.visitors}
-            tooltip="Unique sessions that arrived on the site (one page_views row, plus any historical sessions known from downstream events)."
+            currNum={f.visitors}
+            prevNum={prev?.funnel.visitors}
+            tooltip="Unique sessions that arrived on the site (page_views row + any session known from downstream events)."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Video Opened"
             unit="session"
             value={f.videoOpened}
-            tooltip="Unique sessions that loaded a video page. Does NOT mean they watched it."
+            currNum={f.videoOpened}
+            prevNum={prev?.funnel.videoOpened}
+            tooltip="Unique sessions that loaded a video page."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Engaged Sessions"
             unit="session"
             value={f.clickedSentence}
-            tooltip="A session where the user clicked at least one subtitle sentence. First moment a user experiences NativeFlow's core value."
+            currNum={f.clickedSentence}
+            prevNum={prev?.funnel.clickedSentence}
+            tooltip="Sessions that clicked at least one subtitle sentence."
           />
-          <BigKpi
+          <KpiWithDelta
             label="Saved Sessions"
             unit="session"
             value={f.savedSomething}
+            currNum={f.savedSomething}
+            prevNum={prev?.funnel.savedSomething}
             tooltip="Unique sessions that saved at least one expression or video."
           />
         </div>
       </div>
+
+      <div className="space-y-3">
+        <SectionHeader
+          title="Activation"
+          subtitle="Two definitions, shown separately. Both are within the selected window."
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <KpiWithDelta
+            label="Activated (session)"
+            unit="session"
+            value={`${act.activated} (${actPct}%)`}
+            currNum={act.rate * 100}
+            prevNum={prev ? prev.activationSession.rate * 100 : undefined}
+            tooltip="Same-session ≥30s watched AND clicked ≥1 sentence. Pure session-level definition."
+          />
+          <KpiWithDelta
+            label="Activated (user)"
+            unit="user"
+            value={activatedUsers}
+            currNum={activatedUsers}
+            prevNum={undefined}
+            tooltip="Authenticated user who, across any sessions within 7 days of signup, watched ≥30s AND clicked ≥1 sentence. Lifetime metric — not time-filtered."
+          />
+        </div>
+      </div>
+
+
 
 
       <div className="space-y-3">
