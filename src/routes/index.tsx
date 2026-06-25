@@ -21,6 +21,7 @@ import {
 import { explainSentence } from "@/lib/explain.functions";
 import { submitEarlyAccess } from "@/lib/early-access.functions";
 import { recordVideoSession } from "@/lib/video-sessions.functions";
+import { detectAcquisition } from "@/lib/acquisition";
 import {
   saveExpression,
   listSavedExpressions,
@@ -1598,6 +1599,10 @@ function Index() {
       const seconds = currentSeconds();
       if (!ended && seconds === lastSent) return;
       lastSent = seconds;
+      let acq: { source: string; utm_source: string | null; utm_medium: string | null; utm_campaign: string | null } | null = null;
+      try {
+        acq = detectAcquisition();
+      } catch {}
       recordVideoSession({
         data: {
           sessionId,
@@ -1608,6 +1613,10 @@ function Index() {
           pageUrl: typeof window !== "undefined" ? window.location.href : null,
           ended,
           userId: userIdRef.current,
+          acquisitionSource: acq?.source ?? null,
+          utmSource: acq?.utm_source ?? null,
+          utmMedium: acq?.utm_medium ?? null,
+          utmCampaign: acq?.utm_campaign ?? null,
         },
       }).catch(() => {
         // Best-effort engagement telemetry — never surface to user.

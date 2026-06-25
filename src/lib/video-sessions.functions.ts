@@ -11,6 +11,10 @@ const Input = z.object({
   pageUrl: z.string().max(500).optional().nullable(),
   ended: z.boolean().optional(),
   userId: z.string().uuid().optional().nullable(),
+  acquisitionSource: z.string().max(64).optional().nullable(),
+  utmSource: z.string().max(120).optional().nullable(),
+  utmMedium: z.string().max(120).optional().nullable(),
+  utmCampaign: z.string().max(120).optional().nullable(),
 });
 
 function getClientIp(): string | null {
@@ -31,6 +35,8 @@ export const recordVideoSession = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getActiveCohortId } = await import("@/lib/active-cohort.server");
+    const cohortId = await getActiveCohortId();
     const ip = getClientIp();
     const userAgent = (() => { try { return getRequestHeader("user-agent") ?? null; } catch { return null; } })();
     const { error } = await supabaseAdmin
@@ -48,10 +54,16 @@ export const recordVideoSession = createServerFn({ method: "POST" })
           ip_address: ip,
           user_agent: userAgent,
           user_id: data.userId ?? null,
+          release_cohort_id: cohortId,
+          acquisition_source: data.acquisitionSource ?? null,
+          utm_source: data.utmSource ?? null,
+          utm_medium: data.utmMedium ?? null,
+          utm_campaign: data.utmCampaign ?? null,
         } as any,
         { onConflict: "session_id,video_id" } as any,
       );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
