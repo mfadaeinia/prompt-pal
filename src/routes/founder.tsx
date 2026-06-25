@@ -60,7 +60,7 @@ export const Route = createFileRoute("/founder")({
 
 const AUTH_KEY = "founder-auth-v1";
 
-function FounderGate() {
+export function FounderGate({ Page = FounderPage }: { Page?: React.ComponentType } = {}) {
   const [authed, setAuthed] = useState(false);
   const [checked, setChecked] = useState(false);
   const [password, setPassword] = useState("");
