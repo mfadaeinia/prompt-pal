@@ -31,7 +31,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "nativeflowlife"
+const SITE_NAME = "NativeFlow"
 const SENDER_DOMAIN = "notify.nativeflow.life"
 const ROOT_DOMAIN = "nativeflow.life"
 const FROM_DOMAIN = "nativeflow.life"
