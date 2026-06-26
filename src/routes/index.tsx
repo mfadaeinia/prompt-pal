@@ -3084,6 +3084,7 @@ function Index() {
                           );
                         })}
                       </ol>
+                      </>
                     )}
 
                     {activeOutOfView && playingId !== null && (
