@@ -3129,19 +3129,18 @@ function Index() {
                 </div>
               )}
 
-              {/* Mobile Aha Panel as a bottom Sheet. Closing or swiping down resumes playback. */}
+              {/* Mobile Aha Panel as a bottom Drawer. Slides up to ~50% of screen, supports swipe-to-dismiss. */}
               {studyMode && isMobile && (
-                <Sheet
+                <Drawer
                   open={!!selected}
                   onOpenChange={(open) => {
                     if (!open) resumeFromHere();
                   }}
+                  shouldScaleBackground={false}
                 >
-                  <SheetContent
-                    side="bottom"
-                    className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-t p-0"
-                  >
-                    <div className="p-4 pt-8">
+                  <DrawerContent className="h-[50vh] max-h-[50vh] rounded-t-2xl border-t p-0 focus:outline-none">
+                    {/* The Drawer primitive renders its own handle bar at the top. */}
+                    <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
                       <ExplanationPanel
                         sentence={selected}
                         entry={
@@ -3163,8 +3162,8 @@ function Index() {
                         justSavedExpressionHead={justSavedExpressionHead}
                       />
                     </div>
-                  </SheetContent>
-                </Sheet>
+                  </DrawerContent>
+                </Drawer>
               )}
 
             </div>
