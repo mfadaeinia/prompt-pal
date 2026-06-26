@@ -1991,14 +1991,14 @@ function Index() {
 
     // Keep the active sentence near the top of the transcript viewport
     // (second visible row) so users always see what is playing now.
-    const targetVisibleTop = 48; // px — roughly one sentence below the top edge
+    const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — roughly one sentence below the top edge
     const drift = visibleTop - targetVisibleTop;
     const band = 24; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
     container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
-  }, [playingId, focusMode]);
+  }, [playingId, focusMode, isMobile, showSentenceHint]);
 
   const stickySentence = useMemo(() => {
     if (!isMobile || !activeOutOfView || playingId == null) return null;
@@ -2019,7 +2019,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = 48; // px — align with auto-follow target
+      const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — align with auto-follow target
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
@@ -3013,7 +3013,7 @@ function Index() {
                     ) : (
                       <>
                         {isMobile && showSentenceHint && (
-                          <div className="mx-2 mb-2 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
+                          <div className="mx-2 mb-4 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
                             <MousePointerClick className="h-4 w-4 shrink-0" />
                             <span className="flex-1 text-[13px] font-medium leading-snug">
                               Tap any sentence to understand it instantly
