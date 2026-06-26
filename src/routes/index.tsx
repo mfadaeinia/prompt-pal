@@ -1998,7 +1998,7 @@ function Index() {
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
     container.scrollTo({ top: desiredScrollTop, behavior: "smooth" });
-  }, [playingId, focusMode]);
+  }, [playingId, focusMode, isMobile, showSentenceHint]);
 
   const stickySentence = useMemo(() => {
     if (!isMobile || !activeOutOfView || playingId == null) return null;
