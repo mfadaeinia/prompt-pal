@@ -2019,7 +2019,7 @@ function Index() {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = 48; // px — align with auto-follow target
+      const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — align with auto-follow target
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
