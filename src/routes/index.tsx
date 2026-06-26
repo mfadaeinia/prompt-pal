@@ -3013,7 +3013,7 @@ function Index() {
                     ) : (
                       <>
                         {isMobile && showSentenceHint && (
-                          <div className="mx-2 mb-2 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
+                          <div className="mx-2 mb-4 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
                             <MousePointerClick className="h-4 w-4 shrink-0" />
                             <span className="flex-1 text-[13px] font-medium leading-snug">
                               Tap any sentence to understand it instantly
