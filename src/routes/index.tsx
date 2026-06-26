@@ -1896,14 +1896,18 @@ function Index() {
 
     // First-time-only inline hint. Persisted in localStorage so once the user
     // performs their first successful sentence click, it never shows again.
+    // On mobile/tablet we always show it on a fresh transcript load until the
+    // user taps a sentence in this session — tap targets are less discoverable
+    // without hover affordances.
     try {
       const seen = localStorage.getItem("nativeflow_sentence_hinted");
-      if (!seen && !hasInteractedWithSentenceRef.current) {
+      if ((!seen || isMobile) && !hasInteractedWithSentenceRef.current) {
         setShowSentenceHint(true);
       }
     } catch {
       setShowSentenceHint(true);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sentences.length, browserId]);
 
