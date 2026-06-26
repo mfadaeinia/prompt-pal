@@ -3007,6 +3007,23 @@ function Index() {
                         </div>
                       </div>
                     ) : (
+                      <>
+                        {isMobile && showSentenceHint && (
+                          <div className="mx-2 mb-2 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
+                            <MousePointerClick className="h-4 w-4 shrink-0" />
+                            <span className="flex-1 text-[13px] font-medium leading-snug">
+                              Tap any sentence to understand it instantly
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => dismissSentenceHint(false)}
+                              aria-label="Dismiss hint"
+                              className="-mr-1 rounded p-1 text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
                       <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
