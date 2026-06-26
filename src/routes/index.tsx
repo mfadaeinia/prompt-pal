@@ -1991,7 +1991,7 @@ function Index() {
 
     // Keep the active sentence near the top of the transcript viewport
     // (second visible row) so users always see what is playing now.
-    const targetVisibleTop = 48; // px — roughly one sentence below the top edge
+    const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — roughly one sentence below the top edge
     const drift = visibleTop - targetVisibleTop;
     const band = 24; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
