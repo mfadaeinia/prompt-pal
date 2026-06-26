@@ -218,7 +218,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </div>
           </div>
 
-          <div className="relative origin-left scale-[1.2] lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
+          <div className="relative mx-auto max-w-[92%] scale-[1.2] origin-center md:max-w-[88%] lg:origin-left lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
             <ProductMock />
           </div>
         </div>
