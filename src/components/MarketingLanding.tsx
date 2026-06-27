@@ -69,9 +69,6 @@ export function MarketingLanding({
       <section id="try" className="relative border-t border-slate-200 bg-white">
         <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-6 sm:pt-24">
           <div className="mb-10 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-              Paste a link to begin
-            </span>
             <h2
               className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
               style={heading}
