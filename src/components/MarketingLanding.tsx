@@ -394,7 +394,7 @@ function Comparison() {
           Content Should Teach You. Not Frustrate You.
         </h2>
         <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          Real content is the best teacher — when you have just enough support to follow it.
+          Real content is the best teacher, when you have just enough support to follow it.
         </p>
       </div>
 
