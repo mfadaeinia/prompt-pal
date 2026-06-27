@@ -251,6 +251,51 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 /* ============================== CONTENT TYPES ============================== */
 
+function HowItWorks() {
+  const steps = [
+    {
+      icon: <Search className="h-5 w-5" />,
+      title: "Browse real Dutch videos",
+      body: "Search a curated library of Dutch YouTube content — news, vlogs, interviews. Pick what actually interests you.",
+    },
+    {
+      icon: <MousePointerClick className="h-5 w-5" />,
+      title: "Tap any sentence",
+      body: "See the instant translation, expression notes, and key vocab for that exact sentence. While the video is right there.",
+    },
+    {
+      icon: <Bookmark className="h-5 w-5" />,
+      title: "Save what sticks",
+      body: "One tap saves any word or phrase to your personal vocab list. Review it anytime.",
+    },
+  ];
+  return (
+    <section className="border-t border-slate-200 bg-white">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+        <h2
+          className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
+          style={heading}
+        >
+          Three steps. No friction.
+        </h2>
+        <div className="mt-12 grid gap-8 md:grid-cols-3 md:gap-10">
+          {steps.map((s) => (
+            <div key={s.title} className="flex flex-col items-start">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                {s.icon}
+              </div>
+              <h3 className="text-base font-semibold text-slate-900" style={heading}>
+                {s.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ContentTypes() {
   const cards = [
     {
