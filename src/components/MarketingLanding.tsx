@@ -168,56 +168,47 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
           <div className="max-w-xl md:pl-12 lg:pl-0">
             <span
-              className="mb-5 inline-flex items-center rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm backdrop-blur sm:mb-6"
+              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80 sm:mb-6"
               style={heading}
             >
-              <span className="mr-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Learn from authentic content, naturally
+              Finally, Dutch that sounds like real people talk
             </span>
 
             <h1
-              className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem] whitespace-pre-wrap"
+              className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem]"
               style={heading}
             >
-              Enjoy Native Content.{"\u00a0\n"}<span className="text-blue-600">Understand more of it</span>
+              Watch Dutch YouTube.
+              <br />
+              <span className="text-blue-600">Actually understand it.</span>
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg whitespace-pre-wrap">
-              Turn every Video/podcast you love into a language lesson without leaving the experience.
+            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
+              Browse real Dutch videos, tap any sentence for instant translation and expression notes, save vocab as you go. No textbook Dutch. No tab-switching.
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3 sm:mt-8">
-              <button
-                onClick={onPrimary}
-                className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
-                style={heading}
-              >
-                Start Learning Free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:max-w-sm">
               <button
                 onClick={onSecondary}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
-                <Play className="h-4 w-4 fill-blue-600 text-blue-600" />
-                Watch Demo
+                <Play className="h-4 w-4 fill-white text-white" />
+                Watch a 60-second Demo
+              </button>
+              <button
+                onClick={onPrimary}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
+                style={heading}
+              >
+                Try it Free
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
+                  Early Access
+                </span>
               </button>
             </div>
-
-            <div className="mt-8">
-              <p className="mb-3 text-[11px] font-medium text-slate-500" style={heading}>
-                Learn from content you already love:
-              </p>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-700">
-                <span className="inline-flex items-center gap-1.5"><Youtube className="h-4 w-4 text-red-600" /> YouTube</span>
-                <span className="inline-flex items-center gap-1.5"><img src={tedLogo.url} alt="TED" className="h-4 w-auto" /> TED Talks</span>
-                <span className="inline-flex items-center gap-1.5"><Newspaper className="h-4 w-4 text-slate-700" /> News</span>
-                <span className="inline-flex items-center gap-1.5"><Headphones className="h-4 w-4 text-purple-600" /> Podcasts</span>
-                <span className="text-slate-400">… and more</span>
-              </div>
-            </div>
           </div>
+
 
           <div className="relative mx-auto max-w-[92%] scale-[1.2] origin-center md:max-w-[88%] lg:origin-left lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
             <ProductMock />
