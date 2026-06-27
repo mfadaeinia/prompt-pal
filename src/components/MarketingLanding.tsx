@@ -58,6 +58,7 @@ export function MarketingLanding({
     >
       <div className="relative z-10">
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
+        <HowItWorks />
         <ContentTypes />
         <Comparison />
         <Features />
