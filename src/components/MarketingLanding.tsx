@@ -22,7 +22,7 @@ import {
 import { track } from "@/lib/analytics";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
-import productMock from "@/assets/product-mock-v2.png.asset.json";
+import productMock from "@/assets/product-mock-v3.png.asset.json";
 import tedLogo from "@/assets/ted-logo.png.asset.json";
 
 /**
