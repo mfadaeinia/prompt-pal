@@ -198,9 +198,6 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 style={heading}
               >
                 Try it Free
-                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700">
-                  Early Access
-                </span>
               </button>
             </div>
           </div>
