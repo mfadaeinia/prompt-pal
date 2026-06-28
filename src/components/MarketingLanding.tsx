@@ -180,7 +180,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              While you watch Dutch YouTube, tap any sentence and get the full expression explained in context — like a native friend sitting right next to you.
+              While you watch Dutch YouTube, tap any sentence and get the full expression explained in context , like a native friend sitting right next to you.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:max-w-sm">
