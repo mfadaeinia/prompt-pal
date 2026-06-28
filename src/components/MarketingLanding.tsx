@@ -169,7 +169,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80 sm:mb-6"
               style={heading}
             >
-              Finally, Dutch that sounds like real people talk
+              For Dutch learners who watch YouTube
             </span>
 
             <h1
@@ -180,7 +180,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Tap any sentence while watching Dutch YouTube and get the full expression explained in context — not just a dictionary definition. Like having a native friend sitting next to you.
+              While you watch Dutch YouTube, tap any sentence and get the full expression explained in context — like a native friend sitting right next to you.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:max-w-sm">
