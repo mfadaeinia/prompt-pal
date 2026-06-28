@@ -217,11 +217,11 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 function ProductMock() {
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden rounded-2xl shadow-2xl">
       <img
         src={productMock.url}
         alt="NativeFlow product preview — Dutch sentence explanation"
-        className="block w-full h-auto"
+        className="block w-full h-auto scale-[1.02] origin-center"
       />
     </div>
   );
