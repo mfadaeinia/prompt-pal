@@ -203,7 +203,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           </div>
 
 
-          <div className="relative mx-auto max-w-[92%] scale-[1.2] origin-center md:max-w-[88%] lg:origin-left lg:max-w-[88%] lg:-ml-6 xl:-ml-10">
+          <div className="relative mx-auto w-full">
             <ProductMock />
           </div>
         </div>
@@ -217,7 +217,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 function ProductMock() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-[0_40px_100px_-30px_rgba(15,23,42,0.35)]">
+    <div className="relative">
       <img
         src={productMock.url}
         alt="NativeFlow product preview — Dutch sentence explanation"
