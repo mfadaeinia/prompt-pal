@@ -58,6 +58,7 @@ export function MarketingLanding({
     >
       <div className="relative z-10">
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
+        <CompetitorComparison />
         <HowItWorks />
         <ContentTypes />
         <Comparison />
@@ -242,6 +243,114 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
         {label}
       </div>
       {children}
+    </section>
+  );
+}
+
+/* ============================== COMPETITOR COMPARISON ============================== */
+
+function CompetitorComparison() {
+  return (
+    <section className="bg-white">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+        <h2
+          className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
+          style={heading}
+        >
+          Other tools let you click a word. NativeFlow lets you understand a sentence.
+        </h2>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {/* LEFT — Word-by-word tools */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-7">
+            <h3
+              className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-500"
+              style={heading}
+            >
+              Word-by-word tools
+            </h3>
+            <ul className="mt-6 space-y-3">
+              <li className="flex items-start gap-3 text-sm text-slate-600">
+                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
+                  1
+                </span>
+                Click a single word → get a dictionary definition
+              </li>
+              <li className="flex items-start gap-3 text-sm text-slate-600">
+                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
+                  2
+                </span>
+                Lose the meaning of the full expression
+              </li>
+              <li className="flex items-start gap-3 text-sm text-slate-600">
+                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
+                  3
+                </span>
+                Miss idioms, slang, and context entirely
+              </li>
+            </ul>
+            <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+              <p
+                className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
+                style={heading}
+              >
+                Example
+              </p>
+              <p className="text-sm text-slate-700">
+                "hij slaat nergens op" → click "slaat" → get "hits" ❌
+              </p>
+            </div>
+          </div>
+
+          {/* RIGHT — NativeFlow */}
+          <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/40 p-7">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+            <div className="relative">
+              <h3
+                className="text-sm font-semibold uppercase tracking-[0.15em] text-blue-700"
+                style={heading}
+              >
+                NativeFlow
+              </h3>
+              <ul className="mt-6 space-y-3">
+                <li className="flex items-start gap-3 text-sm text-slate-900">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                    1
+                  </span>
+                  Tap any full sentence → get instant translation
+                </li>
+                <li className="flex items-start gap-3 text-sm text-slate-900">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                    2
+                  </span>
+                  See the expression explained in context
+                </li>
+                <li className="flex items-start gap-3 text-sm text-slate-900">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                    3
+                  </span>
+                  Understand idioms and Dutch expressions as natives use them
+                </li>
+              </ul>
+              <div className="mt-6 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+                <p
+                  className="mb-2 text-xs font-semibold uppercase tracking-wider text-blue-600"
+                  style={heading}
+                >
+                  Example
+                </p>
+                <p className="text-sm text-slate-900">
+                  "hij slaat nergens op" → tap sentence → "This means 'it makes no sense' — common Dutch expression" ✅
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-10 text-center text-lg font-bold text-slate-900">
+          Because Dutch isn't just words. It's expressions.
+        </p>
+      </div>
     </section>
   );
 }
