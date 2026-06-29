@@ -2449,7 +2449,13 @@ function Index() {
           onStartDemo={startDemo}
           onSignUp={() => {
             // "Try it Free" now triggers sign-in upfront so save actions
-            // later in the flow don't interrupt the user.
+            // later in the flow don't interrupt the user. Record intent so
+            // that after the OAuth full-page redirect we land in the app
+            // view instead of bouncing back to the landing page.
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("nativeflow_post_auth_intent", "enter_app");
+            }
+            pendingActionRef.current = () => setView("app");
             setAuthOpen(true);
           }}
 
