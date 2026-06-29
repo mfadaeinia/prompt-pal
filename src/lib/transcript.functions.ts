@@ -1918,6 +1918,93 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
       };
     }
 
+    // ---- Layer 3: Transcribr fallback (fast) ----
+    // YouTube captions are unavailable for this video. Before escalating to
+    // the slow ASR (Whisper) stream, try the Transcribr provider — it is a
+    // single HTTP call and often succeeds on videos where YouTube captions
+    // are disabled. If it returns a usable transcript, surface it as a
+    // normal "ready" result so the UI never has to render the captions
+    // error for videos that actually have a transcript available.
+    try {
+      const tFb = Date.now();
+      const fbTrace: TranscribrTrace = {
+        invoked: false,
+        httpStatus: null,
+        errorMessage: null,
+        rawSegments: 0,
+        keptSegments: 0,
+        discardedReason: null,
+        durationMs: null,
+      };
+      const fb = await fetchFromFallbackProvider({
+        videoId,
+        videoUrl: data.url,
+        trace: fbTrace,
+      });
+      console.log("[transcript-debug] fast:transcribr", {
+        videoId,
+        invoked: fbTrace.invoked,
+        httpStatus: fbTrace.httpStatus,
+        keptSegments: fbTrace.keptSegments,
+        error: fbTrace.errorMessage,
+        elapsed_ms: Date.now() - tFb,
+      });
+      if (fb && fb.chunks.length) {
+        const tBuild = Date.now();
+        const sentences = buildSentencesFromChunks(fb.chunks);
+        timings.sentence_build_ms = Date.now() - tBuild;
+        if (sentences.length > 0) {
+          const detected = detectLanguage(fb.chunks.map((c) => c.text).join(" "));
+          const langMismatch =
+            spokenLanguage &&
+            detected.language &&
+            detected.confidence >= 0.4 &&
+            !sameBaseLanguage(detected.language, spokenLanguage);
+          if (!langMismatch) {
+            const quality = assessQuality(fb.chunks, sentences);
+            const tWrite = Date.now();
+            const cacheWrite = await writeCache({
+              videoId,
+              videoUrl: data.url,
+              chunks: fb.chunks,
+              requestedLanguage,
+              provider: "transcribr",
+              providerResponseLanguage: fb.language,
+            });
+            timings.cache_write_ms = Date.now() - tWrite;
+            timings.provider_used = "transcribr";
+            timings.cache_hit = false;
+            timings.sentence_count = sentences.length;
+            timings.total_server_ms = Date.now() - tStart;
+            logTimings("fast:transcribr", videoId, timings);
+            return {
+              status: "ready",
+              result: {
+                videoId,
+                sentences,
+                source: "fallback",
+                language: detected.language ?? fb.language,
+                spokenLanguage,
+                transcriptLanguage: detected.language ?? fb.language,
+                cacheHit: false,
+                quality,
+                provenance: cacheWrite.provenance ?? null,
+                rawChunks: fb.chunks,
+                stageTimings: timings,
+              },
+            };
+          }
+          console.warn("[lang-pipeline][server] transcribr language mismatch — discarding", {
+            videoId,
+            requestedSpokenLanguage: spokenLanguage,
+            detectedFromText: detected.language,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("[transcript-debug] fast:transcribr threw", e instanceof Error ? e.message : String(e));
+    }
+
     timings.total_server_ms = Date.now() - tStart;
     logTimings("fast:miss", videoId, timings);
     return {
@@ -1927,4 +2014,5 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
       youtubeError: lastErr,
     };
   });
+
 
