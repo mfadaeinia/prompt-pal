@@ -1968,7 +1968,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
               videoUrl: data.url,
               chunks: fb.chunks,
               requestedLanguage,
-              provider: "transcribr",
+              provider: "fallback",
               providerResponseLanguage: fb.language,
             });
             timings.cache_write_ms = Date.now() - tWrite;
