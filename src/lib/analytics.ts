@@ -45,7 +45,14 @@ export function initAnalytics() {
     autocapture: false,
     capture_pageleave: false,
     rageclick: false,
-    disable_session_recording: true,
+    // Session Replay — enabled. Recordings can be filtered in PostHog by any
+    // event we capture (page_view, video_opened, sentence_clicked, save_expression, …).
+    disable_session_recording: false,
+    session_recording: {
+      maskAllInputs: true,
+      maskInputOptions: { password: true, email: false },
+      recordCrossOriginIframes: false,
+    },
   });
 
   // Register is_test_user as a super property so it's attached to every event
