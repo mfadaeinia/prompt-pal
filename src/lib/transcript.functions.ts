@@ -1972,7 +1972,7 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
               providerResponseLanguage: fb.language,
             });
             timings.cache_write_ms = Date.now() - tWrite;
-            timings.provider_used = "transcribr";
+            timings.provider_used = "fallback" as any;
             timings.cache_hit = false;
             timings.sentence_count = sentences.length;
             timings.total_server_ms = Date.now() - tStart;
