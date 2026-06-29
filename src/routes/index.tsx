@@ -2448,9 +2448,9 @@ function Index() {
         <MarketingLanding
           onStartDemo={startDemo}
           onSignUp={() => {
-            // Activation-first: let anyone enter the app. Auth is only
-            // required when they try to save something.
-            setView("app");
+            // "Try it Free" now triggers sign-in upfront so save actions
+            // later in the flow don't interrupt the user.
+            setAuthOpen(true);
           }}
 
           conversionSlot={
