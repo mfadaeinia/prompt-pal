@@ -176,11 +176,11 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem]"
               style={heading}
             >
-              Learn Dutch the way a native friend would explain it.
+              Turn any Dutch YouTube video into an interactive lesson.
             </h1>
 
             <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              While you watch Dutch YouTube, tap any sentence and get the full expression explained in context , like a native friend sitting right next to you.
+              Click any subtitle to instantly understand its meaning, expressions and context.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:max-w-sm">
