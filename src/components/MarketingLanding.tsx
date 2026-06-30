@@ -57,7 +57,7 @@ export function MarketingLanding({
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
       <div className="relative z-10">
-        <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
+        <Hero onSecondary={handleDemo} conversionSlot={conversionSlot} />
         <CompetitorComparison />
         <HowItWorks />
         <ContentTypes />
@@ -66,23 +66,6 @@ export function MarketingLanding({
         <Testimonials />
         <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
-
-      <section id="try" className="relative border-t border-slate-200 bg-white">
-        <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-6 sm:pt-24">
-          <div className="mb-10 text-center">
-            <h2
-              className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
-              style={heading}
-            >
-              Start learning from the content you already love
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:text-base">
-              Free to try. Save words, track progress, and return anytime.
-            </p>
-          </div>
-          {conversionSlot}
-        </div>
-      </section>
     </div>
   );
 }
