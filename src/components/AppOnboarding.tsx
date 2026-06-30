@@ -336,6 +336,12 @@ export function AppOnboarding({
           </p>
         </form>
 
+        {/* Stepper — mobile below search, supports rather than competes */}
+        <div className="mx-auto max-w-3xl">
+          <StepperMobile />
+        </div>
+
+
         {/* Search results */}
         {q.trim() && results && results.length > 0 && (
           <div className="mx-auto mt-6 grid max-w-3xl gap-2.5">
