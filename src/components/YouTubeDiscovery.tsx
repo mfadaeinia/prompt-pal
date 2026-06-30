@@ -12,12 +12,12 @@ import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.fu
 // Thumbnails use maxresdefault (1280×720) with an sddefault fallback.
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "erbiNzXK84I",
-    url: "https://www.youtube.com/watch?v=erbiNzXK84I",
-    title: "Kinderen worden genegeerd door telefoonverslaafde ouders",
-    channel: "LUBACH",
-    thumbnail: "https://i.ytimg.com/vi/erbiNzXK84I/maxresdefault.jpg",
-    durationSec: 452,
+    videoId: "MPb4awFiUj0",
+    url: "https://www.youtube.com/watch?v=MPb4awFiUj0",
+    title: "Dik zijn is ongezond, transgenders zijn ook ongezond | Not That Social S2 #2",
+    channel: "NPO Start Next",
+    thumbnail: "https://i.ytimg.com/vi/MPb4awFiUj0/maxresdefault.jpg",
+    durationSec: 932,
     language: "nl",
   },
   {
