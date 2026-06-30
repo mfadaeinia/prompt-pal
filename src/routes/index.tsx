@@ -2460,23 +2460,19 @@ function Index() {
           }}
 
           conversionSlot={
-            <PrimaryHero
-              url={url}
-              setUrl={setUrl}
+            <HeroInput
               targetLang={targetLang}
               setTargetLang={setTargetLang}
               spokenLang={spokenLang}
               setSpokenLang={setSpokenLang}
               loading={loadMutation.isPending}
-              onSubmit={(u, lang) => {
+              onPick={(u, lang) => {
                 if (lang) setSpokenLang(lang);
                 track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
-                // Activation-first: no auth required to load and explore a video.
                 setUrl(u);
                 setView("demo");
                 submitLoad(u, lang);
               }}
-              onStartDemo={startDemo}
             />
           }
         />
