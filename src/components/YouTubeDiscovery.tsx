@@ -9,13 +9,32 @@ import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.fu
 
 // Curated Dutch-native examples — replaces the previous TED-talk popular row
 // so first-time visitors immediately see that NativeFlow is for Dutch content.
+// Thumbnails use maxresdefault (1280×720) with an sddefault fallback.
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
+  {
+    videoId: "erbiNzXK84I",
+    url: "https://www.youtube.com/watch?v=erbiNzXK84I",
+    title: "Kinderen worden genegeerd door telefoonverslaafde ouders",
+    channel: "LUBACH",
+    thumbnail: "https://i.ytimg.com/vi/erbiNzXK84I/maxresdefault.jpg",
+    durationSec: 452,
+    language: "nl",
+  },
+  {
+    videoId: "Q10J9eE0ScE",
+    url: "https://www.youtube.com/watch?v=Q10J9eE0ScE",
+    title: "Was vroeger alles beter?",
+    channel: "De Avondshow met Arjen Lubach",
+    thumbnail: "https://i.ytimg.com/vi/Q10J9eE0ScE/maxresdefault.jpg",
+    durationSec: 1753,
+    language: "nl",
+  },
   {
     videoId: "Bt7J9fJvJ5Y",
     url: "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y",
     title: "Joost Klein over zijn wereldtour, The Voice en Europapa",
     channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/maxresdefault.jpg",
     durationSec: 246,
     language: "nl",
   },
@@ -24,17 +43,8 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     url: "https://www.youtube.com/watch?v=yKKSoD9beaQ",
     title: "Onderzoekers weten het: 'Deze man verraadde Anne Frank'",
     channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/yKKSoD9beaQ/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/yKKSoD9beaQ/maxresdefault.jpg",
     durationSec: 283,
-    language: "nl",
-  },
-  {
-    videoId: "4ngmE-BV5sE",
-    url: "https://www.youtube.com/watch?v=4ngmE-BV5sE",
-    title: "Ninthe (11) is 1,70 meter en wordt nog veel langer",
-    channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/4ngmE-BV5sE/hqdefault.jpg",
-    durationSec: 151,
     language: "nl",
   },
 ];
@@ -118,6 +128,14 @@ function ResultCard({
           alt=""
           loading="lazy"
           className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.src.includes('/maxresdefault.jpg')) {
+              img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
+            } else if (img.src.includes('/sddefault.jpg')) {
+              img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
+            }
+          }}
         />
         {dur && (
           <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -421,6 +439,14 @@ export function YouTubeDiscovery({
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src.includes('/maxresdefault.jpg')) {
+                        img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
+                      } else if (img.src.includes('/sddefault.jpg')) {
+                        img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
+                      }
+                    }}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
