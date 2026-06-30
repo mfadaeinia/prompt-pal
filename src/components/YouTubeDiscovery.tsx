@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.functions";
 
-type Platform = "youtube" | "spotify" | "netflix";
+
 
 // Curated Dutch-native examples — replaces the previous TED-talk popular row
 // so first-time visitors immediately see that NativeFlow is for Dutch content.
