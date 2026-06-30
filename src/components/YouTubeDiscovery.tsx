@@ -148,7 +148,7 @@ export function YouTubeDiscovery({
   onPick: (url: string, language?: string) => void;
   loading?: boolean;
 }) {
-  const [platform, setPlatform] = useState<Platform>("youtube");
+  
   const [q, setQ] = useState("");
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
