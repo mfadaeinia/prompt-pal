@@ -190,7 +190,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 style={heading}
               >
                 <Play className="h-4 w-4 fill-white text-white" />
-                Watch a 60-second Demo
+                Demo
               </button>
               <button
                 onClick={onPrimary}
