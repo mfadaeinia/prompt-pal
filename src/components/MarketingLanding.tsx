@@ -169,7 +169,7 @@ function Hero({
 
           <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg">
             Tap any sentence in a Dutch YouTube video and get the full expression
-            explained in context — like a native friend sitting next to you.
+            explained in context, like a native friend sitting next to you.
           </p>
 
           {/* ============ HERO INPUT — the single primary CTA ============ */}
