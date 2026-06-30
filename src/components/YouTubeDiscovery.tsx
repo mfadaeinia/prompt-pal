@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.functions";
 
-type Platform = "youtube" | "spotify" | "netflix";
+
 
 // Curated Dutch-native examples — replaces the previous TED-talk popular row
 // so first-time visitors immediately see that NativeFlow is for Dutch content.
@@ -94,49 +94,6 @@ function formatDuration(sec: number | null): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function PlatformTabs({
-  value,
-  onChange,
-}: {
-  value: Platform;
-  onChange: (p: Platform) => void;
-}) {
-  const tabs: { id: Platform; label: string; soon?: boolean }[] = [
-    { id: "youtube", label: "YouTube" },
-    { id: "spotify", label: "Spotify", soon: true },
-    { id: "netflix", label: "Netflix", soon: true },
-  ];
-  return (
-    <div className="flex flex-wrap gap-2">
-      {tabs.map((t) => {
-        const active = value === t.id;
-        const disabled = !!t.soon;
-        return (
-          <button
-            key={t.id}
-            type="button"
-            disabled={disabled}
-            onClick={() => !disabled && onChange(t.id)}
-            className={[
-              "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-border bg-card text-foreground hover:bg-muted",
-              disabled ? "cursor-not-allowed opacity-60" : "",
-            ].join(" ")}
-          >
-            {t.label}
-            {t.soon && (
-              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Soon
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function ResultCard({
   item,
@@ -191,7 +148,7 @@ export function YouTubeDiscovery({
   onPick: (url: string, language?: string) => void;
   loading?: boolean;
 }) {
-  const [platform, setPlatform] = useState<Platform>("youtube");
+  
   const [q, setQ] = useState("");
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -311,8 +268,6 @@ export function YouTubeDiscovery({
 
   return (
     <div className="space-y-4">
-      <PlatformTabs value={platform} onChange={setPlatform} />
-
       <form
         className="flex items-stretch gap-2"
         onSubmit={(e) => {
