@@ -92,25 +92,25 @@ const STEPS = [
   },
 ];
 
-function Stepper() {
+function StepperDesktop() {
   return (
-    <div className="mx-auto mt-3 max-w-3xl">
-      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+    <div className="mx-auto mt-3 hidden max-w-3xl sm:block">
+      <ol className="grid grid-cols-4 gap-3">
         {STEPS.map((s, i) => {
           const Icon = s.icon;
           return (
-            <li key={s.title} className="relative flex items-center gap-2 rounded-xl border border-border/60 bg-card/40 px-2.5 py-2 sm:flex-col sm:items-center sm:text-center sm:px-3 sm:py-2.5">
+            <li key={s.title} className="relative flex flex-col items-center gap-2 rounded-xl border border-border/60 bg-card/40 px-3 py-2.5 text-center">
               <div className="relative shrink-0">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/8 text-primary ring-1 ring-primary/15 sm:h-8 sm:w-8">
-                  <Icon className="h-3 w-3 sm:h-4 sm:w-4" strokeWidth={2.25} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/8 text-primary ring-1 ring-primary/15">
+                  <Icon className="h-4 w-4" strokeWidth={2.25} />
                 </div>
                 <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-foreground">
                   {i + 1}
                 </span>
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold leading-tight text-foreground sm:text-xs">{s.title}</p>
-                <p className="mt-0.5 hidden text-[10px] leading-tight text-muted-foreground sm:block">{s.desc}</p>
+                <p className="text-xs font-semibold leading-tight text-foreground">{s.title}</p>
+                <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{s.desc}</p>
               </div>
             </li>
           );
@@ -119,6 +119,37 @@ function Stepper() {
     </div>
   );
 }
+
+function StepperMobile() {
+  return (
+    <ol className="mt-4 flex items-center justify-between gap-1 sm:hidden">
+      {STEPS.map((s, i) => {
+        const Icon = s.icon;
+        return (
+          <li key={s.title} className="flex flex-1 items-center gap-1">
+            <div className="flex min-w-0 flex-col items-center gap-1 text-center">
+              <div className="relative">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+                  <Icon className="h-3.5 w-3.5" strokeWidth={2.25} />
+                </div>
+                <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-[8px] font-semibold text-primary-foreground">
+                  {i + 1}
+                </span>
+              </div>
+              <p className="line-clamp-1 text-[10px] font-medium leading-tight text-muted-foreground">
+                {s.title.replace("Get instant explanations", "Get explanations").replace("Paste a YouTube link", "Paste link")}
+              </p>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className="mb-4 h-px flex-1 bg-border" aria-hidden />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 
 function RecommendedCard({
   item,
