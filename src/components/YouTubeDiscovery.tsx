@@ -1,99 +1,98 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search, Play, Sparkles, Link2, AlertCircle, X } from "lucide-react";
+import { Loader2, Search, Play, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.functions";
 
+type Platform = "youtube" | "spotify" | "netflix";
 
-
-// Curated Dutch-native examples — replaces the previous TED-talk popular row
-// so first-time visitors immediately see that NativeFlow is for Dutch content.
-// Thumbnails use maxresdefault (1280×720) with an sddefault fallback.
-const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
+const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "MPb4awFiUj0",
-    url: "https://www.youtube.com/watch?v=MPb4awFiUj0",
-    title: "Dik zijn is ongezond, transgenders zijn ook ongezond | Not That Social S2 #2",
-    channel: "NPO Start Next",
-    thumbnail: "https://i.ytimg.com/vi/MPb4awFiUj0/maxresdefault.jpg",
-    durationSec: 932,
-    language: "nl",
+    videoId: "8jPQjjsBbIc",
+    url: "https://www.youtube.com/watch?v=8jPQjjsBbIc",
+    title: "Inside the mind of a master procrastinator | Tim Urban",
+    channel: "TED",
+    thumbnail: "https://i.ytimg.com/vi/8jPQjjsBbIc/hqdefault.jpg",
+    durationSec: 853,
+    language: "en",
   },
   {
-    videoId: "Q10J9eE0ScE",
-    url: "https://www.youtube.com/watch?v=Q10J9eE0ScE",
-    title: "Was vroeger alles beter?",
-    channel: "De Avondshow met Arjen Lubach",
-    thumbnail: "https://i.ytimg.com/vi/Q10J9eE0ScE/maxresdefault.jpg",
-    durationSec: 1753,
-    language: "nl",
+    videoId: "ZSt9tm3RoUU",
+    url: "https://www.youtube.com/watch?v=ZSt9tm3RoUU",
+    title: "Steve Jobs' 2005 Stanford Commencement Address",
+    channel: "Stanford",
+    thumbnail: "https://i.ytimg.com/vi/ZSt9tm3RoUU/hqdefault.jpg",
+    durationSec: 902,
+    language: "en",
   },
   {
-    videoId: "LaPSQKSRbQM",
-    url: "https://www.youtube.com/watch?v=LaPSQKSRbQM",
-    title: "Waarom lijkt iedereen ADHD te hebben?",
-    channel: "NOS op 3",
-    thumbnail: "https://i.ytimg.com/vi/LaPSQKSRbQM/maxresdefault.jpg",
-    durationSec: 714,
-    language: "nl",
+    videoId: "Ks-_Mh1QhMc",
+    url: "https://www.youtube.com/watch?v=Ks-_Mh1QhMc",
+    title: "Your body language may shape who you are | Amy Cuddy",
+    channel: "TED",
+    thumbnail: "https://i.ytimg.com/vi/Ks-_Mh1QhMc/hqdefault.jpg",
+    durationSec: 1262,
+    language: "en",
   },
   {
-    videoId: "T9tv2tmEtCc",
-    url: "https://www.youtube.com/watch?v=T9tv2tmEtCc",
-    title: "Is matcha gevaarlijk voor kinderen?",
-    channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/T9tv2tmEtCc/maxresdefault.jpg",
-    durationSec: 240,
-    language: "nl",
+    videoId: "5MgBikgcWnY",
+    url: "https://www.youtube.com/watch?v=5MgBikgcWnY",
+    title: "The first 20 hours — how to learn anything | Josh Kaufman",
+    channel: "TEDx Talks",
+    thumbnail: "https://i.ytimg.com/vi/5MgBikgcWnY/hqdefault.jpg",
+    durationSec: 1163,
+    language: "en",
   },
 ];
 
-const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
-
-/** Loose detector — if the input looks like it could be a YouTube link
- *  (any URL-ish string containing youtube/youtu.be), route it through the
- *  URL preview path instead of full-text search. */
-function looksLikeYouTubeUrl(raw: string): boolean {
-  const s = raw.trim();
-  if (!s) return false;
-  if (/(^|\s)(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(s)) return true;
-  return false;
-}
-
-function extractYouTubeId(input: string): string | null {
-  if (!input) return null;
-  const raw = input.trim();
-  if (VIDEO_ID_RE.test(raw)) return raw;
-  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-  let u: URL;
-  try {
-    u = new URL(withProto);
-  } catch {
-    return null;
-  }
-  const host = u.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
-  const segs = u.pathname.split("/").filter(Boolean);
-  const valid = (s: string | null | undefined) => (s && VIDEO_ID_RE.test(s) ? s : null);
-  if (host === "youtu.be") return valid(segs[0] ?? null);
-  if (host === "youtube.com" || host.endsWith(".youtube.com")) {
-    if (segs[0] === "watch") {
-      const v = valid(u.searchParams.get("v"));
-      if (v) return v;
-    }
-    if (["shorts", "embed", "live", "v"].includes(segs[0] ?? "")) {
-      return valid(segs[1] ?? null);
-    }
-  }
-  return null;
-}
-
-type UrlPreview = {
-  videoId: string;
-  title: string;
-  channel: string;
-  thumbnail: string;
-};
+const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
+  {
+    videoId: "Bt7J9fJvJ5Y",
+    url: "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y",
+    title: "Joost Klein over zijn wereldtour, The Voice en Europapa",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/hqdefault.jpg",
+    durationSec: 246,
+    language: "nl",
+  },
+  {
+    videoId: "yKKSoD9beaQ",
+    url: "https://www.youtube.com/watch?v=yKKSoD9beaQ",
+    title: "Onderzoekers weten het: 'Deze man verraadde Anne Frank'",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/yKKSoD9beaQ/hqdefault.jpg",
+    durationSec: 283,
+    language: "nl",
+  },
+  {
+    videoId: "4ngmE-BV5sE",
+    url: "https://www.youtube.com/watch?v=4ngmE-BV5sE",
+    title: "Ninthe (11) is 1,70 meter en wordt nog veel langer",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/4ngmE-BV5sE/hqdefault.jpg",
+    durationSec: 151,
+    language: "nl",
+  },
+  {
+    videoId: "isimFyR9MnI",
+    url: "https://www.youtube.com/watch?v=isimFyR9MnI",
+    title: "Lina is 12 en zit nu al op de universiteit",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/isimFyR9MnI/hqdefault.jpg",
+    durationSec: 82,
+    language: "nl",
+  },
+  {
+    videoId: "W3Pu2RuTZ8A",
+    url: "https://www.youtube.com/watch?v=W3Pu2RuTZ8A",
+    title: "Oeps! Dit is de grappigste taalvout van het jaar",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/W3Pu2RuTZ8A/hqdefault.jpg",
+    durationSec: 99,
+    language: "nl",
+  },
+];
 
 function formatDuration(sec: number | null): string {
   if (!sec || sec <= 0) return "";
@@ -104,6 +103,49 @@ function formatDuration(sec: number | null): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function PlatformTabs({
+  value,
+  onChange,
+}: {
+  value: Platform;
+  onChange: (p: Platform) => void;
+}) {
+  const tabs: { id: Platform; label: string; soon?: boolean }[] = [
+    { id: "youtube", label: "YouTube" },
+    { id: "spotify", label: "Spotify", soon: true },
+    { id: "netflix", label: "Netflix", soon: true },
+  ];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tabs.map((t) => {
+        const active = value === t.id;
+        const disabled = !!t.soon;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => !disabled && onChange(t.id)}
+            className={[
+              "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                : "border-border bg-card text-foreground hover:bg-muted",
+              disabled ? "cursor-not-allowed opacity-60" : "",
+            ].join(" ")}
+          >
+            {t.label}
+            {t.soon && (
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Soon
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function ResultCard({
   item,
@@ -128,14 +170,6 @@ function ResultCard({
           alt=""
           loading="lazy"
           className="h-full w-full object-cover transition group-hover:scale-[1.02]"
-          onError={(e) => {
-            const img = e.currentTarget;
-            if (img.src.includes('/maxresdefault.jpg')) {
-              img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
-            } else if (img.src.includes('/sddefault.jpg')) {
-              img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
-            }
-          }}
         />
         {dur && (
           <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -166,114 +200,34 @@ export function YouTubeDiscovery({
   onPick: (url: string, language?: string) => void;
   loading?: boolean;
 }) {
-  
+  const [platform, setPlatform] = useState<Platform>("youtube");
   const [q, setQ] = useState("");
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // URL-paste mode state
-  const [urlMode, setUrlMode] = useState(false);
-  const [urlPreview, setUrlPreview] = useState<UrlPreview | null>(null);
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [urlError, setUrlError] = useState<string | null>(null);
-
   const search = useServerFn(searchYouTube);
   const reqIdRef = useRef(0);
-  const urlReqIdRef = useRef(0);
 
   useEffect(() => {
-    const raw = q.trim();
-    if (!raw) {
+    const term = q.trim();
+    if (!term) {
       setResults(null);
       setError(null);
       setSearching(false);
-      setUrlMode(false);
-      setUrlPreview(null);
-      setUrlError(null);
-      setUrlLoading(false);
       return;
     }
-
-    // ---- URL-paste path ----
-    if (looksLikeYouTubeUrl(raw)) {
-      setUrlMode(true);
-      setResults(null);
-      setError(null);
-      setSearching(false);
-
-      const id = extractYouTubeId(raw);
-      if (!id) {
-        setUrlPreview(null);
-        setUrlLoading(false);
-        setUrlError("That doesn't look like a valid YouTube link.");
-        return;
-      }
-
-      const myId = ++urlReqIdRef.current;
-      setUrlError(null);
-      setUrlLoading(true);
-      setUrlPreview(null);
-
-      (async () => {
-        try {
-          const r = await fetch(
-            `https://www.youtube.com/oembed?url=${encodeURIComponent(
-              `https://www.youtube.com/watch?v=${id}`,
-            )}&format=json`,
-          );
-          if (myId !== urlReqIdRef.current) return;
-          if (!r.ok) {
-            setUrlPreview({
-              videoId: id,
-              title: "YouTube video",
-              channel: "",
-              thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-            });
-            setUrlLoading(false);
-            return;
-          }
-          const json = (await r.json()) as { title?: string; author_name?: string; thumbnail_url?: string };
-          if (myId !== urlReqIdRef.current) return;
-          setUrlPreview({
-            videoId: id,
-            title: json.title ?? "YouTube video",
-            channel: json.author_name ?? "",
-            thumbnail: json.thumbnail_url ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-          });
-          setUrlLoading(false);
-        } catch {
-          if (myId !== urlReqIdRef.current) return;
-          setUrlPreview({
-            videoId: id,
-            title: "YouTube video",
-            channel: "",
-            thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-          });
-          setUrlLoading(false);
-        }
-      })();
-      return;
-    }
-
-    // ---- Search path ----
-    setUrlMode(false);
-    setUrlPreview(null);
-    setUrlError(null);
-    setUrlLoading(false);
-
     const myId = ++reqIdRef.current;
     setSearching(true);
     setError(null);
     const t = setTimeout(async () => {
       try {
-        const res = await search({ data: { q: raw } });
+        const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
         if (res.results.length === 0) setError("No results. Try different keywords.");
       } catch {
         if (myId !== reqIdRef.current) return;
-        setError("Search is temporarily unavailable. Try an example below.");
+        setError("Search is temporarily unavailable. Try a popular example below.");
         setResults([]);
       } finally {
         if (myId === reqIdRef.current) setSearching(false);
@@ -286,122 +240,43 @@ export function YouTubeDiscovery({
 
   return (
     <div className="space-y-4">
+      <PlatformTabs value={platform} onChange={setPlatform} />
+
       <form
         className="flex items-stretch gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          // If URL preview is ready, pressing Enter analyzes it.
-          if (urlMode && urlPreview && !loading) {
-            onPick(`https://www.youtube.com/watch?v=${urlPreview.videoId}`, "nl");
-            return;
-          }
+          // Force an immediate refetch by bumping reqId (effect re-runs on q change normally;
+          // here we just blur to dismiss the mobile keyboard so results are visible).
           (e.currentTarget.querySelector("input") as HTMLInputElement | null)?.blur();
         }}
       >
         <div className="relative flex-1">
-          {urlMode ? (
-            <Link2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-          ) : (
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          )}
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Paste a YouTube link, or search…"
+            placeholder="Search any YouTube video…"
             className="h-12 w-full rounded-xl bg-background pl-11 pr-11 text-base"
             inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
           />
-          {(searching || urlLoading) && (
+          {searching && (
             <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-          )}
-          {!searching && !urlLoading && q && (
-            <button
-              type="button"
-              aria-label="Clear"
-              onClick={() => setQ("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </button>
           )}
         </div>
         <Button
           type="submit"
-          disabled={!q.trim() || searching || loading || (urlMode && !urlPreview)}
+          disabled={!q.trim() || searching}
           className="h-12 rounded-xl px-4"
         >
-          {urlMode ? (
-            <>
-              <Sparkles className="mr-1.5 h-4 w-4" />
-              Analyze
-            </>
-          ) : (
-            <>
-              <Search className="mr-1.5 h-4 w-4" />
-              Search
-            </>
-          )}
+          <Search className="mr-1.5 h-4 w-4" />
+          Search
         </Button>
       </form>
 
-      {/* URL paste — preview / error */}
-      {urlMode && (
-        <div>
-          {urlError && (
-            <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{urlError}</span>
-            </div>
-          )}
-          {!urlError && urlPreview && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                Ready to analyze
-              </p>
-              <div className="flex items-start gap-3">
-                <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-40">
-                  <img
-                    src={urlPreview.thumbnail}
-                    alt=""
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold text-foreground sm:text-[15px]">
-                    {urlPreview.title}
-                  </p>
-                  {urlPreview.channel && (
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {urlPreview.channel}
-                    </p>
-                  )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={loading}
-                    onClick={() =>
-                      onPick(`https://www.youtube.com/watch?v=${urlPreview.videoId}`)
-                    }
-                    className="mt-2 h-8 rounded-full px-3 text-xs"
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    {loading ? "Loading…" : "Analyze this video"}
-                  </Button>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    If the video has no subtitles or captions we can't transcribe yet,
-                    we'll let you know on the next screen.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!urlMode && !showExamples && (
+      {!showExamples && (
         <div className="space-y-2">
           {searching && (!results || results.length === 0) && (
             <p className="text-sm text-muted-foreground">Searching…</p>
@@ -419,56 +294,91 @@ export function YouTubeDiscovery({
         </div>
       )}
 
+
       {showExamples && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Try an example 🇳🇱</h3>
-            <span className="text-xs text-muted-foreground">
-              Dutch samples — or paste your own above
-            </span>
+        <div className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Popular examples</h3>
+              <span className="text-xs text-muted-foreground">Tap to analyze instantly</span>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {POPULAR_EXAMPLES.map((r) => (
+                <div
+                  key={r.videoId}
+                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
+                >
+                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
+                    <img
+                      src={r.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {r.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {r.channel}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={loading}
+                      onClick={() => onPick(r.url, r.language)}
+                      className="mt-2 h-7 rounded-full px-3 text-xs"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" /> Try now
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {DUTCH_EXAMPLES.map((r) => (
-              <div
-                key={r.videoId}
-                className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
-              >
-                <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
-                  <img
-                    src={r.thumbnail}
-                    alt=""
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      const img = e.currentTarget;
-                      if (img.src.includes('/maxresdefault.jpg')) {
-                        img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
-                      } else if (img.src.includes('/sddefault.jpg')) {
-                        img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
-                      }
-                    }}
-                  />
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Learn Dutch 🇳🇱</h3>
+              <span className="text-xs text-muted-foreground">NPO / Jeugdjournaal</span>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {DUTCH_EXAMPLES.map((r) => (
+                <div
+                  key={r.videoId}
+                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
+                >
+                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
+                    <img
+                      src={r.thumbnail}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {r.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {r.channel}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={loading}
+                      onClick={() => onPick(r.url, r.language)}
+                      className="mt-2 h-7 rounded-full px-3 text-xs"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" /> Try now
+                    </Button>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                    {r.title}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {r.channel}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={loading}
-                    onClick={() => onPick(r.url, r.language)}
-                    className="mt-2 h-7 rounded-full px-3 text-xs"
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" /> Try this example
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

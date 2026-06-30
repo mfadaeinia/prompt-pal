@@ -2460,19 +2460,23 @@ function Index() {
           }}
 
           conversionSlot={
-            <HeroInput
+            <PrimaryHero
+              url={url}
+              setUrl={setUrl}
               targetLang={targetLang}
               setTargetLang={setTargetLang}
               spokenLang={spokenLang}
               setSpokenLang={setSpokenLang}
               loading={loadMutation.isPending}
-              onPick={(u, lang) => {
+              onSubmit={(u, lang) => {
                 if (lang) setSpokenLang(lang);
                 track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+                // Activation-first: no auth required to load and explore a video.
                 setUrl(u);
                 setView("demo");
                 submitLoad(u, lang);
               }}
+              onStartDemo={startDemo}
             />
           }
         />
@@ -4656,73 +4660,6 @@ const SPOKEN_LANGUAGE_OPTIONS: Array<{ label: string; code: string }> = [
   { label: "Thai", code: "th" },
   { label: "Persian", code: "fa" },
 ];
-
-function HeroInput({
-  targetLang,
-  setTargetLang,
-  spokenLang,
-  setSpokenLang,
-  loading,
-  onPick,
-}: {
-  targetLang: string;
-  setTargetLang: (v: string) => void;
-  spokenLang: string;
-  setSpokenLang: (v: string) => void;
-  loading: boolean;
-  onPick: (u: string, lang?: string) => void;
-}) {
-  useEffect(() => {
-    track("landing_preview_seen", {});
-  }, []);
-  return (
-    <div className="space-y-3">
-      <YouTubeDiscovery loading={loading} onPick={onPick} />
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="space-y-1 min-w-0">
-          <label htmlFor="hero-lang" className="text-[11px] font-medium text-slate-600">
-            Explanation language
-          </label>
-          <Select value={targetLang} onValueChange={setTargetLang}>
-            <SelectTrigger id="hero-lang" className="h-10 w-full rounded-xl bg-background px-3 text-sm">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {HERO_LANGUAGES.map((l) => (
-                <SelectItem key={l} value={l}>{l}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1 min-w-0">
-          <label htmlFor="hero-spoken-lang" className="text-[11px] font-medium text-slate-600">
-            Video language
-          </label>
-          <Select
-            value={spokenLang === "" ? "__auto__" : spokenLang}
-            onValueChange={(v) => setSpokenLang(v === "__auto__" ? "" : v)}
-          >
-            <SelectTrigger id="hero-spoken-lang" className="h-10 w-full rounded-xl bg-background px-3 text-sm">
-              <SelectValue placeholder="Auto-detect (original)" />
-            </SelectTrigger>
-            <SelectContent>
-              {SPOKEN_LANGUAGE_OPTIONS.map((o) => (
-                <SelectItem key={o.code || "__auto__"} value={o.code || "__auto__"}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      {loading && (
-        <p className="inline-flex items-center gap-2 text-sm text-slate-600">
-          <Loader2 className="h-4 w-4 animate-spin" /> Preparing your video…
-        </p>
-      )}
-    </div>
-  );
-}
 
 function PrimaryHero({
   url, setUrl, targetLang, setTargetLang, spokenLang, setSpokenLang, loading, onSubmit, onStartDemo,
