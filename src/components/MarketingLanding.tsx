@@ -119,7 +119,13 @@ const MOBILE_TILES = [
   "photo-1503676260728-1c00da094a0b", // educational
 ];
 
-function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
+function Hero({
+  onSecondary,
+  conversionSlot,
+}: {
+  onSecondary: () => void;
+  conversionSlot: ReactNode;
+}) {
   return (
     <section className="relative overflow-hidden">
       {/* ============== BACKGROUND — MOBILE & TABLET: very faded collage ============== */}
@@ -127,68 +133,69 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-45"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/60 via-[#F8FAFC]/80 to-[#F8FAFC]" />
       </div>
 
 
-      {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
+      {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~50% ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
+          className="absolute inset-y-0 right-0 h-full w-[50%] object-cover object-left opacity-80"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55%" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-25% via-[#F8FAFC]/40 via-45% to-transparent to-65%" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
       </div>
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
-          <div className="max-w-xl md:pl-12 lg:pl-0">
-            <span
-              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80 sm:mb-6"
+      <div className="relative mx-auto max-w-5xl px-6 pt-6 pb-16 sm:pt-10 sm:pb-20 md:pt-12">
+        <div className="relative z-10 mx-auto max-w-3xl text-center">
+          <span
+            className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80 sm:mb-5"
+            style={heading}
+          >
+            For Dutch learners who watch YouTube
+          </span>
+
+          <h1
+            className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem]"
+            style={heading}
+          >
+            Learn Dutch the way a native friend would explain it.
+          </h1>
+
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg">
+            Tap any sentence in a Dutch YouTube video and get the full expression
+            explained in context — like a native friend sitting next to you.
+          </p>
+
+          {/* ============ HERO INPUT — the single primary CTA ============ */}
+          <div className="mt-7 sm:mt-9">
+            <label
+              htmlFor="hero-input"
+              className="mb-2 block text-left text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-center"
               style={heading}
             >
-              For Dutch learners who watch YouTube
-            </span>
-
-            <h1
-              className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem]"
-              style={heading}
-            >
-              Learn Dutch the way a native friend would explain it.
-            </h1>
-
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              While you watch Dutch YouTube, tap any sentence and get the full expression explained in context , like a native friend sitting right next to you.
-            </p>
-
-            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:max-w-sm">
-              <button
-                onClick={onSecondary}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
-                style={heading}
-              >
-                <Play className="h-4 w-4 fill-white text-white" />
-                Watch a 60-second Demo
-              </button>
-              <button
-                onClick={onPrimary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 py-3.5 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur transition-all hover:bg-white"
-                style={heading}
-              >
-                Try it Free
-              </button>
+              Paste any YouTube video or search for one.
+            </label>
+            <div className="rounded-2xl border border-slate-200 bg-white/95 p-3 text-left shadow-xl shadow-blue-600/5 backdrop-blur sm:p-4">
+              {conversionSlot}
             </div>
+            <p className="mt-3 text-sm text-slate-600">
+              Paste a YouTube link → tap any sentence → get an instant explanation.
+            </p>
           </div>
 
-
-          <div className="relative mx-auto w-full">
-            <ProductMock />
-          </div>
+          <button
+            type="button"
+            onClick={onSecondary}
+            className="mt-5 inline-flex items-center gap-1.5 text-sm text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline"
+          >
+            <Play className="h-3.5 w-3.5" /> Or watch a 60-second demo
+          </button>
         </div>
       </div>
     </section>
