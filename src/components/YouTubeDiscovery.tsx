@@ -128,6 +128,14 @@ function ResultCard({
           alt=""
           loading="lazy"
           className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.src.includes('/maxresdefault.jpg')) {
+              img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
+            } else if (img.src.includes('/sddefault.jpg')) {
+              img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
+            }
+          }}
         />
         {dur && (
           <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
