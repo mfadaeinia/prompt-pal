@@ -144,7 +144,7 @@ function Hero({
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-y-0 right-0 h-full w-[50%] object-cover object-left opacity-80"
+          className="absolute inset-y-0 right-0 h-full w-[50%] object-cover object-left opacity-55"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-25% via-[#F8FAFC]/40 via-45% to-transparent to-65%" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
