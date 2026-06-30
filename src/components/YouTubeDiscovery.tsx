@@ -30,12 +30,12 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     language: "nl",
   },
   {
-    videoId: "Bt7J9fJvJ5Y",
-    url: "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y",
-    title: "Joost Klein over zijn wereldtour, The Voice en Europapa",
-    channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/maxresdefault.jpg",
-    durationSec: 246,
+    videoId: "LaPSQKSRbQM",
+    url: "https://www.youtube.com/watch?v=LaPSQKSRbQM",
+    title: "Waarom lijkt iedereen ADHD te hebben?",
+    channel: "NOS op 3",
+    thumbnail: "https://i.ytimg.com/vi/LaPSQKSRbQM/maxresdefault.jpg",
+    durationSec: 714,
     language: "nl",
   },
   {
