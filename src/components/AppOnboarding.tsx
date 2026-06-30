@@ -239,7 +239,7 @@ export function AppOnboarding({
         }}
       />
 
-      <div className="mx-auto max-w-5xl px-5 pt-10 pb-20 sm:pt-16">
+      <div className="mx-auto max-w-5xl px-5 pt-8 pb-20 sm:pt-10">
         {/* Hero */}
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
