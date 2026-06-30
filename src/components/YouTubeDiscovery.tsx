@@ -39,12 +39,12 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
     language: "nl",
   },
   {
-    videoId: "yKKSoD9beaQ",
-    url: "https://www.youtube.com/watch?v=yKKSoD9beaQ",
-    title: "Onderzoekers weten het: 'Deze man verraadde Anne Frank'",
+    videoId: "T9tv2tmEtCc",
+    url: "https://www.youtube.com/watch?v=T9tv2tmEtCc",
+    title: "Is matcha gevaarlijk voor kinderen?",
     channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/yKKSoD9beaQ/maxresdefault.jpg",
-    durationSec: 283,
+    thumbnail: "https://i.ytimg.com/vi/T9tv2tmEtCc/maxresdefault.jpg",
+    durationSec: 240,
     language: "nl",
   },
 ];
