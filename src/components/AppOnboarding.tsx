@@ -293,7 +293,7 @@ export function AppOnboarding({
         >
 
           <div className="flex items-stretch gap-2 sm:gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF0000] text-white sm:h-14 sm:w-14">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-14 sm:w-14">
               <img src={youtubeIcon.url} alt="YouTube" className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div className="relative flex-1">
