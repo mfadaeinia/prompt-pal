@@ -270,27 +270,28 @@ export function AppOnboarding({
         }}
       />
 
-      <div className="mx-auto max-w-5xl px-5 pt-8 pb-20 sm:pt-10">
+      <div className="mx-auto max-w-5xl px-5 pt-4 pb-20 sm:pt-10">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-5xl">
             Welcome to NativeFlow
           </h1>
-          <p className="mt-3 text-base text-muted-foreground sm:text-lg">
+          <p className="mt-2 text-sm text-muted-foreground sm:mt-3 sm:text-lg">
             Turn any{" "}
             <span className="font-semibold text-primary">Dutch YouTube</span>{" "}
             video into an interactive lesson.
           </p>
         </div>
 
-        {/* Stepper */}
-        <Stepper />
+        {/* Stepper — desktop above search */}
+        <StepperDesktop />
 
-        {/* Primary action — search box */}
+        {/* Primary action — search box (dominant on mobile) */}
         <form
           onSubmit={submit}
-          className="mx-auto mt-6 max-w-3xl rounded-2xl border border-border bg-card p-3 shadow-[0_10px_40px_-12px_color-mix(in_oklab,var(--primary)_25%,transparent)] sm:p-4"
+          className="mx-auto mt-4 max-w-3xl rounded-2xl border-2 border-primary/30 bg-card p-3 shadow-[0_10px_40px_-12px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:mt-6 sm:border sm:border-border sm:p-4"
         >
+
           <div className="flex items-stretch gap-2 sm:gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FF0000] text-white sm:h-14 sm:w-14">
               <img src={youtubeIcon.url} alt="YouTube" className="h-6 w-6 sm:h-7 sm:w-7" />
