@@ -128,14 +128,14 @@ function Hero({
 }) {
   return (
     <section className="relative overflow-hidden">
-      {/* ============== BACKGROUND — MOBILE & TABLET: very faded collage ============== */}
+      {/* ============== BACKGROUND — MOBILE & TABLET: subtle collage ============== */}
       <div aria-hidden className="pointer-events-none absolute inset-0 lg:hidden">
         <img
           src={heroCollage.url}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-30"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-55"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/60 via-[#F8FAFC]/80 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/60 to-[#F8FAFC]" />
       </div>
 
 
