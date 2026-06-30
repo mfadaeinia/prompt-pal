@@ -268,8 +268,6 @@ export function YouTubeDiscovery({
 
   return (
     <div className="space-y-4">
-      <PlatformTabs value={platform} onChange={setPlatform} />
-
       <form
         className="flex items-stretch gap-2"
         onSubmit={(e) => {
