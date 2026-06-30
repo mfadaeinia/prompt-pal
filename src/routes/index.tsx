@@ -51,6 +51,7 @@ import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
+import { AppOnboarding } from "@/components/AppOnboarding";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
@@ -2483,46 +2484,18 @@ function Index() {
       )}
 
       {view === "app" && (
-        <section className="mx-auto max-w-3xl px-6 pt-10 pb-16 sm:pt-16">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Welcome to NativeFlow
-            </h1>
-            <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-              Search any video, or try a popular example to start learning.
-            </p>
-          </div>
-          <div className="mt-8">
-            <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
-              <label htmlFor="app-target-lang" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Explanation language
-              </label>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Sentence explanations and translations will be shown in this language.
-              </p>
-              <Select value={targetLang} onValueChange={setTargetLang}>
-                <SelectTrigger id="app-target-lang" className="mt-2 h-11 w-full rounded-xl bg-background px-4 sm:max-w-xs">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {["English","Dutch","Spanish","French","German","Italian","Portuguese","Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish","Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian","Vietnamese","Thai","Greek","Czech","Persian"].map((lang) => (
-                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <YouTubeDiscovery
-              loading={loadMutation.isPending}
-              onPick={(u, lang) => {
-                if (lang) setSpokenLang(lang);
-                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
-                setUrl(u);
-                setView("demo");
-                submitLoad(u, lang);
-              }}
-            />
-          </div>
-        </section>
+        <AppOnboarding
+          loading={loadMutation.isPending}
+          targetLang={targetLang}
+          setTargetLang={setTargetLang}
+          onPick={(u, lang) => {
+            if (lang) setSpokenLang(lang);
+            track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+            setUrl(u);
+            setView("demo");
+            submitLoad(u, lang);
+          }}
+        />
       )}
 
 
