@@ -10,10 +10,10 @@ import {
   Play,
   Sparkles,
   Settings as SettingsIcon,
-  Youtube,
   Star,
   ArrowRight,
 } from "lucide-react";
+import youtubeIcon from "@/assets/youtube-icon.png.asset.json";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
