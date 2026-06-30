@@ -439,6 +439,14 @@ export function YouTubeDiscovery({
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src.includes('/maxresdefault.jpg')) {
+                        img.src = img.src.replace('/maxresdefault.jpg', '/sddefault.jpg');
+                      } else if (img.src.includes('/sddefault.jpg')) {
+                        img.src = img.src.replace('/sddefault.jpg', '/hqdefault.jpg');
+                      }
+                    }}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
