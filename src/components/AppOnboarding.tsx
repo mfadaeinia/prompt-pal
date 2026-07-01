@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Link2,
@@ -11,6 +11,8 @@ import {
   Sparkles,
   Star,
   ArrowRight,
+  History,
+  Clock,
 } from "lucide-react";
 import youtubeIcon from "@/assets/youtube-icon.png.asset.json";
 import { Input } from "@/components/ui/input";
