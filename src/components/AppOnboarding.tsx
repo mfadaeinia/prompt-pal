@@ -273,7 +273,7 @@ export function AppOnboarding({
         {/* Hero */}
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Welcome to NativeFlow
+            {"\n"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground sm:mt-3 sm:text-lg">
             Turn any{" "}
