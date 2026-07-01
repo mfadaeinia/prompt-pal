@@ -1,69 +1,63 @@
-# Founder Dashboard v2 — Phased Plan
+## Goal
 
-Per your guidance: ship time-based analytics + source filter first. Defer notes, charts, and table enhancements to follow-up phases. Keep current tabs and layout. Default to All Sources. Conservative source bucketing.
+Split marketing from app so authenticated users stay in a persistent Learning Hub with preserved search/watch context, instead of being sent back to the landing page.
 
-## Phase 1 — Time-based analytics + source filter (this iteration)
+## Target routing
 
-### Scope
-1. **Global time filter** at top of `src/routes/founder.tsx`, affecting every tab.
-   - Presets: Today, Yesterday, Last 24h, Last 3d, Last 7d, Last 14d, Last 30d, This Month, All Time, Custom.
-   - **Default: Last 7 Days.**
-   - Persisted in URL search params (`from`, `to`, `preset`) so refresh/share preserves state.
+Current: everything lives in `src/routes/index.tsx` and switches via a local `view` state (`landing` | `demo` | `app`). "Back to Home" always resets to `landing`.
 
-2. **Global source filter** beside the date filter.
-   - **Default: "All Sources" (no filtering applied).**
-   - Buckets derived conservatively from existing `page_views.referrer` / `utm_source` columns only:
-     - Instagram (`l.instagram.com`, `instagram.com`, utm_source=instagram)
-     - Facebook (`l.facebook.com`, `m.facebook.com`, `facebook.com`)
-     - Reddit (`reddit.com`)
-     - Google (`google.com`, `bing.com` → Search)
-     - Direct (no referrer)
-     - **Unknown** (anything we can't confidently classify — never silently dropped)
-   - Skip LinkedIn / Teacher Referral buckets until data exists for them.
+New file-based routes:
 
-3. **Previous-period comparison** for all top-line KPIs.
-   - For preset "Last 7 Days", compare to the 7 days immediately prior.
-   - For "All Time", omit the delta (no equivalent prior period).
-   - Show absolute value + signed % delta + arrow.
+```
+/            Marketing landing (MarketingLanding)
+/demo        Interactive demo (current view === "demo" flow)
+/app         Learning Hub (search + continue watching + saved + recent)
+/watch/$videoId   Video player + transcript + explanations (auth required)
+```
 
-4. **Recompute existing metrics for selected window**:
-   - Overview KPIs, Activation Funnel, Session Quality, Users list, Product Health, Feedback, Engineering — all filtered by `[from, to]`.
-   - Funnel shows raw count, conversion %, drop-off % per step, computed only within window.
+`/login` stays implicit via the existing `AuthDialog` (opened from CTAs). No dedicated `/login` page unless we later want a permalink.
 
-5. **Real Activation — explicit labels** (no ambiguous "Activated"):
-   - **"Activated (session)"** — ≥30s watched AND sentence clicked in same session, within window.
-   - **"Activated (user)"** — both events within 7 days of signup, across sessions, where signup falls in window.
-   - Both displayed side-by-side with tooltip explaining the definition.
+## Refactor steps
 
-6. **Data integrity guard**: a small "Reconciliation" line on Overview showing `page_views` row count for the window so it matches raw analytics — surfaces any silent filtering.
+1. **Extract the monolith.** Pull the existing `IndexPage` in `src/routes/index.tsx` apart into three shared modules under `src/features/player/`:
+   - `usePlayerState.ts` — video/transcript/explanation/save state and mutations (everything currently keyed off `videoId`, `sentences`, `explanationCache`, etc.).
+   - `PlayerView.tsx` — the JSX for the current `view === "demo"` and `view === "app"` player experience (header stays owned by the route).
+   - `MarketingHeader.tsx` / `AppHeader.tsx` — two headers. Marketing gets today's nav; app gets logo + "← Back to Learning Hub" + saved/user menu.
 
-### Technical changes
+2. **New routes.**
+   - `src/routes/index.tsx` → renders `MarketingLanding` only. CTA `Try for Free` → if authed, `navigate({ to: "/app" })`; else open `AuthDialog`, on success navigate to `/app`. `Demo` CTA → `/demo`.
+   - `src/routes/demo.tsx` → runs the demo flow (auto-load DEMO_VIDEO_ID, keeps the current unauth-friendly experience). Header shows "← Back to Home".
+   - `src/routes/app.tsx` → new **Learning Hub** page. Auth-gated via `beforeLoad` redirect to `/` with auth dialog trigger (or inline sign-in). Sections:
+     - Prominent search bar (reuses `YouTubeDiscovery` / `AppOnboarding` search box, wired to persist query).
+     - Continue Watching (last video from `saved_videos` + local `last_watch` marker).
+     - Recently Watched (derived from `video_sessions` for the user).
+     - Recent Searches (localStorage, last 8).
+     - Saved Expressions preview (first 6 from `saved_expressions`) → link to `/saved`.
+     - Saved Videos preview → link to `/saved`.
+   - `src/routes/watch.$videoId.tsx` → renders `PlayerView` with `videoId` from the URL param. Header uses "← Back to Learning Hub" → `/app`. Opening a video from the hub navigates here instead of mutating local state.
 
-- `src/lib/founder-metrics.functions.ts`: add `{ from, to, source }` input; push date + source predicates into every Supabase query; add a sibling call for the previous-period window; return `{ current, previous }` shape.
-- `src/lib/page-views.functions.ts` + `src/lib/video-sessions.functions.ts`: accept the same filter args.
-- `src/lib/source-bucket.ts` (new, tiny): pure function mapping referrer/utm → bucket label. Shared client + server.
-- `src/routes/founder.tsx`:
-  - Add `validateSearch` (zod) for `from`, `to`, `preset`, `source`.
-  - Top toolbar: preset Select + shadcn date range Popover + source Select.
-  - New `<KpiCard>` rendering value + delta from `{ current, previous }`.
-  - Thread filter into all existing tab sections; no layout/tab restructure.
+3. **Preserve search + scroll state.** Add `src/lib/hub-state.ts` with a tiny module-scoped store (plus `sessionStorage` mirror) holding `{ query, results, scrollY, lastVideoId }`. Learning Hub reads it on mount and restores query/results/scroll. Search updates write to it. `watch.$videoId` reads `lastVideoId` for Continue Watching.
 
-### Out of scope this phase (deferred)
-- Campaign notes timeline + chart markers (Phase 2).
-- Daily trend charts (Phase 2).
-- Users-tab filter chips + multi-sort (Phase 3).
-- New source buckets (LinkedIn, Teacher Referral) — only when data exists.
+4. **Session persistence.** On mount of `/app`, if `sessionStorage.nativeflow_last_video` exists, show it in Continue Watching. On mount of `/watch/$videoId`, write it. `useAuth`-gated: if unauthenticated user hits `/app` or `/watch/*`, redirect to `/` and open `AuthDialog`; after sign-in, resume the intended route (reuse the current `nativeflow_post_auth_intent` mechanism, extend it to store a target path).
 
-## Phase 2 (follow-up)
-- Founder Notes table + UI + chart markers.
-- Per-day trend charts (visitors, opens, click rate, save rate, signups, avg session, returning).
+5. **Header/back-button rewrite.**
+   - Marketing routes (`/`, `/demo`): header = current marketing header, "Back to Home" only on `/demo`.
+   - App routes (`/app`, `/watch/*`, `/saved`): shared `AppHeader` with `← Back to Learning Hub` (hidden on `/app` itself), logo → `/app` (not `/`), and a user menu containing `Saved`, `Visit Website` (→ `/`), `Log out`.
 
-## Phase 3 (follow-up)
-- Users-tab advanced filters + sortable columns.
+6. **Cleanup.** Remove the old `view` state, `goHome`, `setView("landing"/"demo"/"app")` calls; delete the CTA path that mutated view in place. Update `AppOnboarding` to call `navigate({ to: "/watch/$videoId", params: { videoId } })` instead of loading in place.
 
-## Acceptance for Phase 1
-- Changing date preset updates every tab's numbers.
-- "All Sources" default shows the same visitor count as raw analytics for the same window.
-- Each KPI shows a previous-period delta (except All Time).
-- Activation cards explicitly say "Activated (session)" vs "Activated (user)".
-- URL reflects current filter; refresh preserves it.
+## Technical notes
+
+- TanStack Router file routes: new files auto-register via `routeTree.gen.ts` on next build; no manual edits.
+- Dynamic segment `/watch/$videoId` uses `<Link to="/watch/$videoId" params={{ videoId }}>` — never string-interpolated hrefs.
+- Auth gate: use a `beforeLoad` in `/app` and `/watch/$videoId` that reads `supabase.auth.getSession()` (client) and `redirect({ to: "/", search: { authRequired: 1, next: location.href } })`. Root `IndexPage` reads `authRequired` search param to auto-open the auth dialog. This avoids introducing an `_authenticated` layout right now while still gating.
+- Analytics: keep existing `track("google_login_completed" …)` and `page_view`; add `hub_view` and `watch_view` events.
+- No DB schema changes needed. Continue Watching + Recently Watched read from existing `saved_videos` and `video_sessions` tables.
+- SEO: `/demo`, `/app`, `/watch/$videoId` each get their own `head()` with unique title/description; `/watch/$videoId` sets `og:image` to the YouTube thumbnail from loader data. `/app` and `/watch/*` should be `noindex` (private surface).
+
+## Out of scope for this pass
+
+- Learning Statistics widget (leave a placeholder container).
+- Recommended Videos (mount an empty section for future work).
+- A dedicated `/login` route (auth stays modal-based).
+- Refactoring `saved.tsx` internals beyond swapping its header to the new `AppHeader`.
