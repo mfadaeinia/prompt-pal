@@ -407,11 +407,15 @@ export function AppOnboarding({
                 <ArrowRight className="h-3 w-3" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {/* Mobile: single horizontal-scroll row. Desktop/tablet: grid. */}
+            <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-4 lg:grid-cols-4">
               {visibleRecommended.map((r) => (
-                <RecommendedCard key={r.videoId} item={r} onPick={onPick} loading={loading} />
+                <div key={r.videoId} className="w-[62%] shrink-0 snap-start sm:w-auto">
+                  <RecommendedCard item={r} onPick={onPick} loading={loading} />
+                </div>
               ))}
             </div>
+
           </div>
         )}
 
