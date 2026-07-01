@@ -320,14 +320,13 @@ export function AppOnboarding({
             <Button
               type="submit"
               disabled={!q.trim() || loading}
-              className="h-10 shrink-0 rounded-lg px-4 text-sm font-semibold sm:h-14 sm:rounded-xl sm:px-6 sm:text-base"
+              aria-label="Search"
+              className="h-10 w-10 shrink-0 rounded-lg sm:h-14 sm:w-14 sm:rounded-xl"
             >
               {loading || searching ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Search className="mr-1.5 h-4 w-4" /> Search
-                </>
+                <Search className="h-4 w-4" />
               )}
             </Button>
           </div>
