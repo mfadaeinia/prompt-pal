@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Link2,
@@ -11,6 +11,8 @@ import {
   Sparkles,
   Star,
   ArrowRight,
+  History,
+  Clock,
 } from "lucide-react";
 import youtubeIcon from "@/assets/youtube-icon.png.asset.json";
 import { Input } from "@/components/ui/input";
@@ -197,23 +199,113 @@ function RecommendedCard({
   );
 }
 
+type SavedVideo = {
+  id?: string;
+  video_id: string;
+  video_url: string;
+  video_title?: string | null;
+  thumbnail_url?: string | null;
+  target_language?: string | null;
+  created_at?: string;
+};
+
+type LastVideo = {
+  videoId: string;
+  videoTitle: string | null;
+  url: string;
+  targetLang: string | null;
+  thumbnail?: string;
+  ts: number;
+};
+
+const SEARCH_STATE_KEY = "nativeflow_hub_search";
+const LAST_VIDEO_KEY = "nativeflow_last_video";
+const RECENT_SEARCHES_KEY = "nativeflow_recent_searches";
+
 export function AppOnboarding({
   onPick,
   loading,
   targetLang,
   setTargetLang,
+  savedVideos = [],
+  isAuthenticated = false,
 }: {
   onPick: PickFn;
   loading?: boolean;
   targetLang: string;
   setTargetLang: (l: string) => void;
+  savedVideos?: SavedVideo[];
+  isAuthenticated?: boolean;
 }) {
-  const [q, setQ] = useState("");
+  // Restore any previously-entered search query so returning to the Hub
+  // from a video keeps the user's search context.
+  const [q, setQ] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return sessionStorage.getItem(SEARCH_STATE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const search = useServerFn(searchYouTube);
   const reqIdRef = useRef(0);
+
+  // Continue-watching pointer from sessionStorage (last video the user opened).
+  const [lastVideo, setLastVideo] = useState<LastVideo | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(LAST_VIDEO_KEY);
+      return raw ? (JSON.parse(raw) as LastVideo) : null;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    // Refresh on focus in case the user came back from a watch view.
+    function refresh() {
+      try {
+        const raw = sessionStorage.getItem(LAST_VIDEO_KEY);
+        setLastVideo(raw ? (JSON.parse(raw) as LastVideo) : null);
+      } catch {}
+    }
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
+  // Recent searches (local, small).
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+    } catch {
+      return [];
+    }
+  });
+  function recordSearch(term: string) {
+    const t = term.trim();
+    if (!t) return;
+    setRecentSearches((prev) => {
+      const next = [t, ...prev.filter((s) => s.toLowerCase() !== t.toLowerCase())].slice(0, 8);
+      try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
+
+  // Persist query so navigation away/back preserves it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (q) sessionStorage.setItem(SEARCH_STATE_KEY, q);
+      else sessionStorage.removeItem(SEARCH_STATE_KEY);
+    } catch {}
+  }, [q]);
 
   useEffect(() => {
     const term = q.trim();
@@ -234,6 +326,7 @@ export function AppOnboarding({
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
+        recordSearch(term);
       } catch {
         if (myId !== reqIdRef.current) return;
         setResults([]);
@@ -362,6 +455,103 @@ export function AppOnboarding({
         <div className="mx-auto max-w-3xl">
           <StepperMobile />
         </div>
+
+        {/* Learning Hub sections — shown when the user isn't actively searching. */}
+        {!q.trim() && (lastVideo || savedVideos.length > 0 || recentSearches.length > 0) && (
+          <div className="mx-auto mt-8 max-w-5xl space-y-8">
+            {/* Continue watching */}
+            {lastVideo && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <Play className="h-4 w-4 text-primary" fill="currentColor" />
+                  Continue watching
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => onPick(lastVideo.url, lastVideo.targetLang ?? undefined)}
+                  disabled={loading}
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-3 text-left transition hover:bg-primary/10"
+                >
+                  <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-muted">
+                    <img
+                      src={lastVideo.thumbnail ?? `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                        <Play className="ml-0.5 h-4 w-4 text-primary" fill="currentColor" />
+                      </span>
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {lastVideo.videoTitle || "Last watched video"}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      Resume <ArrowRight className="h-3 w-3" />
+                    </p>
+                  </div>
+                </button>
+              </section>
+            )}
+
+            {/* Recently watched (from saved videos) */}
+            {isAuthenticated && savedVideos.length > 0 && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <History className="h-4 w-4 text-primary" />
+                  Recently watched
+                </h2>
+                <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-4 lg:grid-cols-4">
+                  {savedVideos
+                    .filter((v) => v.video_id !== lastVideo?.videoId)
+                    .slice(0, 8)
+                    .map((v) => (
+                      <div key={v.video_id} className="w-[62%] shrink-0 snap-start sm:w-auto">
+                        <RecommendedCard
+                          item={{
+                            videoId: v.video_id,
+                            url: v.video_url,
+                            title: v.video_title || v.video_id,
+                            channel: "",
+                            thumbnail: v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`,
+                            durationSec: null,
+                            language: v.target_language ?? undefined,
+                          }}
+                          onPick={onPick}
+                          loading={loading}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recent searches */}
+            {recentSearches.length > 0 && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Recent searches
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setQ(s)}
+                      className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
 
 
         {/* Search results */}

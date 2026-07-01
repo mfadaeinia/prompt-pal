@@ -299,6 +299,25 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
+  // Persist last-watched video so the Learning Hub can show "Continue watching".
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!videoId) return;
+    try {
+      sessionStorage.setItem(
+        "nativeflow_last_video",
+        JSON.stringify({
+          videoId,
+          videoTitle: videoTitle || null,
+          url: url || `https://www.youtube.com/watch?v=${videoId}`,
+          targetLang: targetLang || null,
+          thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          ts: Date.now(),
+        }),
+      );
+    } catch {}
+  }, [videoId, videoTitle, url, targetLang]);
+
   // Warm the demo transcript cache in the background on first mount so
   // that clicking "Try Demo" is instant. The transcript for the fixed
   // demo video is pre-seeded in the server cache, so the fast-path fetch
@@ -876,7 +895,10 @@ function Index() {
 
 
   const goHome = () => {
-    setView("landing");
+    // Authenticated users stay inside the app experience (Learning Hub)
+    // rather than being kicked back to the marketing landing page.
+    setView(isAuthenticated ? "app" : "landing");
+    setVideoId(null);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
@@ -2336,10 +2358,12 @@ function Index() {
               <button
                 onClick={goHome}
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
-                aria-label="Back to home"
+                aria-label={isAuthenticated ? "Back to Learning Hub" : "Back to home"}
               >
                 <span aria-hidden>←</span>
-                <span className="hidden sm:inline">Back to Home</span>
+                <span className="hidden sm:inline">
+                  {isAuthenticated ? "Back to Learning Hub" : "Back to Home"}
+                </span>
               </button>
             )}
             <button
@@ -2494,6 +2518,8 @@ function Index() {
           loading={loadMutation.isPending}
           targetLang={targetLang}
           setTargetLang={setTargetLang}
+          savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
+          isAuthenticated={isAuthenticated}
           onPick={(u, lang) => {
             if (lang) setSpokenLang(lang);
             track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
