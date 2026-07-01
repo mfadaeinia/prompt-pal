@@ -391,50 +391,6 @@ export function AppOnboarding({
           </div>
         )}
 
-        {/* Settings */}
-        <details className="group mx-auto mt-14 max-w-3xl rounded-2xl border border-border bg-card/60 px-5 py-3 shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-foreground">
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <SettingsIcon className="h-4 w-4" />
-              Settings
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Explanation language:{" "}
-              <span className="font-semibold text-primary">{targetLang}</span>
-            </span>
-          </summary>
-          <div className="mt-4 border-t border-border pt-4">
-            <label
-              htmlFor="onboarding-target-lang"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Explanation language
-            </label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Sentence explanations and translations will be shown in this language.
-            </p>
-            <Select value={targetLang} onValueChange={setTargetLang}>
-              <SelectTrigger
-                id="onboarding-target-lang"
-                className="mt-2 h-11 w-full rounded-xl bg-background px-4 sm:max-w-xs"
-              >
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {[
-                  "English","Dutch","Spanish","French","German","Italian","Portuguese",
-                  "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
-                  "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
-                  "Vietnamese","Thai","Greek","Czech","Persian",
-                ].map((lang) => (
-                  <SelectItem key={lang} value={lang}>
-                    {lang}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </details>
       </div>
     </section>
   );
