@@ -188,7 +188,7 @@ function RecommendedCard({
           variant="outline"
           disabled={loading}
           onClick={() => onPick(item.url, item.language)}
-          className="mt-auto h-8 rounded-full text-xs font-medium text-primary hover:bg-primary/5"
+          className="mt-auto hidden h-8 rounded-full text-xs font-medium text-primary hover:bg-primary/5 sm:inline-flex"
         >
           <Play className="mr-1 h-3 w-3" fill="currentColor" /> Try now
         </Button>
