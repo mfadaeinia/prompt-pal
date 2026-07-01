@@ -9,7 +9,6 @@ import {
   Loader2,
   Play,
   Sparkles,
-  Settings as SettingsIcon,
   Star,
   ArrowRight,
 } from "lucide-react";
