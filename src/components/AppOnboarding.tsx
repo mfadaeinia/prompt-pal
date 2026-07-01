@@ -289,19 +289,19 @@ export function AppOnboarding({
         {/* Primary action — search box (dominant on mobile) */}
         <form
           onSubmit={submit}
-          className="mx-auto mt-4 max-w-3xl rounded-2xl border-2 border-primary/30 bg-card p-3 shadow-[0_10px_40px_-12px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:mt-6 sm:border sm:border-border sm:p-4"
+          className="mx-auto mt-4 max-w-3xl rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:mt-6 sm:p-4"
         >
 
           <div className="flex items-stretch gap-2 sm:gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-14 sm:w-14">
-              <img src={youtubeIcon.url} alt="YouTube" className="h-6 w-6 sm:h-7 sm:w-7" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-14 sm:w-14">
+              <img src={youtubeIcon.url} alt="YouTube" className="h-5 w-5 sm:h-7 sm:w-7" />
             </div>
             <div className="relative flex-1">
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Paste a Dutch YouTube URL…"
-                className="h-12 w-full rounded-xl border-border bg-background pl-4 pr-10 text-base sm:h-14 sm:text-[15px]"
+                className="h-10 w-full rounded-lg border-border bg-background pl-3 pr-10 text-sm sm:h-14 sm:pl-4 sm:text-[15px]"
                 inputMode="search"
                 enterKeyHint="search"
                 autoComplete="off"
@@ -320,7 +320,7 @@ export function AppOnboarding({
             <Button
               type="submit"
               disabled={!q.trim() || loading}
-              className="h-12 shrink-0 rounded-xl px-5 text-sm font-semibold sm:h-14 sm:px-6 sm:text-base"
+              className="h-10 shrink-0 rounded-lg px-4 text-sm font-semibold sm:h-14 sm:rounded-xl sm:px-6 sm:text-base"
             >
               {loading || searching ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
