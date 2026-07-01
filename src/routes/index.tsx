@@ -876,7 +876,10 @@ function Index() {
 
 
   const goHome = () => {
-    setView("landing");
+    // Authenticated users stay inside the app experience (Learning Hub)
+    // rather than being kicked back to the marketing landing page.
+    setView(isAuthenticated ? "app" : "landing");
+    setVideoId(null);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
