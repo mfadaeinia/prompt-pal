@@ -456,6 +456,103 @@ export function AppOnboarding({
           <StepperMobile />
         </div>
 
+        {/* Learning Hub sections — shown when the user isn't actively searching. */}
+        {!q.trim() && (lastVideo || savedVideos.length > 0 || recentSearches.length > 0) && (
+          <div className="mx-auto mt-8 max-w-5xl space-y-8">
+            {/* Continue watching */}
+            {lastVideo && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <Play className="h-4 w-4 text-primary" fill="currentColor" />
+                  Continue watching
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => onPick(lastVideo.url, lastVideo.targetLang ?? undefined)}
+                  disabled={loading}
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-3 text-left transition hover:bg-primary/10"
+                >
+                  <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-xl bg-muted">
+                    <img
+                      src={lastVideo.thumbnail ?? `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                        <Play className="ml-0.5 h-4 w-4 text-primary" fill="currentColor" />
+                      </span>
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                      {lastVideo.videoTitle || "Last watched video"}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      Resume <ArrowRight className="h-3 w-3" />
+                    </p>
+                  </div>
+                </button>
+              </section>
+            )}
+
+            {/* Recently watched (from saved videos) */}
+            {isAuthenticated && savedVideos.length > 0 && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <History className="h-4 w-4 text-primary" />
+                  Recently watched
+                </h2>
+                <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-4 lg:grid-cols-4">
+                  {savedVideos
+                    .filter((v) => v.video_id !== lastVideo?.videoId)
+                    .slice(0, 8)
+                    .map((v) => (
+                      <div key={v.video_id} className="w-[62%] shrink-0 snap-start sm:w-auto">
+                        <RecommendedCard
+                          item={{
+                            videoId: v.video_id,
+                            url: v.video_url,
+                            title: v.video_title || v.video_id,
+                            channel: "",
+                            thumbnail: v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`,
+                            durationSec: null,
+                            language: v.target_language ?? null,
+                          }}
+                          onPick={onPick}
+                          loading={loading}
+                        />
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* Recent searches */}
+            {recentSearches.length > 0 && (
+              <section>
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Recent searches
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {recentSearches.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setQ(s)}
+                      className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
 
         {/* Search results */}
         {q.trim() && results && results.length > 0 && (
