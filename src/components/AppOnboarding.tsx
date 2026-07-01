@@ -289,7 +289,7 @@ export function AppOnboarding({
         {/* Primary action — search box (dominant on mobile) */}
         <form
           onSubmit={submit}
-          className="mx-auto mt-4 max-w-3xl rounded-2xl border-2 border-primary/30 bg-card p-3 shadow-[0_10px_40px_-12px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:mt-6 sm:border sm:border-border sm:p-4"
+          className="mx-auto mt-4 max-w-3xl rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:mt-6 sm:p-4"
         >
 
           <div className="flex items-stretch gap-2 sm:gap-3">
