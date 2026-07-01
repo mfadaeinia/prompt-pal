@@ -2339,10 +2339,12 @@ function Index() {
               <button
                 onClick={goHome}
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
-                aria-label="Back to home"
+                aria-label={isAuthenticated ? "Back to Learning Hub" : "Back to home"}
               >
                 <span aria-hidden>←</span>
-                <span className="hidden sm:inline">Back to Home</span>
+                <span className="hidden sm:inline">
+                  {isAuthenticated ? "Back to Learning Hub" : "Back to Home"}
+                </span>
               </button>
             )}
             <button
