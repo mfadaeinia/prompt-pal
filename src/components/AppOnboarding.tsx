@@ -272,15 +272,16 @@ export function AppOnboarding({
       <div className="mx-auto max-w-5xl px-5 pt-4 pb-20 sm:pt-10">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-5xl">
-            {"\n"}
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
+            Start learning from any{" "}
+            <span className="text-primary">Dutch YouTube</span> video
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground sm:mt-3 sm:text-lg">
-            Turn any{" "}
-            <span className="font-semibold text-primary">Dutch YouTube</span>{" "}
-            video into an interactive lesson.
+          <p className="mx-auto mt-2 max-w-md text-sm leading-snug text-muted-foreground sm:mt-3 sm:text-lg">
+            Paste a YouTube link or search for a Dutch video to turn it into an
+            interactive lesson.
           </p>
         </div>
+
 
         {/* Stepper — desktop above search */}
         <StepperDesktop />
@@ -288,19 +289,19 @@ export function AppOnboarding({
         {/* Primary action — search box (dominant on mobile) */}
         <form
           onSubmit={submit}
-          className="mx-auto mt-4 max-w-3xl rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:mt-6 sm:p-4"
+          className="mx-auto mt-5 max-w-3xl rounded-2xl border border-border/60 bg-card p-3 shadow-md sm:mt-6 sm:p-4"
         >
 
           <div className="flex items-stretch gap-2 sm:gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-14 sm:w-14">
-              <img src={youtubeIcon.url} alt="YouTube" className="h-5 w-5 sm:h-7 sm:w-7" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-14 sm:w-14">
+              <img src={youtubeIcon.url} alt="YouTube" className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div className="relative flex-1">
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Paste a Dutch YouTube URL…"
-                className="h-10 w-full rounded-lg border-border bg-background pl-3 pr-10 text-sm sm:h-14 sm:pl-4 sm:text-[15px]"
+                placeholder="Paste a Dutch YouTube URL..."
+                className="h-12 w-full rounded-xl border-border bg-background pl-3 pr-10 text-[15px] sm:h-14 sm:pl-4"
                 inputMode="search"
                 enterKeyHint="search"
                 autoComplete="off"
@@ -320,18 +321,19 @@ export function AppOnboarding({
               type="submit"
               disabled={!q.trim() || loading}
               aria-label="Search"
-              className="h-10 w-10 shrink-0 rounded-lg sm:h-14 sm:w-14 sm:rounded-xl"
+              className="h-12 w-12 shrink-0 rounded-xl sm:h-14 sm:w-14"
             >
               {loading || searching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <Search className="h-4 w-4" />
+                <Search className="h-5 w-5" />
               )}
             </Button>
           </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
+          <p className="mt-2.5 text-center text-xs text-muted-foreground">
             or search by title
           </p>
+
 
           {/* Explanation language — compact inline selector */}
           <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4">
@@ -405,11 +407,15 @@ export function AppOnboarding({
                 <ArrowRight className="h-3 w-3" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {/* Mobile: single horizontal-scroll row. Desktop/tablet: grid. */}
+            <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-4 lg:grid-cols-4">
               {visibleRecommended.map((r) => (
-                <RecommendedCard key={r.videoId} item={r} onPick={onPick} loading={loading} />
+                <div key={r.videoId} className="w-[62%] shrink-0 snap-start sm:w-auto">
+                  <RecommendedCard item={r} onPick={onPick} loading={loading} />
+                </div>
               ))}
             </div>
+
           </div>
         )}
 
