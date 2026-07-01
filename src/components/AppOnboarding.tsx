@@ -272,15 +272,16 @@ export function AppOnboarding({
       <div className="mx-auto max-w-5xl px-5 pt-4 pb-20 sm:pt-10">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-5xl">
-            {"\n"}
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
+            Start learning from any{" "}
+            <span className="text-primary">Dutch YouTube</span> video
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground sm:mt-3 sm:text-lg">
-            Turn any{" "}
-            <span className="font-semibold text-primary">Dutch YouTube</span>{" "}
-            video into an interactive lesson.
+          <p className="mx-auto mt-2 max-w-md text-sm leading-snug text-muted-foreground sm:mt-3 sm:text-lg">
+            Paste a YouTube link or search for a Dutch video to turn it into an
+            interactive lesson.
           </p>
         </div>
+
 
         {/* Stepper — desktop above search */}
         <StepperDesktop />
