@@ -199,23 +199,113 @@ function RecommendedCard({
   );
 }
 
+type SavedVideo = {
+  id?: string;
+  video_id: string;
+  video_url: string;
+  video_title?: string | null;
+  thumbnail_url?: string | null;
+  target_language?: string | null;
+  created_at?: string;
+};
+
+type LastVideo = {
+  videoId: string;
+  videoTitle: string | null;
+  url: string;
+  targetLang: string | null;
+  thumbnail?: string;
+  ts: number;
+};
+
+const SEARCH_STATE_KEY = "nativeflow_hub_search";
+const LAST_VIDEO_KEY = "nativeflow_last_video";
+const RECENT_SEARCHES_KEY = "nativeflow_recent_searches";
+
 export function AppOnboarding({
   onPick,
   loading,
   targetLang,
   setTargetLang,
+  savedVideos = [],
+  isAuthenticated = false,
 }: {
   onPick: PickFn;
   loading?: boolean;
   targetLang: string;
   setTargetLang: (l: string) => void;
+  savedVideos?: SavedVideo[];
+  isAuthenticated?: boolean;
 }) {
-  const [q, setQ] = useState("");
+  // Restore any previously-entered search query so returning to the Hub
+  // from a video keeps the user's search context.
+  const [q, setQ] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return sessionStorage.getItem(SEARCH_STATE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const search = useServerFn(searchYouTube);
   const reqIdRef = useRef(0);
+
+  // Continue-watching pointer from sessionStorage (last video the user opened).
+  const [lastVideo, setLastVideo] = useState<LastVideo | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(LAST_VIDEO_KEY);
+      return raw ? (JSON.parse(raw) as LastVideo) : null;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    // Refresh on focus in case the user came back from a watch view.
+    function refresh() {
+      try {
+        const raw = sessionStorage.getItem(LAST_VIDEO_KEY);
+        setLastVideo(raw ? (JSON.parse(raw) as LastVideo) : null);
+      } catch {}
+    }
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
+  // Recent searches (local, small).
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+    } catch {
+      return [];
+    }
+  });
+  function recordSearch(term: string) {
+    const t = term.trim();
+    if (!t) return;
+    setRecentSearches((prev) => {
+      const next = [t, ...prev.filter((s) => s.toLowerCase() !== t.toLowerCase())].slice(0, 8);
+      try {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
+
+  // Persist query so navigation away/back preserves it.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (q) sessionStorage.setItem(SEARCH_STATE_KEY, q);
+      else sessionStorage.removeItem(SEARCH_STATE_KEY);
+    } catch {}
+  }, [q]);
 
   useEffect(() => {
     const term = q.trim();
@@ -236,6 +326,7 @@ export function AppOnboarding({
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
+        recordSearch(term);
       } catch {
         if (myId !== reqIdRef.current) return;
         setResults([]);
