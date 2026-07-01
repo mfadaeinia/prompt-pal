@@ -289,19 +289,19 @@ export function AppOnboarding({
         {/* Primary action — search box (dominant on mobile) */}
         <form
           onSubmit={submit}
-          className="mx-auto mt-4 max-w-3xl rounded-2xl border border-border/60 bg-card p-2 shadow-sm sm:mt-6 sm:p-4"
+          className="mx-auto mt-5 max-w-3xl rounded-2xl border border-border/60 bg-card p-3 shadow-md sm:mt-6 sm:p-4"
         >
 
           <div className="flex items-stretch gap-2 sm:gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-14 sm:w-14">
-              <img src={youtubeIcon.url} alt="YouTube" className="h-5 w-5 sm:h-7 sm:w-7" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted sm:h-14 sm:w-14">
+              <img src={youtubeIcon.url} alt="YouTube" className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div className="relative flex-1">
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Paste a Dutch YouTube URL…"
-                className="h-10 w-full rounded-lg border-border bg-background pl-3 pr-10 text-sm sm:h-14 sm:pl-4 sm:text-[15px]"
+                placeholder="Paste a Dutch YouTube URL..."
+                className="h-12 w-full rounded-xl border-border bg-background pl-3 pr-10 text-[15px] sm:h-14 sm:pl-4"
                 inputMode="search"
                 enterKeyHint="search"
                 autoComplete="off"
@@ -321,18 +321,19 @@ export function AppOnboarding({
               type="submit"
               disabled={!q.trim() || loading}
               aria-label="Search"
-              className="h-10 w-10 shrink-0 rounded-lg sm:h-14 sm:w-14 sm:rounded-xl"
+              className="h-12 w-12 shrink-0 rounded-xl sm:h-14 sm:w-14"
             >
               {loading || searching ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <Search className="h-4 w-4" />
+                <Search className="h-5 w-5" />
               )}
             </Button>
           </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
+          <p className="mt-2.5 text-center text-xs text-muted-foreground">
             or search by title
           </p>
+
 
           {/* Explanation language — compact inline selector */}
           <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4">
