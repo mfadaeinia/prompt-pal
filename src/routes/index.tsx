@@ -2449,7 +2449,12 @@ function Index() {
         <MarketingLanding
           onStartDemo={startDemo}
           onSignUp={() => {
-            // "Try it Free" now triggers sign-in upfront so save actions
+            // If already signed in, skip the auth dialog and go straight to the app.
+            if (isAuthenticated) {
+              setView("app");
+              return;
+            }
+            // "Try it Free" triggers sign-in upfront so save actions
             // later in the flow don't interrupt the user. Record intent so
             // that after the OAuth full-page redirect we land in the app
             // view instead of bouncing back to the landing page.
@@ -2459,6 +2464,7 @@ function Index() {
             pendingActionRef.current = () => setView("app");
             setAuthOpen(true);
           }}
+
 
           conversionSlot={
             <PrimaryHero
