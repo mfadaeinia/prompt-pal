@@ -299,6 +299,25 @@ function Index() {
     setBrowserId(getBrowserId());
   }, []);
 
+  // Persist last-watched video so the Learning Hub can show "Continue watching".
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!videoId) return;
+    try {
+      sessionStorage.setItem(
+        "nativeflow_last_video",
+        JSON.stringify({
+          videoId,
+          videoTitle: videoTitle || null,
+          url: url || `https://www.youtube.com/watch?v=${videoId}`,
+          targetLang: targetLang || null,
+          thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          ts: Date.now(),
+        }),
+      );
+    } catch {}
+  }, [videoId, videoTitle, url, targetLang]);
+
   // Warm the demo transcript cache in the background on first mount so
   // that clicking "Try Demo" is instant. The transcript for the fixed
   // demo video is pre-seeded in the server cache, so the fast-path fetch
