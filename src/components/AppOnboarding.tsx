@@ -9,7 +9,6 @@ import {
   Loader2,
   Play,
   Sparkles,
-  Settings as SettingsIcon,
   Star,
   ArrowRight,
 } from "lucide-react";
@@ -333,6 +332,28 @@ export function AppOnboarding({
           <p className="mt-2 text-center text-xs text-muted-foreground">
             or search by title
           </p>
+
+          {/* Explanation language — compact inline selector */}
+          <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4">
+            <span className="text-xs text-muted-foreground">Explain in</span>
+            <Select value={targetLang} onValueChange={setTargetLang}>
+              <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-lg border-border bg-background px-3 text-xs sm:h-9 sm:min-w-[140px]">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {[
+                  "English","Dutch","Spanish","French","German","Italian","Portuguese",
+                  "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
+                  "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
+                  "Vietnamese","Thai","Greek","Czech","Persian",
+                ].map((lang) => (
+                  <SelectItem key={lang} value={lang}>
+                    {lang}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </form>
 
         {/* Stepper — mobile below search, supports rather than competes */}
@@ -392,50 +413,6 @@ export function AppOnboarding({
           </div>
         )}
 
-        {/* Settings */}
-        <details className="group mx-auto mt-14 max-w-3xl rounded-2xl border border-border bg-card/60 px-5 py-3 shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-foreground">
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <SettingsIcon className="h-4 w-4" />
-              Settings
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Explanation language:{" "}
-              <span className="font-semibold text-primary">{targetLang}</span>
-            </span>
-          </summary>
-          <div className="mt-4 border-t border-border pt-4">
-            <label
-              htmlFor="onboarding-target-lang"
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Explanation language
-            </label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Sentence explanations and translations will be shown in this language.
-            </p>
-            <Select value={targetLang} onValueChange={setTargetLang}>
-              <SelectTrigger
-                id="onboarding-target-lang"
-                className="mt-2 h-11 w-full rounded-xl bg-background px-4 sm:max-w-xs"
-              >
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {[
-                  "English","Dutch","Spanish","French","German","Italian","Portuguese",
-                  "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
-                  "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
-                  "Vietnamese","Thai","Greek","Czech","Persian",
-                ].map((lang) => (
-                  <SelectItem key={lang} value={lang}>
-                    {lang}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </details>
       </div>
     </section>
   );
