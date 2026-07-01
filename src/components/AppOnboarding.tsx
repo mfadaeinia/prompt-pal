@@ -518,7 +518,7 @@ export function AppOnboarding({
                             channel: "",
                             thumbnail: v.thumbnail_url || `https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg`,
                             durationSec: null,
-                            language: v.target_language ?? null,
+                            language: v.target_language ?? undefined,
                           }}
                           onPick={onPick}
                           loading={loading}
