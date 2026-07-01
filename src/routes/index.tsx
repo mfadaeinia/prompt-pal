@@ -2518,6 +2518,8 @@ function Index() {
           loading={loadMutation.isPending}
           targetLang={targetLang}
           setTargetLang={setTargetLang}
+          savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
+          isAuthenticated={isAuthenticated}
           onPick={(u, lang) => {
             if (lang) setSpokenLang(lang);
             track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
