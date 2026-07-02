@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import {
   Play,
   Check,
-  ArrowRight,
+  
   Languages,
   BookOpen,
   Youtube,
@@ -59,7 +59,7 @@ export function MarketingLanding({
         <Comparison />
         <Features />
         
-        <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
+        
       </div>
 
     </div>
@@ -547,42 +547,3 @@ function Features() {
 }
 
 
-/* ============================== FINAL CTA ============================== */
-
-function FinalCta({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
-  return (
-    <section className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:rounded-[2rem] sm:p-12 lg:p-16">
-        <h2
-          className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
-          style={heading}
-        >
-          The Content You Love Can Become Your Teacher
-        </h2>
-        <p className="mx-auto mt-4 max-w-xl text-base text-slate-600 sm:text-lg">
-          Start learning naturally from real-world content today.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <button
-            onClick={onPrimary}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
-            style={heading}
-          >
-            Start Learning Free
-            <ArrowRight className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onSecondary}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-50"
-            style={heading}
-          >
-            <Play className="h-4 w-4" /> Watch Demo
-          </button>
-        </div>
-        <p className="mt-5 text-xs text-slate-500">
-          Free to try · No credit card required · Works with YouTube
-        </p>
-      </div>
-    </section>
-  );
-}
