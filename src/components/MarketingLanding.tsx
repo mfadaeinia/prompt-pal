@@ -48,20 +48,28 @@ export function MarketingLanding({
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#F8FAFC] text-slate-900 selection:bg-blue-200"
+      className="relative w-full overflow-hidden text-slate-900 selection:bg-blue-200"
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
+      {/* Faded collage background — fixed so it persists while scrolling */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <img
+          src={heroCollage.url}
+          alt=""
+          width={1562}
+          height={1007}
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-[0.07]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/60 via-[#F8FAFC]/90 to-[#F8FAFC]" />
+      </div>
+
       <div className="relative z-10">
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
         <CompetitorComparison />
         <HowItWorks />
-        
         <Comparison />
         <Features />
-        
-        
       </div>
-
     </div>
   );
 }
