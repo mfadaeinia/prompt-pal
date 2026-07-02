@@ -60,7 +60,7 @@ export function MarketingLanding({
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
         <CompetitorComparison />
         <HowItWorks />
-        <ContentTypes />
+        
         <Comparison />
         <Features />
         <FounderNote onPrimary={handleSignUp} />
