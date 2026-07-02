@@ -227,6 +227,8 @@ function ProductMock() {
       <img
         src={productMock.url}
         alt="NativeFlow product preview — Dutch sentence explanation"
+        width={1658}
+        height={949}
         className="block w-full h-auto"
         style={{ transform: "scale(1.02)" }}
       />
