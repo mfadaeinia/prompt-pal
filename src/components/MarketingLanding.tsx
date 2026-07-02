@@ -564,27 +564,6 @@ function Features() {
   );
 }
 
-/* ============================== FOUNDER NOTE ============================== */
-
-function FounderNote({ onPrimary }: { onPrimary: () => void }) {
-  return (
-    <section className="mx-auto max-w-3xl px-6 py-24 sm:py-28">
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
-        <p className="text-[15px] leading-relaxed text-slate-700 sm:text-base">
-          About myself, I&apos;m building this solo in Eindhoven. Be one of the
-          first 10 users and shape it with me.
-        </p>
-        <button
-          onClick={onPrimary}
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
-          style={heading}
-        >
-          Join the first 10
-        </button>
-      </div>
-    </section>
-  );
-}
 
 /* ============================== FINAL CTA ============================== */
 
