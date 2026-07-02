@@ -29,11 +29,9 @@ import tedLogo from "@/assets/ted-logo.png.asset.json";
 export function MarketingLanding({
   onStartDemo,
   onSignUp,
-  conversionSlot,
 }: {
   onStartDemo: () => void;
   onSignUp: () => void;
-  conversionSlot: ReactNode;
 }) {
   useEffect(() => {
     track("marketing_landing_seen", {});
