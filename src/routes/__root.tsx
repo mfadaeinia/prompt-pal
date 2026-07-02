@@ -81,6 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "x4c7ZElUAjtWIupXKHzTeBKUKpvH4_sNO16_f8f-vNE" },
       { title: "NativeFlow — Understand any video, sentence by sentence" },
       { name: "description", content: "Click any sentence in a YouTube video to get translations, explanations, vocabulary, and context — instantly." },
       { name: "author", content: "NativeFlow" },
@@ -117,12 +118,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "Organization",
               name: "NativeFlow",
-              url: "https://native-lens.lovable.app",
+              url: "https://nativeflow.life",
             },
             {
               "@type": "WebSite",
               name: "NativeFlow",
-              url: "https://native-lens.lovable.app",
+              url: "https://nativeflow.life",
             },
           ],
         }),

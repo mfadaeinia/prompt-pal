@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /founder
 
-Sitemap: https://native-lens.lovable.app/sitemap.xml
+Sitemap: https://nativeflow.life/sitemap.xml
