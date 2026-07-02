@@ -118,12 +118,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "Organization",
               name: "NativeFlow",
-              url: "https://native-lens.lovable.app",
+              url: "https://nativeflow.life",
             },
             {
               "@type": "WebSite",
               name: "NativeFlow",
-              url: "https://native-lens.lovable.app",
+              url: "https://nativeflow.life",
             },
           ],
         }),
