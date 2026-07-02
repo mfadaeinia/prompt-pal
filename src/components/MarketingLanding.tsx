@@ -60,7 +60,7 @@ export function MarketingLanding({
         
         <Comparison />
         <Features />
-        <FounderNote onPrimary={handleSignUp} />
+        
         <FinalCta onPrimary={handleSignUp} onSecondary={handleDemo} />
       </div>
 
