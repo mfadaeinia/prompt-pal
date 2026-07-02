@@ -242,7 +242,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function CompetitorComparison() {
   return (
-    <section className="bg-white">
+    <section>
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
@@ -367,7 +367,7 @@ function HowItWorks() {
     },
   ];
   return (
-    <section className="border-t border-slate-200 bg-white">
+    <section className="border-t border-slate-200">
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
@@ -519,7 +519,7 @@ function Features() {
     },
   ];
   return (
-    <section className="border-y border-slate-200 bg-white">
+    <section className="border-y border-slate-200">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
           <h2
