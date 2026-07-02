@@ -48,20 +48,28 @@ export function MarketingLanding({
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#F8FAFC] text-slate-900 selection:bg-blue-200"
+      className="relative w-full overflow-hidden text-slate-900 selection:bg-blue-200"
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
+      {/* Faded collage background — fixed so it persists while scrolling */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
+        <img
+          src={heroCollage.url}
+          alt=""
+          width={1562}
+          height={1007}
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-[0.07]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/60 via-[#F8FAFC]/90 to-[#F8FAFC]" />
+      </div>
+
       <div className="relative z-10">
         <Hero onPrimary={handleSignUp} onSecondary={handleDemo} />
         <CompetitorComparison />
         <HowItWorks />
-        
         <Comparison />
         <Features />
-        
-        
       </div>
-
     </div>
   );
 }
@@ -234,7 +242,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function CompetitorComparison() {
   return (
-    <section className="bg-white">
+    <section>
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
@@ -359,7 +367,7 @@ function HowItWorks() {
     },
   ];
   return (
-    <section className="border-t border-slate-200 bg-white">
+    <section className="border-t border-slate-200">
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
@@ -511,7 +519,7 @@ function Features() {
     },
   ];
   return (
-    <section className="border-y border-slate-200 bg-white">
+    <section className="border-y border-slate-200">
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
           <h2
