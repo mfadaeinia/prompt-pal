@@ -184,16 +184,6 @@ function RecommendedCard({
       <div className="flex flex-1 flex-col gap-2 p-3">
         <p className="line-clamp-2 text-sm font-semibold text-foreground">{item.title}</p>
         <p className="text-xs text-muted-foreground">{item.channel}</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={loading}
-          onClick={() => onPick(item.url, item.language)}
-          className="mt-auto hidden h-8 rounded-full text-xs font-medium text-primary hover:bg-primary/5 sm:inline-flex"
-        >
-          <Play className="mr-1 h-3 w-3" fill="currentColor" /> Try now
-        </Button>
       </div>
     </div>
   );
