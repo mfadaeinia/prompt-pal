@@ -52,7 +52,7 @@ export function AuthDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md bg-background p-0 overflow-hidden">
         <div className="px-6 pt-8 pb-6 sm:px-8 sm:pt-10 sm:pb-8">
           <DialogHeader className="space-y-3 text-center sm:text-center">
             <DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
