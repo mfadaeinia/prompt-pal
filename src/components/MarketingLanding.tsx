@@ -144,6 +144,9 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <img
           src={heroCollage.url}
           alt=""
+          width={1562}
+          height={1007}
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-top opacity-45"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC]" />
@@ -155,6 +158,9 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <img
           src={heroCollage.url}
           alt=""
+          width={1562}
+          height={1007}
+          fetchPriority="high"
           className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55%" />
@@ -221,6 +227,8 @@ function ProductMock() {
       <img
         src={productMock.url}
         alt="NativeFlow product preview — Dutch sentence explanation"
+        width={1658}
+        height={949}
         className="block w-full h-auto"
         style={{ transform: "scale(1.02)" }}
       />
