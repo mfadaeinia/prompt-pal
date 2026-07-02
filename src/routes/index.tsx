@@ -915,6 +915,16 @@ function Index() {
     }
   };
 
+  // Apply dark theme to <html> when in learning mode (demo view) so all
+  // descendants (including body and portals) receive dark tokens.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (view === "demo") {
+      root.classList.add("dark");
+      return () => root.classList.remove("dark");
+    }
+  }, [view]);
+
   // Auto-show the first-time coachmark whenever the demo view is active and
   // we have sentences rendered (covers direct ?v= URL entry that bypasses startDemo).
   useEffect(() => {
