@@ -648,75 +648,23 @@ function Features() {
   );
 }
 
-/* ============================== TESTIMONIALS ============================== */
+/* ============================== FOUNDER NOTE ============================== */
 
-const TESTIMONIALS = [
-  {
-    name: "Sarah Klein",
-    lang: "Learning Dutch",
-    color: "#3b82f6",
-    quote:
-      "I finally understand the podcasts I actually want to listen to. Clicking a sentence and getting the nuance is exactly what I needed.",
-  },
-  {
-    name: "Luca Moretti",
-    lang: "Learning English",
-    color: "#a78bfa",
-    quote:
-      "It's the first tool that fits into how I already watch videos — instead of replacing it with a course.",
-  },
-  {
-    name: "Aiko Tanaka",
-    lang: "Learning French",
-    color: "#10b981",
-    quote:
-      "The expression notes are what set this apart. I'm learning how natives actually talk, not textbook French.",
-  },
-];
-
-function Testimonials() {
+function FounderNote({ onPrimary }: { onPrimary: () => void }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
-      <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
-        <h2
-          className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
+    <section className="mx-auto max-w-3xl px-6 py-24 sm:py-28">
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+        <p className="text-[15px] leading-relaxed text-slate-700 sm:text-base">
+          About myself, I&apos;m building this solo in Eindhoven. Be one of the
+          first 10 users and shape it with me.
+        </p>
+        <button
+          onClick={onPrimary}
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
           style={heading}
         >
-          Learners Who Choose Real Content
-        </h2>
-        <p className="mt-3 text-base text-slate-600 sm:text-lg">
-          People who want to enjoy native podcasts, videos, and shows — and grow from them.
-        </p>
-      </div>
-      <div className="grid gap-5 md:grid-cols-3">
-        {TESTIMONIALS.map((t) => (
-          <figure
-            key={t.name}
-            className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-7 shadow-sm"
-          >
-            <Quote className="h-5 w-5 text-blue-500/60" />
-            <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-slate-700">
-              "{t.quote}"
-            </blockquote>
-            <figcaption className="mt-6 flex items-center gap-3">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-                style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}cc)` }}
-              >
-                {t.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-slate-900" style={heading}>
-                  {t.name}
-                </div>
-                <div className="text-xs text-slate-500">{t.lang}</div>
-              </div>
-            </figcaption>
-          </figure>
-        ))}
+          Join the first 10
+        </button>
       </div>
     </section>
   );
