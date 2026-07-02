@@ -144,6 +144,9 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <img
           src={heroCollage.url}
           alt=""
+          width={1562}
+          height={1007}
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-top opacity-45"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC]" />
