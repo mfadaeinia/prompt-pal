@@ -19,7 +19,7 @@ import {
 
 
 import { explainSentence } from "@/lib/explain.functions";
-import { submitEarlyAccess } from "@/lib/early-access.functions";
+
 import { recordVideoSession } from "@/lib/video-sessions.functions";
 import {
   saveExpression,
@@ -2512,7 +2512,7 @@ function Index() {
 
 
       <main className="relative mx-auto max-w-6xl px-6">
-        {view === "landing" && <EarlyAccessSection />}
+        
 
 
 
@@ -3306,105 +3306,6 @@ function Index() {
 }
 
 
-function EarlyAccessSection() {
-  // Early Access signups are persisted in Supabase.
-  // To view: Supabase → Table Editor → early_access_signups
-  // Or SQL: SELECT * FROM early_access_signups ORDER BY created_at DESC;
-  const submit = useServerFn(submitEarlyAccess);
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!trimmed) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      await submit({
-        data: {
-          email: trimmed,
-          pageUrl: typeof window !== "undefined" ? window.location.href : null,
-          source: "early_access_section",
-          sessionId: null,
-          targetLanguage: null,
-          currentDutchLevel: null,
-        },
-      });
-      const eventProps = { source: "early_access_section", email_provided: true };
-      // TEMP DEBUG: verify PostHog event firing for waitlist conversion
-      console.log("waitlist_joined", eventProps);
-      console.log("early_access_joined", eventProps);
-      track("waitlist_joined", eventProps);
-      track("early_access_joined", eventProps);
-      // parent component reads localStorage flag below for dev panel state
-      try { localStorage.setItem("nativeflow_waitlist_joined", "1"); } catch {}
-      setSubmitted(true);
-    } catch (err) {
-      console.error("waitlist_submit_failed", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <section
-      id="early-access"
-      className="my-20 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/10 via-card to-card p-10 shadow-sm sm:p-14"
-    >
-      <div className="mx-auto max-w-xl text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          <Sparkles className="h-3 w-3" /> Early Access
-        </span>
-        <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Stay updated.
-        </h2>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Get updates about new languages, improvements, and learning features.
-        </p>
-
-        {submitted ? (
-          <p className="mt-8 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            You're on the early access list. Thank you!
-          </p>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="mx-auto mt-8 flex max-w-md flex-col gap-2 sm:flex-row"
-          >
-            <label htmlFor="early-access-email" className="sr-only">
-              Email address
-            </label>
-            <Input
-              id="early-access-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              aria-label="Email address"
-              className="h-11 flex-1 rounded-full bg-background px-5"
-              disabled={submitting}
-            />
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="h-11 shrink-0 rounded-full px-6 shadow-md shadow-primary/20"
-            >
-              {submitting ? "Joining…" : "Join waitlist"}
-            </Button>
-          </form>
-        )}
-        {error && !submitted && (
-          <p className="mt-3 text-sm font-medium text-destructive">{error}</p>
-        )}
-      </div>
-    </section>
-  );
-}
 
 
 function SourceBadge({ source, cachedFrom }: { source: TranscriptSource; cachedFrom?: string | null }) {
