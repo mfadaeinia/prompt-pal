@@ -280,17 +280,6 @@ function CompetitorComparison() {
                 Miss idioms, slang, and context entirely
               </li>
             </ul>
-            <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
-              <p
-                className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
-                style={heading}
-              >
-                Example
-              </p>
-              <p className="text-sm text-slate-700">
-                "hij slaat nergens op" → click "slaat" → get "hits" ❌
-              </p>
-            </div>
           </div>
 
           {/* RIGHT — NativeFlow */}
@@ -323,17 +312,6 @@ function CompetitorComparison() {
                   Understand idioms and Dutch expressions as natives use them
                 </li>
               </ul>
-              <div className="mt-6 rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
-                <p
-                  className="mb-2 text-xs font-semibold uppercase tracking-wider text-blue-600"
-                  style={heading}
-                >
-                  Example
-                </p>
-                <p className="text-sm text-slate-900">
-                  "hij slaat nergens op" → tap sentence → "This means 'it makes no sense' — common Dutch expression" ✅
-                </p>
-              </div>
             </div>
           </div>
         </div>
