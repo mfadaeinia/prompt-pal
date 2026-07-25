@@ -2507,21 +2507,39 @@ function Index() {
       )}
 
       {view === "app" && (
-        <AppOnboarding
-          loading={loadMutation.isPending}
-          targetLang={targetLang}
-          setTargetLang={setTargetLang}
-          savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
-          isAuthenticated={isAuthenticated}
-          onPick={(u, lang) => {
-            if (lang) setSpokenLang(lang);
-            track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
-            setUrl(u);
-            setView("demo");
-            submitLoad(u, lang);
-          }}
-        />
+        <div className="mx-auto max-w-6xl px-6">
+          <AppNav active={appTab} onChange={setAppTab} />
+          {appTab === "today" ? (
+            <TodayFeed
+              loading={loadMutation.isPending}
+              onDiscover={() => setAppTab("discover")}
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("today_feed_video_picked", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u, lang);
+              }}
+            />
+          ) : (
+            <AppOnboarding
+              loading={loadMutation.isPending}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
+              isAuthenticated={isAuthenticated}
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u, lang);
+              }}
+            />
+          )}
+        </div>
       )}
+
 
 
       <main className="relative mx-auto max-w-6xl px-6">
