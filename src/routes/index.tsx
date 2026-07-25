@@ -52,6 +52,8 @@ import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsP
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
+import { AppNav, type AppTab } from "@/components/AppNav";
+import { TodayFeed } from "@/components/TodayFeed";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
@@ -176,6 +178,7 @@ function Index() {
     if (typeof window === "undefined") return "landing";
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
+  const [appTab, setAppTab] = useState<AppTab>("today");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPlayNudge, setShowPlayNudge] = useState(false);
   const hasInteractedWithSentenceRef = useRef(false);
@@ -2504,21 +2507,39 @@ function Index() {
       )}
 
       {view === "app" && (
-        <AppOnboarding
-          loading={loadMutation.isPending}
-          targetLang={targetLang}
-          setTargetLang={setTargetLang}
-          savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
-          isAuthenticated={isAuthenticated}
-          onPick={(u, lang) => {
-            if (lang) setSpokenLang(lang);
-            track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
-            setUrl(u);
-            setView("demo");
-            submitLoad(u, lang);
-          }}
-        />
+        <div className="mx-auto max-w-6xl px-6">
+          <AppNav active={appTab} onChange={setAppTab} />
+          {appTab === "today" ? (
+            <TodayFeed
+              loading={loadMutation.isPending}
+              onDiscover={() => setAppTab("discover")}
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("today_feed_video_picked", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u, lang);
+              }}
+            />
+          ) : (
+            <AppOnboarding
+              loading={loadMutation.isPending}
+              targetLang={targetLang}
+              setTargetLang={setTargetLang}
+              savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
+              isAuthenticated={isAuthenticated}
+              onPick={(u, lang) => {
+                if (lang) setSpokenLang(lang);
+                track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
+                setUrl(u);
+                setView("demo");
+                submitLoad(u, lang);
+              }}
+            />
+          )}
+        </div>
       )}
+
 
 
       <main className="relative mx-auto max-w-6xl px-6">
