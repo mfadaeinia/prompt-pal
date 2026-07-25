@@ -371,69 +371,6 @@ export type Database = {
         }
         Relationships: []
       }
-      dutch_media_items: {
-        Row: {
-          category: string
-          created_at: string
-          difficulty: string | null
-          duration_sec: number | null
-          featured_date: string
-          id: string
-          language: string
-          published_at: string | null
-          short_english_summary: string | null
-          sort_order: number
-          source: string
-          source_url: string
-          status: string
-          thumbnail_url: string
-          title: string
-          updated_at: string
-          video_id: string
-          why_it_matters: string | null
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          difficulty?: string | null
-          duration_sec?: number | null
-          featured_date?: string
-          id?: string
-          language?: string
-          published_at?: string | null
-          short_english_summary?: string | null
-          sort_order?: number
-          source: string
-          source_url: string
-          status?: string
-          thumbnail_url: string
-          title: string
-          updated_at?: string
-          video_id: string
-          why_it_matters?: string | null
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          difficulty?: string | null
-          duration_sec?: number | null
-          featured_date?: string
-          id?: string
-          language?: string
-          published_at?: string | null
-          short_english_summary?: string | null
-          sort_order?: number
-          source?: string
-          source_url?: string
-          status?: string
-          thumbnail_url?: string
-          title?: string
-          updated_at?: string
-          video_id?: string
-          why_it_matters?: string | null
-        }
-        Relationships: []
-      }
       early_access_signups: {
         Row: {
           created_at: string
