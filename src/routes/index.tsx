@@ -178,6 +178,7 @@ function Index() {
     if (typeof window === "undefined") return "landing";
     return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
   });
+  const [appTab, setAppTab] = useState<AppTab>("today");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPlayNudge, setShowPlayNudge] = useState(false);
   const hasInteractedWithSentenceRef = useRef(false);
