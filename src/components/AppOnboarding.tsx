@@ -303,11 +303,13 @@ export function AppOnboarding({
     if (!term) {
       setResults(null);
       setSearching(false);
+      setSearchError(null);
       return;
     }
     // If it looks like a URL, don't search — let user press the button to load.
     if (/^https?:\/\//i.test(term) || /youtu\.?be/i.test(term)) {
       setResults(null);
+      setSearchError(null);
       return;
     }
     const myId = ++reqIdRef.current;
