@@ -71,7 +71,7 @@ export function MarketingLanding({
         >
           <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-orange-900 sm:text-sm">
             <span className="inline-flex items-center rounded-full bg-orange-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-              New
+              Beta
             </span>
             <span>Discover what Dutch people are talking about today</span>
             <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
