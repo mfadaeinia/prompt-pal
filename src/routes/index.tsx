@@ -902,6 +902,22 @@ function Index() {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
 
+  const handleSignOut = async () => {
+    try {
+      await qc.cancelQueries();
+      qc.clear();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore network failures — the local session is cleared either way.
+    }
+    setView("landing");
+    setVideoId(null);
+    try {
+      sessionStorage.removeItem("nativeflow_post_auth_intent");
+    } catch {}
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
   const navTo = (hash: string) => {
     const scroll = () => {
       const el = document.getElementById(hash);
