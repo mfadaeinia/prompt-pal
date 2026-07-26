@@ -2399,22 +2399,33 @@ function Index() {
                 Founder
               </Link>
             )}
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
               {isAuthenticated ? (
-                <span
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600"
-                  title="You are signed in"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <>
+                  <span
+                    className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600"
+                    title="You are signed in"
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
+                    Signed In
                   </span>
-                  Signed In
-                </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    title="Sign out"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Sign out</span>
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => setAuthOpen(true)}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                   title="Sign in to save your progress"
                 >
                   <span className="h-2 w-2 rounded-full bg-slate-400/60" />
