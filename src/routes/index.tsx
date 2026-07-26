@@ -2469,11 +2469,6 @@ function Index() {
                 )}
               </Button>
             )}
-            {view === "landing" && (
-              <Button size="sm" onClick={startDemo} className="h-9 rounded-full px-3 text-xs sm:px-4">
-                <PlayCircle className="mr-1.5 h-3.5 w-3.5" /> Try Demo
-              </Button>
-            )}
           </div>
         </div>
       </header>
