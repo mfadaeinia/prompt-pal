@@ -207,10 +207,11 @@ export function YouTubeDiscovery({
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
-        if (res.results.length === 0) setError("No results. Try different keywords.");
+        if (res.results.length === 0)
+          setError("No videos matched that search. Try different keywords, or clear the search to pick a Dutch example.");
       } catch {
         if (myId !== reqIdRef.current) return;
-        setError("Search is temporarily unavailable. Try a popular example below.");
+        setError("Search is temporarily unavailable right now. Clear the search box to pick a Dutch example, or paste a YouTube link directly.");
         setResults([]);
       } finally {
         if (myId === reqIdRef.current) setSearching(false);
