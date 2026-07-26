@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TodayRouteImport } from './routes/today'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as FounderRouteImport } from './routes/founder'
@@ -22,6 +23,11 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 
+const TodayRoute = TodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/today': typeof TodayRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/today': typeof TodayRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/founder': typeof FounderRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/today': typeof TodayRoute
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/founder'
     | '/saved'
     | '/sitemap.xml'
+    | '/today'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/founder'
     | '/saved'
     | '/sitemap.xml'
+    | '/today'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/founder'
     | '/saved'
     | '/sitemap.xml'
+    | '/today'
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   FounderRoute: typeof FounderRoute
   SavedRoute: typeof SavedRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TodayRoute: typeof TodayRoute
   ApiPublicAsrBenchmarkRunRoute: typeof ApiPublicAsrBenchmarkRunRoute
   ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
   ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
@@ -192,6 +205,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/today': {
+      id: '/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof TodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   FounderRoute: FounderRoute,
   SavedRoute: SavedRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TodayRoute: TodayRoute,
   ApiPublicAsrBenchmarkRunRoute: ApiPublicAsrBenchmarkRunRoute,
   ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
   ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
