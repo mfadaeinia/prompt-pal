@@ -186,7 +186,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               </button>
               <button
                 onClick={onSecondary}
-                className="inline-flex items-center gap-1.5 self-center text-sm font-medium text-slate-600 underline-offset-4 transition-colors hover:text-slate-900 hover:underline sm:self-start"
+                className="inline-flex items-center gap-1.5 self-center text-sm font-medium text-slate-600 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
                 style={heading}
               >
                 <Play className="h-3.5 w-3.5 fill-current" />
