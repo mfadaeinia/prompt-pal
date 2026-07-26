@@ -312,15 +312,23 @@ export function AppOnboarding({
     }
     const myId = ++reqIdRef.current;
     setSearching(true);
+    setSearchError(null);
     const t = setTimeout(async () => {
       try {
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
+        if (res.results.length === 0)
+          setSearchError(
+            "No videos matched that search. Try different keywords, or paste a YouTube link directly.",
+          );
         recordSearch(term);
       } catch {
         if (myId !== reqIdRef.current) return;
         setResults([]);
+        setSearchError(
+          "Search is temporarily unavailable right now. You can still paste a YouTube link directly, or pick one of the recommended videos below.",
+        );
       } finally {
         if (myId === reqIdRef.current) setSearching(false);
       }
