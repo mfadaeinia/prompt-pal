@@ -238,6 +238,7 @@ export function AppOnboarding({
     }
   });
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const search = useServerFn(searchYouTube);
