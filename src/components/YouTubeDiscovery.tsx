@@ -286,7 +286,7 @@ export function YouTubeDiscovery({
               <span className="text-xs text-muted-foreground">Tap to analyze instantly</span>
             </div>
             <div className="grid gap-2.5 sm:grid-cols-2">
-              {DUTCH_EXAMPLES.map((r) => (
+              {[...DUTCH_EXAMPLES, ...DUTCH_EXTRA].map((r) => (
                 <div
                   key={r.videoId}
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
