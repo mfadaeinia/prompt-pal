@@ -7,44 +7,27 @@ import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.fu
 
 type Platform = "youtube" | "spotify" | "netflix";
 
-const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
+const DUTCH_EXTRA: YouTubeSearchResult[] = [
   {
-    videoId: "8jPQjjsBbIc",
-    url: "https://www.youtube.com/watch?v=8jPQjjsBbIc",
-    title: "Inside the mind of a master procrastinator | Tim Urban",
-    channel: "TED",
-    thumbnail: "https://i.ytimg.com/vi/8jPQjjsBbIc/hqdefault.jpg",
-    durationSec: 853,
-    language: "en",
+    videoId: "sgiDZvYZyMQ",
+    url: "https://www.youtube.com/watch?v=sgiDZvYZyMQ",
+    title: "Easy Dutch 1 — Basic Phrases from the streets",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/sgiDZvYZyMQ/hqdefault.jpg",
+    durationSec: 137,
+    language: "nl",
   },
   {
-    videoId: "ZSt9tm3RoUU",
-    url: "https://www.youtube.com/watch?v=ZSt9tm3RoUU",
-    title: "Steve Jobs' 2005 Stanford Commencement Address",
-    channel: "Stanford",
-    thumbnail: "https://i.ytimg.com/vi/ZSt9tm3RoUU/hqdefault.jpg",
-    durationSec: 902,
-    language: "en",
-  },
-  {
-    videoId: "Ks-_Mh1QhMc",
-    url: "https://www.youtube.com/watch?v=Ks-_Mh1QhMc",
-    title: "Your body language may shape who you are | Amy Cuddy",
-    channel: "TED",
-    thumbnail: "https://i.ytimg.com/vi/Ks-_Mh1QhMc/hqdefault.jpg",
-    durationSec: 1262,
-    language: "en",
-  },
-  {
-    videoId: "5MgBikgcWnY",
-    url: "https://www.youtube.com/watch?v=5MgBikgcWnY",
-    title: "The first 20 hours — how to learn anything | Josh Kaufman",
-    channel: "TEDx Talks",
-    thumbnail: "https://i.ytimg.com/vi/5MgBikgcWnY/hqdefault.jpg",
-    durationSec: 1163,
-    language: "en",
+    videoId: "OMToRpHkdjE",
+    url: "https://www.youtube.com/watch?v=OMToRpHkdjE",
+    title: "Tour Around Utrecht (in slow Dutch) | Super Easy Dutch 2",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/OMToRpHkdjE/hqdefault.jpg",
+    durationSec: 267,
+    language: "nl",
   },
 ];
+
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
