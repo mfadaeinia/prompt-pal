@@ -555,6 +555,13 @@ export function AppOnboarding({
         )}
 
 
+        {/* Search fallback message */}
+        {q.trim() && !searching && searchError && (!results || results.length === 0) && (
+          <p className="mx-auto mt-6 max-w-3xl rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
+            {searchError}
+          </p>
+        )}
+
         {/* Search results */}
         {q.trim() && results && results.length > 0 && (
           <div className="mx-auto mt-6 grid max-w-3xl gap-2.5">
