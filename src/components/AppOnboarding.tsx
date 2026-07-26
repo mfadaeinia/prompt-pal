@@ -33,39 +33,39 @@ type PickFn = (url: string, language?: string) => void;
 
 const DUTCH_RECOMMENDED: YouTubeSearchResult[] = [
   {
+    videoId: "sgiDZvYZyMQ",
+    url: "https://www.youtube.com/watch?v=sgiDZvYZyMQ",
+    title: "Easy Dutch 1 — Basic Phrases from the streets",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/sgiDZvYZyMQ/hqdefault.jpg",
+    durationSec: 137,
+    language: "nl",
+  },
+  {
+    videoId: "OMToRpHkdjE",
+    url: "https://www.youtube.com/watch?v=OMToRpHkdjE",
+    title: "Tour Around Utrecht (in slow Dutch) | Super Easy Dutch 2",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/OMToRpHkdjE/hqdefault.jpg",
+    durationSec: 267,
+    language: "nl",
+  },
+  {
+    videoId: "6DvOVDpY_aI",
+    url: "https://www.youtube.com/watch?v=6DvOVDpY_aI",
+    title: "Nederlandse rapper Ashafar maakt nummer over en met Lamine Yamal",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/6DvOVDpY_aI/hqdefault.jpg",
+    durationSec: 162,
+    language: "nl",
+  },
+  {
     videoId: "Lim8683TbuU",
     url: "https://www.youtube.com/watch?v=Lim8683TbuU",
-    title: "Zondag met Lubach",
+    title: "Staatsgreep Zimbabwe — Zondag met Lubach (S07)",
     channel: "VPRO",
     thumbnail: "https://i.ytimg.com/vi/Lim8683TbuU/hqdefault.jpg",
-    durationSec: null,
-    language: "nl",
-  },
-  {
-    videoId: "Bt7J9fJvJ5Y",
-    url: "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y",
-    title: "NOS Jeugdjournaal",
-    channel: "NOS",
-    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/hqdefault.jpg",
-    durationSec: null,
-    language: "nl",
-  },
-  {
-    videoId: "rTMJP9Um8Bs",
-    url: "https://www.youtube.com/watch?v=rTMJP9Um8Bs",
-    title: "Easy Dutch",
-    channel: "Easy Languages",
-    thumbnail: "https://i.ytimg.com/vi/rTMJP9Um8Bs/hqdefault.jpg",
-    durationSec: null,
-    language: "nl",
-  },
-  {
-    videoId: "hLLMgVTeWXM",
-    url: "https://www.youtube.com/watch?v=hLLMgVTeWXM",
-    title: "Op1 — Highlights",
-    channel: "NPO",
-    thumbnail: "https://i.ytimg.com/vi/hLLMgVTeWXM/hqdefault.jpg",
-    durationSec: null,
+    durationSec: 442,
     language: "nl",
   },
 ];
@@ -238,6 +238,7 @@ export function AppOnboarding({
     }
   });
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const search = useServerFn(searchYouTube);
@@ -302,24 +303,34 @@ export function AppOnboarding({
     if (!term) {
       setResults(null);
       setSearching(false);
+      setSearchError(null);
       return;
     }
     // If it looks like a URL, don't search — let user press the button to load.
     if (/^https?:\/\//i.test(term) || /youtu\.?be/i.test(term)) {
       setResults(null);
+      setSearchError(null);
       return;
     }
     const myId = ++reqIdRef.current;
     setSearching(true);
+    setSearchError(null);
     const t = setTimeout(async () => {
       try {
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
+        if (res.results.length === 0)
+          setSearchError(
+            "No videos matched that search. Try different keywords, or paste a YouTube link directly.",
+          );
         recordSearch(term);
       } catch {
         if (myId !== reqIdRef.current) return;
         setResults([]);
+        setSearchError(
+          "Search is temporarily unavailable right now. You can still paste a YouTube link directly, or pick one of the recommended videos below.",
+        );
       } finally {
         if (myId === reqIdRef.current) setSearching(false);
       }
@@ -543,6 +554,13 @@ export function AppOnboarding({
           </div>
         )}
 
+
+        {/* Search fallback message */}
+        {q.trim() && !searching && searchError && (!results || results.length === 0) && (
+          <p className="mx-auto mt-6 max-w-3xl rounded-xl border border-border bg-card p-3 text-sm text-muted-foreground">
+            {searchError}
+          </p>
+        )}
 
         {/* Search results */}
         {q.trim() && results && results.length > 0 && (

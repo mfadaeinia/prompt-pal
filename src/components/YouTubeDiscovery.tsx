@@ -7,44 +7,27 @@ import { searchYouTube, type YouTubeSearchResult } from "@/lib/youtube-search.fu
 
 type Platform = "youtube" | "spotify" | "netflix";
 
-const POPULAR_EXAMPLES: YouTubeSearchResult[] = [
+const DUTCH_EXTRA: YouTubeSearchResult[] = [
   {
-    videoId: "8jPQjjsBbIc",
-    url: "https://www.youtube.com/watch?v=8jPQjjsBbIc",
-    title: "Inside the mind of a master procrastinator | Tim Urban",
-    channel: "TED",
-    thumbnail: "https://i.ytimg.com/vi/8jPQjjsBbIc/hqdefault.jpg",
-    durationSec: 853,
-    language: "en",
+    videoId: "sgiDZvYZyMQ",
+    url: "https://www.youtube.com/watch?v=sgiDZvYZyMQ",
+    title: "Easy Dutch 1 — Basic Phrases from the streets",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/sgiDZvYZyMQ/hqdefault.jpg",
+    durationSec: 137,
+    language: "nl",
   },
   {
-    videoId: "ZSt9tm3RoUU",
-    url: "https://www.youtube.com/watch?v=ZSt9tm3RoUU",
-    title: "Steve Jobs' 2005 Stanford Commencement Address",
-    channel: "Stanford",
-    thumbnail: "https://i.ytimg.com/vi/ZSt9tm3RoUU/hqdefault.jpg",
-    durationSec: 902,
-    language: "en",
-  },
-  {
-    videoId: "Ks-_Mh1QhMc",
-    url: "https://www.youtube.com/watch?v=Ks-_Mh1QhMc",
-    title: "Your body language may shape who you are | Amy Cuddy",
-    channel: "TED",
-    thumbnail: "https://i.ytimg.com/vi/Ks-_Mh1QhMc/hqdefault.jpg",
-    durationSec: 1262,
-    language: "en",
-  },
-  {
-    videoId: "5MgBikgcWnY",
-    url: "https://www.youtube.com/watch?v=5MgBikgcWnY",
-    title: "The first 20 hours — how to learn anything | Josh Kaufman",
-    channel: "TEDx Talks",
-    thumbnail: "https://i.ytimg.com/vi/5MgBikgcWnY/hqdefault.jpg",
-    durationSec: 1163,
-    language: "en",
+    videoId: "OMToRpHkdjE",
+    url: "https://www.youtube.com/watch?v=OMToRpHkdjE",
+    title: "Tour Around Utrecht (in slow Dutch) | Super Easy Dutch 2",
+    channel: "Easy Languages",
+    thumbnail: "https://i.ytimg.com/vi/OMToRpHkdjE/hqdefault.jpg",
+    durationSec: 267,
+    language: "nl",
   },
 ];
+
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
@@ -224,10 +207,11 @@ export function YouTubeDiscovery({
         const res = await search({ data: { q: term } });
         if (myId !== reqIdRef.current) return;
         setResults(res.results);
-        if (res.results.length === 0) setError("No results. Try different keywords.");
+        if (res.results.length === 0)
+          setError("No videos matched that search. Try different keywords, or clear the search to pick a Dutch example.");
       } catch {
         if (myId !== reqIdRef.current) return;
-        setError("Search is temporarily unavailable. Try a popular example below.");
+        setError("Search is temporarily unavailable right now. Clear the search box to pick a Dutch example, or paste a YouTube link directly.");
         setResults([]);
       } finally {
         if (myId === reqIdRef.current) setSearching(false);
@@ -299,53 +283,11 @@ export function YouTubeDiscovery({
         <div className="space-y-5">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Popular examples</h3>
+              <h3 className="text-sm font-semibold text-foreground">Learn Dutch 🇳🇱</h3>
               <span className="text-xs text-muted-foreground">Tap to analyze instantly</span>
             </div>
             <div className="grid gap-2.5 sm:grid-cols-2">
-              {POPULAR_EXAMPLES.map((r) => (
-                <div
-                  key={r.videoId}
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
-                >
-                  <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg bg-muted sm:w-32">
-                    <img
-                      src={r.thumbnail}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                      {r.title}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {r.channel}
-                    </p>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={loading}
-                      onClick={() => onPick(r.url, r.language)}
-                      className="mt-2 h-7 rounded-full px-3 text-xs"
-                    >
-                      <Sparkles className="mr-1 h-3 w-3" /> Try now
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Learn Dutch 🇳🇱</h3>
-              <span className="text-xs text-muted-foreground">NPO / Jeugdjournaal</span>
-            </div>
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              {DUTCH_EXAMPLES.map((r) => (
+              {[...DUTCH_EXAMPLES, ...DUTCH_EXTRA].map((r) => (
                 <div
                   key={r.videoId}
                   className="group flex items-start gap-3 rounded-xl border border-border bg-card p-2.5 transition hover:border-primary/40"
