@@ -375,7 +375,7 @@ function HowItWorks() {
 /* ============================== COMPARISON ============================== */
 
 function Comparison() {
-  const oldWay = ["Find content", "Miss meaning", "Lose focus", "Give up", "Try again", "Stay stuck"];
+  const oldWay = ["Start watching your favorite content", "Miss meaning", "Lose focus", "Give up", "Try again", "Stay stuck"];
   const newWay = ["Watch what you love", "Understand more", "Stay engaged", "Grow naturally"];
 
   return (
