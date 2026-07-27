@@ -21,6 +21,7 @@ import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import tedLogo from "@/assets/ted-logo.png.asset.json";
+import founderPhoto from "@/assets/founder-mahta.png.asset.json";
 
 /**
  * Mission-first landing — philosophy over features.
@@ -29,9 +30,11 @@ import tedLogo from "@/assets/ted-logo.png.asset.json";
 export function MarketingLanding({
   onStartDemo,
   onSignUp,
+  onFeedback,
 }: {
   onStartDemo: () => void;
   onSignUp: () => void;
+  onFeedback?: () => void;
 }) {
   useEffect(() => {
     track("marketing_landing_seen", {});
@@ -69,6 +72,7 @@ export function MarketingLanding({
         <HowItWorks />
         <Comparison />
         <Features />
+        <FounderNote onFeedback={onFeedback} />
       </div>
     </div>
   );
@@ -531,5 +535,54 @@ function Features() {
     </section>
   );
 }
+
+/* ============================== FOUNDER NOTE ============================== */
+
+function FounderNote({ onFeedback }: { onFeedback?: () => void }) {
+  return (
+    <section className="border-t border-slate-200 bg-[#F8FAFC]">
+      <div className="mx-auto max-w-4xl px-6 py-20 sm:py-24">
+        <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
+          <div className="shrink-0">
+            <div className="h-28 w-28 overflow-hidden rounded-full border-4 border-white shadow-md sm:h-32 sm:w-32">
+              <img
+                src={founderPhoto.url}
+                alt="Mahta, founder of NativeFlow"
+                width={256}
+                height={256}
+                className="h-full w-full object-cover object-top"
+              />
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            <h2
+              className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+              style={heading}
+            >
+              Why I built this.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-700 sm:text-lg">
+              I'm Mahta. I moved to the Netherlands in 2015, and picking up Dutch has been a slow climb ever since — I could follow the gist of a video, but the expressions and slang always slipped past me, and no tool ever explained them well. I'm a software engineer working on medical devices, and I built NativeFlow in the hours I have outside a full-time job and two small kids — so it's still rough in places. If you try it, I'd genuinely like to hear{" "}
+              {onFeedback ? (
+                <button
+                  onClick={onFeedback}
+                  className="font-medium text-blue-600 underline underline-offset-4 transition-colors hover:text-blue-700"
+                >
+                  what's not working
+                </button>
+              ) : (
+                <span className="font-medium text-blue-600">what's not working</span>
+              )}
+              .
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+
 
 
