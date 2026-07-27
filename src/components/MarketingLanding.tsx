@@ -330,8 +330,8 @@ function HowItWorks() {
   const steps = [
     {
       icon: <Search className="h-5 w-5" />,
-      title: "Browse real Dutch videos",
-      body: "Search a curated library of Dutch YouTube content, news, vlogs, interviews. Pick what actually interests you.",
+      title: "Pick your video",
+      body: "Paste your own YouTube link, search for one, or pick from our suggestions.",
     },
     {
       icon: <MousePointerClick className="h-5 w-5" />,
