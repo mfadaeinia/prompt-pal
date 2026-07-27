@@ -138,7 +138,7 @@ function StepperMobile() {
                 </span>
               </div>
               <p className="line-clamp-1 text-[10px] font-medium leading-tight text-muted-foreground">
-                {s.title.replace("Get instant explanations", "Get explanations").replace("Paste a YouTube link", "Paste link")}
+                {s.title.replace("Get instant explanations", "Get explanations").replace("Pick a YouTube link", "Pick link")}
               </p>
             </div>
             {i < STEPS.length - 1 && (
