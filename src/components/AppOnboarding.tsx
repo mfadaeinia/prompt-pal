@@ -73,7 +73,7 @@ const DUTCH_RECOMMENDED: YouTubeSearchResult[] = [
 const STEPS = [
   {
     icon: Link2,
-    title: "Paste a YouTube link",
+    title: "Pick a YouTube link",
     desc: "Paste or search for a Dutch YouTube video.",
   },
   {
