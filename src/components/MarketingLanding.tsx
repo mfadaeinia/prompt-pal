@@ -477,8 +477,8 @@ function Features() {
   const items = [
     {
       icon: <Globe className="h-5 w-5" />,
-      title: "Any Language, Any Content",
-      body: "Learn from the podcasts, videos, and interviews you actually care about — in any language.",
+      title: "Learn Dutch by watching your favorite content",
+      body: "Learn from the podcasts, videos, and interviews\u00a0 available on Youtube.",
     },
     {
       icon: <Zap className="h-5 w-5" />,
