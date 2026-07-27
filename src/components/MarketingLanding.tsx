@@ -562,7 +562,7 @@ function FounderNote({ onFeedback }: { onFeedback?: () => void }) {
               Why I built this.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-700 sm:text-lg">
-              I'm Mahta. I moved to the Netherlands in 2015, and picking up Dutch has been a slow climb ever since — I could follow the gist of a video, but the expressions and slang always slipped past me, and no tool ever explained them well. I'm a software engineer working on medical devices, and I built NativeFlow in the hours I have outside a full-time job and two small kids — so it's still rough in places. If you try it, I'd genuinely like to hear{" "}
+              I'm Mahta. I moved to the Netherlands in 2015, and picking up Dutch has been a slow climb ever since, I could follow the gist of a video, but the expressions and slang always slipped past me, and no tool ever explained them well. I'm a software engineer working on medical devices, and I built NativeFlow in the hours I have outside a full-time job and two small kids , so it's still rough in places. If you try it, I'd genuinely like to hear{" "}
               {onFeedback ? (
                 <button
                   onClick={onFeedback}
