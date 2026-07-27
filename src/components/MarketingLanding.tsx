@@ -493,7 +493,7 @@ function Features() {
     {
       icon: <Languages className="h-5 w-5" />,
       title: "Stay in the Flow",
-      body: "Never pause, search, or switch tabs. Stay immersed in the content you love.",
+      body: "Never search, or switch tabs. Stay immersed in the content you love.",
     },
   ];
   return (
