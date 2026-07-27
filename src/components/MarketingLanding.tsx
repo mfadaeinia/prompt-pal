@@ -21,6 +21,7 @@ import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import tedLogo from "@/assets/ted-logo.png.asset.json";
+import founderPhoto from "@/assets/founder-mahta.png.asset.json";
 
 /**
  * Mission-first landing — philosophy over features.
@@ -29,9 +30,11 @@ import tedLogo from "@/assets/ted-logo.png.asset.json";
 export function MarketingLanding({
   onStartDemo,
   onSignUp,
+  onFeedback,
 }: {
   onStartDemo: () => void;
   onSignUp: () => void;
+  onFeedback?: () => void;
 }) {
   useEffect(() => {
     track("marketing_landing_seen", {});
@@ -69,6 +72,7 @@ export function MarketingLanding({
         <HowItWorks />
         <Comparison />
         <Features />
+        <FounderNote onFeedback={onFeedback} />
       </div>
     </div>
   );
