@@ -2520,8 +2520,7 @@ function Index() {
             pendingActionRef.current = () => setView("app");
             setAuthOpen(true);
           }}
-
-
+          onFeedback={openFeedbackManually}
         />
       )}
 
