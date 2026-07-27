@@ -331,7 +331,7 @@ function HowItWorks() {
     {
       icon: <Search className="h-5 w-5" />,
       title: "Browse real Dutch videos",
-      body: "Search a curated library of Dutch YouTube content — news, vlogs, interviews. Pick what actually interests you.",
+      body: "Search a curated library of Dutch YouTube content, news, vlogs, interviews. Pick what actually interests you.",
     },
     {
       icon: <MousePointerClick className="h-5 w-5" />,
