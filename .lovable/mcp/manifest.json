@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://bnwsjmfjjfptecjzmzgi.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "nativeflow-mcp",
+      "version": "0.1.0",
+      "title": "NativeFlow"
+    },
+    "tools": [
+      {
+        "name": "list_saved_expressions",
+        "title": "List saved expressions",
+        "description": "List the sentences and expressions the signed-in user saved while watching videos in NativeFlow, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "How many to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "search": {
+              "description": "Optional text filter on the saved sentence.",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_saved_videos",
+        "title": "List saved videos",
+        "description": "List the YouTube videos the signed-in user saved to their NativeFlow library, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "How many to return (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "save_video",
+        "title": "Save a video",
+        "description": "Save a YouTube video to the signed-in user's NativeFlow library so they can study it with sentence-level explanations.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "video": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A YouTube URL or an 11-character video id."
+            },
+            "title": {
+              "description": "Optional title to store with the video.",
+              "type": "string"
+            },
+            "target_language": {
+              "description": "Language being learned, e.g. 'nl'.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "video"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_saved_video",
+        "title": "Remove a saved video",
+        "description": "Remove a video from the signed-in user's NativeFlow library by its saved row id.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The id returned by list_saved_videos."
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
