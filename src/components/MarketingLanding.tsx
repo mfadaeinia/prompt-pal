@@ -482,17 +482,17 @@ function Features() {
     },
     {
       icon: <Zap className="h-5 w-5" />,
-      title: "Comprehension On Demand",
+      title: "Comprehension on demand",
       body: "Get the exact support you need, exactly when you need it , then keep watching.",
     },
     {
       icon: <Bookmark className="h-5 w-5" />,
-      title: "Build Your Own Learning Path",
+      title: "Build your own learning path",
       body: "Save expressions, revisit them, and watch your understanding grow over time.",
     },
     {
       icon: <Languages className="h-5 w-5" />,
-      title: "Stay in the Flow",
+      title: "Stay in the flow",
       body: "Never search, or switch tabs. Stay immersed in the content you love.",
     },
   ];
