@@ -132,7 +132,13 @@ export function getLandingVariant(): string {
 export function track(event: string, props?: Record<string, any>) {
   if (typeof window === "undefined") return;
   // Ensure is_test_user is always on the event payload (in addition to super property)
-  const enrichedProps = { ...(props ?? {}), is_test_user: isTestUser() };
+  const variant = getLandingVariant();
+  const enrichedProps = {
+    ...(props ?? {}),
+    is_test_user: isTestUser(),
+    ...(variant ? { landing_variant: variant } : {}),
+  };
+
   try {
     const debug =
       new URLSearchParams(window.location.search).get("debug") === "1" ||
