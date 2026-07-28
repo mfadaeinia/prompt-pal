@@ -12,11 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as McpRouteImport } from './routes/mcp'
-import { Route as LibraryRouteImport } from './routes/library'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryIndexRouteImport } from './routes/library.index'
+import { Route as LibraryLevelRouteImport } from './routes/library.$level'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
@@ -46,11 +46,6 @@ const McpRoute = McpRouteImport.update({
   path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FounderRoute = FounderRouteImport.update({
   id: '/founder',
   path: '/founder',
@@ -67,9 +62,14 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryIndexRoute = LibraryIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LibraryRoute,
+  id: '/library/',
+  path: '/library/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryLevelRoute = LibraryLevelRouteImport.update({
+  id: '/library/$level',
+  path: '/library/$level',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
@@ -148,12 +148,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
-  '/library': typeof LibraryRouteWithChildren
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/library/$level': typeof LibraryLevelRoute
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -176,6 +176,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/library/$level': typeof LibraryLevelRoute
   '/library': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -194,12 +195,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
-  '/library': typeof LibraryRouteWithChildren
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/library/$level': typeof LibraryLevelRoute
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -219,12 +220,12 @@ export interface FileRouteTypes {
     | '/'
     | '/english-learners'
     | '/founder'
-    | '/library'
     | '/mcp'
     | '/saved'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/library/$level'
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -247,6 +248,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/library/$level'
     | '/library'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -264,12 +266,12 @@ export interface FileRouteTypes {
     | '/'
     | '/english-learners'
     | '/founder'
-    | '/library'
     | '/mcp'
     | '/saved'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/library/$level'
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -288,12 +290,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EnglishLearnersRoute: typeof EnglishLearnersRoute
   FounderRoute: typeof FounderRoute
-  LibraryRoute: typeof LibraryRouteWithChildren
   McpRoute: typeof McpRoute
   SavedRoute: typeof SavedRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  LibraryLevelRoute: typeof LibraryLevelRoute
+  LibraryIndexRoute: typeof LibraryIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAsrBenchmarkRunRoute: typeof ApiPublicAsrBenchmarkRunRoute
@@ -330,13 +333,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/founder': {
       id: '/founder'
       path: '/founder'
@@ -360,10 +356,17 @@ declare module '@tanstack/react-router' {
     }
     '/library/': {
       id: '/library/'
-      path: '/'
+      path: '/library'
       fullPath: '/library/'
       preLoaderRoute: typeof LibraryIndexRouteImport
-      parentRoute: typeof LibraryRoute
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/$level': {
+      id: '/library/$level'
+      path: '/library/$level'
+      fullPath: '/library/$level'
+      preLoaderRoute: typeof LibraryLevelRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -459,28 +462,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface LibraryRouteChildren {
-  LibraryIndexRoute: typeof LibraryIndexRoute
-}
-
-const LibraryRouteChildren: LibraryRouteChildren = {
-  LibraryIndexRoute: LibraryIndexRoute,
-}
-
-const LibraryRouteWithChildren =
-  LibraryRoute._addFileChildren(LibraryRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EnglishLearnersRoute: EnglishLearnersRoute,
   FounderRoute: FounderRoute,
-  LibraryRoute: LibraryRouteWithChildren,
   McpRoute: McpRoute,
   SavedRoute: SavedRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  LibraryLevelRoute: LibraryLevelRoute,
+  LibraryIndexRoute: LibraryIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAsrBenchmarkRunRoute: ApiPublicAsrBenchmarkRunRoute,
