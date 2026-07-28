@@ -52,6 +52,7 @@ import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsP
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
+import { LibraryStrip } from "@/components/LibraryStrip";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
@@ -182,6 +183,8 @@ function Index() {
     if (start === "app") return "app";
     return "landing";
   });
+
+  const [tryUrl, setTryUrl] = useState("");
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPlayNudge, setShowPlayNudge] = useState(false);
@@ -3228,6 +3231,68 @@ function Index() {
               )}
 
             </div>
+            )}
+
+            {/* You may also like — curated library recommendations. */}
+            <LibraryStrip
+              source="player"
+              title="You may also like"
+              subtitle="Curated videos at a similar level and topic."
+              similarTo={videoId}
+              showLevels={false}
+              showFeatured={false}
+              limit={4}
+              onPick={(u, lang) => {
+                setUrl(u);
+                if (lang) setTargetLang(lang);
+                submitLoad(u);
+                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+              }}
+              className="mt-8"
+            />
+
+            {/* After the demo: turn the visitor into a doer. */}
+            {isDemo && (
+              <section className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
+                <h2 className="text-lg font-bold text-foreground sm:text-xl">
+                  Now try it yourself
+                </h2>
+                <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                  Search any YouTube video or start with one of our curated lessons.
+                </p>
+                <form
+                  className="mx-auto mt-4 flex max-w-md items-center gap-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const u = tryUrl.trim();
+                    if (!u) return;
+                    track("try_it_yourself_submitted", { from: "post_demo" });
+                    setUrl(u);
+                    submitLoad(u);
+                    setTryUrl("");
+                    requestAnimationFrame(() =>
+                      window.scrollTo({ top: 0, behavior: "smooth" }),
+                    );
+                  }}
+                >
+                  <Input
+                    value={tryUrl}
+                    onChange={(e) => setTryUrl(e.target.value)}
+                    placeholder="Paste a YouTube link…"
+                    className="h-11 flex-1 rounded-xl"
+                  />
+                  <Button type="submit" className="h-11 rounded-xl px-4">
+                    Start
+                  </Button>
+                </form>
+                <div className="mt-3">
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/library" onClick={() => track("library_opened", { source: "post_demo" })}>
+                      Browse Library
+                    </Link>
+                  </Button>
+                </div>
+              </section>
             )}
 
             {/* Supporting/marketing content lives BELOW the product. */}
