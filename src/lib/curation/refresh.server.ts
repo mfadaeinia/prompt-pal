@@ -264,6 +264,35 @@ export async function runWeeklyRefresh(opts?: {
     inserted = rows.length;
   }
 
+  // 4b. Backfill missing durations for anything already in the catalogue.
+  const { data: missing } = await supabaseAdmin
+    .from("curated_videos" as any)
+    .select("id, external_id")
+    .eq("status", "active")
+    .is("duration_sec", null)
+    .limit(80);
+  const missRows = (missing ?? []) as any[];
+  if (missRows.length) {
+    const { fetchYoutubeDuration } = await import("./providers.server");
+    const q = [...missRows];
+    await Promise.all(
+      Array.from({ length: 6 }, async () => {
+        for (;;) {
+          const r = q.shift();
+          if (!r) return;
+          const d = await fetchYoutubeDuration(r.external_id);
+          if (d) {
+            await supabaseAdmin
+              .from("curated_videos" as any)
+              .update({ duration_sec: d })
+              .eq("id", r.id);
+          }
+        }
+      }),
+    );
+  }
+
+
   // 5. Retire stale, non-evergreen rows beyond the catalogue target.
   let retired = 0;
   const { data: all } = await supabaseAdmin
