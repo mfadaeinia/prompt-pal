@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LibraryStrip } from "@/components/LibraryStrip";
 import {
   searchYouTube,
   type YouTubeSearchResult,
@@ -346,6 +347,9 @@ export function AppOnboarding({
       onPick(term);
     }
   }
+
+  const hasActivity =
+    Boolean(lastVideo) || savedVideos.length > 0 || recentSearches.length > 0;
 
   const visibleRecommended = showAll
     ? DUTCH_RECOMMENDED
