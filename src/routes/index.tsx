@@ -174,8 +174,15 @@ function Index() {
   const [manualText, setManualText] = useState("");
   const [view, setView] = useState<"landing" | "demo" | "app">(() => {
     if (typeof window === "undefined") return "landing";
-    return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("v")) return "demo";
+    // Entry from a marketing landing variant (e.g. /english-learners)
+    const start = params.get("start");
+    if (start === "demo") return "demo";
+    if (start === "app") return "app";
+    return "landing";
   });
+
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPlayNudge, setShowPlayNudge] = useState(false);
   const hasInteractedWithSentenceRef = useRef(false);
