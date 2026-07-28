@@ -174,8 +174,15 @@ function Index() {
   const [manualText, setManualText] = useState("");
   const [view, setView] = useState<"landing" | "demo" | "app">(() => {
     if (typeof window === "undefined") return "landing";
-    return new URLSearchParams(window.location.search).get("v") ? "demo" : "landing";
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("v")) return "demo";
+    // Entry from a marketing landing variant (e.g. /english-learners)
+    const start = params.get("start");
+    if (start === "demo") return "demo";
+    if (start === "app") return "app";
+    return "landing";
   });
+
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPlayNudge, setShowPlayNudge] = useState(false);
   const hasInteractedWithSentenceRef = useRef(false);
@@ -338,6 +345,26 @@ function Index() {
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Arriving from a marketing landing variant with ?start=app — if the visitor
+  // isn't signed in yet, open the auth dialog and remember the intent.
+  const startIntentRef = useRef(false);
+  useEffect(() => {
+    if (startIntentRef.current) return;
+    if (typeof window === "undefined" || authLoading) return;
+    const params = new URLSearchParams(window.location.search);
+    const start = params.get("start");
+    if (!start) return;
+    startIntentRef.current = true;
+    if (start === "app" && !isAuthenticated) {
+      sessionStorage.setItem("nativeflow_post_auth_intent", "enter_app");
+      pendingActionRef.current = () => setView("app");
+      setAuthOpen(true);
+    }
+    params.delete("start");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, [authLoading, isAuthenticated]);
 
 
   // Auto-load a video when arriving from a saved-library link (e.g. /?url=...)

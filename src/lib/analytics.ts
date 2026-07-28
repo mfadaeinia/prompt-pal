@@ -100,10 +100,45 @@ export function setUserProperties(props: Record<string, any>) {
   } catch {}
 }
 
+const LANDING_VARIANT_KEY = "nativeflow_landing_variant";
+
+/**
+ * Tag the current visitor with the marketing landing variant they arrived
+ * through (A/B experiment). Stored locally + registered as a PostHog super
+ * property so every downstream event (login, search, watch) carries it.
+ */
+export function setLandingVariant(variant: string) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LANDING_VARIANT_KEY, variant);
+  } catch {}
+  try {
+    posthog.register({ landing_variant: variant });
+    posthog.setPersonProperties?.({ landing_variant: variant });
+  } catch {}
+}
+
+export function getLandingVariant(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(LANDING_VARIANT_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+
+
 export function track(event: string, props?: Record<string, any>) {
   if (typeof window === "undefined") return;
   // Ensure is_test_user is always on the event payload (in addition to super property)
-  const enrichedProps = { ...(props ?? {}), is_test_user: isTestUser() };
+  const variant = getLandingVariant();
+  const enrichedProps = {
+    ...(props ?? {}),
+    is_test_user: isTestUser(),
+    ...(variant ? { landing_variant: variant } : {}),
+  };
+
   try {
     const debug =
       new URLSearchParams(window.location.search).get("debug") === "1" ||

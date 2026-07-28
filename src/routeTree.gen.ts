@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as FounderRouteImport } from './routes/founder'
+import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -45,6 +46,11 @@ const McpRoute = McpRouteImport.update({
 const FounderRoute = FounderRouteImport.update({
   id: '/founder',
   path: '/founder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnglishLearnersRoute = EnglishLearnersRouteImport.update({
+  id: '/english-learners',
+  path: '/english-learners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -122,6 +128,7 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
@@ -161,6 +169,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/english-learners'
     | '/founder'
     | '/mcp'
     | '/saved'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/english-learners'
     | '/founder'
     | '/mcp'
     | '/saved'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/english-learners'
     | '/founder'
     | '/mcp'
     | '/saved'
@@ -240,6 +252,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EnglishLearnersRoute: typeof EnglishLearnersRoute
   FounderRoute: typeof FounderRoute
   McpRoute: typeof McpRoute
   SavedRoute: typeof SavedRoute
@@ -286,6 +299,13 @@ declare module '@tanstack/react-router' {
       path: '/founder'
       fullPath: '/founder'
       preLoaderRoute: typeof FounderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/english-learners': {
+      id: '/english-learners'
+      path: '/english-learners'
+      fullPath: '/english-learners'
+      preLoaderRoute: typeof EnglishLearnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -384,6 +404,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EnglishLearnersRoute: EnglishLearnersRoute,
   FounderRoute: FounderRoute,
   McpRoute: McpRoute,
   SavedRoute: SavedRoute,
