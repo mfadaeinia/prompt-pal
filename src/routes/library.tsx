@@ -165,9 +165,11 @@ function VideoCard({
               {LEVEL_DOT[v.cefr_level]} {v.cefr_level}
             </span>
           ) : <span />}
-          <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">
-            {fmtDuration(v.duration_sec)}
-          </span>
+          {v.duration_sec ? (
+            <span className="rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">
+              {fmtDuration(v.duration_sec)}
+            </span>
+          ) : null}
         </div>
       </div>
 
