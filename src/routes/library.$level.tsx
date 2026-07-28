@@ -41,7 +41,7 @@ export const Route = createFileRoute("/library/$level")({
       ],
     };
   },
-  beforeLoad: ({ params }) => {
+  loader: ({ params }) => {
     if (!parseLevel(params.level)) throw notFound();
   },
   component: LevelPage,
