@@ -371,6 +371,141 @@ export type Database = {
         }
         Relationships: []
       }
+      curated_sources: {
+        Row: {
+          created_at: string
+          default_category: string | null
+          external_id: string
+          id: string
+          is_active: boolean
+          language: string
+          name: string
+          notes: string | null
+          provider: string
+          quality_rating: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_category?: string | null
+          external_id: string
+          id?: string
+          is_active?: boolean
+          language?: string
+          name: string
+          notes?: string | null
+          provider?: string
+          quality_rating?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_category?: string | null
+          external_id?: string
+          id?: string
+          is_active?: boolean
+          language?: string
+          name?: string
+          notes?: string | null
+          provider?: string
+          quality_rating?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      curated_videos: {
+        Row: {
+          added_at: string
+          category: string | null
+          cefr_level: Database["public"]["Enums"]["cefr_level"] | null
+          channel: string
+          channel_external_id: string | null
+          created_at: string
+          difficulty_score: number | null
+          duration_sec: number | null
+          external_id: string
+          featured_week: string | null
+          has_subtitles: boolean
+          id: string
+          is_evergreen: boolean
+          language: string
+          popularity: number
+          provider: string
+          published_at: string | null
+          quality_score: number
+          refreshed_at: string
+          speaking_speed: Database["public"]["Enums"]["speaking_speed"] | null
+          status: string
+          summary: string | null
+          thumbnail_url: string | null
+          title: string
+          topics: string[]
+          updated_at: string
+          url: string
+          words_per_minute: number | null
+        }
+        Insert: {
+          added_at?: string
+          category?: string | null
+          cefr_level?: Database["public"]["Enums"]["cefr_level"] | null
+          channel: string
+          channel_external_id?: string | null
+          created_at?: string
+          difficulty_score?: number | null
+          duration_sec?: number | null
+          external_id: string
+          featured_week?: string | null
+          has_subtitles?: boolean
+          id?: string
+          is_evergreen?: boolean
+          language?: string
+          popularity?: number
+          provider?: string
+          published_at?: string | null
+          quality_score?: number
+          refreshed_at?: string
+          speaking_speed?: Database["public"]["Enums"]["speaking_speed"] | null
+          status?: string
+          summary?: string | null
+          thumbnail_url?: string | null
+          title: string
+          topics?: string[]
+          updated_at?: string
+          url: string
+          words_per_minute?: number | null
+        }
+        Update: {
+          added_at?: string
+          category?: string | null
+          cefr_level?: Database["public"]["Enums"]["cefr_level"] | null
+          channel?: string
+          channel_external_id?: string | null
+          created_at?: string
+          difficulty_score?: number | null
+          duration_sec?: number | null
+          external_id?: string
+          featured_week?: string | null
+          has_subtitles?: boolean
+          id?: string
+          is_evergreen?: boolean
+          language?: string
+          popularity?: number
+          provider?: string
+          published_at?: string | null
+          quality_score?: number
+          refreshed_at?: string
+          speaking_speed?: Database["public"]["Enums"]["speaking_speed"] | null
+          status?: string
+          summary?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          topics?: string[]
+          updated_at?: string
+          url?: string
+          words_per_minute?: number | null
+        }
+        Relationships: []
+      }
       dutch_media_items: {
         Row: {
           category: string
@@ -1074,6 +1209,65 @@ export type Database = {
         }
         Relationships: []
       }
+      user_learning_prefs: {
+        Row: {
+          created_at: string
+          preferred_categories: string[]
+          target_level: Database["public"]["Enums"]["cefr_level"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          preferred_categories?: string[]
+          target_level?: Database["public"]["Enums"]["cefr_level"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          preferred_categories?: string[]
+          target_level?: Database["public"]["Enums"]["cefr_level"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      video_interactions: {
+        Row: {
+          created_at: string
+          curated_video_id: string
+          id: string
+          kind: Database["public"]["Enums"]["interaction_kind"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          curated_video_id: string
+          id?: string
+          kind: Database["public"]["Enums"]["interaction_kind"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          curated_video_id?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["interaction_kind"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_interactions_curated_video_id_fkey"
+            columns: ["curated_video_id"]
+            isOneToOne: false
+            referencedRelation: "curated_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_sessions: {
         Row: {
           acquisition_source: string | null
@@ -1287,7 +1481,9 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      cefr_level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+      interaction_kind: "bookmark" | "watched" | "like" | "dislike"
+      speaking_speed: "slow" | "normal" | "fast"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1414,6 +1610,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      cefr_level: ["A1", "A2", "B1", "B2", "C1", "C2"],
+      interaction_kind: ["bookmark", "watched", "like", "dislike"],
+      speaking_speed: ["slow", "normal", "fast"],
+    },
   },
 } as const
