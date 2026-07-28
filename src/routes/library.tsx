@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Play,
   Heart,
@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Loader2,
   Gauge,
+  Clock,
 } from "lucide-react";
 import {
   listCuratedVideos,
@@ -206,7 +207,19 @@ function VideoCard({
 
         <div className="mt-auto flex items-center gap-1 pt-2">
           <Button asChild size="sm" className="h-8 flex-1 text-xs">
-            <Link to="/" search={{ v: v.external_id } as never}>
+            <Link
+              to="/"
+              search={{ v: v.url } as never}
+              onClick={() =>
+                track("library_video_selected", {
+                  source: "library_page",
+                  video_id: v.external_id,
+                  level: v.cefr_level,
+                  category: v.category,
+                  featured: Boolean(featured),
+                })
+              }
+            >
               <Play className="mr-1 h-3.5 w-3.5" /> Open in NativeFlow
             </Link>
           </Button>
@@ -331,11 +344,19 @@ function LibraryPage() {
     speeds: [],
     sort: "personal",
   });
-  const toggleIn = (key: keyof Filters, value: string) =>
+  useEffect(() => {
+    track("library_opened", { source: "library_page" });
+  }, []);
+
+  const toggleIn = (key: keyof Filters, value: string) => {
+    if (key === "levels") track("cefr_filter_used", { source: "library_page", level: value });
+    if (key === "categories") track("category_filter_used", { source: "library_page", category: value });
+    return
     setFilters((f) => {
       const arr = f[key] as string[];
       return { ...f, [key]: arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value] };
     });
+  };
 
   const all = videosQ.data?.items ?? [];
 
@@ -386,6 +407,14 @@ function LibraryPage() {
       .sort((a, b) => Number(b.quality_score) - Number(a.quality_score))
       .slice(0, 10);
   }, [all]);
+
+  const recentlyAdded = useMemo(
+    () =>
+      [...all]
+        .sort((a, b) => (b.added_at ?? "").localeCompare(a.added_at ?? ""))
+        .slice(0, 10),
+    [all],
+  );
 
   const handleInteract = (v: CuratedVideo, kind: InteractionKind, on: boolean) => {
     if (!isAuthenticated) {
@@ -468,6 +497,25 @@ function LibraryPage() {
                   {featured.map((v) => (
                     <VideoCard
                       key={v.id}
+                      v={v}
+                      featured
+                      interactions={interactionSet}
+                      onInteract={handleInteract}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {recentlyAdded.length > 0 && (
+              <section className="mb-10">
+                <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                  <Clock className="h-5 w-5 text-primary" /> Recently added
+                </h2>
+                <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2">
+                  {recentlyAdded.map((v) => (
+                    <VideoCard
+                      key={`recent-${v.id}`}
                       v={v}
                       featured
                       interactions={interactionSet}

@@ -17,6 +17,7 @@ import {
   MousePointerClick,
 } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { LibraryStrip } from "@/components/LibraryStrip";
 import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
@@ -72,6 +73,7 @@ export function MarketingLanding({
         <HowItWorks />
         <Comparison />
         <Features />
+        <LibraryPromo />
         <FounderNote onFeedback={onFeedback} />
       </div>
     </div>
@@ -537,6 +539,32 @@ function Features() {
 }
 
 /* ============================== FOUNDER NOTE ============================== */
+
+function LibraryPromo() {
+  return (
+    <section className="border-t border-slate-200 bg-white">
+      <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Explore our curated library
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-base text-slate-600">
+            Don't know where to start? Choose from professionally curated YouTube videos
+            organized by level and topic.
+          </p>
+        </div>
+        <div className="mt-8">
+          <LibraryStrip
+            source="landing"
+            title="Weekly picks and beginner-friendly lessons"
+            subtitle="Filter by CEFR level and jump straight into a lesson."
+            limit={4}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function FounderNote({ onFeedback }: { onFeedback?: () => void }) {
   return (
