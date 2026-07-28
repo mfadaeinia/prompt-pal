@@ -519,8 +519,11 @@ function splitOversize(
       out.push(s);
       continue;
     }
+    // Clause boundaries: punctuation first, then coordinating/subordinating
+    // conjunctions in Dutch and English.
     const splitPattern =
-      /[,;:—–]\s+|\s+(?:and|but|so|because|or|then|however|while|although)\s+/gi;
+      /[,;:—–]\s+|\s+(?:and|but|so|because|or|then|however|while|although|en|maar|want|omdat|dus|of|terwijl|hoewel|zodat|totdat|dan|daarom|toen)\s+/gi;
+
     const parts: string[] = [];
     let last = 0;
     let m: RegExpExecArray | null;
