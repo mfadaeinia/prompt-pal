@@ -67,8 +67,29 @@ async function fetchDuration(videoId: string): Promise<number | null> {
       /* next mirror */
     }
   }
+  // Fallback: parse lengthSeconds from the watch page.
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      signal: ctrl.signal,
+      headers: { "user-agent": "Mozilla/5.0", "accept-language": "en" },
+    });
+    clearTimeout(t);
+    if (r.ok) {
+      const html = await r.text();
+      const m = html.match(/"lengthSeconds":"(\d+)"/);
+      if (m) return Number(m[1]) || null;
+    }
+  } catch {
+    /* give up */
+  }
   return null;
 }
+
+/** Exposed so the refresh job can backfill durations for existing rows. */
+export const fetchYoutubeDuration = fetchDuration;
+
 
 export const youtubeProvider: ContentProvider = {
   id: "youtube",
