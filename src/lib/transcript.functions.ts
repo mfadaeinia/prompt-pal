@@ -305,16 +305,42 @@ function segmentByPunctuation(
 
   const decoded = decodeEntities(joined);
   const out: TranscriptSentence[] = [];
-  const sentenceRegex = /[^.!?\n]+[.!?]+|[^.!?\n]+$/g;
   let id = 0;
-  let match: RegExpExecArray | null;
-  while ((match = sentenceRegex.exec(decoded)) !== null) {
-    const text = match[0].trim();
-    if (!text) continue;
-    const startChar = match.index;
+
+  const pushSeg = (startChar: number, endChar: number) => {
+    const text = decoded.slice(startChar, endChar).trim();
+    if (!text) return;
     const startTime = charTime[Math.min(startChar, charTime.length - 1)] ?? 0;
     out.push({ id: id++, text, offset: startTime, duration: 0, endTime: 0 });
+  };
+
+  let segStart = 0;
+  for (let i = 0; i < decoded.length; i++) {
+    const ch = decoded[i];
+    if (ch === "\n") {
+      pushSeg(segStart, i);
+      segStart = i + 1;
+      continue;
+    }
+    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+
+    // Consume runs like "?!" or "..."
+    let end = i;
+    while (end + 1 < decoded.length && /[.!?]/.test(decoded[end + 1])) end++;
+    // Include a trailing closing quote/bracket in the sentence.
+    if (end + 1 < decoded.length && /["'”’)\]]/.test(decoded[end + 1])) end++;
+
+    if (isFalseSentenceBoundary(decoded, i, end)) {
+      i = end;
+      continue;
+    }
+
+    pushSeg(segStart, end + 1);
+    segStart = end + 1;
+    i = end;
   }
+  pushSeg(segStart, decoded.length);
+
   for (let i = 0; i < out.length; i++) {
     const cur = out[i];
     const next = out[i + 1];
@@ -322,6 +348,58 @@ function segmentByPunctuation(
   }
   return out;
 }
+
+// Common abbreviations (Dutch + English) that end in a period but do NOT end
+// a sentence. Matched case-insensitively against the token before the dot.
+const ABBREVIATIONS = new Set([
+  // Dutch
+  "bijv", "bv", "bijvb", "enz", "etc", "d.w.z", "dwz", "o.a", "oa", "m.a.w",
+  "maw", "t.o.v", "tov", "i.p.v", "ipv", "dhr", "mevr", "mw", "drs", "ir",
+  "ing", "prof", "dr", "nr", "blz", "jl", "a.u.b", "aub", "z.o.z", "ca",
+  "incl", "excl", "max", "min", "evt", "ong", "st", "pag", "afb", "red",
+  // English
+  "mr", "mrs", "ms", "vs", "e.g", "eg", "i.e", "ie", "approx", "fig", "no",
+  "jr", "sr", "inc", "ltd", "co", "dept", "est", "al",
+]);
+
+// True when the punctuation at [dotStart..dotEnd] should NOT split a sentence:
+// abbreviations, decimals/ordinals, single-letter initials, or when the next
+// visible character continues the same clause (lowercase word).
+function isFalseSentenceBoundary(
+  text: string,
+  dotStart: number,
+  dotEnd: number,
+): boolean {
+  const isDotRun = text.slice(dotStart, dotEnd + 1).replace(/["'”’)\]]/g, "") === ".";
+  if (!isDotRun) return false; // "!" / "?" / "..." are real boundaries
+
+  const before = text.slice(0, dotStart);
+  const after = text.slice(dotEnd + 1);
+
+  // Decimal or numbered list: 1.5 / 3.14
+  if (/\d$/.test(before) && /^\d/.test(after)) return true;
+
+  // Token immediately before the dot.
+  const tokenMatch = before.match(/([\p{L}\p{N}.]+)$/u);
+  const token = tokenMatch ? tokenMatch[1].replace(/\.$/, "") : "";
+  if (token && ABBREVIATIONS.has(token.toLowerCase())) return true;
+
+  // Single-letter initial: "J. de Vries", "d.w.z."
+  if (/^\p{L}$/u.test(token)) return true;
+
+  // No whitespace after the dot and the next char is a letter → mid-token dot.
+  if (/^\p{L}/u.test(after)) return true;
+
+  // Sentence must be followed by something that looks like a new sentence.
+  const nextVisible = after.match(/^\s+(\S)/u);
+  if (nextVisible && /[\p{Ll}]/u.test(nextVisible[1])) {
+    // Lowercase continuation after a period is usually caption noise.
+    return true;
+  }
+
+  return false;
+}
+
 
 // Fallback segmentation: walk raw chunks and emit a segment when we hit a
 // target word count, a large timing gap between chunks, or punctuation.
