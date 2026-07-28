@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LibraryRouteImport } from './routes/library'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,6 +20,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
 import { Route as ApiPublicProductProbeRouteImport } from './routes/api/public/product-probe'
+import { Route as ApiPublicCurateRefreshRouteImport } from './routes/api/public/curate-refresh'
 import { Route as ApiPublicAsrProbeProgressiveRouteImport } from './routes/api/public/asr-probe-progressive'
 import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
 import { Route as ApiPublicAsrBenchmarkRunRouteImport } from './routes/api/public/asr-benchmark-run'
@@ -41,6 +43,11 @@ const SavedRoute = SavedRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FounderRoute = FounderRouteImport.update({
@@ -79,6 +86,11 @@ const ApiPublicTranscriptStreamRoute =
 const ApiPublicProductProbeRoute = ApiPublicProductProbeRouteImport.update({
   id: '/api/public/product-probe',
   path: '/api/public/product-probe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCurateRefreshRoute = ApiPublicCurateRefreshRouteImport.update({
+  id: '/api/public/curate-refresh',
+  path: '/api/public/curate-refresh',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAsrProbeProgressiveRoute =
@@ -130,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
+  '/library': typeof LibraryRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -140,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
+  '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -150,6 +164,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
+  '/library': typeof LibraryRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -160,6 +175,7 @@ export interface FileRoutesByTo {
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
+  '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -171,6 +187,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
+  '/library': typeof LibraryRoute
   '/mcp': typeof McpRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -181,6 +198,7 @@ export interface FileRoutesById {
   '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
   '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
   '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
+  '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
   '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -193,6 +211,7 @@ export interface FileRouteTypes {
     | '/'
     | '/english-learners'
     | '/founder'
+    | '/library'
     | '/mcp'
     | '/saved'
     | '/sitemap.xml'
@@ -203,6 +222,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
+    | '/api/public/curate-refresh'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
@@ -213,6 +233,7 @@ export interface FileRouteTypes {
     | '/'
     | '/english-learners'
     | '/founder'
+    | '/library'
     | '/mcp'
     | '/saved'
     | '/sitemap.xml'
@@ -223,6 +244,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
+    | '/api/public/curate-refresh'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
@@ -233,6 +255,7 @@ export interface FileRouteTypes {
     | '/'
     | '/english-learners'
     | '/founder'
+    | '/library'
     | '/mcp'
     | '/saved'
     | '/sitemap.xml'
@@ -243,6 +266,7 @@ export interface FileRouteTypes {
     | '/api/public/asr-benchmark-run'
     | '/api/public/asr-probe'
     | '/api/public/asr-probe-progressive'
+    | '/api/public/curate-refresh'
     | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
@@ -254,6 +278,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EnglishLearnersRoute: typeof EnglishLearnersRoute
   FounderRoute: typeof FounderRoute
+  LibraryRoute: typeof LibraryRoute
   McpRoute: typeof McpRoute
   SavedRoute: typeof SavedRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -264,6 +289,7 @@ export interface RootRouteChildren {
   ApiPublicAsrBenchmarkRunRoute: typeof ApiPublicAsrBenchmarkRunRoute
   ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
   ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
+  ApiPublicCurateRefreshRoute: typeof ApiPublicCurateRefreshRoute
   ApiPublicProductProbeRoute: typeof ApiPublicProductProbeRoute
   ApiPublicTranscriptStreamRoute: typeof ApiPublicTranscriptStreamRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -292,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/founder': {
@@ -341,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/product-probe'
       fullPath: '/api/public/product-probe'
       preLoaderRoute: typeof ApiPublicProductProbeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/curate-refresh': {
+      id: '/api/public/curate-refresh'
+      path: '/api/public/curate-refresh'
+      fullPath: '/api/public/curate-refresh'
+      preLoaderRoute: typeof ApiPublicCurateRefreshRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/asr-probe-progressive': {
@@ -406,6 +446,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EnglishLearnersRoute: EnglishLearnersRoute,
   FounderRoute: FounderRoute,
+  LibraryRoute: LibraryRoute,
   McpRoute: McpRoute,
   SavedRoute: SavedRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -417,6 +458,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAsrBenchmarkRunRoute: ApiPublicAsrBenchmarkRunRoute,
   ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
   ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
+  ApiPublicCurateRefreshRoute: ApiPublicCurateRefreshRoute,
   ApiPublicProductProbeRoute: ApiPublicProductProbeRoute,
   ApiPublicTranscriptStreamRoute: ApiPublicTranscriptStreamRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

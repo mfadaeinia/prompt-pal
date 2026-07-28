@@ -2433,6 +2433,14 @@ function Index() {
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <button onClick={() => navTo("why")} className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline">Why NativeFlow</button>
+            <Link
+              to="/library"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Library
+            </Link>
+
+
             
             {devPanelEnabled && (
               <Link
