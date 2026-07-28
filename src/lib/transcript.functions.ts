@@ -487,7 +487,9 @@ function mergeTinyFragments(
   minWords = 3,
 ): TranscriptSentence[] {
   if (segs.length <= 1) return segs;
-  const valid = /^(yes|no|ok|okay|hi|hello|thanks|thank you|right|sure|exactly|maybe|wow|hmm|huh|nope|yeah|yep|absolutely)[.!?…]*$/i;
+  const valid =
+    /^(yes|no|ok|okay|hi|hello|thanks|thank you|right|sure|exactly|maybe|wow|hmm|huh|nope|yeah|yep|absolutely|ja|nee|nou|oké|oke|hoi|hallo|dank je|dankjewel|bedankt|precies|klopt|natuurlijk|misschien|echt|zeker|inderdaad|goed|prima|tuurlijk)[.!?…]*$/i;
+
   const out: TranscriptSentence[] = [];
   for (const s of segs) {
     const w = wordCount(s.text);
