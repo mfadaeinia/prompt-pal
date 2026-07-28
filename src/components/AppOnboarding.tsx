@@ -554,6 +554,28 @@ export function AppOnboarding({
           </div>
         )}
 
+        {/* Curated library — secondary discovery path, always below search. */}
+        {!q.trim() && (
+          <div className="mx-auto mt-8 max-w-5xl">
+            {hasActivity ? (
+              <LibraryStrip
+                source="hub"
+                title="Explore more from the Library"
+                subtitle="Curated Dutch videos organized by level and topic."
+                onPick={onPick}
+              />
+            ) : (
+              <LibraryStrip
+                source="empty_state"
+                title="Start with one of our curated lessons"
+                subtitle="Not sure what to watch? Browse our curated learning library — featured picks and beginner-friendly videos."
+                onPick={onPick}
+              />
+            )}
+          </div>
+        )}
+
+
 
         {/* Search fallback message */}
         {q.trim() && !searching && searchError && (!results || results.length === 0) && (
