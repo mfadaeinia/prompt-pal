@@ -129,7 +129,7 @@ export async function runWeeklyRefresh(opts?: {
   targetCatalogue?: number;
 }): Promise<RefreshResult> {
   const perSource = opts?.perSource ?? 8;
-  const maxNew = opts?.maxNew ?? 30;
+  const maxNew = opts?.maxNew ?? 60;
   const targetCatalogue = opts?.targetCatalogue ?? 100;
   const week = weekStart();
   const skipped: Record<string, number> = {};
