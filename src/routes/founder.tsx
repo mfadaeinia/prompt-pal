@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { SOURCE_BUCKETS, SOURCE_LABELS, type SourceBucket } from "@/lib/source-bucket";
+import { getLibraryHealth, revalidateLibrary } from "@/lib/library-health.functions";
+
 import {
   getLibraryMetrics,
   getSentenceClickDebug,
