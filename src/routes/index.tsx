@@ -1419,7 +1419,11 @@ function Index() {
   // this — it allocates the next request seq, resets transcript-bound UI
   // state synchronously (so the previous video's transcript can never linger
   // on screen), and submits the mutation with the seq attached.
-  const submitLoad = (u: string, spokenLanguageOverride?: string) => {
+  const submitLoad = (u: string, spokenLanguageOverrideRaw?: string) => {
+    // Defensive: callers sometimes pass a human-readable label ("Dutch").
+    // The caption pipeline needs ISO-639-1, otherwise the requested track
+    // doesn't exist and YouTube falls back to an English (auto-translated) one.
+    const spokenLanguageOverride = normalizeSpokenLang(spokenLanguageOverrideRaw);
     const requestedId = extractVideoIdClient(u);
     console.log("[lang-pipeline][client] submitLoad", {
       url: u,
