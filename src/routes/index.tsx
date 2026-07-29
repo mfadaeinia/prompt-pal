@@ -2786,7 +2786,8 @@ function Index() {
 
 
 
-            {transcriptStatus === "failed" ? (
+            {transcriptStatus === "failed" &&
+            errorPanelDismissedFor !== (videoId ?? "unknown") ? (
               <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
                 <h2 className="text-lg font-semibold">
                   This video cannot be used in Learning Mode
