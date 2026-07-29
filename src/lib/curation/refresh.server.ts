@@ -344,7 +344,12 @@ export async function runWeeklyRefresh(opts?: {
     kept: withSubs.length,
     inserted,
     featured: rows.length,
+    revalidated,
+    deactivated: deactivatedVideos.length,
+    rejectedCandidates,
+    deactivatedVideos,
     retired,
+
     skipped,
   };
 }
