@@ -318,61 +318,8 @@ export async function runWeeklyRefresh(opts?: {
     );
   }
 
-  // 4c. Revalidate the whole active catalogue: anything private, removed or
-  // no longer embeddable is deactivated immediately so learners never see it.
-  {
-    const { data: activeRows } = await supabaseAdmin
-      .from("curated_videos" as any)
-      .select("id, external_id, title, url, duration_sec, cefr_level")
-      .eq("status", "active");
-    const active = (activeRows ?? []) as any[];
-    revalidated = active.length;
-    const checks = await mapLimit(active, 5, async (row) => ({
-      row,
-      result: await validateVideo({
-        videoId: row.external_id,
-        durationSec: row.duration_sec,
-        cefrLevel: row.cefr_level,
-        // Transcript probes are rate-limited; don't drop a working video just
-        // because the probe was throttled during revalidation.
-        checkTranscript: true,
-        lenientTranscript: true,
-      }),
-    }));
-    const nowIso = new Date().toISOString();
-    for (const { row, result } of checks) {
-      if (result.ok) {
-        await supabaseAdmin
-          .from("curated_videos" as any)
-          .update({
-            is_embeddable: true,
-            validation_status: "ok",
-            validation_reason: null,
-            validated_at: nowIso,
-          })
-          .eq("id", row.id);
-        continue;
-      }
-      await supabaseAdmin
-        .from("curated_videos" as any)
-        .update({
-          status: "inactive",
-          is_embeddable: result.embeddable,
-          validation_status: result.code,
-          validation_reason: result.reason,
-          validated_at: nowIso,
-        })
-        .eq("id", row.id);
-      deactivatedVideos.push({
-        id: row.id,
-        externalId: row.external_id,
-        title: row.title,
-        url: row.url,
-        reason: result.reason,
-        code: result.code,
-      });
-    }
-  }
+
+
 
 
   // 5. Retire stale, non-evergreen rows beyond the catalogue target.
