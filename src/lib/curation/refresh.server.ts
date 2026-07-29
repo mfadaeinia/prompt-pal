@@ -120,6 +120,10 @@ export type RefreshResult = {
   inserted: number;
   featured: number;
   retired: number;
+  revalidated: number;
+  deactivated: number;
+  rejectedCandidates: ValidationFailure[];
+  deactivatedVideos: ValidationFailure[];
   skipped: Record<string, number>;
 };
 
@@ -134,6 +138,10 @@ export async function runWeeklyRefresh(opts?: {
   const week = weekStart();
   const skipped: Record<string, number> = {};
   const bump = (k: string) => (skipped[k] = (skipped[k] ?? 0) + 1);
+  const rejectedCandidates: ValidationFailure[] = [];
+  const deactivatedVideos: ValidationFailure[] = [];
+  let revalidated = 0;
+
 
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
