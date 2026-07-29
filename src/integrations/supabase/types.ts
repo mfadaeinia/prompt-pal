@@ -427,6 +427,7 @@ export type Database = {
           featured_week: string | null
           has_subtitles: boolean
           id: string
+          is_embeddable: boolean
           is_evergreen: boolean
           language: string
           popularity: number
@@ -442,6 +443,9 @@ export type Database = {
           topics: string[]
           updated_at: string
           url: string
+          validated_at: string | null
+          validation_reason: string | null
+          validation_status: string
           words_per_minute: number | null
         }
         Insert: {
@@ -457,6 +461,7 @@ export type Database = {
           featured_week?: string | null
           has_subtitles?: boolean
           id?: string
+          is_embeddable?: boolean
           is_evergreen?: boolean
           language?: string
           popularity?: number
@@ -472,6 +477,9 @@ export type Database = {
           topics?: string[]
           updated_at?: string
           url: string
+          validated_at?: string | null
+          validation_reason?: string | null
+          validation_status?: string
           words_per_minute?: number | null
         }
         Update: {
@@ -487,6 +495,7 @@ export type Database = {
           featured_week?: string | null
           has_subtitles?: boolean
           id?: string
+          is_embeddable?: boolean
           is_evergreen?: boolean
           language?: string
           popularity?: number
@@ -502,6 +511,9 @@ export type Database = {
           topics?: string[]
           updated_at?: string
           url?: string
+          validated_at?: string | null
+          validation_reason?: string | null
+          validation_status?: string
           words_per_minute?: number | null
         }
         Relationships: []

@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { SOURCE_BUCKETS, SOURCE_LABELS, type SourceBucket } from "@/lib/source-bucket";
+import { getLibraryHealth, revalidateLibrary } from "@/lib/library-health.functions";
+
 import {
   getLibraryMetrics,
   getSentenceClickDebug,
@@ -52,6 +54,152 @@ export const Route = createFileRoute("/founder")({
 });
 
 const AUTH_KEY = "founder-auth-v1";
+const TOKEN_KEY = "founder-token-v1";
+
+/** Curated Library validation report: videos that need replacing and why. */
+function LibraryHealthSection() {
+  const fetchHealth = useServerFn(getLibraryHealth);
+  const runRevalidate = useServerFn(revalidateLibrary);
+  const [busy, setBusy] = useState(false);
+  const token = typeof window !== "undefined" ? (sessionStorage.getItem(TOKEN_KEY) ?? "") : "";
+
+  const q = useQuery({
+    queryKey: ["library-health"],
+    queryFn: () => fetchHealth({ data: { token } }),
+    enabled: !!token,
+  });
+
+  if (!token) {
+    return (
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-slate-900">Library validation</h2>
+        <p className="text-sm text-slate-500">Sign in again to load the validation report.</p>
+      </section>
+    );
+  }
+
+  const h = q.data;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Library validation</h2>
+          <p className="text-sm text-slate-500">
+            Videos are checked for availability, embedding, transcript and CEFR level. Failing
+            videos are hidden from learners automatically.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await runRevalidate({ data: { token } });
+              await q.refetch();
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="shrink-0 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {busy ? "Checking…" : "Revalidate now"}
+        </button>
+      </div>
+
+      {q.isLoading && <p className="text-sm text-slate-500">Loading report…</p>}
+      {q.error && (
+        <p className="text-sm text-red-600">
+          {q.error instanceof Error ? q.error.message : "Failed to load report"}
+        </p>
+      )}
+
+      {h && (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="text-xs text-slate-500">Playable in Library</div>
+              <div className="text-2xl font-bold tabular-nums text-slate-900">{h.active}</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="text-xs text-slate-500">Need replacement</div>
+              <div className="text-2xl font-bold tabular-nums text-red-600">
+                {h.needsReplacement}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="text-xs text-slate-500">Never validated</div>
+              <div className="text-2xl font-bold tabular-nums text-slate-900">
+                {h.neverValidated}
+              </div>
+            </div>
+          </div>
+
+          {h.byReason.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {h.byReason.map((r) => (
+                <span
+                  key={r.code}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                >
+                  {r.reason}: {r.count}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {h.items.length === 0 ? (
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              Every curated video passed validation. Nothing to replace.
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">Video</th>
+                    <th className="px-3 py-2">Level</th>
+                    <th className="px-3 py-2">Reason</th>
+                    <th className="px-3 py-2">Checked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {h.items.map((it) => (
+                    <tr key={it.id} className="border-t border-slate-100">
+                      <td className="px-3 py-2">
+                        <a
+                          href={it.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-slate-900 underline-offset-2 hover:underline"
+                        >
+                          {it.title}
+                        </a>
+                        <div className="text-xs text-slate-500">{it.channel}</div>
+                      </td>
+                      <td className="px-3 py-2 text-slate-600">{it.cefrLevel ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                          {it.reason}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-slate-500">
+                        {it.validatedAt ? new Date(it.validatedAt).toLocaleString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+
 
 function FounderGate() {
   const [authed, setAuthed] = useState(false);
@@ -82,7 +230,9 @@ function FounderGate() {
             const res = await verify({ data: { password } });
             if (res.ok) {
               sessionStorage.setItem(AUTH_KEY, "1");
+              sessionStorage.setItem(TOKEN_KEY, res.token);
               setAuthed(true);
+
             } else {
               setError("Incorrect password");
             }
@@ -470,7 +620,13 @@ function FounderPage() {
         )}
 
         {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
-        {tab === "health" && <ProductHealthSection tx={txQ.data} />}
+        {tab === "health" && (
+          <div className="space-y-6">
+            <ProductHealthSection tx={txQ.data} />
+            <LibraryHealthSection />
+          </div>
+        )}
+
         {tab === "feedback" && data && <FeedbackTab m={data} />}
         {tab === "engineering" && (
           <div className="space-y-6">

@@ -54,15 +54,15 @@ function weekStart(d = new Date()): string {
   return x.toISOString().slice(0, 10);
 }
 
-async function hasSubtitles(videoId: string): Promise<boolean> {
-  try {
-    const { YoutubeTranscript } = await import("youtube-transcript");
-    const r = await YoutubeTranscript.fetchTranscript(videoId);
-    return Array.isArray(r) && r.length > 3;
-  } catch {
-    return false;
-  }
-}
+export type ValidationFailure = {
+  id?: string;
+  externalId: string;
+  title: string;
+  url: string;
+  reason: string;
+  code: string;
+};
+
 
 async function enrich(
   batch: RawCandidate[],
@@ -113,13 +113,86 @@ Return ONLY a JSON array, no markdown.`,
   return map;
 }
 
+/**
+ * Re-check every active curated video. Private / removed / non-embeddable
+ * videos are switched to `inactive` so they disappear from the Library, and the
+ * reason is stored for the admin report.
+ */
+export async function revalidateCatalogue(): Promise<{
+  revalidated: number;
+  deactivated: ValidationFailure[];
+}> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { validateVideo, mapLimit } = await import("./validate.server");
+
+  const { data: activeRows } = await supabaseAdmin
+    .from("curated_videos" as any)
+    .select("id, external_id, title, url, duration_sec, cefr_level")
+    .eq("status", "active");
+  const active = (activeRows ?? []) as any[];
+
+  const checks = await mapLimit(active, 5, async (row) => ({
+    row,
+    result: await validateVideo({
+      videoId: row.external_id,
+      durationSec: row.duration_sec,
+      cefrLevel: row.cefr_level,
+      // Transcript probes are rate-limited from this host; don't drop a working
+      // video just because the probe was throttled.
+      lenientTranscript: true,
+    }),
+  }));
+
+  const deactivated: ValidationFailure[] = [];
+  const nowIso = new Date().toISOString();
+  for (const { row, result } of checks) {
+    if (result.ok) {
+      await supabaseAdmin
+        .from("curated_videos" as any)
+        .update({
+          is_embeddable: true,
+          validation_status: "ok",
+          validation_reason: null,
+          validated_at: nowIso,
+        })
+        .eq("id", row.id);
+      continue;
+    }
+    await supabaseAdmin
+      .from("curated_videos" as any)
+      .update({
+        status: "inactive",
+        is_embeddable: result.embeddable,
+        validation_status: result.code,
+        validation_reason: result.reason,
+        validated_at: nowIso,
+      })
+      .eq("id", row.id);
+    deactivated.push({
+      id: row.id,
+      externalId: row.external_id,
+      title: row.title,
+      url: row.url,
+      reason: result.reason,
+      code: result.code,
+    });
+  }
+
+  return { revalidated: active.length, deactivated };
+}
+
 export type RefreshResult = {
+
   week: string;
   candidates: number;
   kept: number;
   inserted: number;
   featured: number;
   retired: number;
+  revalidated: number;
+  deactivated: number;
+  rejectedCandidates: ValidationFailure[];
+  deactivatedVideos: ValidationFailure[];
   skipped: Record<string, number>;
 };
 
@@ -134,11 +207,22 @@ export async function runWeeklyRefresh(opts?: {
   const week = weekStart();
   const skipped: Record<string, number> = {};
   const bump = (k: string) => (skipped[k] = (skipped[k] ?? 0) + 1);
+  const rejectedCandidates: ValidationFailure[] = [];
+  const deactivatedVideos: ValidationFailure[] = [];
+  let revalidated = 0;
+
 
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  // 0. Revalidate what we already publish before adding anything new.
+  const reval = await revalidateCatalogue();
+  revalidated = reval.revalidated;
+  deactivatedVideos.push(...reval.deactivated);
+
+
 
   const { data: sourceRows, error: srcErr } = await supabaseAdmin
     .from("curated_sources" as any)
@@ -175,31 +259,49 @@ export async function runWeeklyRefresh(opts?: {
   pool.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
   pool = pool.slice(0, maxNew * 2);
 
-  // 3. Subtitle check (quality gate), bounded concurrency.
-  const withSubs: RawCandidate[] = [];
-  const rejected: RawCandidate[] = [];
-  const queue = [...pool];
-  await Promise.all(
-    Array.from({ length: 4 }, async () => {
-      for (;;) {
-        if (withSubs.length >= maxNew) return;
-        const item = queue.shift();
-        if (!item) return;
-        if (await hasSubtitles(item.externalId)) withSubs.push(item);
-        else rejected.push(item);
-      }
+  // 3. Full validation gate: public + embeddable + usable transcript.
+  const { validateVideo, mapLimit } = await import("./validate.server");
+  const gate = await mapLimit(pool, 4, async (item) => ({
+    item,
+    result: await validateVideo({
+      videoId: item.externalId,
+      durationSec: item.durationSec,
+      // CEFR is assigned later by the AI pass; checked before insert below.
+      checkTranscript: true,
     }),
-  );
-  if (withSubs.length === 0 && rejected.length > 0) {
-    // The caption probe is rate-limited/blocked from this host — every single
-    // candidate "failed". Trusting the sources (all subtitle-rich broadcasters)
-    // is better than shipping an empty library; the transcript pipeline has its
-    // own fallbacks at watch time.
-    bump("subtitle_probe_unavailable");
-    withSubs.push(...rejected.slice(0, maxNew));
-  } else {
-    for (let i = 0; i < rejected.length; i++) bump("no_subtitles");
+  }));
+
+  const withSubs: RawCandidate[] = [];
+  for (const g of gate) {
+    if (withSubs.length >= maxNew) break;
+    if (g.result.ok) {
+      withSubs.push(g.item);
+      continue;
+    }
+    bump(g.result.code);
+    rejectedCandidates.push({
+      externalId: g.item.externalId,
+      title: g.item.title,
+      url: g.item.url,
+      reason: g.result.reason,
+      code: g.result.code,
+    });
   }
+
+  // The caption probe is sometimes rate-limited from this host. If *every*
+  // candidate failed on transcript alone (never on availability/embedding),
+  // fall back to trusting the sources — the watch-time pipeline has its own
+  // transcript fallbacks. Non-embeddable/private videos are never let through.
+  if (withSubs.length === 0) {
+    const transcriptOnly = gate.filter(
+      (g) => g.result.code === "transcript_unavailable" && g.result.embeddable,
+    );
+    if (transcriptOnly.length) {
+      bump("subtitle_probe_unavailable");
+      withSubs.push(...transcriptOnly.slice(0, maxNew).map((g) => g.item));
+    }
+  }
+
 
 
   if (!withSubs.length) {
@@ -210,8 +312,13 @@ export async function runWeeklyRefresh(opts?: {
       inserted: 0,
       featured: 0,
       retired: 0,
+      revalidated,
+      deactivated: deactivatedVideos.length,
+      rejectedCandidates,
+      deactivatedVideos,
       skipped,
     };
+
   }
 
   // 4. AI enrichment in chunks.
@@ -226,7 +333,9 @@ export async function runWeeklyRefresh(opts?: {
     .map((c) => {
       const e = enriched.get(c.externalId);
       if (!e) return (bump("no_enrichment"), null);
+      if (!LEVELS.includes(e.cefr)) return (bump("missing_cefr"), null);
       if (e.reject || e.quality < 0.45) return (bump("low_quality"), null);
+
       return {
         provider: c.provider,
         external_id: c.externalId,
@@ -250,7 +359,12 @@ export async function runWeeklyRefresh(opts?: {
         popularity: c.popularity,
         featured_week: week,
         status: "active",
+        is_embeddable: true,
+        validation_status: "ok",
+        validation_reason: null,
+        validated_at: new Date().toISOString(),
         refreshed_at: new Date().toISOString(),
+
       };
     })
     .filter(Boolean) as any[];
@@ -293,6 +407,9 @@ export async function runWeeklyRefresh(opts?: {
   }
 
 
+
+
+
   // 5. Retire stale, non-evergreen rows beyond the catalogue target.
   let retired = 0;
   const { data: all } = await supabaseAdmin
@@ -326,7 +443,12 @@ export async function runWeeklyRefresh(opts?: {
     kept: withSubs.length,
     inserted,
     featured: rows.length,
+    revalidated,
+    deactivated: deactivatedVideos.length,
+    rejectedCandidates,
+    deactivatedVideos,
     retired,
+
     skipped,
   };
 }

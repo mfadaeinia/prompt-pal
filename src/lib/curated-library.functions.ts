@@ -62,6 +62,8 @@ export const listCuratedVideos = createServerFn({ method: "POST" })
       .from("curated_videos" as any)
       .select(SELECT)
       .eq("status", "active")
+      .eq("is_embeddable", true)
+
       .order("published_at", { ascending: false })
       .limit(data.limit ?? 200);
     if (error) throw new Error(error.message);
