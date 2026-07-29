@@ -21,16 +21,10 @@ export type LibraryHealth = {
   items: LibraryHealthItem[];
 };
 
-function requireFounder(token: string) {
-  const expected = process.env.FOUNDER_PASSWORD;
-  if (!expected || token !== expected) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-}
-
 export const getLibraryHealth = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ token: z.string().max(200) }).parse(d))
   .handler(async ({ data }): Promise<LibraryHealth> => {
+    const { requireFounder } = await import("./library-health.server");
     requireFounder(data.token);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -90,6 +84,7 @@ export const getLibraryHealth = createServerFn({ method: "POST" })
 export const revalidateLibrary = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ token: z.string().max(200) }).parse(d))
   .handler(async ({ data }) => {
+    const { requireFounder } = await import("./library-health.server");
     requireFounder(data.token);
     const { revalidateCatalogue } = await import("./curation/refresh.server");
     const res = await revalidateCatalogue();
