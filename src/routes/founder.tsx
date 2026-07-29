@@ -474,7 +474,13 @@ function FounderPage() {
         )}
 
         {tab === "cohort" && cohortQ.data && <TesterCohortSection m={cohortQ.data} />}
-        {tab === "health" && <ProductHealthSection tx={txQ.data} />}
+        {tab === "health" && (
+          <div className="space-y-6">
+            <ProductHealthSection tx={txQ.data} />
+            <LibraryHealthSection />
+          </div>
+        )}
+
         {tab === "feedback" && data && <FeedbackTab m={data} />}
         {tab === "engineering" && (
           <div className="space-y-6">
