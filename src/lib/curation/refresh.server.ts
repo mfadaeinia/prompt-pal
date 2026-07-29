@@ -175,31 +175,49 @@ export async function runWeeklyRefresh(opts?: {
   pool.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
   pool = pool.slice(0, maxNew * 2);
 
-  // 3. Subtitle check (quality gate), bounded concurrency.
-  const withSubs: RawCandidate[] = [];
-  const rejected: RawCandidate[] = [];
-  const queue = [...pool];
-  await Promise.all(
-    Array.from({ length: 4 }, async () => {
-      for (;;) {
-        if (withSubs.length >= maxNew) return;
-        const item = queue.shift();
-        if (!item) return;
-        if (await hasSubtitles(item.externalId)) withSubs.push(item);
-        else rejected.push(item);
-      }
+  // 3. Full validation gate: public + embeddable + usable transcript.
+  const { validateVideo, mapLimit } = await import("./validate.server");
+  const gate = await mapLimit(pool, 4, async (item) => ({
+    item,
+    result: await validateVideo({
+      videoId: item.externalId,
+      durationSec: item.durationSec,
+      // CEFR is assigned later by the AI pass; checked before insert below.
+      checkTranscript: true,
     }),
-  );
-  if (withSubs.length === 0 && rejected.length > 0) {
-    // The caption probe is rate-limited/blocked from this host — every single
-    // candidate "failed". Trusting the sources (all subtitle-rich broadcasters)
-    // is better than shipping an empty library; the transcript pipeline has its
-    // own fallbacks at watch time.
-    bump("subtitle_probe_unavailable");
-    withSubs.push(...rejected.slice(0, maxNew));
-  } else {
-    for (let i = 0; i < rejected.length; i++) bump("no_subtitles");
+  }));
+
+  const withSubs: RawCandidate[] = [];
+  for (const g of gate) {
+    if (withSubs.length >= maxNew) break;
+    if (g.result.ok) {
+      withSubs.push(g.item);
+      continue;
+    }
+    bump(g.result.code);
+    rejectedCandidates.push({
+      externalId: g.item.externalId,
+      title: g.item.title,
+      url: g.item.url,
+      reason: g.result.reason,
+      code: g.result.code,
+    });
   }
+
+  // The caption probe is sometimes rate-limited from this host. If *every*
+  // candidate failed on transcript alone (never on availability/embedding),
+  // fall back to trusting the sources — the watch-time pipeline has its own
+  // transcript fallbacks. Non-embeddable/private videos are never let through.
+  if (withSubs.length === 0) {
+    const transcriptOnly = gate.filter(
+      (g) => g.result.code === "transcript_unavailable" && g.result.embeddable,
+    );
+    if (transcriptOnly.length) {
+      bump("subtitle_probe_unavailable");
+      withSubs.push(...transcriptOnly.slice(0, maxNew).map((g) => g.item));
+    }
+  }
+
 
 
   if (!withSubs.length) {
