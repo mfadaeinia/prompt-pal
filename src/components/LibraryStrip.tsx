@@ -167,7 +167,10 @@ export function LibraryStrip({
     if (kind === "featured") track("weekly_featured_clicked", { source, video_id: v.external_id });
     if (onPick) {
       track("library_to_watch", { source, video_id: v.external_id });
-      onPick(v.url, "Dutch");
+      // Pass the SPOKEN language of the video as an ISO-639-1 code so the
+      // transcript pipeline fetches the original (Dutch) captions — never a
+      // human-readable label, which would be an invalid caption track.
+      onPick(v.url, (v.language || "nl").toLowerCase().split(/[-_]/)[0]);
     } else if (typeof window !== "undefined") {
       window.location.href = `/?v=${encodeURIComponent(v.url)}`;
     }
