@@ -204,7 +204,7 @@ export function classifyExtractorFailure(args: {
  * resolves to a downloadable link, fails, or we exhaust the polling budget.
  */
 const POLL_INTERVAL_MS = 3_000;
-const POLL_MAX_MS = 45_000;
+const POLL_MAX_MS = EXTRACT_BUDGET_MS;
 
 async function extractAudioUrl(
   videoId: string,
@@ -317,10 +317,13 @@ async function extractAudioUrl(
 async function downloadAudio(
   audioUrl: string,
   trace: OpenAiAsrTrace,
+  budgetMs: number = DOWNLOAD_BUDGET_MS,
 ): Promise<{ bytes: Uint8Array; contentType: string } | null> {
   const tDl = Date.now();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), Math.max(1_000, budgetMs));
   try {
-    const res = await fetch(audioUrl);
+    const res = await fetch(audioUrl, { signal: ctrl.signal });
     trace.audio_download_status = res.status;
     if (!res.ok) {
       trace.failureCode = "audio_download_failed";
@@ -352,6 +355,8 @@ async function downloadAudio(
     trace.audioExtractError = e instanceof Error ? e.message : String(e);
     trace.audio_download_ms = Date.now() - tDl;
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
