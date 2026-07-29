@@ -3244,8 +3244,10 @@ function Index() {
               limit={4}
               onPick={(u, lang) => {
                 setUrl(u);
-                if (lang) setTargetLang(lang);
-                submitLoad(u);
+                // `lang` is the language SPOKEN in the video, not the
+                // explanation language — never touch targetLang here.
+                if (lang) setSpokenLang(lang);
+                submitLoad(u, lang);
                 requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
               }}
               className="mt-8"
