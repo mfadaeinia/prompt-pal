@@ -52,6 +52,8 @@ export const Route = createFileRoute("/founder")({
 });
 
 const AUTH_KEY = "founder-auth-v1";
+const TOKEN_KEY = "founder-token-v1";
+
 
 function FounderGate() {
   const [authed, setAuthed] = useState(false);
