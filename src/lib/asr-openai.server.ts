@@ -385,12 +385,22 @@ export async function transcribeWithOpenAi(params: {
     return { result: null, trace };
   }
 
-  // Overall timeout guard.
+  // Overall guard. Each stage additionally gets its own budget so a slow
+  // earlier stage can no longer masquerade as an OpenAI timeout.
   const deadline = tStart + TOTAL_TIMEOUT_MS;
   const remainingMs = () => Math.max(0, deadline - Date.now());
+  stageLog(params.videoId, "fallback_started", { budgets: trace.budgets });
 
   // 1. Audio URL
+  trace.stage = "extract";
+  stageLog(params.videoId, "audio_extraction_started");
   const audioUrl = await extractAudioUrl(params.videoId, trace);
+  stageLog(params.videoId, "audio_extraction_completed", {
+    ms: trace.extractor_latency_ms,
+    found: trace.audio_url_found,
+    polls: trace.rapidapi_poll_attempts,
+    failureCode: trace.failureCode,
+  });
   if (!audioUrl) {
     trace.extractor_failure_reason = classifyExtractorFailure({
       httpStatus: trace.rapidapi_http_status,
@@ -402,25 +412,35 @@ export async function transcribeWithOpenAi(params: {
     return { result: null, trace };
   }
 
-  if (remainingMs() <= 0) {
-    trace.failureCode = "asr_timeout";
-    trace.durationMs = Date.now() - tStart;
-    return { result: null, trace };
-  }
-
   // 2. Download bytes
-  const audio = await downloadAudio(audioUrl, trace);
+  trace.stage = "download";
+  stageLog(params.videoId, "audio_download_started", { url: audioUrl.slice(0, 120) });
+  const audio = await downloadAudio(audioUrl, trace, Math.min(DOWNLOAD_BUDGET_MS, remainingMs()));
+  stageLog(params.videoId, "audio_download_completed", {
+    ms: trace.audio_download_ms,
+    sizeMb: trace.audio_size_mb,
+    httpStatus: trace.audio_download_status,
+    mime: audio?.contentType ?? null,
+    filename: "audio.mp3",
+    failureCode: trace.failureCode,
+  });
   if (!audio) {
-    trace.durationMs = Date.now() - tStart;
-    return { result: null, trace };
-  }
-  if (remainingMs() <= 0) {
-    trace.failureCode = "asr_timeout";
     trace.durationMs = Date.now() - tStart;
     return { result: null, trace };
   }
 
   // 3. OpenAI transcription
+  const openaiBudget = Math.min(OPENAI_BUDGET_MS, remainingMs());
+  if (openaiBudget < OPENAI_MIN_BUDGET_MS) {
+    // Explicit, non-misleading: we never dispatched the request.
+    trace.stage = "openai_request";
+    trace.failureCode = "openai_not_reached_budget_exhausted";
+    trace.errorMessage = `only ${openaiBudget}ms left after extract(${trace.extractor_latency_ms}ms) + download(${trace.audio_download_ms}ms)`;
+    trace.durationMs = Date.now() - tStart;
+    stageLog(params.videoId, "openai_request_skipped", { reason: trace.errorMessage });
+    return { result: null, trace };
+  }
+
   try {
     const form = new FormData();
     const audioBuffer = audio.bytes.buffer.slice(
@@ -439,7 +459,17 @@ export async function transcribeWithOpenAi(params: {
     }
 
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), remainingMs());
+    const timer = setTimeout(() => ctrl.abort(), openaiBudget);
+    // Set BEFORE the request leaves — this flag must never be inferred from
+    // httpStatus, which stays null whenever the request aborts or throws.
+    trace.stage = "openai_request";
+    trace.openaiInvoked = true;
+    stageLog(params.videoId, "openai_request_started", {
+      model: DEFAULT_MODEL,
+      timeoutMs: openaiBudget,
+      sizeMb: trace.audio_size_mb,
+      mime: audio.contentType,
+    });
     let res: Response;
     const tOa = Date.now();
     try {
