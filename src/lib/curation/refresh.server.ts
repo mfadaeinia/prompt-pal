@@ -54,15 +54,15 @@ function weekStart(d = new Date()): string {
   return x.toISOString().slice(0, 10);
 }
 
-async function hasSubtitles(videoId: string): Promise<boolean> {
-  try {
-    const { YoutubeTranscript } = await import("youtube-transcript");
-    const r = await YoutubeTranscript.fetchTranscript(videoId);
-    return Array.isArray(r) && r.length > 3;
-  } catch {
-    return false;
-  }
-}
+export type ValidationFailure = {
+  id?: string;
+  externalId: string;
+  title: string;
+  url: string;
+  reason: string;
+  code: string;
+};
+
 
 async function enrich(
   batch: RawCandidate[],
