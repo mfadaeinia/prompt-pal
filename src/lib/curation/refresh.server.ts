@@ -350,7 +350,12 @@ export async function runWeeklyRefresh(opts?: {
         popularity: c.popularity,
         featured_week: week,
         status: "active",
+        is_embeddable: true,
+        validation_status: "ok",
+        validation_reason: null,
+        validated_at: new Date().toISOString(),
         refreshed_at: new Date().toISOString(),
+
       };
     })
     .filter(Boolean) as any[];
