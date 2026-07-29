@@ -216,6 +216,9 @@ function Index() {
   // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
   const [focusMode, setFocusMode] = useState(false);
+  // Video id for which the "cannot be used in Learning Mode" panel was dismissed
+  // via "Back to Watch Mode" — lets the learner keep watching the video.
+  const [errorPanelDismissedFor, setErrorPanelDismissedFor] = useState<string | null>(null);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
