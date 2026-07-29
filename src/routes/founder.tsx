@@ -82,7 +82,9 @@ function FounderGate() {
             const res = await verify({ data: { password } });
             if (res.ok) {
               sessionStorage.setItem(AUTH_KEY, "1");
+              sessionStorage.setItem(TOKEN_KEY, res.token);
               setAuthed(true);
+
             } else {
               setError("Incorrect password");
             }
