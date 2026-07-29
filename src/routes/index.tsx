@@ -2819,6 +2819,17 @@ function Index() {
                     onClick={() => {
                       setStudyMode(false);
                       setSelected(null);
+                      setFocusMode(true);
+                      setErrorPanelDismissedFor(videoId ?? "unknown");
+                      track("study_mode_closed", { video_id: videoId });
+                      if (typeof window !== "undefined") {
+                        window.requestAnimationFrame(() => {
+                          iframeRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                        });
+                      }
                     }}
                   >
                     Back to Watch Mode
