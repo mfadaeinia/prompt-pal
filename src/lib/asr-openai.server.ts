@@ -489,6 +489,11 @@ export async function transcribeWithOpenAi(params: {
     }
     trace.openai_request_ms = Date.now() - tOa;
     trace.httpStatus = res.status;
+    trace.stage = "parse";
+    stageLog(params.videoId, "openai_request_completed", {
+      ms: trace.openai_request_ms,
+      httpStatus: res.status,
+    });
     const bodyText = await res.text().catch(() => "");
     if (!res.ok) {
       trace.failureCode = classifyOpenAiStatus(res.status);
@@ -552,6 +557,12 @@ export async function transcribeWithOpenAi(params: {
     }
 
     trace.durationMs = Date.now() - tStart;
+    trace.stage = "done";
+    stageLog(params.videoId, "fallback_completed", {
+      totalMs: trace.durationMs,
+      chunks: chunks.length,
+      language: trace.language,
+    });
     return {
       result: { chunks, language: trace.language, model: DEFAULT_MODEL },
       trace,
@@ -562,6 +573,13 @@ export async function transcribeWithOpenAi(params: {
     else trace.failureCode = trace.failureCode ?? "unknown";
     trace.errorMessage = msg;
     trace.durationMs = Date.now() - tStart;
+    stageLog(params.videoId, "fallback_failed", {
+      stage: trace.stage,
+      openaiInvoked: trace.openaiInvoked,
+      failureCode: trace.failureCode,
+      totalMs: trace.durationMs,
+      message: msg,
+    });
     return { result: null, trace };
   }
 }

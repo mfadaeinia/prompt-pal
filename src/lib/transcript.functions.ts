@@ -92,6 +92,10 @@ export type GenericAsrTrace = {
   failureCode: string | null;
   /** Audio-extractor (e.g. RapidAPI youtube-mp36) diagnostics — populated
    *  for providers that go through an extractor step (currently OpenAI). */
+  /** True only once the OpenAI request has actually been dispatched. */
+  openaiInvoked?: boolean;
+  /** Last pipeline stage entered by the ASR provider. */
+  stage?: string | null;
   extractor?: {
     provider: string | null;        // e.g. "youtube-mp36.p.rapidapi.com"
     httpStatus: number | null;
@@ -1561,6 +1565,8 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       asrGeneric.durationMs = oa.trace.durationMs;
       asrGeneric.language = oa.trace.language;
       asrGeneric.failureCode = oa.trace.failureCode;
+      asrGeneric.openaiInvoked = oa.trace.openaiInvoked;
+      asrGeneric.stage = oa.trace.stage;
       asrGeneric.extractor = {
         provider: oa.trace.rapidapi_host,
         httpStatus: oa.trace.rapidapi_http_status,
