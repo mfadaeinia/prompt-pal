@@ -17,6 +17,19 @@ export type OpenAiAsrTrace = {
   provider: "openai";
   model: string;
   invoked: boolean;
+  /** True the instant the OpenAI transcription request is dispatched.
+   *  Never derived from httpStatus (which stays null on abort/network error). */
+  openaiInvoked: boolean;
+  /** Last pipeline stage entered — survives timeouts so we know where we stopped. */
+  stage:
+    | "start"
+    | "extract"
+    | "download"
+    | "openai_request"
+    | "parse"
+    | "done";
+  /** Per-stage budgets actually applied (ms). */
+  budgets: { extractMs: number; downloadMs: number; openaiMs: number; totalMs: number };
   httpStatus: number | null;
   errorBody: string | null;
   errorMessage: string | null;
@@ -79,6 +92,7 @@ export type OpenAiAsrTrace = {
     | "openai_wrong_language"
     | "openai_invalid_response"
     | "asr_timeout"
+    | "openai_not_reached_budget_exhausted"
     | "unknown";
 };
 
@@ -92,7 +106,20 @@ export type OpenAiAsrResult = {
 
 const OPENAI_AUDIO_LIMIT_BYTES = 25 * 1024 * 1024; // 25 MB
 const DEFAULT_MODEL = "whisper-1";
-const TOTAL_TIMEOUT_MS = 90_000;
+const TOTAL_TIMEOUT_MS = 180_000;
+/** Per-stage budgets. Previously a single 90s budget wrapped the whole pipeline,
+ *  so slow RapidAPI polling alone could exhaust it and surface as `asr_timeout`
+ *  before the OpenAI request was ever dispatched. */
+const EXTRACT_BUDGET_MS = 50_000;
+const DOWNLOAD_BUDGET_MS = 45_000;
+const OPENAI_BUDGET_MS = 90_000;
+/** Below this remaining OpenAI budget the request is pointless — report it
+ *  explicitly instead of dispatching a request that aborts instantly. */
+const OPENAI_MIN_BUDGET_MS = 5_000;
+
+function stageLog(videoId: string, event: string, fields: Record<string, unknown> = {}) {
+  console.log(`[asr-openai] ${event}`, JSON.stringify({ videoId, ...fields }));
+}
 
 const RAPIDAPI_HOST_DEFAULT = "youtube-mp36.p.rapidapi.com";
 const RAPIDAPI_PATH = "/dl?id=";
@@ -102,6 +129,14 @@ function makeTrace(): OpenAiAsrTrace {
     provider: "openai",
     model: DEFAULT_MODEL,
     invoked: false,
+    openaiInvoked: false,
+    stage: "start",
+    budgets: {
+      extractMs: EXTRACT_BUDGET_MS,
+      downloadMs: DOWNLOAD_BUDGET_MS,
+      openaiMs: OPENAI_BUDGET_MS,
+      totalMs: TOTAL_TIMEOUT_MS,
+    },
     httpStatus: null,
     errorBody: null,
     errorMessage: null,
