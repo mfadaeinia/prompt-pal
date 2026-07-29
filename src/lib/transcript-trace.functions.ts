@@ -464,7 +464,7 @@ async function step6OpenAiWhisper(
       audioExtractorProvider: t.rapidapi_host,
       audioUrlFound: t.audio_url_found,
       audioExtractionFailed,
-      openaiInvoked: !audioExtractionFailed && t.httpStatus !== null,
+      openaiInvoked: t.openaiInvoked,
       openaiHttpStatus: t.httpStatus,
       transcriptChars: chars,
       segmentsCount: t.segmentsCount,
@@ -472,7 +472,7 @@ async function step6OpenAiWhisper(
       model: t.model,
       failureReason: audioExtractionFailed
         ? "audio_extraction_failed"
-        : t.failureCode,
+        : `${t.failureCode ?? "ok"} (stage=${t.stage})`,
       extractorFailureReason: t.extractor_failure_reason,
     };
   } catch (e) {

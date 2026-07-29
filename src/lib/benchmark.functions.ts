@@ -769,7 +769,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             asr_duration_ms = ag.durationMs;
             asr_language = ag.language;
             asr_failure_code = ag.failureCode;
-            if (ag.provider === "openai") openai_invoked = (ag.segmentsCount ?? 0) > 0 || ag.httpStatus != null;
+            if (ag.provider === "openai") openai_invoked = ag.openaiInvoked ?? ((ag.segmentsCount ?? 0) > 0 || ag.httpStatus != null);
             if (ag.extractor) {
               extractor_provider = ag.extractor.provider;
               extractor_http_status = ag.extractor.httpStatus;
@@ -1009,7 +1009,7 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
             asr_duration_ms = ag.durationMs;
             asr_language = ag.language;
             asr_failure_code = ag.failureCode;
-            if (ag.provider === "openai") openai_invoked = ag.httpStatus != null;
+            if (ag.provider === "openai") openai_invoked = ag.openaiInvoked ?? (ag.httpStatus != null);
             if (ag.extractor) {
               extractor_provider = ag.extractor.provider;
               extractor_http_status = ag.extractor.httpStatus;
