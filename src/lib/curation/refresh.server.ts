@@ -217,6 +217,13 @@ export async function runWeeklyRefresh(opts?: {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+  // 0. Revalidate what we already publish before adding anything new.
+  const reval = await revalidateCatalogue();
+  revalidated = reval.revalidated;
+  deactivatedVideos.push(...reval.deactivated);
+
+
+
   const { data: sourceRows, error: srcErr } = await supabaseAdmin
     .from("curated_sources" as any)
     .select("id, provider, external_id, name, language, default_category, quality_rating")
