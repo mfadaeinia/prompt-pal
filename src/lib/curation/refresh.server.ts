@@ -326,7 +326,9 @@ export async function runWeeklyRefresh(opts?: {
     .map((c) => {
       const e = enriched.get(c.externalId);
       if (!e) return (bump("no_enrichment"), null);
+      if (!LEVELS.includes(e.cefr)) return (bump("missing_cefr"), null);
       if (e.reject || e.quality < 0.45) return (bump("low_quality"), null);
+
       return {
         provider: c.provider,
         external_id: c.externalId,
