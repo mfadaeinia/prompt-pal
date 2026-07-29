@@ -216,6 +216,9 @@ function Index() {
   // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
   const [focusMode, setFocusMode] = useState(false);
+  // Video id for which the "cannot be used in Learning Mode" panel was dismissed
+  // via "Back to Watch Mode" — lets the learner keep watching the video.
+  const [errorPanelDismissedFor, setErrorPanelDismissedFor] = useState<string | null>(null);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
@@ -2783,7 +2786,8 @@ function Index() {
 
 
 
-            {transcriptStatus === "failed" ? (
+            {transcriptStatus === "failed" &&
+            errorPanelDismissedFor !== (videoId ?? "unknown") ? (
               <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
                 <h2 className="text-lg font-semibold">
                   This video cannot be used in Learning Mode
@@ -2816,6 +2820,17 @@ function Index() {
                     onClick={() => {
                       setStudyMode(false);
                       setSelected(null);
+                      setFocusMode(true);
+                      setErrorPanelDismissedFor(videoId ?? "unknown");
+                      track("study_mode_closed", { video_id: videoId });
+                      if (typeof window !== "undefined") {
+                        window.requestAnimationFrame(() => {
+                          iframeRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                          });
+                        });
+                      }
                     }}
                   >
                     Back to Watch Mode
