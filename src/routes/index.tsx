@@ -64,6 +64,25 @@ const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
 const DEMO_VIDEO_ID = "ucsSnoeTPMc";
 const DEMO_LANGUAGE = "English";
 
+/** Map a language label or tag to ISO-639-1 for the caption pipeline. */
+const LANG_LABEL_TO_ISO: Record<string, string> = {
+  dutch: "nl", nederlands: "nl", english: "en", german: "de", duits: "de",
+  french: "fr", spanish: "es", italian: "it", portuguese: "pt", polish: "pl",
+  russian: "ru", turkish: "tr", arabic: "ar", persian: "fa", farsi: "fa",
+  japanese: "ja", chinese: "zh", korean: "ko", swedish: "sv", danish: "da",
+  norwegian: "no", finnish: "fi", ukrainian: "uk", hindi: "hi",
+};
+function normalizeSpokenLang(input?: string | null): string | undefined {
+  if (!input) return undefined;
+  const raw = input.trim().toLowerCase();
+  if (!raw || raw === "_any_" || raw === "auto") return undefined;
+  const base = raw.split(/[-_]/)[0];
+  if (LANG_LABEL_TO_ISO[base]) return LANG_LABEL_TO_ISO[base];
+  return /^[a-z]{2,3}$/.test(base) ? base : undefined;
+}
+
+
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
