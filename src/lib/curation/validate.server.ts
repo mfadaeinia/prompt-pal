@@ -62,7 +62,13 @@ type Availability = {
   embeddable: boolean | null;
 };
 
-/** Public + embeddable probe based on oEmbed and the watch-page player config. */
+/**
+ * Public + embeddable probe based on oEmbed and the watch-page player config.
+ * Both probes can be rate-limited from a server host; anything inconclusive is
+ * reported as `unknown` / `null` so we never deactivate a healthy video by
+ * accident. Only explicit negatives (private, removed, playableInEmbed:false)
+ * cause a video to be pulled from the Library.
+ */
 export async function checkYoutubeAvailability(videoId: string): Promise<Availability> {
   let status: Availability["status"] = "unknown";
   try {
@@ -74,7 +80,7 @@ export async function checkYoutubeAvailability(videoId: string): Promise<Availab
     );
     if (r.ok) status = "public";
     else if (r.status === 401 || r.status === 403) status = "private";
-    else if (r.status === 404) status = "removed";
+    else if (r.status === 404 || r.status === 400) status = "removed";
   } catch {
     /* fall through to watch page */
   }
