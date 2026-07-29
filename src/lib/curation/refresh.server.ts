@@ -236,8 +236,13 @@ export async function runWeeklyRefresh(opts?: {
       inserted: 0,
       featured: 0,
       retired: 0,
+      revalidated,
+      deactivated: deactivatedVideos.length,
+      rejectedCandidates,
+      deactivatedVideos,
       skipped,
     };
+
   }
 
   // 4. AI enrichment in chunks.
