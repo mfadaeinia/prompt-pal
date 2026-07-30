@@ -3038,6 +3038,21 @@ function Index() {
                       />
                     )}
                   </div>
+                  {playbackError && (
+                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                      <p className="font-medium text-destructive">Playback problem</p>
+                      <p className="mt-1 text-muted-foreground">{playbackError}</p>
+                      <a
+                        className="mt-2 inline-block text-sm font-medium underline underline-offset-4"
+                        href={`https://www.youtube.com/watch?v=${videoId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Watch on YouTube
+                      </a>
+                    </div>
+                  )}
+
                   {/* The duplicate "Now playing" sentence card was removed.
                       The active sentence now stays in-context inside the
                       transcript list via lyrics-style auto-follow. */}
