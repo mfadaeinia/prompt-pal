@@ -1830,11 +1830,11 @@ function Index() {
     if (!videoId) return null;
     // playsinline=1 is required for inline playback on iOS Safari; without it
     // mobile hands off to the native fullscreen player and JS API sync breaks.
-    // origin is required by the IFrame API for postMessage in some browsers.
-    const origin =
-      typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1${origin}`;
+    // (No `origin` param: it would differ between SSR and client and cause a
+    // hydration mismatch; the IFrame API works without it.)
+    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1`;
   }, [videoId]);
+
 
 
   // Load YT IFrame API and create player
