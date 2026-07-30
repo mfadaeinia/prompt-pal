@@ -1058,19 +1058,37 @@ function Index() {
         },
       });
 
-      if (fast.status === "ready") {
+      // A "ready" fast result is only good enough for Learning Mode when the
+      // captions are dense enough. Low-quality auto-captions used to end the
+      // pipeline here, which is why Whisper looked like it "never ran" and the
+      // user was dumped into BASIC TRANSCRIPT MODE. Keep it as a safety net and
+      // upgrade via Whisper instead.
+      const fastFallback = fast.status === "ready" ? fast.result : null;
+      const fastIsGoodEnough =
+        fastFallback != null && fastFallback.quality.quality !== "low";
+
+      if (fastFallback && fastIsGoodEnough) {
         const startedAt = loadStartedAtRef.current ?? 0;
         const now = typeof performance !== "undefined" ? performance.now() : Date.now();
         perfLog("first_chunk_rendered", {
           path: "fast",
-          source: fast.result.source,
-          cache_hit: !!fast.result.cacheHit,
-          sentence_count: fast.result.sentences.length,
+          source: fastFallback.source,
+          cache_hit: !!fastFallback.cacheHit,
+          sentence_count: fastFallback.sentences.length,
           elapsed_ms: Math.round(now - startedAt),
         });
         perfFirstChunkLoggedRef.current = true;
-        return { res: fast.result, vars, viaSlowPath: false };
+        return { res: fastFallback, vars, viaSlowPath: false };
       }
+
+      if (fastFallback) {
+        console.warn("[transcript-debug][client] fast transcript low quality — upgrading via Whisper", {
+          videoId: fastFallback.videoId,
+          reasons: fastFallback.quality.reasons,
+          sentence_count: fastFallback.sentences.length,
+        });
+      }
+
 
       // ── Slow path: progressive Whisper via SSE ──────────────────────────
       if (vars.seq !== requestSeqRef.current) {
@@ -1105,17 +1123,25 @@ function Index() {
         `?url=${encodeURIComponent(vars.url)}` +
         `&lang=${encodeURIComponent(langParam)}`;
 
-      const firstChunkPromise = new Promise<{
+      type StreamPayload = {
         res: FetchTranscriptResult;
         vars: LoadVars;
         viaSlowPath: true;
         streaming: true;
-      }>((resolve, reject) => {
-        const es = new EventSource(streamUrl);
+      };
+      const MAX_STREAM_ATTEMPTS = 2;
+      const openStream = (attempt: number) => new Promise<StreamPayload>((resolve, reject) => {
+        const es = new EventSource(`${streamUrl}&attempt=${attempt}`);
+
         streamRef.current = es;
         const mySeq = vars.seq;
         let resolved = false;
-        let lastVideoId = fast.videoId ?? vars.requestedVideoId ?? null;
+        let lastVideoId =
+          fastFallback?.videoId ??
+          (fast.status !== "ready" ? fast.videoId : null) ??
+          vars.requestedVideoId ??
+          null;
+
         let detected: string | null = null;
 
         const closeStream = () => {
@@ -1213,22 +1239,54 @@ function Index() {
 
         es.addEventListener("error", (ev) => {
           // SSE 'error' fires for both server-sent error events and transport
-          // failures. If we already resolved, keep what we have; otherwise reject.
+          // failures. If we already resolved, keep what we have; otherwise
+          // retry once, then fall back to the low-quality fast transcript so
+          // the user never hits a silent dead end.
           let payload: any = null;
           try { payload = JSON.parse((ev as MessageEvent).data ?? ""); } catch {}
           const msg = payload?.message || "transcript stream failed";
+          console.error("[transcript-debug][client] whisper stream failed", {
+            attempt,
+            videoId: lastVideoId,
+            stage: payload?.stage ?? null,
+            message: msg,
+          });
+          closeStream();
           if (resolved) {
             // Partial transcript already showing — promote to "ready" so the
             // UI stops the spinner; user has something to learn from.
             setTranscriptStatus("ready");
-          } else {
-            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+            return;
           }
-          closeStream();
+          if (mySeq !== requestSeqRef.current) {
+            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+            return;
+          }
+          if (attempt < MAX_STREAM_ATTEMPTS) {
+            track("transcript_asr_retry", { video_id: lastVideoId, attempt, message: msg });
+            setTranscriptStatus("generating_transcript");
+            window.setTimeout(() => {
+              openStream(attempt + 1).then(resolve, reject);
+            }, 1200);
+            return;
+          }
+          if (fastFallback) {
+            console.warn("[transcript-debug][client] Whisper unavailable — using low-quality captions", {
+              videoId: fastFallback.videoId,
+            });
+            track("transcript_asr_fallback_to_captions", {
+              video_id: fastFallback.videoId,
+              message: msg,
+            });
+            resolve({ res: fastFallback, vars, viaSlowPath: true, streaming: false as unknown as true });
+            return;
+          }
+          reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
         });
       });
 
-      return await firstChunkPromise;
+      return await openStream(1);
+
     },
 
     onSuccess: (payload) => {
@@ -1764,13 +1822,20 @@ function Index() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const embedSrc = useMemo(
-    () =>
-      videoId
-        ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0`
-        : null,
-    [videoId]
-  );
+  // Player-level failure (embedding disabled, removed/private video, bad id).
+  // Without this the iframe just renders black and playback looks "broken".
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  useEffect(() => { setPlaybackError(null); }, [videoId]);
+  const embedSrc = useMemo(() => {
+    if (!videoId) return null;
+    // playsinline=1 is required for inline playback on iOS Safari; without it
+    // mobile hands off to the native fullscreen player and JS API sync breaks.
+    // (No `origin` param: it would differ between SSR and client and cause a
+    // hydration mismatch; the IFrame API works without it.)
+    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1`;
+  }, [videoId]);
+
+
 
   // Load YT IFrame API and create player
   useEffect(() => {
@@ -1824,6 +1889,23 @@ function Index() {
             }, 40);
 
           },
+          onError: (e: any) => {
+            // 2 = invalid id, 5 = HTML5 player error,
+            // 100 = removed/private, 101/150 = embedding disabled by owner.
+            const code = Number(e?.data);
+            const message =
+              code === 101 || code === 150
+                ? "The owner of this video doesn't allow it to be played outside YouTube."
+                : code === 100
+                  ? "This video is no longer available (removed or private)."
+                  : code === 2
+                    ? "This video link looks invalid."
+                    : "This video couldn't be played here.";
+            console.error("[player][error]", { videoId, code, message });
+            track("video_playback_error", { video_id: videoId, code });
+            setPlaybackError(message);
+          },
+
           onPlaybackRateChange: (e: any) => {
             const r = typeof e?.data === "number" ? e.data : playerRef.current?.getPlaybackRate?.();
             if (typeof r === "number" && r > 0) setPlaybackRate(r);
@@ -2956,6 +3038,21 @@ function Index() {
                       />
                     )}
                   </div>
+                  {playbackError && (
+                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                      <p className="font-medium text-destructive">Playback problem</p>
+                      <p className="mt-1 text-muted-foreground">{playbackError}</p>
+                      <a
+                        className="mt-2 inline-block text-sm font-medium underline underline-offset-4"
+                        href={`https://www.youtube.com/watch?v=${videoId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Watch on YouTube
+                      </a>
+                    </div>
+                  )}
+
                   {/* The duplicate "Now playing" sentence card was removed.
                       The active sentence now stays in-context inside the
                       transcript list via lyrics-style auto-follow. */}
