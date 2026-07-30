@@ -1822,13 +1822,20 @@ function Index() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const embedSrc = useMemo(
-    () =>
-      videoId
-        ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0`
-        : null,
-    [videoId]
-  );
+  // Player-level failure (embedding disabled, removed/private video, bad id).
+  // Without this the iframe just renders black and playback looks "broken".
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+  useEffect(() => { setPlaybackError(null); }, [videoId]);
+  const embedSrc = useMemo(() => {
+    if (!videoId) return null;
+    // playsinline=1 is required for inline playback on iOS Safari; without it
+    // mobile hands off to the native fullscreen player and JS API sync breaks.
+    // origin is required by the IFrame API for postMessage in some browsers.
+    const origin =
+      typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1${origin}`;
+  }, [videoId]);
+
 
   // Load YT IFrame API and create player
   useEffect(() => {
