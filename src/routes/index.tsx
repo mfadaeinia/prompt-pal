@@ -1239,22 +1239,54 @@ function Index() {
 
         es.addEventListener("error", (ev) => {
           // SSE 'error' fires for both server-sent error events and transport
-          // failures. If we already resolved, keep what we have; otherwise reject.
+          // failures. If we already resolved, keep what we have; otherwise
+          // retry once, then fall back to the low-quality fast transcript so
+          // the user never hits a silent dead end.
           let payload: any = null;
           try { payload = JSON.parse((ev as MessageEvent).data ?? ""); } catch {}
           const msg = payload?.message || "transcript stream failed";
+          console.error("[transcript-debug][client] whisper stream failed", {
+            attempt,
+            videoId: lastVideoId,
+            stage: payload?.stage ?? null,
+            message: msg,
+          });
+          closeStream();
           if (resolved) {
             // Partial transcript already showing — promote to "ready" so the
             // UI stops the spinner; user has something to learn from.
             setTranscriptStatus("ready");
-          } else {
-            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+            return;
           }
-          closeStream();
+          if (mySeq !== requestSeqRef.current) {
+            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+            return;
+          }
+          if (attempt < MAX_STREAM_ATTEMPTS) {
+            track("transcript_asr_retry", { video_id: lastVideoId, attempt, message: msg });
+            setTranscriptStatus("generating_transcript");
+            window.setTimeout(() => {
+              openStream(attempt + 1).then(resolve, reject);
+            }, 1200);
+            return;
+          }
+          if (fastFallback) {
+            console.warn("[transcript-debug][client] Whisper unavailable — using low-quality captions", {
+              videoId: fastFallback.videoId,
+            });
+            track("transcript_asr_fallback_to_captions", {
+              video_id: fastFallback.videoId,
+              message: msg,
+            });
+            resolve({ res: fastFallback, vars, viaSlowPath: true, streaming: false as unknown as true });
+            return;
+          }
+          reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
         });
       });
 
-      return await firstChunkPromise;
+      return await openStream(1);
+
     },
 
     onSuccess: (payload) => {
