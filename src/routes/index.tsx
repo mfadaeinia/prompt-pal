@@ -1123,13 +1123,16 @@ function Index() {
         `?url=${encodeURIComponent(vars.url)}` +
         `&lang=${encodeURIComponent(langParam)}`;
 
-      const firstChunkPromise = new Promise<{
+      type StreamPayload = {
         res: FetchTranscriptResult;
         vars: LoadVars;
         viaSlowPath: true;
         streaming: true;
-      }>((resolve, reject) => {
-        const es = new EventSource(streamUrl);
+      };
+      const MAX_STREAM_ATTEMPTS = 2;
+      const openStream = (attempt: number) => new Promise<StreamPayload>((resolve, reject) => {
+        const es = new EventSource(`${streamUrl}&attempt=${attempt}`);
+
         streamRef.current = es;
         const mySeq = vars.seq;
         let resolved = false;
