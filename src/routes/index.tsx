@@ -1133,7 +1133,12 @@ function Index() {
         streamRef.current = es;
         const mySeq = vars.seq;
         let resolved = false;
-        let lastVideoId = fast.videoId ?? vars.requestedVideoId ?? null;
+        let lastVideoId =
+          fastFallback?.videoId ??
+          (fast.status !== "ready" ? fast.videoId : null) ??
+          vars.requestedVideoId ??
+          null;
+
         let detected: string | null = null;
 
         const closeStream = () => {
