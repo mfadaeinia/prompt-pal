@@ -1889,6 +1889,23 @@ function Index() {
             }, 40);
 
           },
+          onError: (e: any) => {
+            // 2 = invalid id, 5 = HTML5 player error,
+            // 100 = removed/private, 101/150 = embedding disabled by owner.
+            const code = Number(e?.data);
+            const message =
+              code === 101 || code === 150
+                ? "The owner of this video doesn't allow it to be played outside YouTube."
+                : code === 100
+                  ? "This video is no longer available (removed or private)."
+                  : code === 2
+                    ? "This video link looks invalid."
+                    : "This video couldn't be played here.";
+            console.error("[player][error]", { videoId, code, message });
+            track("video_playback_error", { video_id: videoId, code });
+            setPlaybackError(message);
+          },
+
           onPlaybackRateChange: (e: any) => {
             const r = typeof e?.data === "number" ? e.data : playerRef.current?.getPlaybackRate?.();
             if (typeof r === "number" && r > 0) setPlaybackRate(r);
