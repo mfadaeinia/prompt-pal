@@ -1058,19 +1058,37 @@ function Index() {
         },
       });
 
-      if (fast.status === "ready") {
+      // A "ready" fast result is only good enough for Learning Mode when the
+      // captions are dense enough. Low-quality auto-captions used to end the
+      // pipeline here, which is why Whisper looked like it "never ran" and the
+      // user was dumped into BASIC TRANSCRIPT MODE. Keep it as a safety net and
+      // upgrade via Whisper instead.
+      const fastFallback = fast.status === "ready" ? fast.result : null;
+      const fastIsGoodEnough =
+        fastFallback != null && fastFallback.quality.quality !== "low";
+
+      if (fastFallback && fastIsGoodEnough) {
         const startedAt = loadStartedAtRef.current ?? 0;
         const now = typeof performance !== "undefined" ? performance.now() : Date.now();
         perfLog("first_chunk_rendered", {
           path: "fast",
-          source: fast.result.source,
-          cache_hit: !!fast.result.cacheHit,
-          sentence_count: fast.result.sentences.length,
+          source: fastFallback.source,
+          cache_hit: !!fastFallback.cacheHit,
+          sentence_count: fastFallback.sentences.length,
           elapsed_ms: Math.round(now - startedAt),
         });
         perfFirstChunkLoggedRef.current = true;
-        return { res: fast.result, vars, viaSlowPath: false };
+        return { res: fastFallback, vars, viaSlowPath: false };
       }
+
+      if (fastFallback) {
+        console.warn("[transcript-debug][client] fast transcript low quality — upgrading via Whisper", {
+          videoId: fastFallback.videoId,
+          reasons: fastFallback.quality.reasons,
+          sentence_count: fastFallback.sentences.length,
+        });
+      }
+
 
       // ── Slow path: progressive Whisper via SSE ──────────────────────────
       if (vars.seq !== requestSeqRef.current) {
