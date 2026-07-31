@@ -182,21 +182,21 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
               Click any subtitle to instantly understand its meaning, expressions and context.
             </p>
 
-            <div className="mt-7 flex flex-col items-start gap-3 sm:mt-8 sm:max-w-sm">
+            <div className="mt-7 flex flex-row items-center gap-3 sm:mt-8">
               <button
                 onClick={onPrimary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
                 Start for free
               </button>
               <button
                 onClick={onSecondary}
-                className="inline-flex items-center gap-1.5 self-center text-sm font-medium text-slate-600 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-slate-900/80 px-7 py-3.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-900 hover:text-white active:scale-[0.98]"
                 style={heading}
               >
                 <Play className="h-3.5 w-3.5 fill-current" />
-                Watch the 1-min demo
+                Watch demo
               </button>
             </div>
           </div>
