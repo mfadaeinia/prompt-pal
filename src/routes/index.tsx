@@ -3418,7 +3418,7 @@ function Index() {
                     className="h-11 flex-1 rounded-xl"
                   />
                   <Button type="submit" className="h-11 rounded-xl px-4">
-                    Start
+                    Start for free
                   </Button>
                 </form>
                 <div className="mt-3">
