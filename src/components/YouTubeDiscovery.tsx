@@ -310,12 +310,12 @@ export function YouTubeDiscovery({
                     <Button
                       type="button"
                       size="sm"
-                      variant="secondary"
+                      variant="default"
                       disabled={loading}
                       onClick={() => onPick(r.url, r.language)}
                       className="mt-2 h-7 rounded-full px-3 text-xs"
                     >
-                      <Sparkles className="mr-1 h-3 w-3" /> Try now
+                      Start for free
                     </Button>
                   </div>
                 </div>
