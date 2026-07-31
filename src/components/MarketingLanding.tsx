@@ -188,7 +188,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
                 style={heading}
               >
-                Try it Free
+                Start for free
               </button>
               <button
                 onClick={onSecondary}
