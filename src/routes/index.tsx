@@ -2587,11 +2587,10 @@ function Index() {
               ) : (
                 <button
                   onClick={() => setAuthOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  title="Sign in to save your progress"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  title="Start for free to save your progress"
                 >
-                  <span className="h-2 w-2 rounded-full bg-slate-400/60" />
-                  Sign In
+                  Start for free
                 </button>
               )}
             </div>
@@ -2656,7 +2655,7 @@ function Index() {
               setView("app");
               return;
             }
-            // "Try it Free" triggers sign-in upfront so save actions
+            // "Start for free" triggers sign-in upfront so save actions
             // later in the flow don't interrupt the user. Record intent so
             // that after the OAuth full-page redirect we land in the app
             // view instead of bouncing back to the landing page.
@@ -3419,7 +3418,7 @@ function Index() {
                     className="h-11 flex-1 rounded-xl"
                   />
                   <Button type="submit" className="h-11 rounded-xl px-4">
-                    Start
+                    Start for free
                   </Button>
                 </form>
                 <div className="mt-3">
@@ -3703,7 +3702,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Try the Demo <ArrowRight className="h-4 w-4" />
+                  Start for free <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
