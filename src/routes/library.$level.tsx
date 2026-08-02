@@ -408,7 +408,7 @@ function VideoCard({
 }) {
   const dur = fmtDuration(v.duration_sec);
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-sm hover:shadow-primary/5">
       <button
         type="button"
         onClick={onOpen}
