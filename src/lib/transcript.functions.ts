@@ -326,13 +326,14 @@ function segmentByPunctuation(
       segStart = i + 1;
       continue;
     }
-    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+    if (ch !== "." && ch !== "!" && ch !== "?" && ch !== "…") continue;
 
-    // Consume runs like "?!" or "..."
+    // Consume runs like "?!" or "..." or "…"
     let end = i;
-    while (end + 1 < decoded.length && /[.!?]/.test(decoded[end + 1])) end++;
+    while (end + 1 < decoded.length && /[.!?…]/.test(decoded[end + 1])) end++;
     // Include a trailing closing quote/bracket in the sentence.
     if (end + 1 < decoded.length && /["'”’)\]]/.test(decoded[end + 1])) end++;
+
 
     if (isFalseSentenceBoundary(decoded, i, end)) {
       i = end;
