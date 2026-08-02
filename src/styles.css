@@ -51,6 +51,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-purple: var(--brand-purple);
   --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -83,18 +86,24 @@
   --foreground: #111827;
   --card-foreground: #111827;
   --popover-foreground: #111827;
-  /* Accent blue #2563EB — primary buttons, links, active nav, selection. */
-  --primary: #2563eb;
+  /* Brand purple #7B3FF2 — primary buttons, links, active nav, selection.
+     Taken from the logo gradient (coral #FF5A3D → pink #FF2D7A → purple #7B3FF2). */
+  --primary: #7b3ff2;
   --primary-foreground: #ffffff;
   /* Secondary surface — ghost buttons, subtle chips. */
-  --secondary: #f3f5f9;
+  --secondary: #f5f3fb;
   --secondary-foreground: #111827;
-  /* Muted — soft gray scale for de-emphasized UI + body. */
-  --muted: #f3f5f9;
+  /* Muted — soft neutral scale for de-emphasized UI + body. */
+  --muted: #f4f4f8;
   --muted-foreground: #6b7280;
-  /* Accent — light blue selection wash #EAF2FF */
-  --accent: #eaf2ff;
-  --accent-foreground: #1e3a8a;
+  /* Accent — light violet selection wash. */
+  --accent: #f1eafe;
+  --accent-foreground: #4c1d95;
+  /* Brand gradient tokens (logo ribbon). */
+  --brand-coral: #ff5a3d;
+  --brand-pink: #ff2d7a;
+  --brand-purple: #7b3ff2;
+  --gradient-brand: linear-gradient(135deg, #ff5a3d 0%, #ff2d7a 50%, #7b3ff2 100%);
   /* Success green #10B981 */
   --success: #10b981;
   --success-foreground: #ffffff;
@@ -103,20 +112,20 @@
   /* Borders #E5E7EB — very subtle throughout. */
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #2563eb;
-  --chart-1: #2563eb;
-  --chart-2: #10b981;
-  --chart-3: #6366f1;
-  --chart-4: #f59e0b;
-  --chart-5: #ec4899;
+  --ring: #7b3ff2;
+  --chart-1: #7b3ff2;
+  --chart-2: #ff2d7a;
+  --chart-3: #ff5a3d;
+  --chart-4: #10b981;
+  --chart-5: #f59e0b;
   --sidebar: #ffffff;
   --sidebar-foreground: #111827;
-  --sidebar-primary: #2563eb;
+  --sidebar-primary: #7b3ff2;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eaf2ff;
-  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-accent: #f1eafe;
+  --sidebar-accent-foreground: #4c1d95;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #2563eb;
+  --sidebar-ring: #7b3ff2;
 }
 
 
@@ -182,10 +191,10 @@
 
 @keyframes nativeflow-pulse-ring {
   0%, 100% {
-    box-shadow: 0 0 0 0 oklch(0.55 0.22 265 / 0.35), 0 0 0 0 oklch(0.55 0.22 265 / 0);
+    box-shadow: 0 0 0 0 oklch(0.55 0.25 300 / 0.35), 0 0 0 0 oklch(0.55 0.25 300 / 0);
   }
   50% {
-    box-shadow: 0 0 0 6px oklch(0.55 0.22 265 / 0.12), 0 0 32px 4px oklch(0.55 0.22 265 / 0.15);
+    box-shadow: 0 0 0 6px oklch(0.55 0.25 300 / 0.12), 0 0 32px 4px oklch(0.55 0.25 300 / 0.15);
   }
 }
 
@@ -194,8 +203,8 @@
 }
 
 @keyframes pulse-soft {
-  0%, 100% { background-color: oklch(0.55 0.22 265 / 0.08); }
-  50% { background-color: oklch(0.55 0.22 265 / 0.18); }
+  0%, 100% { background-color: oklch(0.55 0.25 300 / 0.08); }
+  50% { background-color: oklch(0.55 0.25 300 / 0.18); }
 }
 
 .animate-pulse-soft {

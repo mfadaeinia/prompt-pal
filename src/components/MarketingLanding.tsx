@@ -52,7 +52,7 @@ export function MarketingLanding({
 
   return (
     <div
-      className="relative w-full overflow-hidden text-slate-900 selection:bg-blue-200"
+      className="relative w-full overflow-hidden text-slate-900 selection:bg-accent"
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
       {/* Faded collage background — fixed so it persists while scrolling */}
@@ -165,7 +165,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
         <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
           <div className="max-w-xl md:pl-12 lg:pl-0">
             <span
-              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80 sm:mb-6"
+              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80 sm:mb-6"
               style={heading}
             >
               For Dutch learners who watch YouTube
@@ -289,30 +289,30 @@ function CompetitorComparison() {
           </div>
 
           {/* RIGHT — NativeFlow */}
-          <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/40 p-7">
-            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-accent/60 p-7">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
             <div className="relative">
               <h3
-                className="text-sm font-semibold uppercase tracking-[0.15em] text-blue-700"
+                className="text-sm font-semibold uppercase tracking-[0.15em] text-primary"
                 style={heading}
               >
                 NativeFlow
               </h3>
               <ul className="mt-6 space-y-3">
                 <li className="flex items-start gap-3 text-sm text-slate-900">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     1
                   </span>
                   Tap any full sentence → get instant translation
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-900">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     2
                   </span>
                   See the expression explained in context
                 </li>
                 <li className="flex items-start gap-3 text-sm text-slate-900">
-                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     3
                   </span>
                   Understand idioms and Dutch expressions as natives use them
@@ -362,7 +362,7 @@ function HowItWorks() {
         <div className="mt-12 grid gap-8 md:grid-cols-3 md:gap-10">
           {steps.map((s) => (
             <div key={s.title} className="flex flex-col items-start">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary">
                 {s.icon}
               </div>
               <h3 className="text-base font-semibold text-slate-900" style={heading}>
@@ -436,14 +436,14 @@ function Comparison() {
         </div>
 
         {/* NEW WAY */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/40 p-7 shadow-sm">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-accent/60 p-7 shadow-sm">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
           <div className="relative mb-6 flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white">
               <Check className="h-3.5 w-3.5" />
             </span>
             <span
-              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-700"
+              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary"
               style={heading}
             >
               With NativeFlow
@@ -453,17 +453,17 @@ function Comparison() {
             {newWay.map((step, i) => (
               <li
                 key={step}
-                className="flex items-center gap-3 rounded-lg border border-blue-100 bg-white px-3.5 py-2.5 shadow-sm"
+                className="flex items-center gap-3 rounded-lg border border-primary/15 bg-white px-3.5 py-2.5 shadow-sm"
               >
                 <span
-                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-600 text-[11px] font-semibold text-white"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-white"
                   style={heading}
                 >
                   {i + 1}
                 </span>
                 <span className="text-sm font-medium text-slate-900">{step}</span>
                 {step === "Understand more" && (
-                  <MousePointerClick className="ml-auto h-3.5 w-3.5 text-blue-500" />
+                  <MousePointerClick className="ml-auto h-3.5 w-3.5 text-primary" />
                 )}
               </li>
             ))}
@@ -523,7 +523,7 @@ function Features() {
               key={b.title}
               className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 transition-all hover:border-slate-300 hover:bg-white"
             >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
                 {b.icon}
               </div>
               <h3 className="text-base font-semibold text-slate-900" style={heading}>
@@ -594,12 +594,12 @@ function FounderNote({ onFeedback }: { onFeedback?: () => void }) {
               {onFeedback ? (
                 <button
                   onClick={onFeedback}
-                  className="font-medium text-blue-600 underline underline-offset-4 transition-colors hover:text-blue-700"
+                  className="font-medium text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
                 >
                   what's not working
                 </button>
               ) : (
-                <span className="font-medium text-blue-600">what's not working</span>
+                <span className="font-medium text-primary">what's not working</span>
               )}
               .
             </p>

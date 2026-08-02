@@ -156,7 +156,7 @@ function EnglishLearnersLanding() {
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#F8FAFC] text-slate-900 selection:bg-blue-200"
+      className="relative w-full overflow-hidden bg-[#F8FAFC] text-slate-900 selection:bg-accent"
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
       <Hero onTryFree={onTryFree} onDemo={onDemo} />
@@ -196,7 +196,7 @@ function Hero({ onTryFree, onDemo }: { onTryFree: () => void; onDemo: () => void
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
           <div className="max-w-xl">
             <span
-              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-600/80"
+              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
               style={heading}
             >
               For English learners who watch YouTube
@@ -214,7 +214,7 @@ function Hero({ onTryFree, onDemo }: { onTryFree: () => void; onDemo: () => void
             <div className="mt-8 flex flex-col items-start gap-3 sm:max-w-sm">
               <button
                 onClick={onTryFree}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
                 style={heading}
               >
                 Try It Free
@@ -277,8 +277,8 @@ function Audience() {
           ))}
         </ul>
 
-        <div className="relative mt-6 overflow-hidden rounded-2xl border border-blue-200 bg-blue-50/50 p-7 text-center">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-blue-200/40 blur-3xl" />
+        <div className="relative mt-6 overflow-hidden rounded-2xl border border-primary/20 bg-accent/70 p-7 text-center">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
           <p className="relative text-base font-semibold text-slate-900 sm:text-lg">
             NativeFlow turns authentic videos into interactive learning material — so real English
             becomes something you can actually follow.
@@ -305,7 +305,7 @@ function HowItWorks() {
           {STEPS.map(({ icon: Icon, title, body }, i) => (
             <li key={title} className="flex flex-col items-start">
               <div className="mb-4 flex items-center gap-2">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span
@@ -376,7 +376,7 @@ function Benefits() {
               key={b.title}
               className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 transition-all hover:border-slate-300 hover:bg-white"
             >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
                 <Check className="h-5 w-5" />
               </div>
               <h3 className="text-base font-semibold text-slate-900" style={heading}>
@@ -482,7 +482,7 @@ function FinalCta({ onTryFree }: { onTryFree: () => void }) {
         </p>
         <button
           onClick={onTryFree}
-          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-8 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98]"
           style={heading}
         >
           Try NativeFlow Free
