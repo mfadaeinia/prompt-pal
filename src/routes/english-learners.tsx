@@ -230,7 +230,7 @@ function Hero({ onTryFree, onDemo }: { onTryFree: () => void; onDemo: () => void
             </div>
           </div>
 
-          <div className="relative mx-auto w-full overflow-hidden rounded-2xl shadow-2xl">
+          <div className="relative mx-auto w-full overflow-hidden rounded-2xl shadow-md">
             <img
               src={productMock.url}
               alt="NativeFlow turning an English YouTube video into an interactive transcript"

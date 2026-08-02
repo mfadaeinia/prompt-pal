@@ -69,7 +69,7 @@ export function SentenceCoachmark({
       {/* Tooltip */}
       <div
         role="tooltip"
-        className="fixed z-50 flex max-w-[280px] items-start gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm shadow-2xl ring-1 ring-primary/20 animate-in fade-in slide-in-from-top-2"
+        className="fixed z-50 flex max-w-[280px] items-start gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm shadow-md ring-1 ring-primary/20 animate-in fade-in slide-in-from-top-2"
         style={{ top: tooltipTop, left: tooltipLeft }}
       >
         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">

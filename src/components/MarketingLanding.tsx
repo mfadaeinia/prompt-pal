@@ -216,7 +216,7 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 function ProductMock() {
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+    <div className="relative overflow-hidden rounded-2xl shadow-md">
       <img
         src={productMock.url}
         alt="NativeFlow product preview — Dutch sentence explanation"
