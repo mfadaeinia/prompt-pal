@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable";
 import { track } from "@/lib/analytics";
+import { BrandLogo } from "@/components/BrandLogo";
 
 type Props = {
   open: boolean;
@@ -54,6 +55,9 @@ export function AuthDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-background p-0 overflow-hidden">
         <div className="px-6 pt-8 pb-6 sm:px-8 sm:pt-10 sm:pb-8">
+          <div className="mb-5 flex justify-center">
+            <BrandLogo gradientId="nf-auth" markClassName="h-9 w-9" />
+          </div>
           <DialogHeader className="space-y-3 text-center sm:text-center">
             <DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
               {title}
