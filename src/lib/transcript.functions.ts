@@ -621,7 +621,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     final = punctSegments;
     strategy = "punctuation";
   } else if (punctSegments.length <= 3) {
-    final = segmentByChunksAndTiming(cleaned, { target: 14, max: 25, gapSeconds: 1.0 });
+    final = segmentByChunksAndTiming(cleaned, { target: 12, max: 22, gapSeconds: 1.0 });
     strategy = "timing+chunks";
   } else {
     final = [];
@@ -636,7 +636,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
         (c) => c.offset + c.duration >= seg.offset && c.offset <= segEnd
       );
       const subSegs = subChunks.length
-        ? segmentByChunksAndTiming(subChunks, { target: 14, max: 25 })
+        ? segmentByChunksAndTiming(subChunks, { target: 12, max: 22 })
         : [seg];
       for (const s of subSegs) final.push({ ...s, id: id++ });
     }
@@ -644,7 +644,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
   }
 
   // Post-passes: enforce sentence-unit quality invariants.
-  final = splitOversize(final, 35);
+  final = splitOversize(final, 26);
   final = mergeTinyFragments(final, 3);
 
   const segWordCounts = final.map((s) => wordCount(s.text));
