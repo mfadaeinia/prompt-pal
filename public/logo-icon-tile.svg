@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="NativeFlow">
+  <defs>
+    <linearGradient id="nfTile" x1="4" y1="60" x2="60" y2="4" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5A3D"/>
+      <stop offset="50%" stop-color="#FF2D7A"/>
+      <stop offset="100%" stop-color="#7B3FF2"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="64" height="64" rx="15" fill="url(#nfTile)"/>
+  <path d="M18 46V21L46 43V18" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

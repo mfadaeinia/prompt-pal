@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/library/$level")({
   head: ({ params }) => {
@@ -228,6 +229,9 @@ function LevelPage() {
           >
             {level}
           </span>
+          <Link to="/" className="ml-auto" aria-label="NativeFlow home">
+            <BrandLogo markClassName="h-7 w-7" wordClassName="hidden sm:inline" gradientId="nf-level" />
+          </Link>
         </div>
       </header>
 

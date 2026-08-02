@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/library/")({
   head: () => ({
@@ -89,7 +90,8 @@ function LibraryLevelsPage() {
               <ArrowLeft className="mr-1 h-4 w-4" /> Home
             </Link>
           </Button>
-          <span className="flex items-center gap-1.5 text-sm font-semibold">
+          <BrandLogo markClassName="h-7 w-7" wordClassName="hidden sm:inline" gradientId="nf-lib" />
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
             <BookOpen className="h-4 w-4 text-primary" /> Library
           </span>
         </div>

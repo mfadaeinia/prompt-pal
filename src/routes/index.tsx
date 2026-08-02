@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut } from "lucide-react";
-import nativeflowLogo from "@/assets/nativeflow-logo.png.asset.json";
+import { BrandLogo } from "@/components/BrandLogo";
 import { track, setUserProperties } from "@/lib/analytics";
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
@@ -2532,11 +2532,7 @@ function Index() {
               className="flex min-w-0 items-center gap-2.5"
               aria-label="NativeFlow home"
             >
-              <img
-                src={nativeflowLogo.url}
-                alt="NativeFlow"
-                className="h-8 shrink-0"
-              />
+              <BrandLogo markClassName="h-8 w-8" wordClassName="hidden sm:inline" />
             </button>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -3489,7 +3485,10 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} NativeFlow — understand content in context.</span>
+          <span className="flex items-center gap-2">
+            <BrandLogo iconOnly markClassName="h-5 w-5" gradientId="nf-footer" />
+            © {new Date().getFullYear()} NativeFlow — understand content in context.
+          </span>
           <span>Language Learning Beta</span>
         </div>
       </footer>
