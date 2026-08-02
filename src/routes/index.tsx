@@ -3252,13 +3252,14 @@ function Index() {
                                 title={s.text}
                                 aria-label={`Explain: ${s.text}`}
                                 aria-expanded={expanded}
-                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-2 cursor-pointer touch-manipulation rounded-md border-l-2 px-2.5 py-2.5 text-left text-[15px] leading-[1.55] hover:bg-accent/70 hover:border-primary/70 transition-colors duration-150 ${
+                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-3 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.65] transition-colors duration-150 hover:border-primary/40 hover:bg-muted ${
                                   visualState === "playing"
-                                    ? "border-primary bg-primary/20 font-medium text-foreground"
+                                    ? "border-primary bg-accent font-medium text-foreground"
                                     : visualState === "selected"
-                                    ? "border-primary/60 bg-accent/40 text-foreground/90"
+                                    ? "border-primary/50 bg-accent/60 text-foreground"
                                     : "border-transparent text-foreground/85"
                                 }`}
+
                               >
                                 <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
