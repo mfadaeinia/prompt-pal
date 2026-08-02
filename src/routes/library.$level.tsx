@@ -229,6 +229,9 @@ function LevelPage() {
           >
             {level}
           </span>
+          <Link to="/" className="ml-auto" aria-label="NativeFlow home">
+            <BrandLogo markClassName="h-7 w-7" wordClassName="hidden sm:inline" gradientId="nf-level" />
+          </Link>
         </div>
       </header>
 
