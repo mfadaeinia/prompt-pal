@@ -51,6 +51,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-brand-coral: var(--brand-coral);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-purple: var(--brand-purple);
   --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -188,10 +191,10 @@
 
 @keyframes nativeflow-pulse-ring {
   0%, 100% {
-    box-shadow: 0 0 0 0 oklch(0.55 0.22 265 / 0.35), 0 0 0 0 oklch(0.55 0.22 265 / 0);
+    box-shadow: 0 0 0 0 oklch(0.55 0.25 300 / 0.35), 0 0 0 0 oklch(0.55 0.25 300 / 0);
   }
   50% {
-    box-shadow: 0 0 0 6px oklch(0.55 0.22 265 / 0.12), 0 0 32px 4px oklch(0.55 0.22 265 / 0.15);
+    box-shadow: 0 0 0 6px oklch(0.55 0.25 300 / 0.12), 0 0 32px 4px oklch(0.55 0.25 300 / 0.15);
   }
 }
 
@@ -200,8 +203,8 @@
 }
 
 @keyframes pulse-soft {
-  0%, 100% { background-color: oklch(0.55 0.22 265 / 0.08); }
-  50% { background-color: oklch(0.55 0.22 265 / 0.18); }
+  0%, 100% { background-color: oklch(0.55 0.25 300 / 0.08); }
+  50% { background-color: oklch(0.55 0.25 300 / 0.18); }
 }
 
 .animate-pulse-soft {
