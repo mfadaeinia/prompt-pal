@@ -375,11 +375,20 @@ function isFalseSentenceBoundary(
   dotStart: number,
   dotEnd: number,
 ): boolean {
-  const isDotRun = text.slice(dotStart, dotEnd + 1).replace(/["'”’)\]]/g, "") === ".";
-  if (!isDotRun) return false; // "!" / "?" / "..." are real boundaries
-
+  const run = text.slice(dotStart, dotEnd + 1).replace(/["'”’)\]]/g, "");
   const before = text.slice(0, dotStart);
   const after = text.slice(dotEnd + 1);
+  const nextVisible = after.match(/^\s*(\S)/u);
+
+  // Ellipsis ("..." / "…") is only a boundary when what follows starts a new
+  // sentence. Trailing-off speech that continues in lowercase stays together.
+  if (/^(\.{2,}|…+)$/.test(run)) {
+    if (!nextVisible) return false;
+    return /[\p{Ll}]/u.test(nextVisible[1]);
+  }
+
+  const isDotRun = run === ".";
+  if (!isDotRun) return false; // "!" / "?" are real boundaries
 
   // Decimal or numbered list: 1.5 / 3.14
   if (/\d$/.test(before) && /^\d/.test(after)) return true;
@@ -396,14 +405,15 @@ function isFalseSentenceBoundary(
   if (/^\p{L}/u.test(after)) return true;
 
   // Sentence must be followed by something that looks like a new sentence.
-  const nextVisible = after.match(/^\s+(\S)/u);
-  if (nextVisible && /[\p{Ll}]/u.test(nextVisible[1])) {
+  const nextAfterSpace = after.match(/^\s+(\S)/u);
+  if (nextAfterSpace && /[\p{Ll}]/u.test(nextAfterSpace[1])) {
     // Lowercase continuation after a period is usually caption noise.
     return true;
   }
 
   return false;
 }
+
 
 
 // Fallback segmentation: walk raw chunks and emit a segment when we hit a
