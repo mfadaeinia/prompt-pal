@@ -3222,7 +3222,7 @@ function Index() {
                             </button>
                           </div>
                         )}
-                      <ol ref={listRef} className="flex-1 overflow-y-auto px-2 pb-3">
+                      <ol ref={listRef} className="flex-1 divide-y divide-border/40 overflow-y-auto px-1 pb-3">
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
@@ -3240,6 +3240,10 @@ function Index() {
                             : selectedRow
                             ? "selected"
                             : "default";
+                          // One sentence = one row. Collapsed rows stay on a
+                          // single line (truncated); the active/selected row
+                          // expands so the full sentence is always readable.
+                          const expanded = playing || selectedRow;
                           const inlineEntry = selectedRow ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
@@ -3248,29 +3252,35 @@ function Index() {
                                 data-state={visualState}
                                 onClick={() => jumpTo(s)}
                                 onMouseEnter={onSentenceHover}
-                                title="Tap to see the meaning"
+                                title={s.text}
                                 aria-label={`Explain: ${s.text}`}
-                                className={`group flex w-full items-start gap-2 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.7] hover:bg-accent/70 hover:border-primary/70 hover:translate-x-0.5 active:scale-[0.98] transition-transform duration-150 ${
+                                aria-expanded={expanded}
+                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-2 cursor-pointer touch-manipulation rounded-md border-l-2 px-2.5 py-2.5 text-left text-[15px] leading-[1.55] hover:bg-accent/70 hover:border-primary/70 transition-colors duration-150 ${
                                   visualState === "playing"
-                                    ? "border-primary bg-primary/25 font-medium text-foreground ring-1 ring-primary/25"
+                                    ? "border-primary bg-primary/20 font-medium text-foreground"
                                     : visualState === "selected"
-                                    ? "border-primary/60 bg-transparent text-foreground/90"
+                                    ? "border-primary/60 bg-accent/40 text-foreground/90"
                                     : "border-transparent text-foreground/85"
                                 }`}
                               >
-                                <span className="mt-[3px] shrink-0 text-[10px] tabular-nums text-muted-foreground/70">
+                                <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
                                 </span>
-                                <span className="flex-1">{s.text}</span>
+                                <span
+                                  className={`min-w-0 ${expanded ? "whitespace-normal" : "truncate"}`}
+                                >
+                                  {s.text}
+                                </span>
                                 <MousePointerClick
                                   aria-hidden
-                                  className={`mt-[3px] h-4 w-4 shrink-0 transition-opacity duration-150 ${
+                                  className={`h-4 w-4 shrink-0 self-center transition-opacity duration-150 ${
                                     playing
                                       ? "text-primary opacity-100"
                                       : "text-muted-foreground/30 opacity-0 group-hover:opacity-100 group-hover:text-primary"
                                   }`}
                                 />
                               </button>
+
                               {/* Mobile inline expansion removed — the ExplanationPanel above is the primary learning surface on mobile. */}
                               {false && selectedRow && studyMode && inlineEntry && (
                                 <div className="hidden">
