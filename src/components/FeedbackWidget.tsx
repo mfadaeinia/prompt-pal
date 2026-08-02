@@ -179,7 +179,7 @@ export function FeedbackWidget({
     <div
       role="dialog"
       aria-label="Quick feedback"
-      className="fixed bottom-4 right-4 z-50 w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-border bg-card/95 p-4 shadow-2xl ring-1 ring-primary/10 backdrop-blur-xl animate-in slide-in-from-bottom-4 fade-in"
+      className="fixed bottom-4 right-4 z-50 w-[min(360px,calc(100vw-2rem))] rounded-2xl border border-border bg-card/95 p-4 shadow-md ring-1 ring-primary/10 backdrop-blur-xl animate-in slide-in-from-bottom-4 fade-in"
     >
       <button
         onClick={() => {

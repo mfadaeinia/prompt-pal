@@ -983,15 +983,12 @@ function Index() {
     }
   };
 
-  // Apply dark theme to <html> when in learning mode (demo view) so all
-  // descendants (including body and portals) receive dark tokens.
+  // Light-first design system: learning mode uses the same bright surfaces as
+  // the rest of the product. Clear any legacy dark class left on <html>.
   useEffect(() => {
-    const root = document.documentElement;
-    if (view === "demo") {
-      root.classList.add("dark");
-      return () => root.classList.remove("dark");
-    }
+    document.documentElement.classList.remove("dark");
   }, [view]);
+
 
   // Auto-show the first-time coachmark whenever the demo view is active and
   // we have sentences rendered (covers direct ?v= URL entry that bypasses startDemo).
@@ -2514,7 +2511,7 @@ function Index() {
 
 
   return (
-    <div className={`relative min-h-screen bg-background text-foreground ${view === "demo" ? "dark" : ""}`}>
+    <div className="relative min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -3255,13 +3252,14 @@ function Index() {
                                 title={s.text}
                                 aria-label={`Explain: ${s.text}`}
                                 aria-expanded={expanded}
-                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-2 cursor-pointer touch-manipulation rounded-md border-l-2 px-2.5 py-2.5 text-left text-[15px] leading-[1.55] hover:bg-accent/70 hover:border-primary/70 transition-colors duration-150 ${
+                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-3 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.65] transition-colors duration-150 hover:border-primary/40 hover:bg-muted ${
                                   visualState === "playing"
-                                    ? "border-primary bg-primary/20 font-medium text-foreground"
+                                    ? "border-primary bg-accent font-medium text-foreground"
                                     : visualState === "selected"
-                                    ? "border-primary/60 bg-accent/40 text-foreground/90"
+                                    ? "border-primary/50 bg-accent/60 text-foreground"
                                     : "border-transparent text-foreground/85"
                                 }`}
+
                               >
                                 <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/70">
                                   {formatTime(s.offset)}
@@ -3461,7 +3459,7 @@ function Index() {
                         setStudyMode(true);
                         track("study_mode_opened", { video_id: videoId });
                       }}
-                      className="h-12 w-full rounded-full text-sm font-semibold shadow-lg shadow-primary/20"
+                      className="h-12 w-full rounded-full text-sm font-semibold shadow-sm"
                     >
                       <BookOpen className="mr-2 h-4 w-4" />
                       Study This Video
@@ -3704,7 +3702,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
               size="lg"
               onClick={onStart}
               disabled={loading}
-              className="h-11 gap-2 rounded-full px-5 text-sm font-medium shadow-lg shadow-primary/20"
+              className="h-11 gap-2 rounded-full px-5 text-sm font-medium shadow-sm"
             >
               {loading ? (
                 <>
@@ -3741,7 +3739,7 @@ function ProductMockup() {
         aria-hidden
         className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent blur-2xl"
       />
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-primary/10">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-1.5 border-b border-border bg-muted/40 px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
@@ -3943,7 +3941,7 @@ function ExplanationPanel({
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,oklch(0.55_0.22_265/0.10),transparent_70%)]"
         />
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -4892,7 +4890,7 @@ function HeroWithPreview({
             Never leave the video to figure out what was just said. Get translation and expression notes in one tap.
           </p>
 
-          <div className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-lg shadow-primary/10 sm:p-5">
+          <div className="mt-5 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 min-w-0">
                 <label htmlFor="hero-lang" className="text-xs font-medium text-foreground">
@@ -5027,7 +5025,7 @@ function ProductPreview() {
   const moment = PREVIEW_MOMENTS[idx];
 
   return (
-    <div className="rounded-2xl border border-border bg-card/80 p-3 shadow-xl shadow-primary/10 backdrop-blur sm:p-4">
+    <div className="rounded-2xl border border-border bg-card/80 p-3 shadow-sm backdrop-blur sm:p-4">
       <div className="mb-2 flex items-center justify-between px-1 pt-1">
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
           <Tv className="h-3 w-3" /> Live example
@@ -5162,7 +5160,7 @@ function BeforeAfterSection() {
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-md shadow-primary/10">
+          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
               After NativeFlow
             </p>
