@@ -97,7 +97,7 @@ function SavedPage() {
               <ArrowLeft className="h-4 w-4" /> Back
             </Link>
             <h1 className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <Bookmark className="h-4 w-4 text-primary" /> My Library
+              <BrandLogo iconOnly markClassName="h-6 w-6" gradientId="nf-saved" /> My Library
             </h1>
             <span className="w-12" />
           </div>
@@ -232,7 +232,7 @@ function LibraryView({ userEmail }: { userEmail: string | null }) {
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
           <h1 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Bookmark className="h-4 w-4 text-primary" /> My Library
+            <BrandLogo iconOnly markClassName="h-6 w-6" gradientId="nf-saved" /> My Library
           </h1>
           <button
             onClick={handleSignOut}
