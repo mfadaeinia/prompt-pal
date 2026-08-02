@@ -326,13 +326,14 @@ function segmentByPunctuation(
       segStart = i + 1;
       continue;
     }
-    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+    if (ch !== "." && ch !== "!" && ch !== "?" && ch !== "…") continue;
 
-    // Consume runs like "?!" or "..."
+    // Consume runs like "?!" or "..." or "…"
     let end = i;
-    while (end + 1 < decoded.length && /[.!?]/.test(decoded[end + 1])) end++;
+    while (end + 1 < decoded.length && /[.!?…]/.test(decoded[end + 1])) end++;
     // Include a trailing closing quote/bracket in the sentence.
     if (end + 1 < decoded.length && /["'”’)\]]/.test(decoded[end + 1])) end++;
+
 
     if (isFalseSentenceBoundary(decoded, i, end)) {
       i = end;
@@ -374,11 +375,20 @@ function isFalseSentenceBoundary(
   dotStart: number,
   dotEnd: number,
 ): boolean {
-  const isDotRun = text.slice(dotStart, dotEnd + 1).replace(/["'”’)\]]/g, "") === ".";
-  if (!isDotRun) return false; // "!" / "?" / "..." are real boundaries
-
+  const run = text.slice(dotStart, dotEnd + 1).replace(/["'”’)\]]/g, "");
   const before = text.slice(0, dotStart);
   const after = text.slice(dotEnd + 1);
+  const nextVisible = after.match(/^\s*(\S)/u);
+
+  // Ellipsis ("..." / "…") is only a boundary when what follows starts a new
+  // sentence. Trailing-off speech that continues in lowercase stays together.
+  if (/^(\.{2,}|…+)$/.test(run)) {
+    if (!nextVisible) return false;
+    return /[\p{Ll}]/u.test(nextVisible[1]);
+  }
+
+  const isDotRun = run === ".";
+  if (!isDotRun) return false; // "!" / "?" are real boundaries
 
   // Decimal or numbered list: 1.5 / 3.14
   if (/\d$/.test(before) && /^\d/.test(after)) return true;
@@ -395,14 +405,15 @@ function isFalseSentenceBoundary(
   if (/^\p{L}/u.test(after)) return true;
 
   // Sentence must be followed by something that looks like a new sentence.
-  const nextVisible = after.match(/^\s+(\S)/u);
-  if (nextVisible && /[\p{Ll}]/u.test(nextVisible[1])) {
+  const nextAfterSpace = after.match(/^\s+(\S)/u);
+  if (nextAfterSpace && /[\p{Ll}]/u.test(nextAfterSpace[1])) {
     // Lowercase continuation after a period is usually caption noise.
     return true;
   }
 
   return false;
 }
+
 
 
 // Fallback segmentation: walk raw chunks and emit a segment when we hit a
@@ -610,7 +621,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
     final = punctSegments;
     strategy = "punctuation";
   } else if (punctSegments.length <= 3) {
-    final = segmentByChunksAndTiming(cleaned, { target: 14, max: 25, gapSeconds: 1.0 });
+    final = segmentByChunksAndTiming(cleaned, { target: 12, max: 22, gapSeconds: 1.0 });
     strategy = "timing+chunks";
   } else {
     final = [];
@@ -625,7 +636,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
         (c) => c.offset + c.duration >= seg.offset && c.offset <= segEnd
       );
       const subSegs = subChunks.length
-        ? segmentByChunksAndTiming(subChunks, { target: 14, max: 25 })
+        ? segmentByChunksAndTiming(subChunks, { target: 12, max: 22 })
         : [seg];
       for (const s of subSegs) final.push({ ...s, id: id++ });
     }
@@ -633,7 +644,7 @@ function buildSentencesFromChunks(chunks: RawChunk[]): TranscriptSentence[] {
   }
 
   // Post-passes: enforce sentence-unit quality invariants.
-  final = splitOversize(final, 35);
+  final = splitOversize(final, 26);
   final = mergeTinyFragments(final, 3);
 
   const segWordCounts = final.map((s) => wordCount(s.text));
