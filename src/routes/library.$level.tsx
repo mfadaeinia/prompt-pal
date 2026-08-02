@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/library/$level")({
   head: ({ params }) => {
