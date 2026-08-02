@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Search, Trash2, Play, ArrowLeft, Bookmark, Film, X, LogOut, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   listSavedExpressions,
   deleteSavedExpression,
