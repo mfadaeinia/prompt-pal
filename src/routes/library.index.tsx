@@ -231,16 +231,21 @@ function BrowsePage() {
 
   const stats = useMemo(() => {
     const map = {} as Record<CefrLevel, { total: number; avgMin: number }>;
-    for (const l of CEFR_LEVELS) map[l] = { total: 0, avgMin: 0 };
-    const sums = {} as Record<CefrLevel, number>;
-    for (const l of CEFR_LEVELS) sums[l] = 0;
+    const sums = {} as Record<CefrLevel, { min: number; n: number }>;
+    for (const l of CEFR_LEVELS) {
+      map[l] = { total: 0, avgMin: 0 };
+      sums[l] = { min: 0, n: 0 };
+    }
     for (const v of all) {
       if (!v.cefr_level || !(v.cefr_level in map)) continue;
       map[v.cefr_level].total += 1;
-      sums[v.cefr_level] += (v.duration_sec ?? 0) / 60;
+      if (v.duration_sec) {
+        sums[v.cefr_level].min += v.duration_sec / 60;
+        sums[v.cefr_level].n += 1;
+      }
     }
     for (const l of CEFR_LEVELS) {
-      map[l].avgMin = map[l].total ? Math.round(sums[l] / map[l].total) : 0;
+      map[l].avgMin = sums[l].n ? Math.round(sums[l].min / sums[l].n) : 0;
     }
     return map;
   }, [all]);
