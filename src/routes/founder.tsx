@@ -2627,44 +2627,20 @@ function TraceResult({ trace }: { trace: PipelineTrace }) {
         )}
       </TraceBlock>
 
-      <TraceBlock title="Step 4 — Transcribr fallback" status={trace.step4_transcribr.status}>
-        <Row k="attempted" v={String(trace.step4_transcribr.attempted)} />
-        <Row k="request_sent" v={String(trace.step4_transcribr.requestSent)} />
-        <Row k="http_status" v={trace.step4_transcribr.httpStatus ?? "—"} />
-        <Row k="language_returned" v={trace.step4_transcribr.languageReturned ?? "—"} />
-        <Row k="raw_segments" v={trace.step4_transcribr.rawSegments} />
-        <Row k="kept_segments" v={trace.step4_transcribr.keptSegments} />
-        <Row k="transcript_chars" v={trace.step4_transcribr.transcriptChars} />
-        <Row k="skip_reason" v={trace.step4_transcribr.skipReason ?? "—"} />
-        <Row k="error" v={trace.step4_transcribr.errorMessage ?? "—"} />
-        {trace.step4_transcribr.responseBodySnippet && (
-          <div className="mt-2">
-            <div className="text-xs font-medium text-slate-500 mb-1">Response body (truncated)</div>
-            <pre className="overflow-x-auto rounded bg-slate-50 p-2 text-[11px] text-slate-700">{trace.step4_transcribr.responseBodySnippet}</pre>
-          </div>
-        )}
-      </TraceBlock>
-
-      <TraceBlock title="Step 5 — Gemini ASR fallback" status={"disabled" as any}>
-        <Row k="attempted" v={String(trace.step5_gemini.attempted)} />
-        <Row k="status" v="DISABLED" />
-        <Row k="reason" v={trace.step5_gemini.reason} />
-      </TraceBlock>
-
-      <TraceBlock title="Step 6 — OpenAI Whisper fallback" status={trace.step6_openai_whisper.status}>
-        <Row k="attempted" v={String(trace.step6_openai_whisper.attempted)} />
-        <Row k="skip_reason" v={trace.step6_openai_whisper.skipReason ?? "—"} />
-        <Row k="audio_extractor_provider" v={trace.step6_openai_whisper.audioExtractorProvider ?? "—"} />
-        <Row k="audio_url_found" v={String(trace.step6_openai_whisper.audioUrlFound)} />
-        <Row k="audio_extraction_failed" v={String(trace.step6_openai_whisper.audioExtractionFailed)} />
-        <Row k="openai_invoked" v={String(trace.step6_openai_whisper.openaiInvoked)} />
-        <Row k="openai_http_status" v={trace.step6_openai_whisper.openaiHttpStatus ?? "—"} />
-        <Row k="transcript_chars" v={trace.step6_openai_whisper.transcriptChars} />
-        <Row k="segments_count" v={trace.step6_openai_whisper.segmentsCount} />
-        <Row k="language" v={trace.step6_openai_whisper.language ?? "—"} />
-        <Row k="model" v={trace.step6_openai_whisper.model ?? "—"} />
-        <Row k="failure_reason" v={trace.step6_openai_whisper.failureReason ?? "—"} />
-        <Row k="extractor_failure_reason" v={trace.step6_openai_whisper.extractorFailureReason ?? "—"} />
+      <TraceBlock title="Step 4 — OpenAI Whisper (last resort)" status={trace.step4_openai_whisper.status}>
+        <Row k="attempted" v={String(trace.step4_openai_whisper.attempted)} />
+        <Row k="skip_reason" v={trace.step4_openai_whisper.skipReason ?? "—"} />
+        <Row k="audio_extractor_provider" v={trace.step4_openai_whisper.audioExtractorProvider ?? "—"} />
+        <Row k="audio_url_found" v={String(trace.step4_openai_whisper.audioUrlFound)} />
+        <Row k="audio_extraction_failed" v={String(trace.step4_openai_whisper.audioExtractionFailed)} />
+        <Row k="openai_invoked" v={String(trace.step4_openai_whisper.openaiInvoked)} />
+        <Row k="openai_http_status" v={trace.step4_openai_whisper.openaiHttpStatus ?? "—"} />
+        <Row k="transcript_chars" v={trace.step4_openai_whisper.transcriptChars} />
+        <Row k="segments_count" v={trace.step4_openai_whisper.segmentsCount} />
+        <Row k="language" v={trace.step4_openai_whisper.language ?? "—"} />
+        <Row k="model" v={trace.step4_openai_whisper.model ?? "—"} />
+        <Row k="failure_reason" v={trace.step4_openai_whisper.failureReason ?? "—"} />
+        <Row k="extractor_failure_reason" v={trace.step4_openai_whisper.extractorFailureReason ?? "—"} />
       </TraceBlock>
 
 

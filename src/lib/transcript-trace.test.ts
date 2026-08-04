@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractVideoId } from "./transcript-trace.functions";
+import { extractVideoId } from "./youtube-id";
 
 const ID = "ydKcaIE6O1k";
 
