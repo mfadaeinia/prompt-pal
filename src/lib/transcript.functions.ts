@@ -1052,6 +1052,13 @@ async function writeCache(params: {
   return { ok: true, validation, provenance: data ? rowToProvenance(data as unknown as CacheRow) : undefined };
 }
 
+/**
+ * Shared, validated transcript cache write. The ONLY way any pipeline stage
+ * (captions, Whisper, streaming Whisper, manual paste) is allowed to persist a
+ * transcript — keeps validation + language-authority logic in one place.
+ */
+export const writeTranscriptCache = writeCache;
+
 /** Founder/debug: delete every cached row for a video, across all providers/languages. */
 export const clearTranscriptCacheForVideo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ videoId: z.string().min(1).max(50) }).parse(d))
@@ -1822,93 +1829,9 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
       };
     }
 
-    // ---- Layer 3: Transcribr fallback (fast) ----
-    // YouTube captions are unavailable for this video. Before escalating to
-    // the slow ASR (Whisper) stream, try the Transcribr provider — it is a
-    // single HTTP call and often succeeds on videos where YouTube captions
-    // are disabled. If it returns a usable transcript, surface it as a
-    // normal "ready" result so the UI never has to render the captions
-    // error for videos that actually have a transcript available.
-    try {
-      const tFb = Date.now();
-      const fbTrace: TranscribrTrace = {
-        invoked: false,
-        httpStatus: null,
-        errorMessage: null,
-        rawSegments: 0,
-        keptSegments: 0,
-        discardedReason: null,
-        durationMs: null,
-      };
-      const fb = await fetchFromFallbackProvider({
-        videoId,
-        videoUrl: data.url,
-        trace: fbTrace,
-      });
-      console.log("[transcript-debug] fast:transcribr", {
-        videoId,
-        invoked: fbTrace.invoked,
-        httpStatus: fbTrace.httpStatus,
-        keptSegments: fbTrace.keptSegments,
-        error: fbTrace.errorMessage,
-        elapsed_ms: Date.now() - tFb,
-      });
-      if (fb && fb.chunks.length) {
-        const tBuild = Date.now();
-        const sentences = buildSentencesFromChunks(fb.chunks);
-        timings.sentence_build_ms = Date.now() - tBuild;
-        if (sentences.length > 0) {
-          const detected = detectLanguage(fb.chunks.map((c) => c.text).join(" "));
-          const langMismatch =
-            spokenLanguage &&
-            detected.language &&
-            detected.confidence >= 0.4 &&
-            !sameBaseLanguage(detected.language, spokenLanguage);
-          if (!langMismatch) {
-            const quality = assessQuality(fb.chunks, sentences);
-            const tWrite = Date.now();
-            const cacheWrite = await writeCache({
-              videoId,
-              videoUrl: data.url,
-              chunks: fb.chunks,
-              requestedLanguage,
-              provider: "fallback",
-              providerResponseLanguage: fb.language,
-            });
-            timings.cache_write_ms = Date.now() - tWrite;
-            timings.provider_used = "fallback";
-            timings.cache_hit = false;
-            timings.sentence_count = sentences.length;
-            timings.total_server_ms = Date.now() - tStart;
-            logTimings("fast:transcribr", videoId, timings);
-            return {
-              status: "ready",
-              result: {
-                videoId,
-                sentences,
-                source: "fallback",
-                language: detected.language ?? fb.language,
-                spokenLanguage,
-                transcriptLanguage: detected.language ?? fb.language,
-                cacheHit: false,
-                quality,
-                provenance: cacheWrite.provenance ?? null,
-                rawChunks: fb.chunks,
-                stageTimings: timings,
-              },
-            };
-          }
-          console.warn("[lang-pipeline][server] transcribr language mismatch — discarding", {
-            videoId,
-            requestedSpokenLanguage: spokenLanguage,
-            detectedFromText: detected.language,
-          });
-        }
-      }
-    } catch (e) {
-      console.warn("[transcript-debug] fast:transcribr threw", e instanceof Error ? e.message : String(e));
-    }
-
+    // Cache miss + no usable captions → the caller escalates to the
+    // progressive Whisper stream (/api/public/transcript-stream). No other
+    // provider is attempted here: one ASR backend, one code path.
     timings.total_server_ms = Date.now() - tStart;
     logTimings("fast:miss", videoId, timings);
     return {
