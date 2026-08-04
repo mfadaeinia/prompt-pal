@@ -452,7 +452,6 @@ function BenchmarkBody({ data, health }: { data: LatestBenchmark; health: Datase
       )}
 
       <SummaryInsights results={results} health={health} />
-      <TranscribrBreakdown results={results} />
       <AutoObservations results={results} />
       <QualityDistribution results={results} />
       <SourceAnalysis results={results} />
@@ -549,131 +548,6 @@ function SummaryInsights({ results, health }: { results: BenchmarkResultRow[]; h
           <li key={idx}>• {i}</li>
         ))}
       </ul>
-    </section>
-  );
-}
-
-// ---------- Transcribr failure breakdown ----------
-
-type TranscribrBucket =
-  | "402_insufficient_credits"
-  | "401_unauthorized"
-  | "429_rate_limited"
-  | "5xx_provider_error"
-  | "empty_transcript"
-  | "timeout"
-  | "not_invoked"
-  | "ok"
-  | "unknown";
-
-const TRANSCRIBR_BUCKET_LABEL: Record<TranscribrBucket, string> = {
-  "402_insufficient_credits": "402 insufficient credits",
-  "401_unauthorized": "401 unauthorized",
-  "429_rate_limited": "429 rate limited",
-  "5xx_provider_error": "5xx provider error",
-  empty_transcript: "Empty transcript",
-  timeout: "Timeout",
-  not_invoked: "Not invoked",
-  ok: "OK",
-  unknown: "Unknown",
-};
-
-export function classifyTranscribrBucket(row: {
-  transcribr_invoked: boolean | null;
-  transcribr_status: number | null;
-  transcribr_error: string | null;
-  transcribr_segments_count: number | null;
-}): TranscribrBucket {
-  if (row.transcribr_invoked === false || row.transcribr_invoked == null) {
-    // Distinguish "never tried" from "tried and ok": if status is set, treat as invoked.
-    if (row.transcribr_status == null && !row.transcribr_error) return "not_invoked";
-  }
-  const s = row.transcribr_status;
-  const err = (row.transcribr_error ?? "").toLowerCase();
-  if (s === 402) return "402_insufficient_credits";
-  if (s === 401 || s === 403) return "401_unauthorized";
-  if (s === 429) return "429_rate_limited";
-  if (s != null && s >= 500 && s <= 599) return "5xx_provider_error";
-  if (/timeout|timed out|etimedout|aborted/.test(err)) return "timeout";
-  if (s === 200 && (row.transcribr_segments_count ?? 0) === 0) return "empty_transcript";
-  if (s === 200) return "ok";
-  if (s == null && err) return "unknown";
-  return "unknown";
-}
-
-function TranscribrBreakdown({ results }: { results: BenchmarkResultRow[] }) {
-  const stats = useMemo(() => {
-    const failures = results.filter((r) => !r.transcript_found);
-    const buckets = new Map<TranscribrBucket, number>();
-    for (const r of failures) {
-      const b = classifyTranscribrBucket(r);
-      buckets.set(b, (buckets.get(b) ?? 0) + 1);
-    }
-    const total = failures.length;
-    const ordered: TranscribrBucket[] = [
-      "402_insufficient_credits",
-      "401_unauthorized",
-      "429_rate_limited",
-      "5xx_provider_error",
-      "empty_transcript",
-      "timeout",
-      "not_invoked",
-      "unknown",
-    ];
-    const rows = ordered
-      .map((b) => ({ bucket: b, count: buckets.get(b) ?? 0 }))
-      .filter((r) => r.count > 0);
-    const c402 = buckets.get("402_insufficient_credits") ?? 0;
-    const dominantInsight =
-      total > 0 && c402 / total > 0.5
-        ? "Most transcript failures are caused by Transcribr insufficient credits."
-        : null;
-    return { rows, total, dominantInsight };
-  }, [results]);
-
-  if (!stats.total) return null;
-  return (
-    <section>
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Transcribr failure breakdown
-      </h3>
-      <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
-        {stats.dominantInsight && (
-          <div className="mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
-            ⚠ {stats.dominantInsight}
-          </div>
-        )}
-        {stats.rows.length === 0 ? (
-          <div className="text-slate-500">
-            No Transcribr diagnostics on the {stats.total} failed video(s) — run a new benchmark to populate these fields.
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="text-slate-500">
-              <tr>
-                <th className="px-2 py-1 text-left font-medium">Reason</th>
-                <th className="px-2 py-1 text-right font-medium">Count</th>
-                <th className="px-2 py-1 text-right font-medium">% of failures</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.rows.map((r) => (
-                <tr key={r.bucket} className="border-t border-slate-100">
-                  <td className="px-2 py-1">{TRANSCRIBR_BUCKET_LABEL[r.bucket]}</td>
-                  <td className="px-2 py-1 text-right font-mono">{r.count}</td>
-                  <td className="px-2 py-1 text-right font-mono">
-                    {Math.round((r.count / stats.total) * 100)}%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        <p className="mt-2 text-[11px] text-slate-500">
-          Buckets are derived from per-row Transcribr HTTP status, error body, and segment count
-          (new fields persisted to <code className="font-mono">benchmark_video_results</code>).
-        </p>
-      </div>
     </section>
   );
 }
@@ -1220,23 +1094,9 @@ function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => v
           ))}
         </div>
 
-        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Transcribr Diagnostics</h5>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
-          <dt className="text-slate-500">Bucket</dt>
-          <dd className="font-mono">
-            {TRANSCRIBR_BUCKET_LABEL[classifyTranscribrBucket(row)]}
-          </dd>
-          <dt className="text-slate-500">Invoked</dt>
-          <dd className="font-mono">{row.transcribr_invoked == null ? "—" : row.transcribr_invoked ? "yes" : "no"}</dd>
-          <dt className="text-slate-500">HTTP status</dt>
-          <dd className="font-mono">{row.transcribr_status ?? "—"}</dd>
-          <dt className="text-slate-500">Segments returned</dt>
-          <dd className="font-mono">{row.transcribr_segments_count ?? "—"}</dd>
-          <dt className="text-slate-500">Latency</dt>
-          <dd className="font-mono">{row.transcribr_duration_ms != null ? `${row.transcribr_duration_ms}ms` : "—"}</dd>
-          <dt className="text-slate-500">Error body</dt>
-          <dd className="font-mono break-all text-red-700">{row.transcribr_error ?? "—"}</dd>
-        </dl>
+        {/* Transcribr was removed from the pipeline (single ASR backend: OpenAI
+            Whisper), so its legacy diagnostics are no longer surfaced. */}
+
 
         {row.provider_error && (
           <>

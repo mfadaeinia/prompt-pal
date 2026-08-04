@@ -747,18 +747,9 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         cacheRowId = tr.provenance?.cacheRowId ?? null;
         cacheKey = tr.provenance?.cacheKey ?? null;
 
-        // Capture Transcribr trace on success path too (e.g. if Transcribr
-        // was attempted and failed before YouTube captions succeeded, or
-        // when source === "fallback" the trace shows what Transcribr returned).
+        // Transcribr was removed from the pipeline; its legacy columns stay
+        // null so historical runs remain comparable.
         {
-          const tr2 = tr.providerTrace?.transcribr;
-          if (tr2) {
-            transcribr_invoked = tr2.invoked;
-            transcribr_status = tr2.httpStatus;
-            transcribr_error = tr2.errorMessage;
-            transcribr_segments_count = tr2.rawSegments;
-            transcribr_duration_ms = tr2.durationMs;
-          }
           const ag = tr.providerTrace?.asrGeneric;
           if (ag) {
             asr_provider = ag.provider;
@@ -966,26 +957,6 @@ export const processBenchmarkVideo = createServerFn({ method: "POST" })
         //   • Was ASR invoked? Did it return a transcript that got discarded?
         const pt = (e as { providerTrace?: import("@/lib/transcript.functions").ProviderTrace } | null)?.providerTrace;
         if (pt) {
-          const tr = pt.transcribr;
-          // Persist Transcribr diagnostics directly to dedicated columns
-          // so failures can be aggregated without parsing the log array.
-          transcribr_invoked = tr.invoked;
-          transcribr_status = tr.httpStatus;
-          transcribr_error = tr.errorMessage;
-          transcribr_segments_count = tr.rawSegments;
-          transcribr_duration_ms = tr.durationMs;
-          const trDiscarded = tr.rawSegments > 0 && tr.keptSegments === 0;
-          log({
-            step: "provider:transcribr",
-            ok: tr.keptSegments > 0,
-            detail:
-              `invoked=${tr.invoked ? "yes" : "no"}` +
-              ` http=${tr.httpStatus ?? "-"}` +
-              ` segments=${tr.rawSegments}` +
-              ` kept=${tr.keptSegments}` +
-              (trDiscarded ? ` discarded=${tr.discardedReason ?? "yes"}` : "") +
-              (tr.errorMessage ? ` error=${tr.errorMessage.slice(0, 160)}` : ""),
-          });
           const ar = pt.asr;
           const arDiscarded = ar.rawSegments > 0 && ar.keptSegments === 0;
           log({

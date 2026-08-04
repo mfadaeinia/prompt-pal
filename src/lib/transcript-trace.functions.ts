@@ -9,62 +9,17 @@
  *   1. Validate YouTube video (oEmbed)
  *   2. Cache lookup (youtube_transcript_cache)
  *   3. YouTube captions (youtube-transcript lib, per-lang loop)
- *   4. Transcribr fallback (https://www.transcribr.io)
- *   5. Gemini ASR — DISABLED in code (hallucination risk)
+ *   4. OpenAI Whisper (audio extraction + transcription)
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
+import { extractVideoId } from "@/lib/youtube-id";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
   expectedLanguage: z.string().max(20).optional(),
 });
-
-const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
-
-export function extractVideoId(input: string): string | null {
-  if (!input) return null;
-  const raw = input.trim();
-  if (VIDEO_ID_RE.test(raw)) return raw;
-
-  // Allow bare URLs without protocol
-  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-
-  let u: URL;
-  try {
-    u = new URL(withProto);
-  } catch {
-    return null;
-  }
-
-  const host = u.hostname.toLowerCase().replace(/^www\./, "").replace(/^m\./, "");
-  const segments = u.pathname.split("/").filter(Boolean);
-
-  const valid = (s: string | null | undefined): string | null =>
-    s && VIDEO_ID_RE.test(s) ? s : null;
-
-  if (host === "youtu.be") {
-    return valid(segments[0] ?? null);
-  }
-
-  if (host === "youtube.com" || host.endsWith(".youtube.com")) {
-    // /watch?v=ID  (regardless of other query params)
-    if (segments[0] === "watch") {
-      const v = valid(u.searchParams.get("v"));
-      if (v) return v;
-    }
-    // /shorts/ID, /embed/ID, /live/ID, /v/ID
-    if (["shorts", "embed", "live", "v"].includes(segments[0])) {
-      return valid(segments[1] ?? null);
-    }
-    // Fallback: any ?v= param
-    const v = valid(u.searchParams.get("v"));
-    if (v) return v;
-  }
-
-  return null;
-}
 
 export type StepStatus = "ok" | "fail" | "skipped";
 
@@ -117,25 +72,7 @@ export type PipelineTrace = {
     attempts: Array<{ lang: string; ok: boolean; chunks: number; error: string | null }>;
     errorMessage: string | null;
   };
-  step4_transcribr: {
-    attempted: boolean;
-    status: StepStatus;
-    requestSent: boolean;
-    httpStatus: number | null;
-    languageReturned: string | null;
-    rawSegments: number;
-    keptSegments: number;
-    transcriptChars: number;
-    responseBodySnippet: string | null;
-    errorMessage: string | null;
-    skipReason: string | null;
-  };
-  step5_gemini: {
-    attempted: boolean;
-    status: "disabled";
-    reason: string;
-  };
-  step6_openai_whisper: {
+  step4_openai_whisper: {
     attempted: boolean;
     status: StepStatus;
     skipReason: string | null;
@@ -341,103 +278,10 @@ async function step3Youtube(videoId: string): Promise<PipelineTrace["step3_youtu
   };
 }
 
-async function step4Transcribr(videoId: string): Promise<PipelineTrace["step4_transcribr"]> {
-  const apiKey = process.env.TRANSCRIBR_API_KEY;
-  if (!apiKey) {
-    return {
-      attempted: false,
-      status: "skipped",
-      requestSent: false,
-      httpStatus: null,
-      languageReturned: null,
-      rawSegments: 0,
-      keptSegments: 0,
-      transcriptChars: 0,
-      responseBodySnippet: null,
-      errorMessage: null,
-      skipReason: "TRANSCRIBR_API_KEY missing",
-    };
-  }
-  try {
-    const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ video_id: videoId }),
-    });
-    const bodyText = await res.text().catch(() => "");
-    if (!res.ok) {
-      return {
-        attempted: true,
-        status: "fail",
-        requestSent: true,
-        httpStatus: res.status,
-        languageReturned: null,
-        rawSegments: 0,
-        keptSegments: 0,
-        transcriptChars: 0,
-        responseBodySnippet: bodyText.slice(0, 500),
-        errorMessage: `HTTP ${res.status}`,
-        skipReason: null,
-      };
-    }
-    let json: any = null;
-    try {
-      json = JSON.parse(bodyText);
-    } catch {
-      return {
-        attempted: true,
-        status: "fail",
-        requestSent: true,
-        httpStatus: res.status,
-        languageReturned: null,
-        rawSegments: 0,
-        keptSegments: 0,
-        transcriptChars: 0,
-        responseBodySnippet: bodyText.slice(0, 500),
-        errorMessage: "invalid_json",
-        skipReason: null,
-      };
-    }
-    const transcript: any[] = Array.isArray(json?.transcript) ? json.transcript : [];
-    const kept = transcript.filter((c) => String(c.text ?? "").length > 0);
-    const chars = kept.reduce((n, c) => n + String(c.text ?? "").length, 0);
-    return {
-      attempted: true,
-      status: kept.length > 0 ? "ok" : "fail",
-      requestSent: true,
-      httpStatus: res.status,
-      languageReturned: json?.language ?? null,
-      rawSegments: transcript.length,
-      keptSegments: kept.length,
-      transcriptChars: chars,
-      responseBodySnippet: bodyText.slice(0, 300),
-      errorMessage: kept.length > 0 ? null : "empty_or_blank_segments",
-      skipReason: null,
-    };
-  } catch (e) {
-    return {
-      attempted: true,
-      status: "fail",
-      requestSent: true,
-      httpStatus: null,
-      languageReturned: null,
-      rawSegments: 0,
-      keptSegments: 0,
-      transcriptChars: 0,
-      responseBodySnippet: null,
-      errorMessage: e instanceof Error ? e.message : String(e),
-      skipReason: null,
-    };
-  }
-}
-async function step6OpenAiWhisper(
+async function step4OpenAiWhisper(
   videoId: string,
   expectedLanguage: string,
-): Promise<PipelineTrace["step6_openai_whisper"]> {
+): Promise<PipelineTrace["step4_openai_whisper"]> {
   if (!process.env.OPENAI_API_KEY) {
     return {
       attempted: false, status: "skipped", skipReason: "OPENAI_API_KEY missing",
@@ -518,17 +362,7 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
         attempted: false, status: "skipped", languageUsed: null,
         chunkCount: 0, transcriptChars: 0, attempts: [], errorMessage: null,
       },
-      step4_transcribr: {
-        attempted: false, status: "skipped", requestSent: false, httpStatus: null,
-        languageReturned: null, rawSegments: 0, keptSegments: 0, transcriptChars: 0,
-        responseBodySnippet: null, errorMessage: null, skipReason: null,
-      },
-      step5_gemini: {
-        attempted: false,
-        status: "disabled",
-        reason: "Layer 4 (Gemini file_uri ASR) is permanently disabled in transcript.functions.ts — the gateway does not fetch YouTube audio and the model hallucinates transcripts. No real ASR backend is wired yet.",
-      },
-      step6_openai_whisper: {
+      step4_openai_whisper: {
         attempted: false, status: "skipped", skipReason: null,
         audioExtractorProvider: null, audioUrlFound: false, audioExtractionFailed: false,
         openaiInvoked: false, openaiHttpStatus: null, transcriptChars: 0,
@@ -574,19 +408,8 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       return trace;
     }
 
-    trace.step4_transcribr = await step4Transcribr(videoId);
-    if (trace.step4_transcribr.status === "ok") {
-      trace.final = {
-        transcriptGenerated: true,
-        finalSource: "fallback",
-        failureCode: null,
-        failureReason: null,
-      };
-      return trace;
-    }
-
-    trace.step6_openai_whisper = await step6OpenAiWhisper(videoId, expectedLanguage);
-    if (trace.step6_openai_whisper.status === "ok") {
+    trace.step4_openai_whisper = await step4OpenAiWhisper(videoId, expectedLanguage);
+    if (trace.step4_openai_whisper.status === "ok") {
       trace.final = {
         transcriptGenerated: true,
         finalSource: "openai_whisper",
@@ -596,14 +419,11 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
       return trace;
     }
 
-    // All available layers failed (Gemini is disabled by code).
+    // All layers failed.
     const reasons: string[] = [];
     if (trace.step3_youtube.errorMessage) reasons.push(`youtube: ${trace.step3_youtube.errorMessage}`);
-    if (trace.step4_transcribr.skipReason) reasons.push(`transcribr_skipped: ${trace.step4_transcribr.skipReason}`);
-    else if (trace.step4_transcribr.errorMessage) reasons.push(`transcribr: ${trace.step4_transcribr.errorMessage}`);
-    reasons.push("gemini_asr_disabled");
-    if (trace.step6_openai_whisper.skipReason) reasons.push(`openai_whisper_skipped: ${trace.step6_openai_whisper.skipReason}`);
-    else if (trace.step6_openai_whisper.failureReason) reasons.push(`openai_whisper: ${trace.step6_openai_whisper.failureReason}`);
+    if (trace.step4_openai_whisper.skipReason) reasons.push(`openai_whisper_skipped: ${trace.step4_openai_whisper.skipReason}`);
+    else if (trace.step4_openai_whisper.failureReason) reasons.push(`openai_whisper: ${trace.step4_openai_whisper.failureReason}`);
     trace.final = {
       transcriptGenerated: false,
       finalSource: "none",

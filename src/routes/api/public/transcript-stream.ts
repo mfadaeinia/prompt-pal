@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import {
   buildSentencesFromChunksExport,
-  TRANSCRIPT_PIPELINE_VERSION,
+  writeTranscriptCache,
   type RawChunk,
 } from "@/lib/transcript.functions";
+import { extractVideoId } from "@/lib/youtube-id";
+
 
 const OPENAI_AUDIO_LIMIT_BYTES = 25 * 1024 * 1024;
 
@@ -58,8 +60,7 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
         if (!url) {
           return new Response("missing ?url", { status: 400 });
         }
-        const videoId =
-          url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/)?.[1] ?? url;
+        const videoId = extractVideoId(url) ?? url;
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
@@ -277,30 +278,14 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                   });
 
                   try {
-                    const requestedLanguage = lang && lang !== "_any_" ? lang : "_any_";
-                    const provider = "openai";
-                    const sourceVersion = TRANSCRIPT_PIPELINE_VERSION;
-                    const totalChars = allRawChunks.reduce((n, c) => n + (c.text?.length ?? 0), 0);
-                    const cacheKey = `${videoId}::${requestedLanguage}::${provider}::v${sourceVersion}`;
-                    await supabaseAdmin
-                      .from("youtube_transcript_cache" as any)
-                      .upsert(
-                        {
-                          video_id: videoId,
-                          video_url: url,
-                          transcript_json: allRawChunks,
-                          language: detectedLanguage,
-                          source: provider,
-                          provider,
-                          requested_language: requestedLanguage,
-                          provider_response_language: detectedLanguage,
-                          source_version: sourceVersion,
-                          cache_key: cacheKey,
-                          transcript_length_chars: totalChars,
-                          updated_at: new Date().toISOString(),
-                        },
-                        { onConflict: "video_id,requested_language,provider,source_version" },
-                      );
+                    await writeTranscriptCache({
+                      videoId,
+                      videoUrl: url,
+                      chunks: allRawChunks,
+                      requestedLanguage: lang && lang !== "_any_" ? lang : "_any_",
+                      provider: "openai",
+                      providerResponseLanguage: detectedLanguage,
+                    });
                   } catch (cacheErr) {
                     console.warn("[transcript-stream] cache write failed", cacheErr);
                   }
@@ -555,15 +540,6 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
               // Write to youtube_transcript_cache so subsequent loads hit
               // the fast path instead of re-running progressive Whisper.
               try {
-                const requestedLanguage = lang && lang !== "_any_" ? lang : "_any_";
-                const provider = "openai";
-                const sourceVersion = TRANSCRIPT_PIPELINE_VERSION;
-                const totalChars = allRawChunks.reduce(
-                  (n, c) => n + (c.text?.length ?? 0),
-                  0,
-                );
-                const cacheKey = `${videoId}::${requestedLanguage}::${provider}::v${sourceVersion}`;
-
                 // Safety guard: compare summed Whisper-decoded durations vs
                 // the media duration we can estimate from totalAudioBytes /
                 // measured bitrate. If they diverge by more than ~2%, future
@@ -588,25 +564,14 @@ export const Route = createFileRoute("/api/public/transcript-stream")({
                     console.log("[sync-debug][server] drift OK", payload);
                   }
                 }
-                await supabaseAdmin
-                  .from("youtube_transcript_cache" as any)
-                  .upsert(
-                    {
-                      video_id: videoId,
-                      video_url: url,
-                      transcript_json: allRawChunks,
-                      language: lastDetectedLanguage,
-                      source: provider,
-                      provider,
-                      requested_language: requestedLanguage,
-                      provider_response_language: lastDetectedLanguage,
-                      source_version: sourceVersion,
-                      cache_key: cacheKey,
-                      transcript_length_chars: totalChars,
-                      updated_at: new Date().toISOString(),
-                    },
-                    { onConflict: "video_id,requested_language,provider,source_version" },
-                  );
+                await writeTranscriptCache({
+                  videoId,
+                  videoUrl: url,
+                  chunks: allRawChunks,
+                  requestedLanguage: lang && lang !== "_any_" ? lang : "_any_",
+                  provider: "openai",
+                  providerResponseLanguage: lastDetectedLanguage,
+                });
               } catch (cacheErr) {
                 console.warn("[transcript-stream] cache write failed", cacheErr);
               }

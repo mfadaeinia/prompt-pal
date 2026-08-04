@@ -584,7 +584,4 @@ export async function transcribeWithOpenAi(params: {
   }
 }
 
-export function getAsrProvider(): "transcribr" | "openai" {
-  const v = (process.env.ASR_PROVIDER || "transcribr").toLowerCase();
-  return v === "openai" ? "openai" : "transcribr";
-}
+

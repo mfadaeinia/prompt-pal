@@ -3585,7 +3585,8 @@ function Index() {
 function SourceBadge({ source, cachedFrom }: { source: TranscriptSource; cachedFrom?: string | null }) {
   const labels: Record<string, string> = {
     youtube: "YouTube captions",
-    fallback: "Transcribr fallback",
+    // Legacy rows only — the fallback provider was removed from the pipeline.
+    fallback: "Fallback provider (legacy)",
     manual: "Manual paste",
     asr: "AI transcribed",
     unknown: "unknown",
