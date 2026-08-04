@@ -552,6 +552,587 @@ function SummaryInsights({ results, health }: { results: BenchmarkResultRow[]; h
   );
 }
 
+function Kpi({ label, value, target, count }: { label: string; value: number; target: number; count: string }) {
+  const v = Number(value);
+  const pass = v >= target;
+  const color = pass ? "text-green-600" : v >= target - 5 ? "text-amber-600" : "text-red-600";
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className={`mt-1 text-3xl font-bold ${color}`}>{v.toFixed(1)}%</div>
+      <div className="mt-1 text-xs text-slate-500">
+        {count} · target ≥{target}%{" "}
+        <span className={pass ? "text-green-600" : "text-red-600"}>{pass ? "PASS" : "FAIL"}</span>
+      </div>
+    </div>
+  );
+}
+
+function AudioExtractionPanel({ results }: { results: BenchmarkResultRow[] }) {
+  const m = useMemo(() => {
+    const openaiRows = results.filter(
+      (r) => r.openai_invoked || r.extractor_provider != null,
+    );
+
+    const attempts = openaiRows.length;
+    const success = openaiRows.filter((r) => r.extractor_audio_url_found).length;
+    const failures = openaiRows.filter(
+      (r) => r.extractor_audio_url_found === false || (!r.extractor_audio_url_found && r.extractor_failure_reason),
+    );
+    const reasonCounts: Record<string, number> = {};
+    for (const r of failures) {
+      const key = r.extractor_failure_reason ?? "provider_unknown";
+      reasonCounts[key] = (reasonCounts[key] ?? 0) + 1;
+    }
+    const latencies = openaiRows
+      .map((r) => r.extractor_latency_ms)
+      .filter((n): n is number => typeof n === "number" && n > 0);
+    const avgLatency = latencies.length
+      ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+      : null;
+    const openaiInvokedCount = openaiRows.filter((r) => r.openai_invoked).length;
+    const openaiSuccess = openaiRows.filter(
+      (r) => (r.transcript_source === "fallback" || r.transcript_source === "asr") && r.transcript_found,
+    ).length;
+    return {
+      attempts,
+      success,
+      successPct: attempts ? Number(((success / attempts) * 100).toFixed(1)) : 0,
+      failureCount: failures.length,
+      reasonCounts,
+      avgLatency,
+      openaiInvokedCount,
+      openaiSuccess,
+      openaiSuccessPct: openaiInvokedCount
+        ? Number(((openaiSuccess / openaiInvokedCount) * 100).toFixed(1))
+        : 0,
+    };
+  }, [results]);
+
+  if (m.attempts === 0) return null;
+
+  const ranked = Object.entries(m.reasonCounts).sort((a, b) => b[1] - a[1]);
+  const maxN = Math.max(1, ...Object.values(m.reasonCounts));
+
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Audio Extraction Reliability
+      </h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Extraction success</div>
+          <div className={`mt-1 text-3xl font-bold ${m.successPct >= 80 ? "text-green-600" : m.successPct >= 60 ? "text-amber-600" : "text-red-600"}`}>
+            {m.successPct}%
+          </div>
+          <div className="mt-1 text-xs text-slate-500">{m.success}/{m.attempts} audio URLs resolved</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Extraction failures</div>
+          <div className="mt-1 text-3xl font-bold text-red-600">{m.failureCount}</div>
+          <div className="mt-1 text-xs text-slate-500">videos blocked before OpenAI</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">Avg extractor latency</div>
+          <div className="mt-1 text-3xl font-bold text-slate-900">
+            {m.avgLatency != null ? `${(m.avgLatency / 1000).toFixed(1)}s` : "—"}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">RapidAPI poll loop</div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs text-slate-500">OpenAI transcription</div>
+          <div className={`mt-1 text-3xl font-bold ${m.openaiSuccessPct >= 90 ? "text-green-600" : "text-amber-600"}`}>
+            {m.openaiSuccessPct}%
+          </div>
+          <div className="mt-1 text-xs text-slate-500">
+            {m.openaiSuccess}/{m.openaiInvokedCount} when audio reached OpenAI
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Failure reasons
+        </div>
+        {ranked.length === 0 ? (
+          <p className="text-xs text-slate-400">No extractor failures recorded.</p>
+        ) : (
+          <div className="space-y-1">
+            {ranked.map(([reason, n]) => {
+              const pct = m.failureCount ? Math.round((n / m.failureCount) * 100) : 0;
+              return (
+                <div key={reason} className="flex items-center gap-3 text-xs">
+                  <div className="w-44 truncate font-mono text-slate-700">{reason}</div>
+                  <div className="h-3 flex-1 overflow-hidden rounded bg-slate-100">
+                    <div className="h-full bg-red-400" style={{ width: `${(n / maxN) * 100}%` }} />
+                  </div>
+                  <div className="w-20 text-right tabular-nums text-slate-700">
+                    {n} ({pct}%)
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-[11px] text-slate-500">
+          Separates audio acquisition (extractor) from transcription (OpenAI). If extraction
+          succeeds but OpenAI fails, the bottleneck is transcription; if extraction fails, the
+          bottleneck is the extractor or the source video itself.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function FailureBreakdown({ results }: { results: BenchmarkResultRow[] }) {
+
+  const counts: Record<FailureCode, number> = ALL_FAILURE_CODES.reduce(
+    (acc, c) => ({ ...acc, [c]: 0 }),
+    {} as Record<FailureCode, number>,
+  );
+  for (const r of results) if (r.failure_code) counts[r.failure_code] += 1;
+  const totalFails = Object.values(counts).reduce((a, b) => a + b, 0);
+  const ranked = [...ALL_FAILURE_CODES].sort((a, b) => counts[b] - counts[a]);
+  const max = Math.max(1, ...Object.values(counts));
+
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Failure Breakdown ({totalFails} total)
+      </h3>
+      <div className="space-y-1 rounded-lg border border-slate-200 bg-white p-4">
+        {ranked.map((c) => {
+          const n = counts[c];
+          const pct = totalFails ? Math.round((n / totalFails) * 100) : 0;
+          return (
+            <div key={c} className="flex items-center gap-3 text-xs">
+              <div className="w-56 truncate font-mono text-slate-600">{FAILURE_LABELS[c]}</div>
+              <div className="h-3 flex-1 overflow-hidden rounded bg-slate-100">
+                <div className={`h-full ${n > 0 ? "bg-red-400" : ""}`} style={{ width: `${(n / max) * 100}%` }} />
+              </div>
+              <div className="w-20 text-right tabular-nums text-slate-700">
+                {n} ({pct}%)
+              </div>
+            </div>
+          );
+        })}
+        {totalFails === 0 && <p className="text-xs text-slate-400">No failures recorded in this run 🎉</p>}
+      </div>
+    </section>
+  );
+}
+
+function CategoryPerformance({ results }: { results: BenchmarkResultRow[] }) {
+  const byCat: Record<string, { total: number; success: number; highCount: number; mediumCount: number; lowCount: number }> = {};
+  for (const c of CATEGORIES) byCat[c] = { total: 0, success: 0, highCount: 0, mediumCount: 0, lowCount: 0 };
+  for (const r of results) {
+    if (!byCat[r.category]) byCat[r.category] = { total: 0, success: 0, highCount: 0, mediumCount: 0, lowCount: 0 };
+    const b = byCat[r.category];
+    b.total += 1;
+    if (r.transcript_found && !r.failure_code) b.success += 1;
+    if (r.quality_rating === "high") b.highCount += 1;
+    else if (r.quality_rating === "medium") b.mediumCount += 1;
+    else b.lowCount += 1;
+  }
+
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Category Performance</h3>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-50 text-left text-slate-500">
+            <tr>
+              <th className="px-3 py-2">Category</th>
+              <th className="px-3 py-2">Tested</th>
+              <th className="px-3 py-2">Success Rate</th>
+              <th className="px-3 py-2">High</th>
+              <th className="px-3 py-2">Medium</th>
+              <th className="px-3 py-2">Low</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(byCat).map(([cat, v]) => {
+              const rate = v.total ? (v.success / v.total) * 100 : 0;
+              const color = rate >= 95 ? "text-green-600" : rate >= 85 ? "text-amber-600" : "text-red-600";
+              return (
+                <tr key={cat} className="border-t border-slate-100">
+                  <td className="px-3 py-1.5 font-medium">{cat}</td>
+                  <td className="px-3 py-1.5">{v.total}</td>
+                  <td className={`px-3 py-1.5 font-semibold ${color}`}>{v.total ? `${rate.toFixed(0)}%` : "—"}</td>
+                  <td className="px-3 py-1.5">{v.highCount}</td>
+                  <td className="px-3 py-1.5">{v.mediumCount}</td>
+                  <td className="px-3 py-1.5">{v.lowCount}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function DatasetPanel({ dataset }: { dataset: LatestBenchmark["dataset"] }) {
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Benchmark Dataset</h3>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-xs shadow-sm">
+        <div className="mb-2 text-slate-600">
+          Total: <strong>{dataset.total}</strong> · Active: <strong>{dataset.active}</strong> ·
+          Inactive: <strong className={dataset.inactive > 0 ? "text-amber-600" : ""}>{dataset.inactive}</strong>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(dataset.byCategory).map(([cat, v]) => (
+            <div key={cat} className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-slate-700">
+              {cat}: <strong>{v.active}</strong>/{v.total}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ResultsTable({ results, onOpen }: { results: BenchmarkResultRow[]; onOpen: (r: BenchmarkResultRow) => void }) {
+  if (!results.length) return null;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Per-video Results <span className="font-normal normal-case text-slate-400">(click a row for details)</span>
+      </h3>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full text-xs">
+          <thead className="bg-slate-50 text-left text-slate-500">
+            <tr>
+              <th className="px-2 py-2">Category</th>
+              <th className="px-2 py-2">URL</th>
+              <th className="px-2 py-2">HTTP</th>
+              <th className="px-2 py-2">Download</th>
+              <th className="px-2 py-2">MB</th>
+              <th className="px-2 py-2">Cache</th>
+              <th className="px-2 py-2">Transcript</th>
+              <th className="px-2 py-2">Chars</th>
+              <th className="px-2 py-2">Sentences</th>
+              <th className="px-2 py-2">Translation</th>
+              <th className="px-2 py-2">Quality</th>
+              <th className="px-2 py-2">Failure</th>
+              <th className="px-2 py-2">ms</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.map((r) => (
+              <tr
+                key={r.id}
+                className="cursor-pointer border-t border-slate-100 hover:bg-slate-50"
+                onClick={() => onOpen(r)}
+              >
+                <td className="px-2 py-1">{r.category}</td>
+                <td className={`px-2 py-1 ${r.video_url_status === "OK" ? "text-green-600" : "text-red-600"}`}>
+                  {r.video_url_status ?? "—"}
+                </td>
+                <td className="px-2 py-1">{r.http_status_code ?? "—"}</td>
+                <td className="px-2 py-1">{r.download_status ?? "—"}</td>
+                <td className="px-2 py-1 tabular-nums">{r.download_size_mb != null ? Number(r.download_size_mb).toFixed(3) : "—"}</td>
+                <td className="px-2 py-1">{r.cache_hit ? "Yes" : "No"}</td>
+                <td className="px-2 py-1">{r.transcript_generated ? "Yes" : "No"}</td>
+                <td className="px-2 py-1 tabular-nums">{r.transcript_length_chars ?? 0}</td>
+                <td className="px-2 py-1">{r.sentence_count}</td>
+                <td className="px-2 py-1">{r.translation_generated ? "Yes" : "No"}</td>
+                <td
+                  className={`px-2 py-1 font-medium ${
+                    r.quality_rating === "high" ? "text-green-600" : r.quality_rating === "medium" ? "text-amber-600" : "text-red-600"
+                  }`}
+                  title={r.quality_reason ?? ""}
+                >
+                  {r.quality_rating}
+                </td>
+                <td className="px-2 py-1 font-mono text-red-600">{r.failure_code ?? ""}</td>
+                <td className="px-2 py-1 tabular-nums">{r.processing_time_ms}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function Drilldown({ row, onClose }: { row: BenchmarkResultRow; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-900">Failure Drilldown</h4>
+            <p className="text-xs text-slate-500">{row.video_title ?? row.video_id_ext ?? row.benchmark_video_id}</p>
+          </div>
+          <button onClick={onClose} className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100">
+            Close
+          </button>
+        </div>
+
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <dt className="text-slate-500">Video ID</dt>
+          <dd className="font-mono">{row.video_id_ext ?? "—"}</dd>
+          <dt className="text-slate-500">Original URL</dt>
+          <dd className="truncate">
+            {row.video_url ? (
+              <a href={row.video_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                {row.video_url}
+              </a>
+            ) : "—"}
+          </dd>
+          <dt className="text-slate-500">URL Status</dt>
+          <dd>{row.video_url_status ?? "—"}</dd>
+          <dt className="text-slate-500">HTTP Code</dt>
+          <dd>{row.http_status_code ?? "—"}</dd>
+          <dt className="text-slate-500">Download</dt>
+          <dd>{row.download_status ?? "—"} ({row.download_size_mb != null ? `${Number(row.download_size_mb).toFixed(3)} MB` : "—"})</dd>
+          <dt className="text-slate-500">Cache hit</dt>
+          <dd>{row.cache_hit ? "Yes" : "No"}</dd>
+          <dt className="text-slate-500">Transcript exists</dt>
+          <dd>{row.transcript_generated ? `Yes (${row.transcript_length_chars} chars)` : "No"}</dd>
+          <dt className="text-slate-500">Translation</dt>
+          <dd>{row.translation_generated ? "Yes" : "No"}</dd>
+          <dt className="text-slate-500">Failure code</dt>
+          <dd className="font-mono text-red-600">{row.failure_code ?? "—"}</dd>
+          <dt className="text-slate-500">Quality</dt>
+          <dd>{row.quality_rating} — {row.quality_reason ?? ""}</dd>
+        </dl>
+
+        {(row.extractor_provider || row.openai_invoked) && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              Audio Extractor + OpenAI
+            </h5>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+              <dt className="text-slate-500">Extractor provider</dt>
+              <dd className="font-mono">{row.extractor_provider ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor HTTP</dt>
+              <dd className="font-mono">{row.extractor_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">Response status</dt>
+              <dd className="font-mono">{row.extractor_response_status ?? "—"}</dd>
+              <dt className="text-slate-500">Audio URL found</dt>
+              <dd className="font-mono">{row.extractor_audio_url_found == null ? "—" : row.extractor_audio_url_found ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">Audio URL</dt>
+              <dd className="truncate font-mono">{row.extractor_audio_url ?? "—"}</dd>
+              <dt className="text-slate-500">Extractor latency</dt>
+              <dd className="font-mono">{row.extractor_latency_ms != null ? `${row.extractor_latency_ms} ms` : "—"}</dd>
+              <dt className="text-slate-500">Failure reason</dt>
+              <dd className={"font-mono " + (row.extractor_failure_reason ? "text-red-700" : "text-slate-700")}>
+                {row.extractor_failure_reason ?? "—"}
+              </dd>
+              <dt className="text-slate-500">OpenAI invoked</dt>
+              <dd className="font-mono">{row.openai_invoked == null ? "—" : row.openai_invoked ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">OpenAI HTTP</dt>
+              <dd className="font-mono">{row.asr_http_status ?? "—"}</dd>
+              <dt className="text-slate-500">OpenAI failure</dt>
+              <dd className="font-mono text-red-700">{row.asr_failure_code ?? "—"}</dd>
+            </dl>
+            {row.extractor_response_body && (
+              <details className="mt-2 rounded border border-slate-200 bg-slate-50 p-2 text-[11px]">
+                <summary className="cursor-pointer text-slate-600">Raw extractor response body</summary>
+                <pre className="mt-1 whitespace-pre-wrap break-all text-slate-700">{row.extractor_response_body}</pre>
+              </details>
+            )}
+          </>
+        )}
+
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Quality Score Breakdown</h5>
+
+        <ScoreBreakdownBlock row={row} />
+
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Sentence Segmentation Diagnostics</h5>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+          <dt className="text-slate-500">Sentence count</dt>
+          <dd className="font-mono">{row.sentence_count}</dd>
+          <dt className="text-slate-500">Avg words / sentence</dt>
+          <dd className="font-mono">{row.avg_sentence_length}</dd>
+          <dt className="text-slate-500">Longest sentence</dt>
+          <dd className="font-mono">{row.longest_sentence_words} words</dd>
+          <dt className="text-slate-500">Short fragments (&lt;4w)</dt>
+          <dd className="font-mono">{row.short_fragment_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Giant sentences (&gt;35w)</dt>
+          <dd className="font-mono">{row.giant_sentence_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Punctuation coverage</dt>
+          <dd className="font-mono">{row.punctuation_coverage_pct ?? "—"}%</dd>
+          <dt className="text-slate-500">Median gap between sentences</dt>
+          <dd className="font-mono">{row.median_gap_seconds != null ? `${row.median_gap_seconds}s` : "—"}</dd>
+          <dt className="text-slate-500">Sentence UX quality</dt>
+          <dd>
+            <span className={
+              row.sentence_quality_rating === "high" ? "text-green-700 font-semibold" :
+              row.sentence_quality_rating === "medium" ? "text-amber-700 font-semibold" :
+              "text-red-700 font-semibold"
+            }>{row.sentence_quality_rating ?? "—"}</span>
+            {row.sentence_quality_reason && (
+              <span className="text-slate-500"> — {row.sentence_quality_reason}</span>
+            )}
+          </dd>
+        </dl>
+
+        {row.sentence_preview && row.sentence_preview.length > 0 && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              First {row.sentence_preview.length} Sentence Units (manual inspection)
+            </h5>
+            <div className="overflow-hidden rounded border border-slate-200">
+              <table className="w-full text-[11px]">
+                <thead className="bg-slate-100 text-slate-600">
+                  <tr>
+                    <th className="w-10 px-2 py-1 text-left">#</th>
+                    <th className="w-24 px-2 py-1 text-left">Time</th>
+                    <th className="w-10 px-2 py-1 text-right">w</th>
+                    <th className="px-2 py-1 text-left">Sentence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {row.sentence_preview.map((s, i) => {
+                    const tooShort = s.words > 0 && s.words < 4;
+                    const tooLong = s.words > 35;
+                    const cls = tooShort ? "bg-amber-50" : tooLong ? "bg-red-50" : "";
+                    const fmt = (n: number) => {
+                      const m = Math.floor(n / 60);
+                      const sec = Math.floor(n % 60).toString().padStart(2, "0");
+                      return `${m}:${sec}`;
+                    };
+                    return (
+                      <tr key={i} className={`border-t border-slate-100 ${cls}`}>
+                        <td className="px-2 py-1 font-mono text-slate-400">{i + 1}</td>
+                        <td className="px-2 py-1 font-mono text-slate-500">
+                          {fmt(s.start)}–{fmt(s.end)}
+                        </td>
+                        <td className="px-2 py-1 text-right font-mono text-slate-500">{s.words}</td>
+                        <td className="px-2 py-1 text-slate-800">{s.text}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* Sentence Repair drilldown */}
+        {(row.deterministic_quality || row.ai_repair_used) && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">
+              AI-Assisted Sentence Repair
+            </h5>
+            <dl className="mb-2 grid grid-cols-[180px_1fr] gap-x-3 gap-y-1 text-xs">
+              <dt className="text-slate-500">Deterministic quality</dt>
+              <dd className="font-mono">{row.deterministic_quality ?? "—"}</dd>
+              <dt className="text-slate-500">AI repair used</dt>
+              <dd className="font-mono">{row.ai_repair_used ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">AI repair success</dt>
+              <dd className="font-mono">{row.ai_repair_success ? "yes" : "no"}</dd>
+              <dt className="text-slate-500">Final sentence quality</dt>
+              <dd className="font-mono">{row.final_sentence_quality ?? "—"}</dd>
+              <dt className="text-slate-500">Reason</dt>
+              <dd className="text-slate-700">{row.repair_reason ?? "—"}</dd>
+            </dl>
+
+            {row.repair_diagnostics && (
+              <div className="grid gap-2 md:grid-cols-3">
+                <RepairColumn
+                  title="Raw caption chunks"
+                  items={(row.repair_diagnostics.rawChunksPreview ?? []).map((c) => ({
+                    label: `#${c.i} ${fmtTime(c.start)}–${fmtTime(c.end)}`,
+                    text: c.text,
+                  }))}
+                />
+                <RepairColumn
+                  title={`Deterministic sentences${row.deterministic_quality ? ` (${row.deterministic_quality})` : ""}`}
+                  items={(row.repair_diagnostics.deterministicPreview ?? []).map((s, i) => ({
+                    label: `#${i + 1} ${fmtTime(s.start)}–${fmtTime(s.end)} · ${s.words}w`,
+                    text: s.text,
+                  }))}
+                />
+                <RepairColumn
+                  title={`AI-repaired sentences${row.ai_repair_success ? " (accepted)" : row.ai_repair_used ? " (rejected)" : ""}`}
+                  items={(row.repair_diagnostics.repairedPreview ?? []).map((s, i) => ({
+                    label: `#${i + 1} ${fmtTime(s.start)}–${fmtTime(s.end)} · ${s.words}w`,
+                    text: s.text,
+                  }))}
+                  empty={
+                    row.ai_repair_used
+                      ? row.repair_diagnostics.validationError ?? "no output"
+                      : "not invoked"
+                  }
+                />
+              </div>
+            )}
+
+            {row.ai_repair_used && row.repair_diagnostics && (
+              <RepairValidationPanel
+                accepted={!!row.ai_repair_success}
+                reason={row.repair_reason ?? null}
+                validationError={row.repair_diagnostics.validationError ?? null}
+                httpStatus={row.repair_diagnostics.aiHttpStatus ?? null}
+                rawChunks={row.repair_diagnostics.rawChunksPreview ?? []}
+                repaired={row.repair_diagnostics.repairedPreview ?? null}
+              />
+            )}
+          </>
+        )}
+
+
+
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Pipeline Logs</h5>
+        <div className="rounded border border-slate-200 bg-slate-50 p-2 text-[11px] font-mono">
+          {(row.pipeline_logs ?? []).length === 0 && <div className="text-slate-400">No logs captured.</div>}
+          {(row.pipeline_logs ?? []).map((l, i) => (
+            <div key={i} className={l.ok ? "text-green-700" : "text-red-700"}>
+              {l.ok ? "✓" : "✗"} {l.step} {l.ms != null ? `(${l.ms}ms)` : ""} {l.detail ? `— ${l.detail}` : ""}
+            </div>
+          ))}
+        </div>
+
+        <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Transcribr Diagnostics</h5>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs">
+          <dt className="text-slate-500">Bucket</dt>
+          <dd className="font-mono">
+            {TRANSCRIBR_BUCKET_LABEL[classifyTranscribrBucket(row)]}
+          </dd>
+          <dt className="text-slate-500">Invoked</dt>
+          <dd className="font-mono">{row.transcribr_invoked == null ? "—" : row.transcribr_invoked ? "yes" : "no"}</dd>
+          <dt className="text-slate-500">HTTP status</dt>
+          <dd className="font-mono">{row.transcribr_status ?? "—"}</dd>
+          <dt className="text-slate-500">Segments returned</dt>
+          <dd className="font-mono">{row.transcribr_segments_count ?? "—"}</dd>
+          <dt className="text-slate-500">Latency</dt>
+          <dd className="font-mono">{row.transcribr_duration_ms != null ? `${row.transcribr_duration_ms}ms` : "—"}</dd>
+          <dt className="text-slate-500">Error body</dt>
+          <dd className="font-mono break-all text-red-700">{row.transcribr_error ?? "—"}</dd>
+        </dl>
+
+        {row.provider_error && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">Raw Provider Error</h5>
+            <pre className="overflow-x-auto rounded border border-red-200 bg-red-50 p-2 text-[11px] text-red-800">
+              {row.provider_error}
+            </pre>
+          </>
+        )}
+        {row.error_message && (
+          <>
+            <h5 className="mt-4 mb-1 text-xs font-semibold uppercase text-slate-500">User-facing Error</h5>
+            <pre className="overflow-x-auto rounded border border-slate-200 bg-slate-50 p-2 text-[11px] text-slate-700">
+              {row.error_message}
+            </pre>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---------- Quality breakdown / explainability ----------
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
