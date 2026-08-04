@@ -1135,14 +1135,6 @@ async function recordTranscriptReport(params: {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Layer 3: Fallback transcript provider — Transcribr.io
-// Docs: https://www.transcribr.io/youtube-transcript-api
-// POST https://www.transcribr.io/api/v1/transcript
-//   headers: X-API-Key: <TRANSCRIBR_API_KEY>
-//   body:    { video_id }
-//   resp:    { transcript: [{text, start, duration}], language, ... }
-// ---------------------------------------------------------------------------
 function makeEmptyTimings(): TranscriptStageTimings {
   return {
     total_server_ms: null,

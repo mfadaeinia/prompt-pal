@@ -1973,7 +1973,7 @@ function TranscriptCacheTools() {
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <p className="mb-2 text-xs text-slate-500">
           Removes every cached transcript row for this video (all providers / languages).
-          The next load will re-fetch from YouTube captions or Transcribr.
+          The next load will re-fetch from YouTube captions or Whisper.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -2531,7 +2531,7 @@ function PipelineTraceSection() {
         <p className="text-xs text-slate-500">
           Read-only walkthrough of every layer in <code>fetchTranscript</code>. Does
           not write to cache or benchmark tables. Order: validate → cache →
-          YouTube captions → Transcribr → Gemini (disabled).
+          YouTube captions → OpenAI Whisper.
         </p>
         <div className="flex flex-wrap gap-2">
           <input
