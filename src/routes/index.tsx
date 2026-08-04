@@ -971,13 +971,17 @@ function Index() {
   };
 
   const navTo = (hash: string) => {
-    const scroll = () => {
+    const scroll = (attempt = 0) => {
       const el = document.getElementById(hash);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (attempt < 10) {
+        setTimeout(() => scroll(attempt + 1), 100);
+      }
     };
-    if (view === "demo") {
+    if (view !== "landing") {
       setView("landing");
-      setTimeout(scroll, 80);
+      setTimeout(() => scroll(), 100);
     } else {
       scroll();
     }
