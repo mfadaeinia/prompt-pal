@@ -185,14 +185,14 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
             <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
               <button
                 onClick={onPrimary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
                 style={heading}
               >
                 Start for free
               </button>
               <button
                 onClick={onSecondary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-slate-900/80 bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 transition-all hover:bg-slate-900 hover:text-white active:scale-[0.98] sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary bg-white px-7 py-3.5 text-sm font-semibold text-primary transition-all hover:bg-primary hover:text-white active:scale-[0.98] sm:w-auto"
                 style={heading}
               >
                 <Play className="h-3.5 w-3.5 fill-current" />
