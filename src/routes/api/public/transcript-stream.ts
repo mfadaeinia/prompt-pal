@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import {
   buildSentencesFromChunksExport,
-  TRANSCRIPT_PIPELINE_VERSION,
+  writeTranscriptCache,
   type RawChunk,
 } from "@/lib/transcript.functions";
+import { extractVideoId } from "@/lib/youtube-id";
+
 
 const OPENAI_AUDIO_LIMIT_BYTES = 25 * 1024 * 1024;
 
