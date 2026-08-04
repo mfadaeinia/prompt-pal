@@ -20,11 +20,7 @@ import { Route as LibraryLevelRouteImport } from './routes/library.$level'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
-import { Route as ApiPublicProductProbeRouteImport } from './routes/api/public/product-probe'
 import { Route as ApiPublicCurateRefreshRouteImport } from './routes/api/public/curate-refresh'
-import { Route as ApiPublicAsrProbeProgressiveRouteImport } from './routes/api/public/asr-probe-progressive'
-import { Route as ApiPublicAsrProbeRouteImport } from './routes/api/public/asr-probe'
-import { Route as ApiPublicAsrBenchmarkRunRouteImport } from './routes/api/public/asr-benchmark-run'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -89,33 +85,11 @@ const ApiPublicTranscriptStreamRoute =
     path: '/api/public/transcript-stream',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicProductProbeRoute = ApiPublicProductProbeRouteImport.update({
-  id: '/api/public/product-probe',
-  path: '/api/public/product-probe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicCurateRefreshRoute = ApiPublicCurateRefreshRouteImport.update({
   id: '/api/public/curate-refresh',
   path: '/api/public/curate-refresh',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAsrProbeProgressiveRoute =
-  ApiPublicAsrProbeProgressiveRouteImport.update({
-    id: '/api/public/asr-probe-progressive',
-    path: '/api/public/asr-probe-progressive',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAsrProbeRoute = ApiPublicAsrProbeRouteImport.update({
-  id: '/api/public/asr-probe',
-  path: '/api/public/asr-probe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAsrBenchmarkRunRoute =
-  ApiPublicAsrBenchmarkRunRouteImport.update({
-    id: '/api/public/asr-benchmark-run',
-    path: '/api/public/asr-benchmark-run',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -157,11 +131,7 @@ export interface FileRoutesByFullPath {
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
-  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
-  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
-  '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -180,11 +150,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
-  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
-  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
-  '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -204,11 +170,7 @@ export interface FileRoutesById {
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
-  '/api/public/asr-benchmark-run': typeof ApiPublicAsrBenchmarkRunRoute
-  '/api/public/asr-probe': typeof ApiPublicAsrProbeRoute
-  '/api/public/asr-probe-progressive': typeof ApiPublicAsrProbeProgressiveRoute
   '/api/public/curate-refresh': typeof ApiPublicCurateRefreshRoute
-  '/api/public/product-probe': typeof ApiPublicProductProbeRoute
   '/api/public/transcript-stream': typeof ApiPublicTranscriptStreamRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -229,11 +191,7 @@ export interface FileRouteTypes {
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
-    | '/api/public/asr-benchmark-run'
-    | '/api/public/asr-probe'
-    | '/api/public/asr-probe-progressive'
     | '/api/public/curate-refresh'
-    | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -252,11 +210,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
-    | '/api/public/asr-benchmark-run'
-    | '/api/public/asr-probe'
-    | '/api/public/asr-probe-progressive'
     | '/api/public/curate-refresh'
-    | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -275,11 +229,7 @@ export interface FileRouteTypes {
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
-    | '/api/public/asr-benchmark-run'
-    | '/api/public/asr-probe'
-    | '/api/public/asr-probe-progressive'
     | '/api/public/curate-refresh'
-    | '/api/public/product-probe'
     | '/api/public/transcript-stream'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -299,11 +249,7 @@ export interface RootRouteChildren {
   LibraryIndexRoute: typeof LibraryIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
-  ApiPublicAsrBenchmarkRunRoute: typeof ApiPublicAsrBenchmarkRunRoute
-  ApiPublicAsrProbeRoute: typeof ApiPublicAsrProbeRoute
-  ApiPublicAsrProbeProgressiveRoute: typeof ApiPublicAsrProbeProgressiveRoute
   ApiPublicCurateRefreshRoute: typeof ApiPublicCurateRefreshRoute
-  ApiPublicProductProbeRoute: typeof ApiPublicProductProbeRoute
   ApiPublicTranscriptStreamRoute: typeof ApiPublicTranscriptStreamRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -389,39 +335,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTranscriptStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/product-probe': {
-      id: '/api/public/product-probe'
-      path: '/api/public/product-probe'
-      fullPath: '/api/public/product-probe'
-      preLoaderRoute: typeof ApiPublicProductProbeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/curate-refresh': {
       id: '/api/public/curate-refresh'
       path: '/api/public/curate-refresh'
       fullPath: '/api/public/curate-refresh'
       preLoaderRoute: typeof ApiPublicCurateRefreshRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/asr-probe-progressive': {
-      id: '/api/public/asr-probe-progressive'
-      path: '/api/public/asr-probe-progressive'
-      fullPath: '/api/public/asr-probe-progressive'
-      preLoaderRoute: typeof ApiPublicAsrProbeProgressiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/asr-probe': {
-      id: '/api/public/asr-probe'
-      path: '/api/public/asr-probe'
-      fullPath: '/api/public/asr-probe'
-      preLoaderRoute: typeof ApiPublicAsrProbeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/asr-benchmark-run': {
-      id: '/api/public/asr-benchmark-run'
-      path: '/api/public/asr-benchmark-run'
-      fullPath: '/api/public/asr-benchmark-run'
-      preLoaderRoute: typeof ApiPublicAsrBenchmarkRunRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {
@@ -476,11 +394,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryIndexRoute: LibraryIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
-  ApiPublicAsrBenchmarkRunRoute: ApiPublicAsrBenchmarkRunRoute,
-  ApiPublicAsrProbeRoute: ApiPublicAsrProbeRoute,
-  ApiPublicAsrProbeProgressiveRoute: ApiPublicAsrProbeProgressiveRoute,
   ApiPublicCurateRefreshRoute: ApiPublicCurateRefreshRoute,
-  ApiPublicProductProbeRoute: ApiPublicProductProbeRoute,
   ApiPublicTranscriptStreamRoute: ApiPublicTranscriptStreamRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
