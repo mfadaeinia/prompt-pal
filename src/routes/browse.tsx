@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import {
   ArrowRight,
   Bookmark,
@@ -152,7 +152,7 @@ function SidebarInner() {
 
 function LevelArt({ level, className }: { level: CefrLevel; className?: string }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  const art: Record<CefrLevel, JSX.Element> = {
+  const art: Record<CefrLevel, ReactElement> = {
     A1: (
       <g {...common}>
         <circle cx="60" cy="26" r="16" />
