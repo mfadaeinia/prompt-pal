@@ -973,11 +973,17 @@ function Index() {
   const navTo = (hash: string) => {
     const scroll = (attempt = 0) => {
       const el = document.getElementById(hash);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else if (attempt < 10) {
-        setTimeout(() => scroll(attempt + 1), 100);
+      if (!el) {
+        if (attempt < 12) setTimeout(() => scroll(attempt + 1), 100);
+        return;
       }
+      const top = el.getBoundingClientRect().top + window.scrollY - 72;
+      const start = window.scrollY;
+      window.scrollTo({ top, behavior: "smooth" });
+      // Some environments silently ignore smooth scrolling — jump if nothing moved.
+      setTimeout(() => {
+        if (Math.abs(window.scrollY - start) < 4) window.scrollTo(0, top);
+      }, 350);
     };
     if (view !== "landing") {
       setView("landing");
