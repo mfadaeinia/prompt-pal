@@ -248,7 +248,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function CompetitorComparison() {
   return (
-    <section>
+    <section id="why" className="scroll-mt-24">
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
