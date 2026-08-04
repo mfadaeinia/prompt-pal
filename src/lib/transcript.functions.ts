@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
 import { detectLanguage, sameBaseLanguage } from "@/lib/lang-detect.server";
+import { extractVideoId } from "@/lib/youtube-id";
 
 const Input = z.object({
   url: z.string().min(1).max(500),
@@ -14,24 +15,14 @@ const Input = z.object({
   /** Benchmark hooks — bypass cache / captions, force a provider. */
   skipCache: z.boolean().optional(),
   skipYoutube: z.boolean().optional(),
-  forceProvider: z.enum(["openai", "transcribr"]).optional(),
+  forceProvider: z.enum(["openai"]).optional(),
 });
 const ManualInput = z.object({
   url: z.string().min(1).max(500),
   text: z.string().min(1).max(200_000),
 });
 
-function extractVideoId(url: string): string | null {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
-  }
-  return null;
-}
+
 
 export type TranscriptSentence = {
   id: number;
@@ -82,7 +73,7 @@ export type AsrTrace = {
 
 /** Generic, provider-agnostic ASR diagnostics persisted to benchmark rows. */
 export type GenericAsrTrace = {
-  provider: "transcribr" | "openai" | null;
+  provider: "openai" | null;
   model: string | null;
   httpStatus: number | null;
   errorBody: string | null;
@@ -110,7 +101,6 @@ export type GenericAsrTrace = {
 
 
 export type ProviderTrace = {
-  transcribr: TranscribrTrace;
   asr: AsrTrace;
   /** Generic ASR diagnostics. Populated for whichever provider ASR_PROVIDER selected. */
   asrGeneric?: GenericAsrTrace;
@@ -192,48 +182,6 @@ export type RawChunk = { text: string; offset: number; duration: number };
 
 export function buildSentencesFromChunksExport(chunks: RawChunk[]): TranscriptSentence[] {
   return buildSentencesFromChunks(chunks);
-}
-
-/**
- * Convert Whisper-style word-level timestamps into clickable sentence units.
- *
- * Each AsrWord becomes a 1-word RawChunk (offset = word.start, duration = end - start).
- * The existing deterministic segmenter (`buildSentencesFromChunks`) then groups
- * words by punctuation, timing gaps, capitalization, and max-word heuristics.
- *
- * Guarantees:
- *   - Every sentence's `offset` traces back to a real word.start (no invented times).
- *   - Every sentence's `endTime` traces back to a real word.end.
- *   - No paraphrase/hallucination: text is concatenated verbatim from words[].
- *   - Sentences are sorted by offset; ids reassigned 0..n-1.
- *
- * Invalid words (NaN, end <= start, empty text) are dropped silently.
- */
-export function buildSentencesFromAsrWords(words: AsrWord[]): TranscriptSentence[] {
-  if (!Array.isArray(words) || words.length === 0) return [];
-
-  const chunks: RawChunk[] = [];
-  for (const w of words) {
-    if (!w || typeof w.text !== "string") continue;
-    const text = w.text.trim();
-    if (!text) continue;
-    const start = Number(w.start);
-    const end = Number(w.end);
-    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
-    if (end <= start) continue;
-    chunks.push({ text, offset: start, duration: end - start });
-  }
-
-  if (chunks.length === 0) return [];
-  chunks.sort((a, b) => a.offset - b.offset);
-
-  const sentences = buildSentencesFromChunks(chunks);
-  return sentences.map((s, i) => ({ ...s, id: i }));
-}
-
-/** Convenience wrapper: build sentences directly from an AsrResult. */
-export function buildSentencesFromAsrResult(asr: AsrResult): TranscriptSentence[] {
-  return buildSentencesFromAsrWords(asr.words);
 }
 
 function classifyError(err: unknown): TranscriptErrorType {
@@ -1188,113 +1136,6 @@ async function recordTranscriptReport(params: {
 //   body:    { video_id }
 //   resp:    { transcript: [{text, start, duration}], language, ... }
 // ---------------------------------------------------------------------------
-export type TranscribrTrace = {
-  invoked: boolean;
-  httpStatus: number | null;
-  errorMessage: string | null;
-  rawSegments: number;
-  keptSegments: number;
-  discardedReason: string | null;
-  durationMs: number | null;
-};
-
-async function fetchFromFallbackProvider(params: {
-  videoId: string;
-  videoUrl: string;
-  trace: TranscribrTrace;
-}): Promise<{ chunks: RawChunk[]; language: string | null } | null> {
-  const { trace } = params;
-  const apiKey = process.env.TRANSCRIBR_API_KEY;
-  if (!apiKey) {
-    trace.invoked = false;
-    trace.errorMessage = "TRANSCRIBR_API_KEY missing";
-    console.warn("[transcript-debug] TRANSCRIBR_API_KEY missing — skipping fallback");
-    return null;
-  }
-  trace.invoked = true;
-  const tStart = Date.now();
-
-  try {
-    const res = await fetch("https://www.transcribr.io/api/v1/transcript", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ video_id: params.videoId }),
-    });
-    trace.httpStatus = res.status;
-    console.log("[transcript-debug] Transcribr HTTP", { status: res.status, ok: res.ok });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      trace.errorMessage = text.slice(0, 300) || `HTTP ${res.status}`;
-      trace.durationMs = Date.now() - tStart;
-      console.warn("[transcript-debug] Transcribr error body", text.slice(0, 500));
-      return null;
-    }
-    const json: any = await res.json();
-    const transcript: any[] = Array.isArray(json?.transcript) ? json.transcript : [];
-    trace.rawSegments = transcript.length;
-    console.log("[transcript-debug] Transcribr response", {
-      transcript_items: transcript.length,
-      language: json?.language ?? null,
-      top_level_keys: json && typeof json === "object" ? Object.keys(json) : [],
-    });
-    if (!transcript.length) {
-      trace.discardedReason = "empty_transcript_array";
-      trace.durationMs = Date.now() - tStart;
-      return null;
-    }
-    const chunks: RawChunk[] = transcript
-      .map((c) => ({
-        text: String(c.text ?? ""),
-        offset: Number(c.start ?? 0),
-        duration: Number(c.duration ?? 0),
-      }))
-      .filter((c) => c.text.length > 0);
-    trace.keptSegments = chunks.length;
-    if (!chunks.length) {
-      trace.discardedReason = "all_segments_blank_after_filter";
-      trace.durationMs = Date.now() - tStart;
-      return null;
-    }
-    trace.durationMs = Date.now() - tStart;
-    return { chunks, language: json?.language ?? null };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    trace.errorMessage = msg;
-    trace.durationMs = Date.now() - tStart;
-    console.warn("[transcript-debug] Transcribr fetch threw", msg);
-    return null;
-  }
-}
-
-
-
-
-// ---------------------------------------------------------------------------
-// Layer 4 (LLM-as-transcriber) is permanently removed.
-//
-// We previously sent the YouTube URL to Gemini via the Lovable AI Gateway as
-// `file_data` and asked it to "transcribe". The gateway does NOT fetch and
-// decode the video — the model only sees the URL as text and hallucinates a
-// plausible-but-fake transcript that has nothing to do with the real audio.
-//
-// HARD RULE: transcript text may ONLY come from
-//   1. cached entries previously produced by (2) or (3)
-//   2. official YouTube captions (youtube-transcript)
-//   3. an audio-based ASR provider (Transcribr today)
-//   4. user-pasted manual text
-//
-// AI is allowed ONLY as a post-processor on text that already came from one
-// of the above sources (sentence boundary repair in sentence-repair.server.ts,
-// which validates token overlap and rejects hallucinated output). AI must
-// never invent words and must never be asked to "transcribe" from a URL.
-// ---------------------------------------------------------------------------
-
-
-
 function makeEmptyTimings(): TranscriptStageTimings {
   return {
     total_server_ms: null,
