@@ -1254,11 +1254,6 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     });
 
     // Per-provider diagnostics (always returned/thrown so callers can attribute failures).
-    const transcribrTrace: TranscribrTrace = {
-      invoked: false, httpStatus: null, errorMessage: null,
-      rawSegments: 0, keptSegments: 0, discardedReason: null,
-      durationMs: null,
-    };
     const asrTrace: AsrTrace = {
       invoked: false, httpStatus: null, errorMessage: null,
       rawSegments: 0, keptSegments: 0, discardedReason: null,
@@ -1388,87 +1383,55 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: raw,
-        providerTrace: { transcribr: transcribrTrace, asr: asrTrace },
+        providerTrace: { asr: asrTrace },
         stageTimings: timings,
       };
     }
 
-    // -------- Layer 3: ASR provider (Transcribr default, OpenAI behind flag) --------
-    const { getAsrProvider, transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
-    const asrProvider = data.forceProvider ?? getAsrProvider();
-    console.log("[transcript-debug] ASR_PROVIDER =", asrProvider, data.forceProvider ? "(forced)" : "");
+    // -------- Layer 3: OpenAI Whisper (last resort) --------
+    // Single ASR provider. Runs only after cache miss AND no usable captions.
+    const { transcribeWithOpenAi } = await import("@/lib/asr-openai.server");
 
     let fb: { chunks: RawChunk[]; language: string | null } | null = null;
-    let fbSource: "fallback" | "openai" = "fallback";
+    const fbSource = "openai" as const;
     const asrGeneric: GenericAsrTrace = {
       provider: null, model: null, httpStatus: null, errorBody: null,
       segmentsCount: null, durationMs: null, language: null, failureCode: null,
       extractor: null,
     };
 
-    const runOpenAi = async () => {
-      const expectedLang = spokenLanguage;
-      const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: expectedLang });
-      asrGeneric.provider = "openai";
-      asrGeneric.model = oa.trace.model;
-      asrGeneric.httpStatus = oa.trace.httpStatus ?? oa.trace.audioExtractStatus;
-      asrGeneric.errorBody = oa.trace.errorBody ?? oa.trace.audioExtractError;
-      asrGeneric.segmentsCount = oa.trace.segmentsCount;
-      asrGeneric.durationMs = oa.trace.durationMs;
-      asrGeneric.language = oa.trace.language;
-      asrGeneric.failureCode = oa.trace.failureCode;
-      asrGeneric.openaiInvoked = oa.trace.openaiInvoked;
-      asrGeneric.stage = oa.trace.stage;
-      asrGeneric.extractor = {
-        provider: oa.trace.rapidapi_host,
-        httpStatus: oa.trace.rapidapi_http_status,
-        responseStatus: oa.trace.rapidapi_response_status,
-        responseBody: oa.trace.extractor_response_body,
-        audioUrlFound: oa.trace.audio_url_found,
-        audioUrl: oa.trace.extractor_audio_url,
-        latencyMs: oa.trace.extractor_latency_ms,
-        failureReason: oa.trace.extractor_failure_reason,
-      };
-      // Pull per-stage timings from the OpenAI trace
-      timings.audio_extract_ms = oa.trace.extractor_latency_ms;
-      timings.audio_download_ms = oa.trace.audio_download_ms;
-      timings.openai_transcription_ms = oa.trace.openai_request_ms;
-      timings.audio_size_mb = oa.trace.audio_size_mb;
-      timings.openai_segments_count = oa.trace.segmentsCount;
-      if (oa.result && oa.result.chunks.length) {
-        fb = { chunks: oa.result.chunks, language: oa.result.language };
-        fbSource = "openai";
-      }
+    const oa = await transcribeWithOpenAi({ videoId, expectedLanguage: spokenLanguage });
+    asrGeneric.provider = "openai";
+    asrGeneric.model = oa.trace.model;
+    asrGeneric.httpStatus = oa.trace.httpStatus ?? oa.trace.audioExtractStatus;
+    asrGeneric.errorBody = oa.trace.errorBody ?? oa.trace.audioExtractError;
+    asrGeneric.segmentsCount = oa.trace.segmentsCount;
+    asrGeneric.durationMs = oa.trace.durationMs;
+    asrGeneric.language = oa.trace.language;
+    asrGeneric.failureCode = oa.trace.failureCode;
+    asrGeneric.openaiInvoked = oa.trace.openaiInvoked;
+    asrGeneric.stage = oa.trace.stage;
+    asrGeneric.extractor = {
+      provider: oa.trace.rapidapi_host,
+      httpStatus: oa.trace.rapidapi_http_status,
+      responseStatus: oa.trace.rapidapi_response_status,
+      responseBody: oa.trace.extractor_response_body,
+      audioUrlFound: oa.trace.audio_url_found,
+      audioUrl: oa.trace.extractor_audio_url,
+      latencyMs: oa.trace.extractor_latency_ms,
+      failureReason: oa.trace.extractor_failure_reason,
     };
-
-    if (asrProvider === "openai") {
-      await runOpenAi();
-    } else {
-      console.log("[transcript-debug] trying fallback provider (Transcribr)");
-      fb = await fetchFromFallbackProvider({
-        videoId,
-        videoUrl: data.url,
-        trace: transcribrTrace,
-      });
-      asrGeneric.provider = "transcribr";
-      asrGeneric.model = "transcribr-v1";
-      asrGeneric.httpStatus = transcribrTrace.httpStatus;
-      asrGeneric.errorBody = transcribrTrace.errorMessage;
-      asrGeneric.segmentsCount = transcribrTrace.rawSegments;
-      asrGeneric.durationMs = transcribrTrace.durationMs;
-      asrGeneric.language = fb?.language ?? null;
-      asrGeneric.failureCode = transcribrTrace.errorMessage ? "transcribr_error" : null;
-
-      // -------- Layer 4: OpenAI Whisper as final fallback --------
-      if (!fb || !fb.chunks.length) {
-        console.log("[transcript-debug] Transcribr empty — trying OpenAI Whisper fallback");
-        await runOpenAi();
-      }
+    timings.audio_extract_ms = oa.trace.extractor_latency_ms;
+    timings.audio_download_ms = oa.trace.audio_download_ms;
+    timings.openai_transcription_ms = oa.trace.openai_request_ms;
+    timings.audio_size_mb = oa.trace.audio_size_mb;
+    timings.openai_segments_count = oa.trace.segmentsCount;
+    if (oa.result && oa.result.chunks.length) {
+      fb = { chunks: oa.result.chunks, language: oa.result.language };
     }
 
-
     console.log("[transcript-debug] ASR result", {
-      provider: asrProvider,
+      provider: fbSource,
       chunks: fb?.chunks.length ?? 0,
       language: fb?.language ?? null,
       failureCode: asrGeneric.failureCode,
@@ -1484,7 +1447,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       timings.sentence_build_ms = Date.now() - tBuild;
       const chars = sentences.reduce((n, s) => n + s.text.length, 0);
       console.log("[transcript-debug] ASR SUCCESS", {
-        videoId, provider: asrProvider, raw_chunks: fb.chunks.length,
+        videoId, provider: fbSource, raw_chunks: fb.chunks.length,
         sentences: sentences.length, total_chars: chars,
       });
       const tWrite = Date.now();
@@ -1499,7 +1462,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       timings.cache_write_ms = Date.now() - tWrite;
       logEvent({
         video_id: videoId,
-        fetch_source: "fallback",
+        fetch_source: "asr",
         success: true,
         cache_hit: false,
       });
@@ -1531,7 +1494,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
         quality,
         provenance: cacheWrite.provenance ?? null,
         rawChunks: fb.chunks,
-        providerTrace: { transcribr: transcribrTrace, asr: asrTrace, asrGeneric },
+        providerTrace: { asr: asrTrace, asrGeneric },
         stageTimings: timings,
       };
     }
@@ -1539,7 +1502,7 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     // -------- Layer 4: Hallucination-prone LLM-ASR remains DISABLED --------
     asrTrace.invoked = false;
     asrTrace.errorMessage = "disabled: gateway file_uri to YouTube hallucinates";
-    const providerTrace: ProviderTrace = { transcribr: transcribrTrace, asr: asrTrace, asrGeneric };
+    const providerTrace: ProviderTrace = { asr: asrTrace, asrGeneric };
 
 
     // All layers failed — surface a single friendly message.
