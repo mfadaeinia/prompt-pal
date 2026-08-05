@@ -1984,6 +1984,9 @@ function Index() {
   // has actually seeked).
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
+  // True while the learner has an explicitly tapped sentence open. Manual
+  // selection takes precedence over playback-driven auto-follow updates.
+  const manualSelectedRef = useRef(false);
 
   // Track YouTube playback rate so we can keep the highlight lookahead
   // constant in wall-clock time across 0.25×–2× speeds.
