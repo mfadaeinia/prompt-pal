@@ -2263,10 +2263,12 @@ function Index() {
     if (!videoId) return;
     if (sentences.length === 0) return;
     if (selected) return;
-    if (playingId != null) return;
     if (autoPreselectedForVideoRef.current === videoId) return;
     autoPreselectedForVideoRef.current = videoId;
-    const first = sentences[0];
+    // Prefer the sentence currently playing (if playback already started),
+    // otherwise the very first sentence of the transcript.
+    const first =
+      (playingId != null ? sentences.find((s) => s.id === playingId) : null) ?? sentences[0];
     setSelected(first);
     ensureExplanation(first, sentences);
     // eslint-disable-next-line react-hooks/exhaustive-deps
