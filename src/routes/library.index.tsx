@@ -313,6 +313,12 @@ function BrowsePage() {
       {/* header */}
       <header className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
+          <Link
+            to="/"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            ← Back to home
+          </Link>
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2.5rem]">
             Browse by Level
           </h1>
