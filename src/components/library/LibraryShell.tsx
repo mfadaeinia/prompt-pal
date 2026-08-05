@@ -169,7 +169,9 @@ export function LibraryShell({ children }: { children: React.ReactNode }) {
 
       <main className="lg:pl-[248px]">
         <div className="mx-auto max-w-[1200px] px-4 pb-24 pt-6 sm:px-8">{children}</div>
+        <AppFooter />
       </main>
+
     </div>
   );
 }
