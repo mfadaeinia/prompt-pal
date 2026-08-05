@@ -2607,11 +2607,11 @@ function Index() {
                     setShowSavedTooltip(false);
                     localStorage.setItem("nativeflow_saved_tooltip_seen", "1");
                   }}
-                  aria-label="My Library"
-                  title="My Library"
+                  aria-label="My Learning"
+                  title="My Learning"
                 >
                   <Bookmark className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                  <span className="hidden sm:inline">My Library</span>
+                  <span className="hidden sm:inline">My Learning</span>
                   {savedQuery.data && (savedQuery.data.items ?? []).length > 0 && (
                     <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-background sm:static sm:ring-0">
                       {(savedQuery.data.items ?? []).length > 99 ? "99+" : (savedQuery.data.items ?? []).length}
