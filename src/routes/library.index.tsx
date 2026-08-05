@@ -432,7 +432,20 @@ function BrowsePage() {
         <div className="flex items-center gap-2 py-24 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading curated videos…
         </div>
+      ) : videosQ.isError ? (
+        <div className="my-10 rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm font-medium text-foreground">
+            We couldn't load the library just now.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Check your connection and try again, the videos are still there.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => videosQ.refetch()}>
+            Try again
+          </Button>
+        </div>
       ) : (
+
         <>
           {/* continue learning */}
           {continueVideo && !filtering && (
