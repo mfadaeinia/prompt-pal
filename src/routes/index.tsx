@@ -128,9 +128,12 @@ export const Route = createFileRoute("/")({
 
   // Prime the curated-library cache so the discovery strip is server-rendered
   // with real videos instead of a "Loading…" placeholder.
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(curatedVideosQuery(60));
+  loader: ({ context }) => {
+    // Non-blocking: the curated strip is secondary content, so it must never
+    // delay the landing page's first paint.
+    void context.queryClient.prefetchQuery(curatedVideosQuery(60));
   },
+
   component: Index,
 
 });
