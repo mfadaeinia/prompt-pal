@@ -55,6 +55,8 @@ import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { LibraryStrip } from "@/components/LibraryStrip";
+import { AppFooter } from "@/components/AppFooter";
+
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";

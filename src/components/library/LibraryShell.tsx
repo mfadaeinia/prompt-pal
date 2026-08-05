@@ -14,8 +14,10 @@ import {
   X,
 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { AppFooter } from "@/components/AppFooter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
 
 type NavItem = {
   label: string;
