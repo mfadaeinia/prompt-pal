@@ -409,12 +409,14 @@ function Index() {
     if (autoLoadedRef.current) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const u = params.get("url");
+    const u = params.get("url") ?? params.get("v");
+    const lang = params.get("lang") ?? undefined;
     if (u && /youtu/.test(u)) {
       autoLoadedRef.current = true;
       setUrl(u);
       setView("demo");
-      submitLoad(u);
+      submitLoad(u, lang);
+
       // clean the URL so refreshes don't reload
       window.history.replaceState({}, "", window.location.pathname);
     }
