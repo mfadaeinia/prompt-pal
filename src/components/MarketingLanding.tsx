@@ -132,33 +132,24 @@ const MOBILE_TILES = [
 function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
   return (
     <section className="relative overflow-hidden">
-      {/* ============== BACKGROUND — MOBILE & TABLET: very faded collage ============== */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 lg:hidden">
+      {/*
+        BACKGROUND — one single decorative collage image (no duplicate <img>).
+        Mobile/tablet: full-bleed and faded. Desktop: concentrated on the right ~60%.
+      */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
         <img
           src={heroCollage.url}
           alt=""
           width={1562}
           height={1007}
           fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-45"
+          className="absolute inset-y-0 left-0 h-full w-full object-cover object-top opacity-45 lg:left-auto lg:right-0 lg:w-[60%] lg:object-left lg:opacity-100"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC] lg:hidden" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55% lg:block" />
+        <div className="absolute inset-x-0 bottom-0 hidden h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent lg:block" />
       </div>
 
-
-      {/* ============== BACKGROUND — DESKTOP: collage concentrated on right ~60% ============== */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 hidden lg:block">
-        <img
-          src={heroCollage.url}
-          alt=""
-          width={1562}
-          height={1007}
-          fetchPriority="high"
-          className="absolute inset-y-0 right-0 h-full w-[60%] object-cover object-left"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55%" />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
-      </div>
 
 
       <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
