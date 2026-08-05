@@ -46,6 +46,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track, setUserProperties } from "@/lib/analytics";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
+
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
