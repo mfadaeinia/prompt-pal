@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Library, Play, Flame, ArrowRight, Loader2 } from "lucide-react";
+import { Library, Play, Flame, ArrowRight } from "lucide-react";
 import {
   CEFR_LEVELS,
   type CuratedVideo,
