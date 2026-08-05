@@ -2553,7 +2553,7 @@ function Index() {
               to="/library"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Library
+              Browse By level
             </Link>
 
 
