@@ -15,7 +15,6 @@ import {
   SearchX,
 } from "lucide-react";
 import {
-  listCuratedVideos,
   listMyInteractions,
   toggleInteraction,
   CEFR_LEVELS,

@@ -12,7 +12,6 @@ import {
   Clock,
 } from "lucide-react";
 import {
-  listCuratedVideos,
   listMyInteractions,
   toggleInteraction,
   type CuratedVideo,
