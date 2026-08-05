@@ -33,6 +33,7 @@ export const Route = createFileRoute("/library/$level")({
     const meta = LEVEL_META[level];
     const title = `${level} Dutch Learning Library — NativeFlow`;
     const description = `${meta.name} Dutch: curated YouTube videos at CEFR ${level}. ${meta.short}`;
+    const url = `https://nativeflow.life/library/${level}`;
     return {
       meta: [
         { title },
@@ -40,13 +41,19 @@ export const Route = createFileRoute("/library/$level")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
-  loader: ({ params }) => {
+  loader: ({ params, context }) => {
     if (!parseLevel(params.level)) throw notFound();
+    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
   },
+
   component: LevelPage,
 });
 
