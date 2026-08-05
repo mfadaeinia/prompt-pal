@@ -2398,13 +2398,20 @@ function Index() {
     setCurrentTime(s.offset);
   }
 
-  // Resume playback from the user's current transcript position (no seek),
-  // close the Aha Panel. Used by Resume button, sheet dismiss, and panel close.
+  // Resume playback ONLY. Playback state and the user's manual transcript
+  // selection are independent: resuming must never clear the selected sentence
+  // or replace the explanation the learner is reading.
   function resumeFromHere() {
-    setSelected(null);
     const p = playerRef.current;
     p?.playVideo?.();
     track("learning_resume", { video_id: videoId });
+  }
+
+  // Explicitly close the Aha Panel (clears manual selection) and resume playback.
+  function closeAndResume() {
+    setSelected(null);
+    manualSelectedRef.current = false;
+    resumeFromHere();
   }
 
   const clickCountRef = useRef(0);
