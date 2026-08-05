@@ -1165,6 +1165,65 @@ function logTimings(label: string, videoId: string | null, t: TranscriptStageTim
   } catch {}
 }
 
+/**
+ * Resolve the language actually SPOKEN in a video from YouTube's own metadata.
+ *
+ * Why: when the learner leaves "Video language" on auto, we used to ask
+ * youtube-transcript for the video's *default* caption track. On many Dutch
+ * videos that default track is an English one (creator-uploaded subtitles or an
+ * English-first track list), so the learner ended up reading an English
+ * transcript under a Dutch video. Knowing the spoken language lets us request
+ * the right caption track AND lets the existing mismatch guard escalate to
+ * Whisper when the captions are in another language.
+ *
+ * Cheap best-effort: one HTML fetch with a short timeout, cached in-memory.
+ * Returns a base ISO-639-1 code, or null when it can't be determined.
+ */
+const SPOKEN_LANG_PROBE_CACHE = new Map<string, string | null>();
+
+async function probeSpokenLanguage(videoId: string): Promise<string | null> {
+  if (SPOKEN_LANG_PROBE_CACHE.has(videoId)) {
+    return SPOKEN_LANG_PROBE_CACHE.get(videoId) ?? null;
+  }
+  let resolved: string | null = null;
+  try {
+    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=en`, {
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "accept-language": "en-US,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(4500),
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const base = (v: string) => v.split(/[-_]/)[0].toLowerCase();
+      // 1. Explicit audio language declared by the uploader — most reliable.
+      const audio = html.match(/"defaultAudioLanguage"\s*:\s*"([A-Za-z-]{2,10})"/);
+      if (audio) {
+        resolved = base(audio[1]);
+      } else {
+        // 2. Otherwise: the source language of YouTube's own auto-captions
+        //    (ASR runs on the spoken audio, so this reflects the audio too).
+        const asr = html.match(
+          /"kind"\s*:\s*"asr"[^}]*?"languageCode"\s*:\s*"([A-Za-z-]{2,10})"/,
+        ) ?? html.match(
+          /"languageCode"\s*:\s*"([A-Za-z-]{2,10})"[^}]*?"kind"\s*:\s*"asr"/,
+        );
+        if (asr) resolved = base(asr[1]);
+      }
+    }
+  } catch {
+    resolved = null;
+  }
+  console.log("[lang-pipeline][server] spoken_language_probe", { videoId, resolved });
+  if (SPOKEN_LANG_PROBE_CACHE.size > 300) SPOKEN_LANG_PROBE_CACHE.clear();
+  SPOKEN_LANG_PROBE_CACHE.set(videoId, resolved);
+  return resolved;
+}
+
+
+
 export const fetchTranscript = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<FetchTranscriptResult> => {
