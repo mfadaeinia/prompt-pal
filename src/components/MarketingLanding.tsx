@@ -489,7 +489,7 @@ function Features() {
     {
       icon: <Zap className="h-5 w-5" />,
       title: "Comprehension on demand",
-      body: "Get the exact support you need, exactly when you need it , then keep watching.",
+      body: "Get the exact support you need, exactly when you need it, then keep watching.",
     },
     {
       icon: <Bookmark className="h-5 w-5" />,
