@@ -1417,6 +1417,7 @@ function Index() {
 
 
       setSelected(null);
+      manualSelectedRef.current = false;
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
       setTranscriptCacheRowId(res.provenance?.cacheRowId ?? null);
@@ -1546,6 +1547,7 @@ function Index() {
     setSentences([]);
     setTranscriptRawChunks([]);
     setSelected(null);
+    manualSelectedRef.current = false;
     setTranscriptSource(null);
     setCachedFromProvider(null);
     setTranscriptCacheRowId(null);
@@ -1607,6 +1609,7 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      manualSelectedRef.current = false;
       setTranscriptSource("manual");
       setCachedFromProvider(null);
       setTranscriptQuality(res.quality);
@@ -1984,6 +1987,9 @@ function Index() {
   // has actually seeked).
   const [manualActiveId, setManualActiveId] = useState<number | null>(null);
   const manualUntilRef = useRef(0);
+  // True while the learner has an explicitly tapped sentence open. Manual
+  // selection takes precedence over playback-driven auto-follow updates.
+  const manualSelectedRef = useRef(false);
 
   // Track YouTube playback rate so we can keep the highlight lookahead
   // constant in wall-clock time across 0.25×–2× speeds.
@@ -2249,6 +2255,8 @@ function Index() {
     // Auto-following the active sentence is gated on auto-follow (focusMode).
     // In Learning Mode with auto-follow off, only explicit taps open the Aha Panel.
     if (!focusMode) return;
+    // Manual selection wins: never overwrite a sentence the learner tapped.
+    if (manualSelectedRef.current) return;
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
@@ -2398,13 +2406,20 @@ function Index() {
     setCurrentTime(s.offset);
   }
 
-  // Resume playback from the user's current transcript position (no seek),
-  // close the Aha Panel. Used by Resume button, sheet dismiss, and panel close.
+  // Resume playback ONLY. Playback state and the user's manual transcript
+  // selection are independent: resuming must never clear the selected sentence
+  // or replace the explanation the learner is reading.
   function resumeFromHere() {
-    setSelected(null);
     const p = playerRef.current;
     p?.playVideo?.();
     track("learning_resume", { video_id: videoId });
+  }
+
+  // Explicitly close the Aha Panel (clears manual selection) and resume playback.
+  function closeAndResume() {
+    setSelected(null);
+    manualSelectedRef.current = false;
+    resumeFromHere();
   }
 
   const clickCountRef = useRef(0);
@@ -2439,6 +2454,7 @@ function Index() {
       perfLog("sentence_clicked", { sentence_id: s.id, mode: studyMode ? "learning" : "watch" });
     }
     if (studyMode) {
+      manualSelectedRef.current = true;
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
       // Learning Mode: pause on tap so the learner can study. Resume is explicit.
@@ -3340,7 +3356,7 @@ function Index() {
                     entry={
                       selected ? explanationCache[selected.id] : undefined
                     }
-                    onClose={resumeFromHere}
+                    onClose={closeAndResume}
                     onReplay={replaySelected}
                     onResume={resumeFromHere}
                     onSave={() => handleSaveExpression(selected)}
@@ -3363,7 +3379,7 @@ function Index() {
                 <Drawer
                   open={!!selected}
                   onOpenChange={(open) => {
-                    if (!open) resumeFromHere();
+                    if (!open) closeAndResume();
                   }}
                   shouldScaleBackground={false}
                 >
@@ -3375,7 +3391,7 @@ function Index() {
                         entry={
                           selected ? explanationCache[selected.id] : undefined
                         }
-                        onClose={resumeFromHere}
+                        onClose={closeAndResume}
                         onReplay={replaySelected}
                         onResume={resumeFromHere}
                         onSave={() => handleSaveExpression(selected)}
