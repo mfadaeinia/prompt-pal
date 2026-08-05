@@ -149,3 +149,43 @@ export function sameBaseLanguage(a: string | null | undefined, b: string | null 
   const norm = (s: string) => s.toLowerCase().split(/[-_]/)[0];
   return norm(a) === norm(b);
 }
+
+/**
+ * Script-level guard for the stopword detector above, which only knows
+ * Latin-script languages and therefore returns `null` for Arabic, Cyrillic,
+ * CJK, etc. Used to reject caption tracks written in a completely different
+ * script than the language we asked for (e.g. Arabic subtitles uploaded on a
+ * Dutch lesson).
+ */
+const NON_LATIN_SCRIPT =
+  /[\u0400-\u04FF\u0530-\u058F\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u0900-\u097F\u0E00-\u0E7F\u10A0-\u10FF\u1100-\u11FF\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uAC00-\uD7AF]/g;
+const LATIN_LETTER = /[A-Za-z\u00C0-\u024F]/g;
+
+/** Languages we support that are written in Latin script. */
+const LATIN_SCRIPT_LANGS = new Set(["nl", "en", "de", "fr", "es", "it", "pt", "sv", "da", "no", "pl", "tr", "id"]);
+
+export function isLatinScriptLanguage(lang: string | null | undefined): boolean {
+  if (!lang) return false;
+  return LATIN_SCRIPT_LANGS.has(lang.toLowerCase().split("-")[0]);
+}
+
+/** True when the text is predominantly written in a non-Latin script. */
+export function isMostlyNonLatinScript(text: string): boolean {
+  const sample = text.slice(0, 2000);
+  const nonLatin = sample.match(NON_LATIN_SCRIPT)?.length ?? 0;
+  const latin = sample.match(LATIN_LETTER)?.length ?? 0;
+  if (nonLatin + latin < 40) return false;
+  return nonLatin / (nonLatin + latin) > 0.3;
+}
+
+/**
+ * True when `text` clearly cannot be in `expected` — either the stopword
+ * detector confidently disagrees, or the script is incompatible.
+ */
+export function textContradictsLanguage(text: string, expected: string): boolean {
+  if (isLatinScriptLanguage(expected) && isMostlyNonLatinScript(text)) return true;
+  const detected = detectLanguage(text);
+  return Boolean(
+    detected.language && detected.confidence >= 0.4 && !sameBaseLanguage(detected.language, expected),
+  );
+}

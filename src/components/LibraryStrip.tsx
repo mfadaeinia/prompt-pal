@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Library, Play, Flame, ArrowRight, Loader2 } from "lucide-react";
+import { Library, Play, Flame, ArrowRight } from "lucide-react";
 import {
   CEFR_LEVELS,
   type CuratedVideo,
@@ -168,18 +168,19 @@ export function LibraryStrip({
       // human-readable label, which would be an invalid caption track.
       onPick(v.url, (v.language || "nl").toLowerCase().split(/[-_]/)[0]);
     } else if (typeof window !== "undefined") {
-      window.location.href = `/?v=${encodeURIComponent(v.url)}`;
+      // Standalone navigation (e.g. from the landing page): carry the spoken
+      // language along so the transcript pipeline asks for the original track.
+      const lang = (v.language || "nl").toLowerCase().split(/[-_]/)[0];
+      window.location.href = `/?url=${encodeURIComponent(v.url)}&lang=${encodeURIComponent(lang)}`;
     }
+
   };
 
-  if (q.isLoading) {
-    return (
-      <div className={cn("flex items-center gap-2 py-8 text-sm text-muted-foreground", className)}>
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading curated lessons…
-      </div>
-    );
-  }
+  // Secondary discovery surface: never show a blocking spinner or an error
+  // state here — the strip simply appears once the curated videos are ready.
+  if (q.isLoading || q.isError) return null;
   if (all.length === 0) return null;
+
 
   return (
     <section className={cn("rounded-2xl border border-border/60 bg-muted/30 p-4 sm:p-5", className)}>

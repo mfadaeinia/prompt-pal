@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { YoutubeTranscript } from "youtube-transcript";
-import { detectLanguage, sameBaseLanguage } from "@/lib/lang-detect.server";
+import { detectLanguage, sameBaseLanguage, textContradictsLanguage } from "@/lib/lang-detect.server";
 import { extractVideoId } from "@/lib/youtube-id";
 
 const Input = z.object({
@@ -831,32 +831,36 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
   if (!rows.length) return null;
 
   const isPoisoned = (r: CacheRow): boolean => {
-    // Only re-validate rows whose provider's language claim is historically
-    // unreliable ("fallback" = Transcribr). YouTube captions and Whisper
-    // carry their own language tag we trust.
+    // A cached row is poisoned when its TEXT contradicts either the language
+    // the provider claimed or the language the caller asked for. This applies
+    // to every provider: YouTube can hand back a creator-uploaded track in an
+    // unrelated language (e.g. Arabic subtitles on a Dutch lesson) and we
+    // would otherwise keep serving it forever from cache.
     const provider = (r.provider ?? r.source ?? "").toLowerCase();
-    if (provider !== "fallback") return false;
     const claimed = r.language ?? r.provider_response_language ?? null;
-    if (!claimed) return false;
+    const expected = requestedLanguage === "_any_" ? claimed : requestedLanguage;
+    if (!expected) return false;
     const text = (r.transcript_json ?? [])
       .slice(0, 80)
       .map((c) => c?.text ?? "")
       .join(" ");
     if (text.length < 80) return false;
+    if (!textContradictsLanguage(text, expected)) return false;
     const detected = detectLanguage(text);
-    if (!detected.language || detected.confidence < 0.4) return false;
-    if (sameBaseLanguage(detected.language, claimed)) return false;
+
     console.warn("[transcript] poisoned cache row detected — skipping", {
       videoId,
       cacheRowId: r.id,
       provider,
       claimedLanguage: claimed,
+      expectedLanguage: expected,
       detectedLanguage: detected.language,
       confidence: detected.confidence,
       scores: detected.scores,
     });
     return true;
   };
+
 
   if (requestedLanguage === "_any_") {
     const picked = rows.find((r) => !isPoisoned(r));
@@ -1327,7 +1331,25 @@ export const fetchTranscript = createServerFn({ method: "POST" })
       console.warn("[transcript-debug] youtube blocked — skipping remaining langs, going to fallback");
     }
 
+    // Same guard as the streaming path: discard a caption track whose text is
+    // clearly not the requested spoken language (creator-uploaded or
+    // auto-translated tracks in another language) and escalate to ASR.
+    if (raw && raw.length && spokenLanguage) {
+      const joined = raw.map((r) => r.text).join(" ");
+      if (textContradictsLanguage(joined, spokenLanguage)) {
+        console.warn("[lang-pipeline][server] youtube caption language mismatch — discarding", {
+          videoId,
+          requestedSpokenLanguage: spokenLanguage,
+          detectedFromText: detectLanguage(joined).language,
+        });
+        raw = null;
+        usedLang = null;
+      }
+    }
+
+
     if (raw && raw.length) {
+
       const tBuild = Date.now();
       const sentences = buildSentencesFromChunks(raw);
       timings.sentence_build_ms = Date.now() - tBuild;
@@ -1765,12 +1787,8 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         detectedFromText: detected.language,
         detectionConfidence: detected.confidence,
       });
-      if (
-        spokenLanguage &&
-        detected.language &&
-        detected.confidence >= 0.4 &&
-        !sameBaseLanguage(detected.language, spokenLanguage)
-      ) {
+      if (spokenLanguage && textContradictsLanguage(joinedText, spokenLanguage)) {
+
         console.warn(
           "[lang-pipeline][server] youtube caption language mismatch — discarding",
           { videoId, requestedSpokenLanguage: spokenLanguage, detectedFromText: detected.language },
