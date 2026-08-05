@@ -1251,7 +1251,11 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     // language — that would pull auto-translated caption tracks.
     const spokenLanguageRaw =
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
-    const spokenLanguage = spokenLanguageRaw || null; // null = auto/original
+    // When the learner leaves the video language on auto, ask YouTube what the
+    // video is actually spoken in so we don't pull an English caption track for
+    // a Dutch video.
+    const spokenLanguage =
+      spokenLanguageRaw || (data.skipYoutube ? null : await probeSpokenLanguage(videoId));
     const requestedLanguage = spokenLanguage ?? "_any_";
     const tCache = Date.now();
     const cached = data.skipCache ? null : await readCache(videoId, requestedLanguage);
@@ -1727,7 +1731,9 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
     }
     const spokenLanguageRaw =
       (data.spokenLanguage ?? data.requestedLanguage)?.trim() || "";
-    const spokenLanguage = spokenLanguageRaw || null;
+    // Auto video-language: resolve the real spoken language from YouTube
+    // metadata before picking a caption track (see probeSpokenLanguage).
+    const spokenLanguage = spokenLanguageRaw || (await probeSpokenLanguage(videoId));
     const requestedLanguage = spokenLanguage ?? "_any_";
 
     // ---- Layer 1: cache ----
