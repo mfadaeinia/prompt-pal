@@ -25,6 +25,7 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
+  { label: "Home", icon: Home, to: "/" },
   { label: "Browse", icon: LayoutGrid, to: "/library", active: true },
   { label: "My Learning", icon: GraduationCap, to: "/" },
   { label: "Saved videos", icon: Bookmark, to: "/saved" },
