@@ -14,8 +14,10 @@ import {
   X,
 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { AppFooter } from "@/components/AppFooter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
 
 type NavItem = {
   label: string;
@@ -169,7 +171,9 @@ export function LibraryShell({ children }: { children: React.ReactNode }) {
 
       <main className="lg:pl-[248px]">
         <div className="mx-auto max-w-[1200px] px-4 pb-24 pt-6 sm:px-8">{children}</div>
+        <AppFooter />
       </main>
+
     </div>
   );
 }
