@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SavedRouteImport } from './routes/saved'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
@@ -35,6 +36,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
+  '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/english-learners'
     | '/founder'
     | '/mcp'
+    | '/privacy'
     | '/saved'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/english-learners'
     | '/founder'
     | '/mcp'
+    | '/privacy'
     | '/saved'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/english-learners'
     | '/founder'
     | '/mcp'
+    | '/privacy'
     | '/saved'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   EnglishLearnersRoute: typeof EnglishLearnersRoute
   FounderRoute: typeof FounderRoute
   McpRoute: typeof McpRoute
+  PrivacyRoute: typeof PrivacyRoute
   SavedRoute: typeof SavedRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnglishLearnersRoute: EnglishLearnersRoute,
   FounderRoute: FounderRoute,
   McpRoute: McpRoute,
+  PrivacyRoute: PrivacyRoute,
   SavedRoute: SavedRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
