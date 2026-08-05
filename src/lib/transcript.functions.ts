@@ -1335,21 +1335,18 @@ export const fetchTranscript = createServerFn({ method: "POST" })
     // clearly not the requested spoken language (creator-uploaded or
     // auto-translated tracks in another language) and escalate to ASR.
     if (raw && raw.length && spokenLanguage) {
-      const detected = detectLanguage(raw.map((r) => r.text).join(" "));
-      if (
-        detected.language &&
-        detected.confidence >= 0.4 &&
-        !sameBaseLanguage(detected.language, spokenLanguage)
-      ) {
+      const joined = raw.map((r) => r.text).join(" ");
+      if (textContradictsLanguage(joined, spokenLanguage)) {
         console.warn("[lang-pipeline][server] youtube caption language mismatch — discarding", {
           videoId,
           requestedSpokenLanguage: spokenLanguage,
-          detectedFromText: detected.language,
+          detectedFromText: detectLanguage(joined).language,
         });
         raw = null;
         usedLang = null;
       }
     }
+
 
     if (raw && raw.length) {
 
