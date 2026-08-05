@@ -831,13 +831,15 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
   if (!rows.length) return null;
 
   const isPoisoned = (r: CacheRow): boolean => {
-    // Only re-validate rows whose provider's language claim is historically
-    // unreliable ("fallback" = Transcribr). YouTube captions and Whisper
-    // carry their own language tag we trust.
+    // A cached row is poisoned when its TEXT contradicts either the language
+    // the provider claimed or the language the caller asked for. This applies
+    // to every provider: YouTube can hand back a creator-uploaded track in an
+    // unrelated language (e.g. Arabic subtitles on a Dutch lesson) and we
+    // would otherwise keep serving it forever from cache.
     const provider = (r.provider ?? r.source ?? "").toLowerCase();
-    if (provider !== "fallback") return false;
     const claimed = r.language ?? r.provider_response_language ?? null;
-    if (!claimed) return false;
+    const expected = requestedLanguage === "_any_" ? claimed : requestedLanguage;
+    if (!expected) return false;
     const text = (r.transcript_json ?? [])
       .slice(0, 80)
       .map((c) => c?.text ?? "")
@@ -845,18 +847,20 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
     if (text.length < 80) return false;
     const detected = detectLanguage(text);
     if (!detected.language || detected.confidence < 0.4) return false;
-    if (sameBaseLanguage(detected.language, claimed)) return false;
+    if (sameBaseLanguage(detected.language, expected)) return false;
     console.warn("[transcript] poisoned cache row detected — skipping", {
       videoId,
       cacheRowId: r.id,
       provider,
       claimedLanguage: claimed,
+      expectedLanguage: expected,
       detectedLanguage: detected.language,
       confidence: detected.confidence,
       scores: detected.scores,
     });
     return true;
   };
+
 
   if (requestedLanguage === "_any_") {
     const picked = rows.find((r) => !isPoisoned(r));
