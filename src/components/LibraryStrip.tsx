@@ -172,14 +172,11 @@ export function LibraryStrip({
     }
   };
 
-  if (q.isLoading) {
-    return (
-      <div className={cn("flex items-center gap-2 py-8 text-sm text-muted-foreground", className)}>
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading curated lessons…
-      </div>
-    );
-  }
+  // Secondary discovery surface: never show a blocking spinner or an error
+  // state here — the strip simply appears once the curated videos are ready.
+  if (q.isLoading || q.isError) return null;
   if (all.length === 0) return null;
+
 
   return (
     <section className={cn("rounded-2xl border border-border/60 bg-muted/30 p-4 sm:p-5", className)}>
