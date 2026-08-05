@@ -18,6 +18,8 @@ import {
   type CuratedVideo,
 } from "@/lib/curated-library.functions";
 import { LEVEL_META, NEXT_LEVEL, parseLevel } from "@/lib/cefr-meta";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
