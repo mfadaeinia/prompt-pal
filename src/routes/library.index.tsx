@@ -23,7 +23,9 @@ import {
   type CuratedVideo,
 } from "@/lib/curated-library.functions";
 import { LEVEL_META } from "@/lib/cefr-meta";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
 import { LEVEL_PALETTE } from "@/lib/cefr-palette";
+
 import { LibraryShell } from "@/components/library/LibraryShell";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/AuthDialog";
