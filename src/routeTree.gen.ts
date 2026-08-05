@@ -16,6 +16,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as FounderRouteImport } from './routes/founder'
 import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as LibraryLevelRouteImport } from './routes/library.$level'
@@ -62,6 +63,11 @@ const FounderRoute = FounderRouteImport.update({
 const EnglishLearnersRoute = EnglishLearnersRouteImport.update({
   id: '/english-learners',
   path: '/english-learners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -132,6 +138,7 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
@@ -175,6 +183,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/english-learners': typeof EnglishLearnersRoute
   '/founder': typeof FounderRoute
   '/mcp': typeof McpRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/contact'
     | '/english-learners'
     | '/founder'
     | '/mcp'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contact'
     | '/english-learners'
     | '/founder'
     | '/mcp'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/contact'
     | '/english-learners'
     | '/founder'
     | '/mcp'
@@ -262,6 +274,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContactRoute: typeof ContactRoute
   EnglishLearnersRoute: typeof EnglishLearnersRoute
   FounderRoute: typeof FounderRoute
   McpRoute: typeof McpRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/english-learners'
       fullPath: '/english-learners'
       preLoaderRoute: typeof EnglishLearnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -422,6 +442,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContactRoute: ContactRoute,
   EnglishLearnersRoute: EnglishLearnersRoute,
   FounderRoute: FounderRoute,
   McpRoute: McpRoute,
