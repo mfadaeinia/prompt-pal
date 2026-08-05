@@ -179,7 +179,7 @@ function BrowsePage() {
   const { isAuthenticated } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
 
-  const fetchVideos = useServerFn(listCuratedVideos);
+  
   const fetchInteractions = useServerFn(listMyInteractions);
   const saveInteraction = useServerFn(toggleInteraction);
 
