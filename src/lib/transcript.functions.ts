@@ -845,9 +845,9 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
       .map((c) => c?.text ?? "")
       .join(" ");
     if (text.length < 80) return false;
+    if (!textContradictsLanguage(text, expected)) return false;
     const detected = detectLanguage(text);
-    if (!detected.language || detected.confidence < 0.4) return false;
-    if (sameBaseLanguage(detected.language, expected)) return false;
+
     console.warn("[transcript] poisoned cache row detected — skipping", {
       videoId,
       cacheRowId: r.id,
