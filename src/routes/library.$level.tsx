@@ -117,11 +117,8 @@ function LevelPage() {
   const fetchInteractions = useServerFn(listMyInteractions);
   const saveInteraction = useServerFn(toggleInteraction);
 
-  const videosQ = useQuery({
-    queryKey: ["curated-videos", 300],
-    queryFn: () => fetchVideos({ data: { limit: 300 } }),
-    staleTime: 5 * 60_000,
-  });
+  const videosQ = useQuery(curatedVideosQuery(300));
+
   const interactionsQ = useQuery({
     queryKey: ["curated-interactions"],
     queryFn: () => fetchInteractions({ data: {} as never }),
