@@ -33,26 +33,32 @@ import { useAuth } from "@/hooks/use-auth";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
+const LIBRARY_TITLE = "Browse Dutch Videos by Level — NativeFlow Library";
+const LIBRARY_DESCRIPTION =
+  "Discover carefully selected Dutch YouTube videos matched to your CEFR level, from A1 beginner to C2 proficient.";
+
 export const Route = createFileRoute("/library/")({
   head: () => ({
     meta: [
-      { title: "Browse Dutch Videos by Level — NativeFlow Library" },
-      {
-        name: "description",
-        content:
-          "Discover carefully selected Dutch YouTube videos matched to your CEFR level, from A1 beginner to C2 proficient.",
-      },
-      { property: "og:title", content: "Browse Dutch Videos by Level — NativeFlow" },
-      {
-        property: "og:description",
-        content:
-          "A calm, premium way to browse curated Dutch YouTube videos at exactly your level.",
-      },
+      { title: LIBRARY_TITLE },
+      { name: "description", content: LIBRARY_DESCRIPTION },
+      { property: "og:title", content: LIBRARY_TITLE },
+      { property: "og:description", content: LIBRARY_DESCRIPTION },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://nativeflow.life/library" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: LIBRARY_TITLE },
+      { name: "twitter:description", content: LIBRARY_DESCRIPTION },
     ],
+    links: [{ rel: "canonical", href: "https://nativeflow.life/library" }],
   }),
+  // Prime the cache during SSR so the server-rendered HTML already contains the
+  // curated videos instead of an indefinite "Loading…" skeleton.
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
+  },
   component: BrowsePage,
+
 });
 
 /* --------------------------------- helpers -------------------------------- */
