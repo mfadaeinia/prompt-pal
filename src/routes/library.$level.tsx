@@ -280,7 +280,17 @@ function LevelPage() {
           <div className="flex items-center gap-2 py-20 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading {level} videos…
           </div>
+        ) : videosQ.isError ? (
+          <div className="rounded-xl border border-dashed border-border p-10 text-center">
+            <p className="text-sm font-medium text-foreground">
+              We couldn't load the {level} videos just now.
+            </p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => videosQ.refetch()}>
+              Try again
+            </Button>
+          </div>
         ) : total === 0 ? (
+
           <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
             New lessons for this level are coming soon.
           </div>
