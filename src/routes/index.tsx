@@ -1417,6 +1417,7 @@ function Index() {
 
 
       setSelected(null);
+      manualSelectedRef.current = false;
       setTranscriptSource(res.source);
       setCachedFromProvider(res.cachedFromProvider ?? null);
       setTranscriptCacheRowId(res.provenance?.cacheRowId ?? null);
@@ -1546,6 +1547,7 @@ function Index() {
     setSentences([]);
     setTranscriptRawChunks([]);
     setSelected(null);
+    manualSelectedRef.current = false;
     setTranscriptSource(null);
     setCachedFromProvider(null);
     setTranscriptCacheRowId(null);
@@ -1607,6 +1609,7 @@ function Index() {
       setVideoId(res.videoId);
       setSentences(res.sentences);
       setSelected(null);
+      manualSelectedRef.current = false;
       setTranscriptSource("manual");
       setCachedFromProvider(null);
       setTranscriptQuality(res.quality);
