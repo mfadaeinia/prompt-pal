@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
+  Home,
   LayoutGrid,
   GraduationCap,
   Bookmark,
@@ -24,6 +25,7 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
+  { label: "Home", icon: Home, to: "/" },
   { label: "Browse", icon: LayoutGrid, to: "/library", active: true },
   { label: "My Learning", icon: GraduationCap, to: "/" },
   { label: "Saved videos", icon: Bookmark, to: "/saved" },
