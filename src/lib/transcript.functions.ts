@@ -1787,12 +1787,8 @@ export const fetchTranscriptFast = createServerFn({ method: "POST" })
         detectedFromText: detected.language,
         detectionConfidence: detected.confidence,
       });
-      if (
-        spokenLanguage &&
-        detected.language &&
-        detected.confidence >= 0.4 &&
-        !sameBaseLanguage(detected.language, spokenLanguage)
-      ) {
+      if (spokenLanguage && textContradictsLanguage(joinedText, spokenLanguage)) {
+
         console.warn(
           "[lang-pipeline][server] youtube caption language mismatch — discarding",
           { videoId, requestedSpokenLanguage: spokenLanguage, detectedFromText: detected.language },
