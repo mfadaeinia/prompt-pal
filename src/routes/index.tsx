@@ -2451,6 +2451,7 @@ function Index() {
       perfLog("sentence_clicked", { sentence_id: s.id, mode: studyMode ? "learning" : "watch" });
     }
     if (studyMode) {
+      manualSelectedRef.current = true;
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
       // Learning Mode: pause on tap so the learner can study. Resume is explicit.
@@ -3352,7 +3353,7 @@ function Index() {
                     entry={
                       selected ? explanationCache[selected.id] : undefined
                     }
-                    onClose={resumeFromHere}
+                    onClose={closeAndResume}
                     onReplay={replaySelected}
                     onResume={resumeFromHere}
                     onSave={() => handleSaveExpression(selected)}
@@ -3375,7 +3376,7 @@ function Index() {
                 <Drawer
                   open={!!selected}
                   onOpenChange={(open) => {
-                    if (!open) resumeFromHere();
+                    if (!open) closeAndResume();
                   }}
                   shouldScaleBackground={false}
                 >
@@ -3387,7 +3388,7 @@ function Index() {
                         entry={
                           selected ? explanationCache[selected.id] : undefined
                         }
-                        onClose={resumeFromHere}
+                        onClose={closeAndResume}
                         onReplay={replaySelected}
                         onResume={resumeFromHere}
                         onSave={() => handleSaveExpression(selected)}
