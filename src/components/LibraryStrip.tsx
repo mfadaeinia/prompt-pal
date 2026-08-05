@@ -168,8 +168,12 @@ export function LibraryStrip({
       // human-readable label, which would be an invalid caption track.
       onPick(v.url, (v.language || "nl").toLowerCase().split(/[-_]/)[0]);
     } else if (typeof window !== "undefined") {
-      window.location.href = `/?v=${encodeURIComponent(v.url)}`;
+      // Standalone navigation (e.g. from the landing page): carry the spoken
+      // language along so the transcript pipeline asks for the original track.
+      const lang = (v.language || "nl").toLowerCase().split(/[-_]/)[0];
+      window.location.href = `/?url=${encodeURIComponent(v.url)}&lang=${encodeURIComponent(lang)}`;
     }
+
   };
 
   // Secondary discovery surface: never show a blocking spinner or an error
