@@ -53,8 +53,8 @@ export const Route = createFileRoute("/library/")({
   }),
   // Prime the cache during SSR so the server-rendered HTML already contains the
   // curated videos instead of an indefinite "Loading…" skeleton.
-  loader: ({ context }) => {
-    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(curatedVideosQuery(300));
   },
   component: BrowsePage,
 

@@ -48,9 +48,9 @@ export const Route = createFileRoute("/library/$level")({
       links: [{ rel: "canonical", href: url }],
     };
   },
-  loader: ({ params, context }) => {
+  loader: async ({ params, context }) => {
     if (!parseLevel(params.level)) throw notFound();
-    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
+    await context.queryClient.ensureQueryData(curatedVideosQuery(300));
   },
 
   component: LevelPage,
