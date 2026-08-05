@@ -24,13 +24,9 @@ function fmtDuration(s: number | null) {
 }
 
 export function useCuratedVideos(limit = 60) {
-  const fetchVideos = useServerFn(listCuratedVideos);
-  return useQuery({
-    queryKey: ["curated-videos", limit],
-    queryFn: () => fetchVideos({ data: { limit } }),
-    staleTime: 5 * 60_000,
-  });
+  return useQuery(curatedVideosQuery(limit));
 }
+
 
 function LibraryCard({
   v,
