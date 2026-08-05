@@ -2221,12 +2221,14 @@ function Index() {
   }, [isMobile, activeOutOfView, playingId, sentences]);
 
   // Sentence shown in the persistent "Current sentence" bar under the video.
-  // Prefers the user's selection (when they tapped a sentence in study mode),
-  // otherwise falls back to whatever is currently playing.
+  // Always follows playback so the highlight moves with the video; falls back
+  // to the user's selection only when nothing is playing yet.
   const currentSentence = useMemo(() => {
-    if (selected) return selected;
-    if (playingId == null) return null;
-    return sentences.find((x) => x.id === playingId) ?? null;
+    if (playingId != null) {
+      const p = sentences.find((x) => x.id === playingId);
+      if (p) return p;
+    }
+    return selected;
   }, [selected, playingId, sentences]);
 
   function jumpToCurrentSentence() {
