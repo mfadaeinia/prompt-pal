@@ -46,6 +46,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track, setUserProperties } from "@/lib/analytics";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
+
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
@@ -124,7 +126,13 @@ export const Route = createFileRoute("/")({
     ],
   }),
 
+  // Prime the curated-library cache so the discovery strip is server-rendered
+  // with real videos instead of a "Loading…" placeholder.
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(curatedVideosQuery(60));
+  },
   component: Index,
+
 });
 
 function Index() {
@@ -3496,14 +3504,29 @@ function Index() {
       </main>
 
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
           <span className="flex items-center gap-2">
             <BrandLogo iconOnly markClassName="h-5 w-5" gradientId="nf-footer" />
             © {new Date().getFullYear()} NativeFlow — understand content in context.
           </span>
-          <span>Language Learning Beta</span>
+          <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link to="/library" className="hover:text-foreground">
+              Browse by level
+            </Link>
+            <Link to="/contact" className="hover:text-foreground">
+              Contact
+            </Link>
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms
+            </Link>
+            <span>Language Learning Beta</span>
+          </nav>
         </div>
       </footer>
+
 
       {showOnboarding && view === "demo" && studyMode && (
         <SentenceCoachmark

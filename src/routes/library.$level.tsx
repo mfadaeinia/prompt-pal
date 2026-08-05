@@ -12,12 +12,13 @@ import {
   Clock,
 } from "lucide-react";
 import {
-  listCuratedVideos,
   listMyInteractions,
   toggleInteraction,
   type CuratedVideo,
 } from "@/lib/curated-library.functions";
 import { LEVEL_META, NEXT_LEVEL, parseLevel } from "@/lib/cefr-meta";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/library/$level")({
     const meta = LEVEL_META[level];
     const title = `${level} Dutch Learning Library — NativeFlow`;
     const description = `${meta.name} Dutch: curated YouTube videos at CEFR ${level}. ${meta.short}`;
+    const url = `https://nativeflow.life/library/${level}`;
     return {
       meta: [
         { title },
@@ -38,13 +40,19 @@ export const Route = createFileRoute("/library/$level")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
-  loader: ({ params }) => {
+  loader: ({ params, context }) => {
     if (!parseLevel(params.level)) throw notFound();
+    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
   },
+
   component: LevelPage,
 });
 
@@ -113,15 +121,12 @@ function LevelPage() {
   const { isAuthenticated } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
 
-  const fetchVideos = useServerFn(listCuratedVideos);
+  
   const fetchInteractions = useServerFn(listMyInteractions);
   const saveInteraction = useServerFn(toggleInteraction);
 
-  const videosQ = useQuery({
-    queryKey: ["curated-videos", 300],
-    queryFn: () => fetchVideos({ data: { limit: 300 } }),
-    staleTime: 5 * 60_000,
-  });
+  const videosQ = useQuery(curatedVideosQuery(300));
+
   const interactionsQ = useQuery({
     queryKey: ["curated-interactions"],
     queryFn: () => fetchInteractions({ data: {} as never }),
@@ -274,7 +279,17 @@ function LevelPage() {
           <div className="flex items-center gap-2 py-20 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading {level} videos…
           </div>
+        ) : videosQ.isError ? (
+          <div className="rounded-xl border border-dashed border-border p-10 text-center">
+            <p className="text-sm font-medium text-foreground">
+              We couldn't load the {level} videos just now.
+            </p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => videosQ.refetch()}>
+              Try again
+            </Button>
+          </div>
         ) : total === 0 ? (
+
           <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
             New lessons for this level are coming soon.
           </div>

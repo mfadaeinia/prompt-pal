@@ -15,7 +15,6 @@ import {
   SearchX,
 } from "lucide-react";
 import {
-  listCuratedVideos,
   listMyInteractions,
   toggleInteraction,
   CEFR_LEVELS,
@@ -23,7 +22,9 @@ import {
   type CuratedVideo,
 } from "@/lib/curated-library.functions";
 import { LEVEL_META } from "@/lib/cefr-meta";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
 import { LEVEL_PALETTE } from "@/lib/cefr-palette";
+
 import { LibraryShell } from "@/components/library/LibraryShell";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/AuthDialog";
@@ -31,26 +32,32 @@ import { useAuth } from "@/hooks/use-auth";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
+const LIBRARY_TITLE = "Browse Dutch Videos by Level — NativeFlow Library";
+const LIBRARY_DESCRIPTION =
+  "Discover carefully selected Dutch YouTube videos matched to your CEFR level, from A1 beginner to C2 proficient.";
+
 export const Route = createFileRoute("/library/")({
   head: () => ({
     meta: [
-      { title: "Browse Dutch Videos by Level — NativeFlow Library" },
-      {
-        name: "description",
-        content:
-          "Discover carefully selected Dutch YouTube videos matched to your CEFR level, from A1 beginner to C2 proficient.",
-      },
-      { property: "og:title", content: "Browse Dutch Videos by Level — NativeFlow" },
-      {
-        property: "og:description",
-        content:
-          "A calm, premium way to browse curated Dutch YouTube videos at exactly your level.",
-      },
+      { title: LIBRARY_TITLE },
+      { name: "description", content: LIBRARY_DESCRIPTION },
+      { property: "og:title", content: LIBRARY_TITLE },
+      { property: "og:description", content: LIBRARY_DESCRIPTION },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://nativeflow.life/library" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: LIBRARY_TITLE },
+      { name: "twitter:description", content: LIBRARY_DESCRIPTION },
     ],
+    links: [{ rel: "canonical", href: "https://nativeflow.life/library" }],
   }),
+  // Prime the cache during SSR so the server-rendered HTML already contains the
+  // curated videos instead of an indefinite "Loading…" skeleton.
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(curatedVideosQuery(300));
+  },
   component: BrowsePage,
+
 });
 
 /* --------------------------------- helpers -------------------------------- */
@@ -177,15 +184,12 @@ function BrowsePage() {
   const { isAuthenticated } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
 
-  const fetchVideos = useServerFn(listCuratedVideos);
+  
   const fetchInteractions = useServerFn(listMyInteractions);
   const saveInteraction = useServerFn(toggleInteraction);
 
-  const videosQ = useQuery({
-    queryKey: ["curated-videos", 300],
-    queryFn: () => fetchVideos({ data: { limit: 300 } }),
-    staleTime: 5 * 60_000,
-  });
+  const videosQ = useQuery(curatedVideosQuery(300));
+
   const interactionsQ = useQuery({
     queryKey: ["curated-interactions"],
     queryFn: () => fetchInteractions({ data: {} as never }),
@@ -427,7 +431,20 @@ function BrowsePage() {
         <div className="flex items-center gap-2 py-24 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading curated videos…
         </div>
+      ) : videosQ.isError ? (
+        <div className="my-10 rounded-2xl border border-dashed border-border p-10 text-center">
+          <p className="text-sm font-medium text-foreground">
+            We couldn't load the library just now.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Check your connection and try again, the videos are still there.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => videosQ.refetch()}>
+            Try again
+          </Button>
+        </div>
       ) : (
+
         <>
           {/* continue learning */}
           {continueVideo && !filtering && (

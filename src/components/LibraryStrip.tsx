@@ -1,17 +1,17 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Library, Play, Flame, ArrowRight, Loader2 } from "lucide-react";
 import {
-  listCuratedVideos,
   CEFR_LEVELS,
   type CuratedVideo,
   type CefrLevel,
 } from "@/lib/curated-library.functions";
+import { curatedVideosQuery } from "@/lib/curated-videos.query";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+
 
 const LEVEL_DOT: Record<string, string> = {
   A1: "🟢", A2: "🟢", B1: "🔵", B2: "🟠", C1: "🔴", C2: "🔴",
@@ -24,13 +24,9 @@ function fmtDuration(s: number | null) {
 }
 
 export function useCuratedVideos(limit = 60) {
-  const fetchVideos = useServerFn(listCuratedVideos);
-  return useQuery({
-    queryKey: ["curated-videos", limit],
-    queryFn: () => fetchVideos({ data: { limit } }),
-    staleTime: 5 * 60_000,
-  });
+  return useQuery(curatedVideosQuery(limit));
 }
+
 
 function LibraryCard({
   v,
