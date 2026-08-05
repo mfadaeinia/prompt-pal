@@ -2252,6 +2252,8 @@ function Index() {
     // Auto-following the active sentence is gated on auto-follow (focusMode).
     // In Learning Mode with auto-follow off, only explicit taps open the Aha Panel.
     if (!focusMode) return;
+    // Manual selection wins: never overwrite a sentence the learner tapped.
+    if (manualSelectedRef.current) return;
     if (playingId == null) return;
     const s = sentences.find((x) => x.id === playingId);
     if (!s) return;
