@@ -240,6 +240,7 @@ export function YouTubeDiscovery({
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            aria-label="Search YouTube videos"
             placeholder="Search any YouTube video…"
             className="h-12 w-full rounded-xl bg-background pl-11 pr-11 text-base"
             inputMode="search"
