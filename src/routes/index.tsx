@@ -91,7 +91,7 @@ function normalizeSpokenLang(input?: string | null): string | undefined {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NativeFlow" },
+      { title: "NativeFlow — Understand any video, sentence by sentence" },
       {
         name: "description",
         content:

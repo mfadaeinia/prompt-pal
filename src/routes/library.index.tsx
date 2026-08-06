@@ -50,6 +50,19 @@ export const Route = createFileRoute("/library/")({
       { name: "twitter:description", content: LIBRARY_DESCRIPTION },
     ],
     links: [{ rel: "canonical", href: "https://nativeflow.life/library" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: LIBRARY_TITLE,
+          description: LIBRARY_DESCRIPTION,
+          url: "https://nativeflow.life/library",
+          isPartOf: { "@type": "WebSite", name: "NativeFlow", url: "https://nativeflow.life" },
+        }),
+      },
+    ],
   }),
   // Prime the cache during SSR so the server-rendered HTML already contains the
   // curated videos instead of an indefinite "Loading…" skeleton.

@@ -19,7 +19,7 @@ import productMock from "@/assets/product-mock-v3.png.asset.json";
 const VARIANT = "english_learners";
 const TITLE = "Learn English with YouTube — Real Videos, Real Listening | NativeFlow";
 const DESCRIPTION =
-  "Improve English listening with authentic YouTube videos, podcasts and TED Talks. Click any subtitle for instant explanations, idioms and phrasal verbs in context.";
+  "Improve English listening with real YouTube videos and TED Talks. Click any subtitle for instant explanations, idioms and phrasal verbs in context.";
 const URL = "https://nativeflow.life/english-learners";
 
 export const Route = createFileRoute("/english-learners")({
