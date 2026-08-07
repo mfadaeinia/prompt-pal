@@ -152,9 +152,10 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
-          <div className="max-w-xl md:pl-12 lg:pl-0">
+      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24 min-[1600px]:max-w-[1600px] min-[1600px]:px-12 min-[1600px]:pt-10 min-[1600px]:pb-20 min-[2560px]:max-w-[1650px]">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12 min-[1600px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1600px]:gap-16">
+          <div className="max-w-xl md:pl-12 lg:pl-0 min-[1600px]:max-w-[560px] min-[1600px]:pl-0">
+
             <span
               className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80 sm:mb-6"
               style={heading}
