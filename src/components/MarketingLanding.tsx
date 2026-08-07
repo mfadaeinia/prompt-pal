@@ -152,9 +152,10 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
 
 
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12">
-          <div className="max-w-xl md:pl-12 lg:pl-0">
+      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24 min-[1600px]:max-w-[1600px] min-[1600px]:px-12 min-[1600px]:pt-10 min-[1600px]:pb-20 min-[2560px]:max-w-[1650px]">
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12 min-[1600px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1600px]:gap-16">
+          <div className="max-w-xl md:pl-12 lg:pl-0 min-[1600px]:max-w-[560px] min-[1600px]:pl-0">
+
             <span
               className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80 sm:mb-6"
               style={heading}
@@ -240,7 +241,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function CompetitorComparison() {
   return (
     <section id="why" className="scroll-mt-24">
-      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24 min-[1600px]:max-w-[1400px] min-[1600px]:px-12 min-[1600px]:py-[4.5rem]">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
           style={heading}
@@ -248,7 +249,7 @@ function CompetitorComparison() {
           Other tools let you click a word. NativeFlow lets you understand a sentence.
         </h2>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 min-[1600px]:mt-10 min-[1600px]:gap-8">
           {/* LEFT — Word-by-word tools */}
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-7">
             <h3
@@ -258,19 +259,19 @@ function CompetitorComparison() {
               Word-by-word tools
             </h3>
             <ul className="mt-6 space-y-3">
-              <li className="flex items-start gap-3 text-sm text-slate-600">
+              <li className="flex items-start gap-3 text-sm text-slate-600 min-[1600px]:text-[0.9375rem]">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
                   1
                 </span>
                 Click a single word → get a dictionary definition
               </li>
-              <li className="flex items-start gap-3 text-sm text-slate-600">
+              <li className="flex items-start gap-3 text-sm text-slate-600 min-[1600px]:text-[0.9375rem]">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
                   2
                 </span>
                 Lose the meaning of the full expression
               </li>
-              <li className="flex items-start gap-3 text-sm text-slate-600">
+              <li className="flex items-start gap-3 text-sm text-slate-600 min-[1600px]:text-[0.9375rem]">
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
                   3
                 </span>
@@ -290,19 +291,19 @@ function CompetitorComparison() {
                 NativeFlow
               </h3>
               <ul className="mt-6 space-y-3">
-                <li className="flex items-start gap-3 text-sm text-slate-900">
+                <li className="flex items-start gap-3 text-sm text-slate-900 min-[1600px]:text-[0.9375rem]">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     1
                   </span>
                   Tap any full sentence → get instant translation
                 </li>
-                <li className="flex items-start gap-3 text-sm text-slate-900">
+                <li className="flex items-start gap-3 text-sm text-slate-900 min-[1600px]:text-[0.9375rem]">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     2
                   </span>
                   See the expression explained in context
                 </li>
-                <li className="flex items-start gap-3 text-sm text-slate-900">
+                <li className="flex items-start gap-3 text-sm text-slate-900 min-[1600px]:text-[0.9375rem]">
                   <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                     3
                   </span>
@@ -343,7 +344,7 @@ function HowItWorks() {
   ];
   return (
     <section className="border-t border-slate-200">
-      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24 min-[1600px]:max-w-[1400px] min-[1600px]:px-12 min-[1600px]:py-[4.5rem]">
         <h2
           className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl"
           style={heading}
@@ -376,7 +377,7 @@ function Comparison() {
   const newWay = ["Watch what you love", "Understand more", "Stay engaged", "Grow naturally"];
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
+    <section className="mx-auto max-w-7xl px-6 py-24 sm:py-28 min-[1600px]:max-w-[1400px] min-[1600px]:px-12 min-[1600px]:py-[5.25rem]">
       <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-16">
         <h2
           className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
@@ -495,7 +496,7 @@ function Features() {
   ];
   return (
     <section className="border-y border-slate-200">
-      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-28">
+      <div className="mx-auto max-w-7xl px-6 py-24 sm:py-28 min-[1600px]:max-w-[1400px] min-[1600px]:px-12 min-[1600px]:py-[5.25rem]">
         <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
           <h2
             className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl"
