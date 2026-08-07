@@ -921,6 +921,7 @@ function Index() {
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
     setTargetLang(DEMO_LANGUAGE);
+    setSpokenLang("nl");
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
     if (videoId !== DEMO_VIDEO_ID) {
