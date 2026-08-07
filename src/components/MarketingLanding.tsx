@@ -129,13 +129,18 @@ const MOBILE_TILES = [
   "photo-1503676260728-1c00da094a0b", // educational
 ];
 
-function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: () => void }) {
+function Hero({
+  onSubmitUrl,
+  onStartDemo,
+}: {
+  onSubmitUrl: (url: string) => void;
+  onStartDemo: () => void;
+}) {
+  const [value, setValue] = useState("");
+  const trimmed = value.trim();
+
   return (
     <section className="relative overflow-hidden">
-      {/*
-        BACKGROUND — one single decorative collage image (no duplicate <img>).
-        Mobile/tablet: full-bleed and faded. Desktop: concentrated on the right ~60%.
-      */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <img
           src={heroCollage.url}
@@ -143,83 +148,164 @@ function Hero({ onPrimary, onSecondary }: { onPrimary: () => void; onSecondary: 
           width={1562}
           height={1007}
           fetchPriority="high"
-          className="absolute inset-y-0 left-0 h-full w-full object-cover object-top opacity-45 lg:left-auto lg:right-0 lg:w-[60%] lg:object-left lg:opacity-100"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/40 via-[#F8FAFC]/70 to-[#F8FAFC] lg:hidden" />
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-[#F8FAFC] from-15% via-[#F8FAFC]/20 via-35% to-transparent to-55% lg:block" />
-        <div className="absolute inset-x-0 bottom-0 hidden h-24 bg-gradient-to-t from-[#F8FAFC] to-transparent lg:block" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 via-[#F8FAFC]/85 to-[#F8FAFC]" />
       </div>
 
+      <div className="relative mx-auto max-w-3xl px-6 pt-12 pb-10 text-center sm:pt-16 sm:pb-12 min-[1600px]:max-w-4xl min-[1600px]:pt-20">
+        <span
+          className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
+          style={heading}
+        >
+          For Dutch learners who watch YouTube
+        </span>
 
+        <h1
+          className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem]"
+          style={heading}
+        >
+          Paste any Dutch video. Understand every sentence.
+        </h1>
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-4 pb-16 sm:pt-6 sm:pb-24 md:pt-8 md:pb-28 lg:pb-24 min-[1600px]:max-w-[1600px] min-[1600px]:px-12 min-[1600px]:pt-10 min-[1600px]:pb-20 min-[2560px]:max-w-[1650px]">
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-12 min-[1600px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1600px]:gap-16">
-          <div className="max-w-xl md:pl-12 lg:pl-0 min-[1600px]:max-w-[560px] min-[1600px]:pl-0">
+        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg">
+          Tap any sentence to get an instant explanation in context: meaning, expressions and grammar.
+        </p>
 
-            <span
-              className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80 sm:mb-6"
-              style={heading}
-            >
-              For Dutch learners who watch YouTube
-            </span>
-
-            <h1
-              className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.5rem]"
-              style={heading}
-            >
-              Turn any Dutch YouTube video into an interactive lesson.
-            </h1>
-
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:mt-6 sm:text-lg">
-              Click any subtitle to instantly understand its meaning, expressions and context.
-            </p>
-
-            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
-              <button
-                onClick={onPrimary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
-                style={heading}
-              >
-                Start for free
-              </button>
-              <button
-                onClick={onSecondary}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary bg-white px-7 py-3.5 text-sm font-semibold text-primary transition-all hover:bg-primary hover:text-white active:scale-[0.98] sm:w-auto"
-                style={heading}
-              >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                Watch demo
-              </button>
-            </div>
+        <form
+          className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-2.5 sm:flex-row sm:items-center sm:rounded-full sm:border sm:border-slate-200 sm:bg-white sm:p-1.5 sm:shadow-sm"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!trimmed) return;
+            track("marketing_hero_url_submitted", {});
+            onSubmitUrl(trimmed);
+          }}
+        >
+          <div className="relative flex-1">
+            <Youtube className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
+            <input
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              aria-label="Paste a Dutch YouTube video link"
+              placeholder="Paste a Dutch YouTube link…"
+              inputMode="url"
+              autoComplete="off"
+              className="h-12 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary sm:border-transparent sm:shadow-none sm:focus:border-transparent"
+            />
           </div>
+          <button
+            type="submit"
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
+            style={heading}
+            disabled={!trimmed}
+          >
+            <Play className="h-3.5 w-3.5 fill-current" />
+            Watch and learn
+          </button>
+        </form>
 
-
-          <div className="relative mx-auto w-full">
-            <ProductMock />
-          </div>
-        </div>
+        <p className="mt-3 text-xs text-slate-500">No account needed to try it</p>
       </div>
+
+      <LiveExample onStartDemo={onStartDemo} />
     </section>
   );
 }
 
+/* ============================== LIVE EXAMPLE ============================== */
 
+const EXAMPLE_VIDEO_ID = "Bt7J9fJvJ5Y";
+const EXAMPLE_SENTENCES = [
+  {
+    nl: "Joost Klein maakt zich klaar voor zijn wereldtour.",
+    en: "Joost Klein is getting ready for his world tour.",
+    note: "“zich klaarmaken voor” = to get ready for something.",
+  },
+  {
+    nl: "Ik had nooit gedacht dat het zo hard zou gaan.",
+    en: "I never thought it would take off this fast.",
+    note: "“zo hard gaan” literally “go so hard”, used for things moving/growing fast.",
+  },
+  {
+    nl: "Daar kijk ik echt naar uit.",
+    en: "I'm really looking forward to that.",
+    note: "“ergens naar uitkijken” = to look forward to something (separable verb).",
+  },
+];
 
+function LiveExample({ onStartDemo }: { onStartDemo: () => void }) {
+  const [active, setActive] = useState(1);
+  const current = EXAMPLE_SENTENCES[active];
 
-function ProductMock() {
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-md">
-      <img
-        src={productMock.url}
-        alt="NativeFlow product preview — Dutch sentence explanation"
-        width={1658}
-        height={949}
-        className="block w-full h-auto"
-        style={{ transform: "scale(1.02)" }}
-      />
+    <div className="relative mx-auto max-w-6xl px-6 pb-16 sm:pb-24 min-[1600px]:max-w-[1400px] min-[1600px]:px-12">
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+          <MousePointerClick className="h-3.5 w-3.5" /> Live example, tap a sentence
+        </span>
+        <span className="text-xs text-slate-500">NOS Jeugdjournaal · Dutch</span>
+      </div>
+
+      <div className="grid gap-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[1.25fr_1fr]">
+        <div className="overflow-hidden rounded-xl bg-slate-900">
+          <div className="relative aspect-video w-full">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${EXAMPLE_VIDEO_ID}?cc_load_policy=1&cc_lang_pref=nl&modestbranding=1&rel=0`}
+              title="Dutch example video: NOS Jeugdjournaal"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="space-y-1.5">
+            {EXAMPLE_SENTENCES.map((s, i) => (
+              <button
+                key={s.nl}
+                type="button"
+                onClick={() => setActive(i)}
+                className={[
+                  "block w-full rounded-lg px-3 py-2 text-left text-sm transition",
+                  i === active
+                    ? "bg-accent font-semibold text-slate-900 ring-1 ring-primary/25"
+                    : "text-slate-600 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                {s.nl}
+              </button>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+            <div
+              className="text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+              style={heading}
+            >
+              Explanation
+            </div>
+            <p className="mt-1.5 text-sm font-medium text-slate-900">{current.en}</p>
+            <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-slate-600">
+              <Languages className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              {current.note}
+            </p>
+          </div>
+
+          <button
+            onClick={onStartDemo}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/30 bg-white px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-accent"
+            style={heading}
+          >
+            Open this video in NativeFlow
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
