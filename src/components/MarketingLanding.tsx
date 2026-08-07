@@ -29,12 +29,10 @@ import founderPhoto from "@/assets/founder-mahta.png.asset.json";
  */
 export function MarketingLanding({
   onStartDemo,
-  onSignUp,
   onFeedback,
   onSubmitUrl,
 }: {
   onStartDemo: () => void;
-  onSignUp: () => void;
   onFeedback?: () => void;
   onSubmitUrl: (url: string) => void;
 }) {
@@ -42,10 +40,6 @@ export function MarketingLanding({
     track("marketing_landing_seen", {});
   }, []);
 
-  const handleSignUp = () => {
-    track("try_for_free_clicked", { source: "marketing_landing" });
-    onSignUp();
-  };
   const handleDemo = () => {
     track("marketing_cta_clicked", { target: "demo" });
     onStartDemo();

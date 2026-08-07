@@ -64,8 +64,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 
-const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=ucsSnoeTPMc";
-const DEMO_VIDEO_ID = "ucsSnoeTPMc";
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y";
+const DEMO_VIDEO_ID = "Bt7J9fJvJ5Y";
 const DEMO_LANGUAGE = "English";
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
@@ -2687,21 +2687,12 @@ function Index() {
       {view === "landing" && (
         <MarketingLanding
           onStartDemo={startDemo}
-          onSignUp={() => {
-            // If already signed in, skip the auth dialog and go straight to the app.
-            if (isAuthenticated) {
-              setView("app");
-              return;
-            }
-            // "Start for free" triggers sign-in upfront so save actions
-            // later in the flow don't interrupt the user. Record intent so
-            // that after the OAuth full-page redirect we land in the app
-            // view instead of bouncing back to the landing page.
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("nativeflow_post_auth_intent", "enter_app");
-            }
-            pendingActionRef.current = () => setView("app");
-            setAuthOpen(true);
+          onSubmitUrl={(u) => {
+            track("custom_video_attempted", { video_url: u, spoken_language: "nl" });
+            setUrl(u);
+            setSpokenLang("nl");
+            setView("demo");
+            submitLoad(u, "nl");
           }}
           onFeedback={openFeedbackManually}
         />
