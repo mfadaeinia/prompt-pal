@@ -2879,7 +2879,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 )}
               </div>
             )}
-            {videoId && view !== "landing" && (
+            {/* "Save video" hidden from the public header (code preserved). */}
+            {experiment && videoId && view !== "landing" && (
+
               <Button
                 size="sm"
                 variant={isVideoSaved ? "outline" : "default"}
