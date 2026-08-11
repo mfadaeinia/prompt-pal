@@ -80,7 +80,7 @@ export function SentenceCoachmark({
             Tap any sentence to see the explanation
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            The video pauses while you study.
+            The video keeps playing while you read.
           </p>
         </div>
         <button

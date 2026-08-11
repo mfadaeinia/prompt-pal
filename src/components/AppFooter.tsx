@@ -11,7 +11,7 @@ export function AppFooter() {
         </span>
         <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/library" className="hover:text-foreground">
-            Browse by level
+            Explore Dutch
           </Link>
           <Link to="/contact" className="hover:text-foreground">
             Contact
