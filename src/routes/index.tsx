@@ -74,7 +74,7 @@ import { trackWatch, deviceType } from "@/lib/watch-analytics";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
@@ -192,6 +192,14 @@ function Index() {
   const [url, setUrl] = useState("");
   // targetLang = learner's help/translation language (used by explainSentence).
   const [targetLang, setTargetLang] = useState("English");
+  // Restore the learner's explanation language across sessions.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("nf.explainLanguage");
+      if (stored) setTargetLang(stored);
+    } catch { /* ignore */ }
+  }, []);
+
   // Learner CEFR level — main learner-specific input to expression ranking.
   const [learnerLevel, setLearnerLevel] = useState<CefrLevel>(DEFAULT_LEARNER_LEVEL);
   useEffect(() => {
@@ -1700,6 +1708,22 @@ function Index() {
     Record<number, ExplanationEntry>
   >({});
   const inFlightRef = useRef<Set<number>>(new Set());
+
+  /**
+   * Switch the language explanations are written in. Persisted, and clears the
+   * cached explanations so the current sentence is re-explained immediately.
+   */
+  function changeExplanationLanguage(lang: string) {
+    if (lang === targetLang) return;
+    setTargetLang(lang);
+    try {
+      window.localStorage.setItem("nf.explainLanguage", lang);
+    } catch { /* ignore */ }
+    setExplanationCache({});
+    inFlightRef.current = new Set();
+    track("explanation_language_changed", { target_language: lang });
+  }
+
   // Current video id, readable from async callbacks (stale-response guard).
   const videoIdRef = useRef<string | null>(null);
   // Last auto-surfaced expression head, so we fire expression_auto_shown once.
@@ -2949,7 +2973,7 @@ function Index() {
         <AppOnboarding
           loading={loadMutation.isPending}
           targetLang={targetLang}
-          setTargetLang={setTargetLang}
+          setTargetLang={changeExplanationLanguage}
           savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
           isAuthenticated={isAuthenticated}
           onPick={(u, lang) => {
@@ -3391,7 +3415,23 @@ function Index() {
                         </span>
                       </span>
 
-                      <div className="hidden sm:flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Explanation language — learners read meanings here. */}
+                        <Select value={targetLang} onValueChange={changeExplanationLanguage}>
+                          <SelectTrigger
+                            className="h-7 w-auto gap-1 rounded-full border-border bg-background px-2.5 text-[11px] font-medium"
+                            aria-label="Explanation language"
+                            title="Language used for meanings and explanations"
+                          >
+                            <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Persian">Persian (فارسی)</SelectItem>
+                          </SelectContent>
+                        </Select>
+
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
                             type="button"

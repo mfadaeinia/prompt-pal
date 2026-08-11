@@ -457,18 +457,17 @@ export function AppOnboarding({
                 <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-lg border-border bg-background px-3 text-xs sm:h-9 sm:min-w-[140px]">
                   <SelectValue placeholder="Language" />
                 </SelectTrigger>
-                <SelectContent className="max-h-72">
+                <SelectContent>
                   {[
-                    "English","Dutch","Spanish","French","German","Italian","Portuguese",
-                    "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
-                    "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
-                    "Vietnamese","Thai","Greek","Czech","Persian",
+                    { value: "English", label: "English" },
+                    { value: "Persian", label: "Persian (فارسی)" },
                   ].map((lang) => (
-                    <SelectItem key={lang} value={lang}>
-                      {lang}
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
+
               </Select>
             </div>
             <div className="flex items-center gap-2">
