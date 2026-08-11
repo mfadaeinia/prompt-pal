@@ -46,7 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { track, setUserProperties, setExperienceType } from "@/lib/analytics";
+import { track, linkAnonymousToUser, setUserProperties, setExperienceType } from "@/lib/analytics";
 
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
@@ -470,9 +470,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // On sign-in: claim any anonymous saves from this browser, then run any
   // pending save action the user was about to perform, and refresh lists.
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN") return;
       track("google_login_completed", {});
+      // Keep the pre-signup anonymous journey attributable to this account.
+      if (session?.user?.id) linkAnonymousToUser(session.user.id);
       const sid = browserId || getBrowserId();
       if (sid) {
         void claimAnonFx({ data: { sessionId: sid } }).catch(() => {});
