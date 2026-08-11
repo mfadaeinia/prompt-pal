@@ -192,6 +192,14 @@ function Index() {
   const [url, setUrl] = useState("");
   // targetLang = learner's help/translation language (used by explainSentence).
   const [targetLang, setTargetLang] = useState("English");
+  // Restore the learner's explanation language across sessions.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("nf.explainLanguage");
+      if (stored) setTargetLang(stored);
+    } catch { /* ignore */ }
+  }, []);
+
   // Learner CEFR level — main learner-specific input to expression ranking.
   const [learnerLevel, setLearnerLevel] = useState<CefrLevel>(DEFAULT_LEARNER_LEVEL);
   useEffect(() => {
