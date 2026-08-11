@@ -4311,7 +4311,7 @@ function ExplanationPanel({
 function FallbackHint() {
   return (
     <p className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-      Explanation not available for this line — pause the video to read the
+      Explanation not available for this line — read the
       original sentence above, or click another line.
     </p>
   );
