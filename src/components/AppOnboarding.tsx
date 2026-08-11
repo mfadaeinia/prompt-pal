@@ -228,6 +228,7 @@ export function AppOnboarding({
   setTargetLang,
   savedVideos = [],
   isAuthenticated = false,
+  showLevelSelector = false,
 }: {
   onPick: PickFn;
   loading?: boolean;
@@ -235,7 +236,9 @@ export function AppOnboarding({
   setTargetLang: (l: string) => void;
   savedVideos?: SavedVideo[];
   isAuthenticated?: boolean;
+  showLevelSelector?: boolean;
 }) {
+
   // Restore any previously-entered search query so returning to the Hub
   // from a video keeps the user's search context.
   const [q, setQ] = useState<string>(() => {
