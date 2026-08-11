@@ -2824,16 +2824,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             <div className="relative flex items-center gap-2">
               {isAuthenticated ? (
                 <>
-                  <span
-                    className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600"
-                    title="You are signed in"
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                    </span>
-                    Signed In
-                  </span>
+                  {/* "Signed In" pulsing badge hidden in the cleaned-up public
+                      header — sign-out alone communicates session state. */}
+
                   <button
                     onClick={handleSignOut}
                     className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
