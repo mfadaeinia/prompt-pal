@@ -22,7 +22,6 @@ export function AppFooter() {
           <Link to="/terms" className="hover:text-foreground">
             Terms
           </Link>
-          <span>Language Learning Beta</span>
         </nav>
       </div>
     </footer>
