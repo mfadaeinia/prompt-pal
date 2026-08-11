@@ -3249,23 +3249,19 @@ function Index() {
 
                 </div>
 
-                {/* Language scaffolding: what is worth noticing (Useful Dutch)
-                    plus just enough context to follow along. Mobile stacks;
-                    desktop shows both side by side. Never pauses playback. */}
+                {/* One expression for the current moment. Anything deeper opens
+                    in a drawer — nothing is stacked under the video. */}
                 {studyMode && !limitedMode && (
-                  <div className="mx-auto grid w-full gap-4 md:max-w-[900px] lg:grid-cols-2 xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                    <UsefulDutchPanel
-                      className="order-1"
-                      items={expressionQueue}
+                  <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                    <UsefulExpressionBar
+                      expression={autoExpression}
                       loading={queueLoading}
-                      onExplain={(it) => openSentenceDetails(it.sentenceId, it.head)}
-                    />
-                    <ContextStrip
-                      className="order-2"
-                      previous={contextLines.previous}
-                      current={contextLines.current}
-                      next={contextLines.next}
-                      onSelect={(line) => openSentenceDetails(line.id)}
+                      expanded={expressionExpanded}
+                      onToggle={() => {
+                        if (currentSentence) {
+                          openSentenceDetails(currentSentence.id, autoExpression?.head ?? null);
+                        }
+                      }}
                     />
                   </div>
                 )}
