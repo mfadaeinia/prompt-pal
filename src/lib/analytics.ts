@@ -129,6 +129,36 @@ export function getLandingVariant(): string {
 
 
 
+/** Which product surface the current session is using. Additive property —
+ *  no event names or existing properties change. */
+export type ExperienceType = "public" | "passive_learning_experiment";
+let experienceType: ExperienceType = "public";
+
+export function setExperienceType(type: ExperienceType) {
+  experienceType = type;
+  if (typeof window === "undefined") return;
+  try {
+    posthog.register({ experience_type: type });
+  } catch {}
+}
+
+export function getExperienceType(): ExperienceType {
+  return experienceType;
+}
+
+/** Internal (founder / debug / test) session — lets us exclude our own usage. */
+export function isInternalSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (isTestUser()) return true;
+    if (localStorage.getItem("nativeflow_debug") === "1") return true;
+    if (sessionStorage.getItem("founder-auth-v1") === "1") return true;
+    return new URLSearchParams(window.location.search).get("debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function track(event: string, props?: Record<string, any>) {
   if (typeof window === "undefined") return;
   // Ensure is_test_user is always on the event payload (in addition to super property)
@@ -136,8 +166,11 @@ export function track(event: string, props?: Record<string, any>) {
   const enrichedProps = {
     ...(props ?? {}),
     is_test_user: isTestUser(),
+    experience_type: experienceType,
+    is_internal: isInternalSession(),
     ...(variant ? { landing_variant: variant } : {}),
   };
+
 
   try {
     const debug =
