@@ -29,6 +29,7 @@ import {
 import { saveVideo, listSavedVideos } from "@/lib/saved-videos.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
+import { getSessionId, getAnonymousUserId } from "@/lib/identity";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -227,10 +228,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
   const [showManualTranscript, setShowManualTranscript] = useState(false);
+  // One id per browsing session (sessionStorage-backed), distinct from the
+  // persistent anonymous visitor id in `browserId`.
   const sessionIdRef = useRef<string>("");
-  if (!sessionIdRef.current && typeof crypto !== "undefined") {
-    sessionIdRef.current =
-      (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
+  if (!sessionIdRef.current && typeof window !== "undefined") {
+    sessionIdRef.current = getSessionId();
   }
   const feedbackShownRef = useRef(false);
   const feedbackSubmittedRef = useRef(false);
@@ -534,6 +536,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         data: {
           eventName: "expression_saved",
           sessionId: browserId,
+          anonymousId: browserId || null,
           videoId: videoId ?? null,
           userId,
           metadata: { source: "explanation_panel" },
@@ -619,6 +622,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           data: {
             eventName: "expression_saved",
             sessionId: browserId,
+            anonymousId: browserId || null,
             videoId: videoId ?? null,
             userId,
             metadata: { source: "expression_row" },
@@ -724,6 +728,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           data: {
             eventName: "expression_saved",
             sessionId: browserId,
+            anonymousId: browserId || null,
             videoId: videoId ?? null,
             userId,
             metadata: { source: "text_selection", selected_length: text.length },
@@ -1820,6 +1825,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       recordVideoSession({
         data: {
           sessionId,
+          anonymousId: getAnonymousUserId() || null,
           videoId,
           durationSeconds: seconds,
           videoUrl: url || null,
@@ -2123,6 +2129,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       data: {
         eventName,
         sessionId: sid,
+        anonymousId: getAnonymousUserId() || null,
         videoId: videoId ?? null,
         userId,
         metadata: meta,
