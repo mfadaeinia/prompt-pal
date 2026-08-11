@@ -215,7 +215,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
   const [focusMode, setFocusMode] = useState(false);
   // Video id for which the "cannot be used in Learning Mode" panel was dismissed
-  // via "Back to Watch Mode" — lets the learner keep watching the video.
+  // via "Keep watching" — lets the learner keep watching the video.
   const [errorPanelDismissedFor, setErrorPanelDismissedFor] = useState<string | null>(null);
   const [browserId, setBrowserId] = useState("");
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
@@ -3050,8 +3050,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {slowTimeoutLevel >= 1
-                        ? "This can take longer for videos without captions. You can keep watching — Learning Mode will unlock as soon as sentences are ready."
-                        : "Transcript is being prepared. You can watch now — Learning Mode will unlock shortly."}
+                        ? "This can take longer for videos without captions. You can keep watching — the transcript and sentence explanations appear as soon as sentences are ready."
+                        : "Transcript is being prepared. You can watch now — sentence explanations appear shortly."}
                     </div>
                   </div>
                 </div>
@@ -3065,7 +3065,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             errorPanelDismissedFor !== (videoId ?? "unknown") ? (
               <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-6 text-foreground shadow-sm">
                 <h2 className="text-lg font-semibold">
-                  This video cannot be used in Learning Mode
+                  We couldn’t prepare a transcript for this video
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   We found subtitles or transcript data, but could not extract enough
@@ -3084,7 +3084,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     </div>
                     <div>Sentence count: <b>{sentences.length}</b></div>
                     <div>Processing status: <b>{processingStatus}</b></div>
-                    <div>Learning Mode usable: <b>NO</b></div>
+                    <div>Transcript usable: <b>NO</b></div>
                     <div>Transcript source: <b>{transcriptSource ?? "—"}</b></div>
                     <div>Video id: <b>{videoId ?? "—"}</b></div>
                   </div>
@@ -3108,7 +3108,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       }
                     }}
                   >
-                    Back to Watch Mode
+                    Keep watching
                   </Button>
                   <Button
                     onClick={() => {
