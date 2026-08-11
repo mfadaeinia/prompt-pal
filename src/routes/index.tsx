@@ -3415,7 +3415,23 @@ function Index() {
                         </span>
                       </span>
 
-                      <div className="hidden sm:flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Explanation language — learners read meanings here. */}
+                        <Select value={targetLang} onValueChange={changeExplanationLanguage}>
+                          <SelectTrigger
+                            className="h-7 w-auto gap-1 rounded-full border-border bg-background px-2.5 text-[11px] font-medium"
+                            aria-label="Explanation language"
+                            title="Language used for meanings and explanations"
+                          >
+                            <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Persian">Persian (فارسی)</SelectItem>
+                          </SelectContent>
+                        </Select>
+
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
                             type="button"
