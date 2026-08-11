@@ -32,7 +32,7 @@ export function UsefulDutchPanel({ items, loading, onExplain, className }: Props
 
   return (
     <section
-      className={`flex min-h-[220px] flex-col rounded-xl border border-border bg-card p-4 shadow-sm ${className ?? ""}`}
+      className={`flex min-h-[180px] sm:min-h-[220px] flex-col rounded-xl border border-border bg-card p-4 shadow-sm ${className ?? ""}`}
     >
       <h2 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />

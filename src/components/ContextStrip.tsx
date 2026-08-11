@@ -23,7 +23,7 @@ export function ContextStrip({ previous, current, next, onSelect, className }: P
 
   return (
     <section
-      className={`flex min-h-[220px] flex-col rounded-xl border border-border bg-card p-4 shadow-sm ${className ?? ""}`}
+      className={`flex min-h-[180px] sm:min-h-[220px] flex-col rounded-xl border border-border bg-card p-4 shadow-sm ${className ?? ""}`}
     >
       <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         Current context

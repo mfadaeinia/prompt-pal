@@ -25,10 +25,10 @@ export function VideoSubtitle({ text, highlight, onHighlightClick, className }: 
 
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 bottom-10 z-10 flex justify-center px-3 sm:bottom-14 sm:px-6 ${className ?? ""}`}
+      className={`pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center px-2 sm:bottom-14 sm:px-6 ${className ?? ""}`}
       aria-live="off"
     >
-      <p className="pointer-events-auto max-w-[92%] rounded-lg bg-black/75 px-3 py-2 text-center text-[15px] font-medium leading-snug text-white shadow-lg backdrop-blur-sm sm:px-4 sm:text-[19px] md:text-[21px]">
+      <p className="pointer-events-auto line-clamp-2 max-w-[96%] rounded-lg bg-black/75 px-2.5 py-1.5 text-center text-[13px] font-medium leading-snug text-white shadow-lg backdrop-blur-sm sm:line-clamp-none sm:px-4 sm:py-2 sm:text-[19px] md:text-[21px]">
         {parts ? (
           <>
             {parts[0]}
