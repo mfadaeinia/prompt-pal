@@ -216,3 +216,22 @@ export function track(event: string, props?: Record<string, any>) {
 }
 
 export { posthog };
+
+/**
+ * Called once after a successful sign-in. Links the persistent anonymous
+ * visitor id to the authenticated account so the pre-signup journey stays
+ * attributable (PostHog alias + an explicit `account_linked` event).
+ */
+export function linkAnonymousToUser(userId: string) {
+  if (typeof window === "undefined" || !userId) return;
+  const anonId = getAnonymousUserId();
+  try {
+    posthog.identify(userId, {
+      anonymous_user_id: anonId,
+      first_seen_at: getFirstSeenAt(),
+    });
+    if (anonId) posthog.alias(anonId, userId);
+    posthog.register({ user_id: userId });
+  } catch {}
+  track("account_linked", { user_id: userId, anonymous_user_id: anonId });
+}
