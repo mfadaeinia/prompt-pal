@@ -67,9 +67,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 
-const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y";
-const DEMO_VIDEO_ID = "Bt7J9fJvJ5Y";
-const DEMO_LANGUAGE = "English";
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
+const DEMO_VIDEO_ID = "3GHwKtBtdfk";
+const DEMO_LANGUAGE = "Dutch";
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
 const LANG_LABEL_TO_ISO: Record<string, string> = {

@@ -209,22 +209,22 @@ function Hero({
 
 /* ============================== LIVE EXAMPLE ============================== */
 
-const EXAMPLE_VIDEO_ID = "Bt7J9fJvJ5Y";
+const EXAMPLE_VIDEO_ID = "3GHwKtBtdfk";
 const EXAMPLE_SENTENCES = [
   {
-    nl: "Joost Klein maakt zich klaar voor zijn wereldtour.",
-    en: "Joost Klein is getting ready for his world tour.",
-    note: "“zich klaarmaken voor” = to get ready for something.",
+    nl: "Artsen waarschuwen voor een goede bril bij de zonsverduistering.",
+    en: "Doctors warn that you need proper glasses for the solar eclipse.",
+    note: "“zich voorbereiden op” = to prepare for something.",
   },
   {
-    nl: "Ik had nooit gedacht dat het zo hard zou gaan.",
-    en: "I never thought it would take off this fast.",
-    note: "“zo hard gaan” literally “go so hard”, used for things moving/growing fast.",
+    nl: "Zonder de juiste bril kun je oogschade oplopen.",
+    en: "Without the right glasses you can suffer eye damage.",
+    note: "“oopschade oplopen” = to sustain eye damage.",
   },
   {
-    nl: "Daar kijk ik echt naar uit.",
-    en: "I'm really looking forward to that.",
-    note: "“ergens naar uitkijken” = to look forward to something (separable verb).",
+    nl: "De zonsverduistering is zaterdag goed te zien.",
+    en: "The solar eclipse will be clearly visible on Saturday.",
+    note: "“goed te zien” = clearly visible / easy to see.",
   },
 ];
 
@@ -238,7 +238,7 @@ function LiveExample({ onStartDemo }: { onStartDemo: () => void }) {
         <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
           <MousePointerClick className="h-3.5 w-3.5" /> Live example, tap a sentence
         </span>
-        <span className="text-xs text-slate-500">NOS Jeugdjournaal · Dutch</span>
+        <span className="text-xs text-slate-500">NOS Journaal · Dutch</span>
       </div>
 
       <div className="grid gap-4 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:grid-cols-[1.25fr_1fr]">
@@ -246,7 +246,7 @@ function LiveExample({ onStartDemo }: { onStartDemo: () => void }) {
           <div className="relative aspect-video w-full">
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${EXAMPLE_VIDEO_ID}?cc_load_policy=1&cc_lang_pref=nl&modestbranding=1&rel=0`}
-              title="Dutch example video: NOS Jeugdjournaal"
+              title="Dutch example video: NOS Journaal"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
               allowFullScreen
               loading="lazy"
