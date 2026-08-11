@@ -19,7 +19,9 @@ import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LibraryIndexRouteImport } from './routes/library.index'
+import { Route as ExperimentsIndexRouteImport } from './routes/experiments.index'
 import { Route as LibraryLevelRouteImport } from './routes/library.$level'
+import { Route as ExperimentsPassiveLearningRouteImport } from './routes/experiments.passive-learning'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
@@ -80,11 +82,22 @@ const LibraryIndexRoute = LibraryIndexRouteImport.update({
   path: '/library/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExperimentsIndexRoute = ExperimentsIndexRouteImport.update({
+  id: '/experiments/',
+  path: '/experiments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LibraryLevelRoute = LibraryLevelRouteImport.update({
   id: '/library/$level',
   path: '/library/$level',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExperimentsPassiveLearningRoute =
+  ExperimentsPassiveLearningRouteImport.update({
+    id: '/experiments/passive-learning',
+    path: '/experiments/passive-learning',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -148,7 +161,9 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/experiments/passive-learning': typeof ExperimentsPassiveLearningRoute
   '/library/$level': typeof LibraryLevelRoute
+  '/experiments/': typeof ExperimentsIndexRoute
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -170,7 +185,9 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/experiments/passive-learning': typeof ExperimentsPassiveLearningRoute
   '/library/$level': typeof LibraryLevelRoute
+  '/experiments': typeof ExperimentsIndexRoute
   '/library': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -193,7 +210,9 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/experiments/passive-learning': typeof ExperimentsPassiveLearningRoute
   '/library/$level': typeof LibraryLevelRoute
+  '/experiments/': typeof ExperimentsIndexRoute
   '/library/': typeof LibraryIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -217,7 +236,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/experiments/passive-learning'
     | '/library/$level'
+    | '/experiments/'
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -239,7 +260,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/experiments/passive-learning'
     | '/library/$level'
+    | '/experiments'
     | '/library'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -261,7 +284,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/experiments/passive-learning'
     | '/library/$level'
+    | '/experiments/'
     | '/library/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -284,7 +309,9 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ExperimentsPassiveLearningRoute: typeof ExperimentsPassiveLearningRoute
   LibraryLevelRoute: typeof LibraryLevelRoute
+  ExperimentsIndexRoute: typeof ExperimentsIndexRoute
   LibraryIndexRoute: typeof LibraryIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -367,11 +394,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/experiments/': {
+      id: '/experiments/'
+      path: '/experiments'
+      fullPath: '/experiments/'
+      preLoaderRoute: typeof ExperimentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/library/$level': {
       id: '/library/$level'
       path: '/library/$level'
       fullPath: '/library/$level'
       preLoaderRoute: typeof LibraryLevelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experiments/passive-learning': {
+      id: '/experiments/passive-learning'
+      path: '/experiments/passive-learning'
+      fullPath: '/experiments/passive-learning'
+      preLoaderRoute: typeof ExperimentsPassiveLearningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
@@ -453,7 +494,9 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ExperimentsPassiveLearningRoute: ExperimentsPassiveLearningRoute,
   LibraryLevelRoute: LibraryLevelRoute,
+  ExperimentsIndexRoute: ExperimentsIndexRoute,
   LibraryIndexRoute: LibraryIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,

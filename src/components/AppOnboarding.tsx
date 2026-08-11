@@ -228,6 +228,7 @@ export function AppOnboarding({
   setTargetLang,
   savedVideos = [],
   isAuthenticated = false,
+  showLevelSelector = false,
 }: {
   onPick: PickFn;
   loading?: boolean;
@@ -235,7 +236,9 @@ export function AppOnboarding({
   setTargetLang: (l: string) => void;
   savedVideos?: SavedVideo[];
   isAuthenticated?: boolean;
+  showLevelSelector?: boolean;
 }) {
+
   // Restore any previously-entered search query so returning to the Hub
   // from a video keeps the user's search context.
   const [q, setQ] = useState<string>(() => {
@@ -470,6 +473,9 @@ export function AppOnboarding({
 
               </Select>
             </div>
+            {/* Learner-level selector is experiment-only: the public product
+                treats CEFR as metadata/filtering, not a hidden setting. */}
+            {showLevelSelector && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">My level</span>
               <Select
@@ -491,6 +497,8 @@ export function AppOnboarding({
                 </SelectContent>
               </Select>
             </div>
+            )}
+
           </div>
 
         </form>

@@ -1,21 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  Home,
-  LayoutGrid,
-  GraduationCap,
-  Bookmark,
-  History,
-  BookOpen,
-  NotebookPen,
-  Settings,
-  Gem,
-  Menu,
-  X,
-} from "lucide-react";
+import { Home, LayoutGrid, Bookmark, Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { AppFooter } from "@/components/AppFooter";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 
@@ -29,12 +16,9 @@ type NavItem = {
 const NAV: NavItem[] = [
   { label: "Home", icon: Home, to: "/" },
   { label: "Browse", icon: LayoutGrid, to: "/library", active: true },
-  { label: "My Learning", icon: GraduationCap, to: "/" },
   { label: "Saved videos", icon: Bookmark, to: "/saved" },
-  { label: "History", icon: History },
-  { label: "Vocabulary", icon: BookOpen },
-  { label: "Notebook", icon: NotebookPen },
 ];
+
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -84,25 +68,6 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function UpgradeCard() {
-  return (
-    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-        <Gem className="h-4 w-4 text-primary" />
-      </span>
-      <p className="mt-2 text-sm font-semibold text-foreground">Unlock Premium</p>
-      <ul className="mt-2 space-y-1 text-left text-[11px] leading-relaxed text-muted-foreground">
-        <li>• Unlimited explanations</li>
-        <li>• Unlimited vocabulary</li>
-        <li>• Practice mode</li>
-      </ul>
-      <Button size="sm" variant="outline" className="mt-3 w-full rounded-full text-xs">
-        Upgrade
-      </Button>
-    </div>
-  );
-}
-
 function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col gap-6 p-4">
@@ -110,12 +75,6 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
         <BrandLogo markClassName="h-8 w-8" gradientId="nf-sidebar" />
       </Link>
       <NavList onNavigate={onNavigate} />
-      <div className="mt-auto space-y-3">
-        <UpgradeCard />
-        <span className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground/70">
-          <Settings className="h-4 w-4" /> Settings
-        </span>
-      </div>
     </div>
   );
 }
