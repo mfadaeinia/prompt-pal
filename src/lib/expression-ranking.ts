@@ -89,7 +89,7 @@ export const RANKING_CONFIG = {
   /** A much stronger candidate may override the spacing rule. */
   overrideMargin: 1.0,
   /** Near-duplicate threshold (token Jaccard) for dedup. */
-  dedupJaccard: 0.8,
+  dedupJaccard: 0.65,
   /** Cap on inferred (legacy-parsed) candidates so they cannot pass the gate. */
   inferredCap: 6,
 };
