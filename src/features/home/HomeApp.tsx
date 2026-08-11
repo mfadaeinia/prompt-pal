@@ -147,12 +147,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     } catch { /* ignore */ }
   }, []);
 
-  // Learner CEFR level — main learner-specific input to expression ranking.
+  // Learner CEFR level — an experiment-only personalization input. The public
+  // product treats CEFR as metadata/filtering only, so it never silently reads
+  // a stored level to personalize ranking (data + helpers stay intact).
   const [learnerLevel, setLearnerLevel] = useState<CefrLevel>(DEFAULT_LEARNER_LEVEL);
   useEffect(() => {
+    if (!experiment) return;
     const stored = readStoredLearnerLevel();
     if (stored) setLearnerLevel(stored);
-  }, []);
+  }, [experiment]);
+
 
   // spokenLang = language ACTUALLY spoken in the video, sent to the transcript
   // provider. "" means auto/original (let the provider pick the original track).
