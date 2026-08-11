@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { streamText } from "ai";
+import { createLovableResponsesProvider } from "./ai-gateway.server";
 
 const Input = z.object({
   sentence: z.string().min(1).max(2000),
@@ -34,6 +34,19 @@ Vocabulary: <0–2 individual high-value vocabulary items NOT already in Key Exp
 Context: <OPTIONAL — DEFAULT "—". ONE short sentence (≤120 chars) ONLY when a news / political / cultural / historical / sports / regional reference provides background the learner would otherwise MISS. Hide ("—") for everyday conversation, simple statements, generic comments, or anything obvious from the translation. Do NOT restate the meaning. Do NOT start with "The speaker", "The sentence", "This sentence", "In this sentence", "The narrator".>
 Grammar Insight: <OPTIONAL — DEFAULT "—". ONLY render when there is a GENUINE GRAMMAR PATTERN: separable verbs, V2 / word-order inversion, subordinate-clause order, passive voice, modal stacking, reflexive constructions, tense patterns that differ from ${targetLanguage}. MAX 2 SHORT LINES. NEVER explain what a WORD or PHRASE means here — that belongs in Key Expressions/Vocabulary. If what you would write is really a vocabulary/expression note (e.g. "'wel eens' means 'at some point'"), write "—" and put the phrase in Key Expressions instead.>
 
+Candidates:
+<STAGE-1 OUTPUT FOR A RANKING ENGINE — NOT shown to the learner. 0–4 lines, one candidate per line, LAST block of your output. You are proposing CANDIDATES to be evaluated; you do NOT decide what is taught, so slightly over-propose and describe each item honestly. Prefer meaningful language chunks: idioms, collocations, phrasal/separable verbs, conversational chunks, fixed/semi-fixed expressions, native-like phrasing, constructions whose meaning is not obvious word-for-word. Do NOT propose isolated basic vocabulary just because it is frequent. If nothing qualifies, write a single line: —
+Fields, pipe-separated, in this EXACT order:
+phrase | literal | meaning | type | cefr | reuse | opaque | context
+- phrase: EXACTLY as it appears in the source sentence.
+- literal: word-for-word gloss in ${targetLanguage} (use — if identical to meaning).
+- meaning: short natural ${targetLanguage} meaning.
+- type: one of idiom, collocation, phrasal, separable, chunk, fixed, vocab, grammar.
+- cefr: A1|A2|B1|B2|C1|C2 — the level at which a learner typically MEETS this phrase (a greeting like "goedemorgen" is A1).
+- reuse: 0–3 — in how many UNRELATED everyday situations could a learner reuse it (0 = only this topic, 3 = almost anywhere).
+- opaque: 0–3 — how much the meaning CANNOT be derived from the individual words (0 = fully transparent, 3 = you must know it).
+- context: 0–3 — how much understanding THIS sentence depends on it (0 = not at all, 3 = the sentence collapses without it).>
+
 HARD RULES — failure means rejection:
 - OPTIMIZE FOR SPEED. The explanation must NEVER feel longer than the original sentence.
 - Meaning is the hero. Most outputs are Meaning + Key Expressions ONLY.
@@ -44,7 +57,8 @@ HARD RULES — failure means rejection:
 - NEVER use linguistic jargon ("dative", "subjunctive", "transitive", "auxiliary").
 - NEVER use banned openers: "The speaker is discussing/explaining", "The sentence refers to/means", "In this sentence", "This sentence is about", "The narrator".
 - NO bullet points, NO markdown, NO extra headings.
-- Each label appears exactly once, in the exact order above.
+- Each label appears exactly once, in the exact order above, with Candidates LAST.
+- Candidates ratings are honest observations, not sales pitches. Never inflate reuse/opaque/context.
 ${retry ? "\nIMPORTANT: Your previous output was padded or put a vocabulary/expression note in Grammar. Rewrite: keep Meaning, trim Key Expressions to the strongest 1–2, use \"—\" for Context AND Grammar unless truly essential. If Grammar was a word's meaning, move it to Key Expressions and put \"—\" in Grammar." : ""}`;
 }
 
@@ -109,7 +123,7 @@ function fixItemListOrder(text: string, label: string, sentence: string): string
 // Tiny in-memory LRU cache for repeat sentence clicks within a server
 // instance. Keyed by sentence+targetLanguage+model so the same sentence in
 // different help-languages stays distinct. Bounded to avoid leaks.
-const MODEL_VERSION = "google/gemini-3-flash-preview@v1";
+const MODEL_VERSION = "openai/gpt-5.6-sol@v2-candidates";
 const EXPLAIN_CACHE = new Map<string, string>();
 const EXPLAIN_CACHE_MAX = 500;
 function cacheKey(sentence: string, targetLanguage: string) {
@@ -145,19 +159,23 @@ export const explainSentence = createServerFn({ method: "POST" })
       return { explanation: cached, cached: true as const };
     }
 
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const gateway = createLovableResponsesProvider(key);
+    const model = gateway.responses("openai/gpt-5.6-sol");
 
     const prompt = `Sentence: "${data.sentence}"${
       data.context ? `\n\nSurrounding context (for reference only, do not translate): ${data.context}` : ""
     }`;
 
     const run = async (retry: boolean) => {
-      const { text } = await generateText({
+      // Streaming (consumed server-side): a buffered call on a reasoning model
+      // can outlive the platform request timeout.
+      const result = streamText({
         model,
         system: buildSystem(data.targetLanguage, retry),
         prompt,
+        providerOptions: { openai: { store: false } },
       });
+      const text = await result.text;
       return text.trim();
     };
 
@@ -184,7 +202,7 @@ export const explainSentence = createServerFn({ method: "POST" })
       const isCredits = status === 402 || /payment required|credit/i.test(message);
       console.error("[explain] generation failed", { status, message });
 
-      const fallback = `Meaning: —\nKey Expressions: —\nVocabulary: —\nContext: —\nGrammar Insight: —`;
+      const fallback = `Meaning: —\nKey Expressions: —\nVocabulary: —\nContext: —\nGrammar Insight: —\nCandidates:\n—`;
 
       if (isRateLimit) {
         return { explanation: fallback, error: "rate_limited" as const };
