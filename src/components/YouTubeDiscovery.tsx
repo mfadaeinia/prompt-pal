@@ -316,7 +316,7 @@ export function YouTubeDiscovery({
                       onClick={() => onPick(r.url, r.language)}
                       className="mt-2 h-7 rounded-full px-3 text-xs"
                     >
-                      Start for free
+                      Watch
                     </Button>
                   </div>
                 </div>
