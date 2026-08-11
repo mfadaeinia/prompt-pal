@@ -1708,6 +1708,22 @@ function Index() {
     Record<number, ExplanationEntry>
   >({});
   const inFlightRef = useRef<Set<number>>(new Set());
+
+  /**
+   * Switch the language explanations are written in. Persisted, and clears the
+   * cached explanations so the current sentence is re-explained immediately.
+   */
+  function changeExplanationLanguage(lang: string) {
+    if (lang === targetLang) return;
+    setTargetLang(lang);
+    try {
+      window.localStorage.setItem("nf.explainLanguage", lang);
+    } catch { /* ignore */ }
+    setExplanationCache({});
+    inFlightRef.current = new Set();
+    track("explanation_language_changed", { target_language: lang });
+  }
+
   // Current video id, readable from async callbacks (stale-response guard).
   const videoIdRef = useRef<string | null>(null);
   // Last auto-surfaced expression head, so we fire expression_auto_shown once.
