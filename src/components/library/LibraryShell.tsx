@@ -29,12 +29,9 @@ type NavItem = {
 const NAV: NavItem[] = [
   { label: "Home", icon: Home, to: "/" },
   { label: "Browse", icon: LayoutGrid, to: "/library", active: true },
-  { label: "My Learning", icon: GraduationCap, to: "/" },
   { label: "Saved videos", icon: Bookmark, to: "/saved" },
-  { label: "History", icon: History },
-  { label: "Vocabulary", icon: BookOpen },
-  { label: "Notebook", icon: NotebookPen },
 ];
+
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   return (
