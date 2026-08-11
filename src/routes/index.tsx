@@ -56,8 +56,8 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { LibraryStrip } from "@/components/LibraryStrip";
 import { AppFooter } from "@/components/AppFooter";
-import { UsefulDutchPanel, type QueuedExpression } from "@/components/UsefulDutchPanel";
-import { ContextStrip } from "@/components/ContextStrip";
+import { type QueuedExpression } from "@/components/UsefulDutchPanel";
+import { UsefulExpressionBar } from "@/components/UsefulExpressionBar";
 import { VideoSubtitle } from "@/components/VideoSubtitle";
 import { pickUsefulExpression, rankUsefulExpressions } from "@/lib/useful-expression";
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
@@ -3048,62 +3048,7 @@ function Index() {
                 </div>
               )}
 
-            {/* Watch / Learning toggle — flat segmented control, sits directly below the video. */}
-            <div className="flex items-center justify-between gap-3">
-              <div
-                role="tablist"
-                aria-label="Viewing mode"
-                className="inline-flex items-center rounded-lg bg-muted/60 p-0.5"
-              >
-                <button
-                  role="tab"
-                  aria-selected={!studyMode}
-                  onClick={() => {
-                    if (!studyMode) return;
-                    setStudyMode(false);
-                    setSelected(null);
-                    setFocusMode(true); // Watch Mode: auto-follow on
-                    track("study_mode_closed", { video_id: videoId });
-                    track("watch_mode_opened", { video_id: videoId });
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
-                    !studyMode
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tv className="h-3.5 w-3.5" />
-                  Watch
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={studyMode}
-                  disabled={transcriptStatus === "failed" || sentences.length === 0}
-                  title={
-                    transcriptStatus === "failed"
-                      ? "Learning Mode unavailable: transcript could not be generated"
-                      : sentences.length === 0
-                        ? "Transcript is still being prepared — Learning Mode will unlock shortly"
-                        : undefined
-                  }
-                  onClick={() => {
-                    if (studyMode) return;
-                    if (transcriptStatus === "failed" || sentences.length === 0) return;
-                    setStudyMode(true);
-                    setFocusMode(false); // Learning Mode: learner drives via taps
-                    track("study_mode_opened", { video_id: videoId });
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
-                    studyMode
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  <BookOpen className="h-3.5 w-3.5" />
-                  Learning
-                </button>
-              </div>
-            </div>
+            {/* No Watch / Learning distinction: intelligent subtitles are always on. */}
 
 
 
@@ -3304,23 +3249,19 @@ function Index() {
 
                 </div>
 
-                {/* Language scaffolding: what is worth noticing (Useful Dutch)
-                    plus just enough context to follow along. Mobile stacks;
-                    desktop shows both side by side. Never pauses playback. */}
+                {/* One expression for the current moment. Anything deeper opens
+                    in a drawer — nothing is stacked under the video. */}
                 {studyMode && !limitedMode && (
-                  <div className="mx-auto grid w-full gap-4 md:max-w-[900px] lg:grid-cols-2 xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                    <UsefulDutchPanel
-                      className="order-1"
-                      items={expressionQueue}
+                  <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                    <UsefulExpressionBar
+                      expression={autoExpression}
                       loading={queueLoading}
-                      onExplain={(it) => openSentenceDetails(it.sentenceId, it.head)}
-                    />
-                    <ContextStrip
-                      className="order-2"
-                      previous={contextLines.previous}
-                      current={contextLines.current}
-                      next={contextLines.next}
-                      onSelect={(line) => openSentenceDetails(line.id)}
+                      expanded={expressionExpanded}
+                      onToggle={() => {
+                        if (currentSentence) {
+                          openSentenceDetails(currentSentence.id, autoExpression?.head ?? null);
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -3595,36 +3536,9 @@ function Index() {
               </div>
               </div>
 
-              {/* Aha Panel — primary learning surface.
-                  Desktop / tablet: side panel in the right column.
-                  Mobile: rendered below as a bottom Sheet so the transcript stays the primary interaction layer. */}
-              {studyMode && expressionExpanded && !!selected && (
-                <div className="mx-auto hidden w-full min-w-0 order-2 lg:block md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                  <ExplanationPanel
-                    sentence={selected}
-                    entry={
-                      selected ? explanationCache[selected.id] : undefined
-                    }
-                    onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
-                    onReplay={replaySelected}
-                    onResume={resumeFromHere}
-                    onSave={() => handleSaveExpression(selected)}
-                    isSaved={isSentenceSaved(selected)}
-                    justSaved={!!selected && justSavedId === selected.id}
-                    saving={saveExpressionMutation.isPending}
-                    limitedMode={limitedMode}
-                    sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
-                    targetLangLabel={targetLang}
-                    onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
-                    savedExpressionHeads={savedExpressionHeads}
-                    savingExpressionHead={savingExpressionHead}
-                    justSavedExpressionHead={justSavedExpressionHead}
-                  />
-                </div>
-              )}
-
-              {/* Mobile Aha Panel as a bottom Drawer. Slides up to ~50% of screen, supports swipe-to-dismiss. */}
-              {studyMode && isMobile && (
+              {/* Explanations live in one drawer on every screen size — never
+                  stacked beneath the video. */}
+              {studyMode && (
                 <Drawer
                   open={expressionExpanded && !!selected}
                   onOpenChange={(open) => {
@@ -3636,7 +3550,7 @@ function Index() {
                   }}
                   shouldScaleBackground={false}
                 >
-                  <DrawerContent className="h-[50vh] max-h-[50vh] rounded-t-2xl border-t p-0 focus:outline-none">
+                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none lg:mx-auto lg:max-w-[900px]">
                     {/* The Drawer primitive renders its own handle bar at the top. */}
                     <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
                       <ExplanationPanel
@@ -3738,41 +3652,6 @@ function Index() {
             </section>
 
 
-            {/* Mobile persistent bottom bar */}
-            {isMobile && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                {!studyMode ? (
-                  <div className="space-y-2">
-                    <p className="text-center text-[11px] text-muted-foreground">
-                      Want translations, explanations and clickable captions?
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setStudyMode(true);
-                        track("study_mode_opened", { video_id: videoId });
-                      }}
-                      className="h-12 w-full rounded-full text-sm font-semibold shadow-sm"
-                    >
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Study This Video
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setStudyMode(false);
-                      setSelected(null);
-                      track("study_mode_closed", { video_id: videoId });
-                    }}
-                    className="h-11 w-full rounded-full text-sm font-medium"
-                  >
-                    <Tv className="mr-2 h-4 w-4" />
-                    Back to Watch Mode
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         )}
 
