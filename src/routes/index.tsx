@@ -50,7 +50,7 @@ export const Route = createFileRoute("/")({
     void context.queryClient.prefetchQuery(curatedVideosQuery(60));
   },
 
-  component: Index,
+  component: HomeApp,
 
 });
 
