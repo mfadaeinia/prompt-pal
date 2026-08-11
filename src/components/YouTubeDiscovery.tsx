@@ -31,12 +31,12 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "Bt7J9fJvJ5Y",
-    url: "https://www.youtube.com/watch?v=Bt7J9fJvJ5Y",
-    title: "Joost Klein over zijn wereldtour, The Voice en Europapa",
-    channel: "NOS Jeugdjournaal",
-    thumbnail: "https://i.ytimg.com/vi/Bt7J9fJvJ5Y/hqdefault.jpg",
-    durationSec: 246,
+    videoId: "3GHwKtBtdfk",
+    url: "https://www.youtube.com/watch?v=3GHwKtBtdfk",
+    title: "Artsen: 'Zorg voor goede bril om zonsverduistering te zien'",
+    channel: "NOS Journaal",
+    thumbnail: "https://i.ytimg.com/vi/3GHwKtBtdfk/hqdefault.jpg",
+    durationSec: 90,
     language: "nl",
   },
   {
