@@ -3048,62 +3048,7 @@ function Index() {
                 </div>
               )}
 
-            {/* Watch / Learning toggle — flat segmented control, sits directly below the video. */}
-            <div className="flex items-center justify-between gap-3">
-              <div
-                role="tablist"
-                aria-label="Viewing mode"
-                className="inline-flex items-center rounded-lg bg-muted/60 p-0.5"
-              >
-                <button
-                  role="tab"
-                  aria-selected={!studyMode}
-                  onClick={() => {
-                    if (!studyMode) return;
-                    setStudyMode(false);
-                    setSelected(null);
-                    setFocusMode(true); // Watch Mode: auto-follow on
-                    track("study_mode_closed", { video_id: videoId });
-                    track("watch_mode_opened", { video_id: videoId });
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
-                    !studyMode
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Tv className="h-3.5 w-3.5" />
-                  Watch
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={studyMode}
-                  disabled={transcriptStatus === "failed" || sentences.length === 0}
-                  title={
-                    transcriptStatus === "failed"
-                      ? "Learning Mode unavailable: transcript could not be generated"
-                      : sentences.length === 0
-                        ? "Transcript is still being prepared — Learning Mode will unlock shortly"
-                        : undefined
-                  }
-                  onClick={() => {
-                    if (studyMode) return;
-                    if (transcriptStatus === "failed" || sentences.length === 0) return;
-                    setStudyMode(true);
-                    setFocusMode(false); // Learning Mode: learner drives via taps
-                    track("study_mode_opened", { video_id: videoId });
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition ${
-                    studyMode
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  } ${transcriptStatus === "failed" || sentences.length === 0 ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  <BookOpen className="h-3.5 w-3.5" />
-                  Learning
-                </button>
-              </div>
-            </div>
+            {/* No Watch / Learning distinction: intelligent subtitles are always on. */}
 
 
 
