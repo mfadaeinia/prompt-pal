@@ -3536,36 +3536,9 @@ function Index() {
               </div>
               </div>
 
-              {/* Aha Panel — primary learning surface.
-                  Desktop / tablet: side panel in the right column.
-                  Mobile: rendered below as a bottom Sheet so the transcript stays the primary interaction layer. */}
-              {studyMode && expressionExpanded && !!selected && (
-                <div className="mx-auto hidden w-full min-w-0 order-2 lg:block md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                  <ExplanationPanel
-                    sentence={selected}
-                    entry={
-                      selected ? explanationCache[selected.id] : undefined
-                    }
-                    onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
-                    onReplay={replaySelected}
-                    onResume={resumeFromHere}
-                    onSave={() => handleSaveExpression(selected)}
-                    isSaved={isSentenceSaved(selected)}
-                    justSaved={!!selected && justSavedId === selected.id}
-                    saving={saveExpressionMutation.isPending}
-                    limitedMode={limitedMode}
-                    sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
-                    targetLangLabel={targetLang}
-                    onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
-                    savedExpressionHeads={savedExpressionHeads}
-                    savingExpressionHead={savingExpressionHead}
-                    justSavedExpressionHead={justSavedExpressionHead}
-                  />
-                </div>
-              )}
-
-              {/* Mobile Aha Panel as a bottom Drawer. Slides up to ~50% of screen, supports swipe-to-dismiss. */}
-              {studyMode && isMobile && (
+              {/* Explanations live in one drawer on every screen size — never
+                  stacked beneath the video. */}
+              {studyMode && (
                 <Drawer
                   open={expressionExpanded && !!selected}
                   onOpenChange={(open) => {
