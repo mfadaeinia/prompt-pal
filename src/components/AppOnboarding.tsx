@@ -470,6 +470,9 @@ export function AppOnboarding({
 
               </Select>
             </div>
+            {/* Learner-level selector is experiment-only: the public product
+                treats CEFR as metadata/filtering, not a hidden setting. */}
+            {showLevelSelector && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">My level</span>
               <Select
@@ -491,6 +494,8 @@ export function AppOnboarding({
                 </SelectContent>
               </Select>
             </div>
+            )}
+
           </div>
 
         </form>
