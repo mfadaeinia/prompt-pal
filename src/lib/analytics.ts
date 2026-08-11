@@ -97,6 +97,20 @@ export function initAnalytics() {
     }
     posthog.register({ first_visit_date: firstVisit });
   } catch {}
+
+  // Identity: persistent anonymous visitor + current session. Registered as
+  // super properties so every event carries them. Anonymous visitors are NOT
+  // identified as persons in PostHog — we only tag events with a random id.
+  try {
+    const anonId = getAnonymousUserId();
+    posthog.register({
+      anonymous_user_id: anonId,
+      session_id: getSessionId(),
+      first_seen_at: getFirstSeenAt(),
+      is_returning_visitor: isReturningVisitor(),
+    });
+  } catch {}
+
 }
 
 export function setUserProperties(props: Record<string, any>) {
