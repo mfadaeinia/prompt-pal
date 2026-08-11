@@ -167,19 +167,21 @@ function RootComponent() {
       initAnalytics();
       track("page_view", { path: window.location.pathname });
     });
-    // True visitor signal: write a page_views row keyed by browser session id.
-    // Fire-and-forget; never block UI on analytics.
+    // True visitor signal: one page_views row carrying BOTH the per-session id
+    // and the persistent anonymous visitor id. Fire-and-forget.
     Promise.all([
       import("../lib/page-views.functions"),
-      import("../lib/browser-id"),
+      import("../lib/identity"),
     ])
-      .then(([{ logPageView }, { getBrowserId }]) => {
-        const sid = getBrowserId();
+      .then(([{ logPageView }, { getAnonymousUserId, getSessionId }]) => {
+        const anonId = getAnonymousUserId();
+        const sid = getSessionId() || anonId;
         if (!sid) return;
         const params = new URLSearchParams(window.location.search);
         return logPageView({
           data: {
             sessionId: sid,
+            anonymousId: anonId || null,
             path: window.location.pathname,
             referrer: document.referrer || null,
             utmSource: params.get("utm_source"),
@@ -189,6 +191,7 @@ function RootComponent() {
         });
       })
       .catch(() => {});
+
   }, []);
 
   return (

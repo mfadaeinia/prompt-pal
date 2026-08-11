@@ -19,6 +19,7 @@ const LogInput = z.object({
     "hint_clicked",
   ]),
   sessionId: z.string().min(1).max(128),
+  anonymousId: z.string().max(128).nullable().optional(),
   videoId: z.string().max(64).nullable().optional(),
   expressionId: z.string().uuid().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
@@ -33,6 +34,7 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("library_events" as any).insert({
       event_name: data.eventName,
       session_id: data.sessionId,
+      anonymous_id: data.anonymousId ?? null,
       video_id: data.videoId ?? null,
       expression_id: data.expressionId ?? null,
       user_id: data.userId ?? null,

@@ -737,6 +737,7 @@ export type Database = {
       library_events: {
         Row: {
           acquisition_source: string | null
+          anonymous_id: string | null
           created_at: string
           event_name: string
           expression_id: string | null
@@ -752,6 +753,7 @@ export type Database = {
         }
         Insert: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           event_name: string
           expression_id?: string | null
@@ -767,6 +769,7 @@ export type Database = {
         }
         Update: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           event_name?: string
           expression_id?: string | null
@@ -793,6 +796,7 @@ export type Database = {
       page_views: {
         Row: {
           acquisition_source: string | null
+          anonymous_id: string | null
           created_at: string
           id: string
           path: string | null
@@ -805,6 +809,7 @@ export type Database = {
         }
         Insert: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           id?: string
           path?: string | null
@@ -817,6 +822,7 @@ export type Database = {
         }
         Update: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           id?: string
           path?: string | null
@@ -1283,6 +1289,7 @@ export type Database = {
       video_sessions: {
         Row: {
           acquisition_source: string | null
+          anonymous_id: string | null
           created_at: string
           duration_seconds: number
           ended: boolean
@@ -1305,6 +1312,7 @@ export type Database = {
         }
         Insert: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           duration_seconds?: number
           ended?: boolean
@@ -1327,6 +1335,7 @@ export type Database = {
         }
         Update: {
           acquisition_source?: string | null
+          anonymous_id?: string | null
           created_at?: string
           duration_seconds?: number
           ended?: boolean

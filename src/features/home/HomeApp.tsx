@@ -29,6 +29,7 @@ import {
 import { saveVideo, listSavedVideos } from "@/lib/saved-videos.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
+import { getSessionId, getAnonymousUserId } from "@/lib/identity";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { track, setUserProperties, setExperienceType } from "@/lib/analytics";
+import { track, linkAnonymousToUser, setUserProperties, setExperienceType } from "@/lib/analytics";
 
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
@@ -227,10 +228,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const [justSavedId, setJustSavedId] = useState<number | null>(null);
   const [showSavedTooltip, setShowSavedTooltip] = useState(false);
   const [showManualTranscript, setShowManualTranscript] = useState(false);
+  // One id per browsing session (sessionStorage-backed), distinct from the
+  // persistent anonymous visitor id in `browserId`.
   const sessionIdRef = useRef<string>("");
-  if (!sessionIdRef.current && typeof crypto !== "undefined") {
-    sessionIdRef.current =
-      (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2);
+  if (!sessionIdRef.current && typeof window !== "undefined") {
+    sessionIdRef.current = getSessionId();
   }
   const feedbackShownRef = useRef(false);
   const feedbackSubmittedRef = useRef(false);
@@ -468,9 +470,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // On sign-in: claim any anonymous saves from this browser, then run any
   // pending save action the user was about to perform, and refresh lists.
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN") return;
       track("google_login_completed", {});
+      // Keep the pre-signup anonymous journey attributable to this account.
+      if (session?.user?.id) linkAnonymousToUser(session.user.id);
       const sid = browserId || getBrowserId();
       if (sid) {
         void claimAnonFx({ data: { sessionId: sid } }).catch(() => {});
@@ -534,6 +538,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         data: {
           eventName: "expression_saved",
           sessionId: browserId,
+          anonymousId: browserId || null,
           videoId: videoId ?? null,
           userId,
           metadata: { source: "explanation_panel" },
@@ -619,6 +624,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           data: {
             eventName: "expression_saved",
             sessionId: browserId,
+            anonymousId: browserId || null,
             videoId: videoId ?? null,
             userId,
             metadata: { source: "expression_row" },
@@ -724,6 +730,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           data: {
             eventName: "expression_saved",
             sessionId: browserId,
+            anonymousId: browserId || null,
             videoId: videoId ?? null,
             userId,
             metadata: { source: "text_selection", selected_length: text.length },
@@ -1820,6 +1827,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       recordVideoSession({
         data: {
           sessionId,
+          anonymousId: getAnonymousUserId() || null,
           videoId,
           durationSeconds: seconds,
           videoUrl: url || null,
@@ -2123,6 +2131,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       data: {
         eventName,
         sessionId: sid,
+        anonymousId: getAnonymousUserId() || null,
         videoId: videoId ?? null,
         userId,
         metadata: meta,
@@ -2844,12 +2853,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </button>
                 </>
               ) : (
+                /* Subtle, secondary sign-in — trying NativeFlow needs no
+                   account, so this is only for returning users. */
                 <button
-                  onClick={() => setAuthOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-                  title="Start for free to save your progress"
+                  onClick={() => {
+                    track("sign_in_clicked", { from: "header" });
+                    setAuthOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  title="Sign in to keep your activity across devices"
                 >
-                  Start for free
+                  Sign in
                 </button>
               )}
             </div>
@@ -3666,7 +3680,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     className="h-11 flex-1 rounded-xl"
                   />
                   <Button type="submit" className="h-11 rounded-xl px-4">
-                    Start for free
+                    Watch
                   </Button>
                 </form>
                 <div className="mt-3">
@@ -3891,14 +3905,14 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             🌍 Language Learning Beta
           </span>
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[3rem] lg:leading-[1.05]">
-            Understand real videos in any language{" "}
+            Watch Dutch videos.{" "}
             <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              instantly.
+              Actually understand what&apos;s being said.
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Click any subtitle sentence while watching YouTube and get
-            translations, explanations, and expressions in context.
+            Follow authentic Dutch with transcripts and contextual
+            explanations when you need them.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
@@ -3913,7 +3927,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Start for free <ArrowRight className="h-4 w-4" />
+                  Watch the demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>

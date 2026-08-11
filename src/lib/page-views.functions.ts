@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const Input = z.object({
   sessionId: z.string().min(1).max(128),
+  anonymousId: z.string().max(128).nullable().optional(),
   path: z.string().max(500).nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
   referrer: z.string().max(500).nullable().optional(),
@@ -38,6 +39,7 @@ export const logPageView = createServerFn({ method: "POST" })
         : classifyReferrer(data.referrer ?? null);
     const { error } = await supabaseAdmin.from("page_views" as any).insert({
       session_id: data.sessionId,
+      anonymous_id: data.anonymousId ?? null,
       path: data.path ?? null,
       user_id: data.userId ?? null,
       acquisition_source: acquisition,

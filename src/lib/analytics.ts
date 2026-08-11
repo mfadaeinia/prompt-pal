@@ -1,6 +1,13 @@
 import posthog from "posthog-js";
+import {
+  getAnonymousUserId,
+  getSessionId,
+  getFirstSeenAt,
+  isReturningVisitor,
+} from "./identity";
 
 let initialized = false;
+
 
 const TEST_USER_KEY = "nativeflow_is_test_user";
 
@@ -90,6 +97,20 @@ export function initAnalytics() {
     }
     posthog.register({ first_visit_date: firstVisit });
   } catch {}
+
+  // Identity: persistent anonymous visitor + current session. Registered as
+  // super properties so every event carries them. Anonymous visitors are NOT
+  // identified as persons in PostHog — we only tag events with a random id.
+  try {
+    const anonId = getAnonymousUserId();
+    posthog.register({
+      anonymous_user_id: anonId,
+      session_id: getSessionId(),
+      first_seen_at: getFirstSeenAt(),
+      is_returning_visitor: isReturningVisitor(),
+    });
+  } catch {}
+
 }
 
 export function setUserProperties(props: Record<string, any>) {
@@ -168,8 +189,11 @@ export function track(event: string, props?: Record<string, any>) {
     is_test_user: isTestUser(),
     experience_type: experienceType,
     is_internal: isInternalSession(),
+    anonymous_user_id: getAnonymousUserId(),
+    session_id: (props ?? {}).session_id ?? getSessionId(),
     ...(variant ? { landing_variant: variant } : {}),
   };
+
 
 
   try {
@@ -192,3 +216,22 @@ export function track(event: string, props?: Record<string, any>) {
 }
 
 export { posthog };
+
+/**
+ * Called once after a successful sign-in. Links the persistent anonymous
+ * visitor id to the authenticated account so the pre-signup journey stays
+ * attributable (PostHog alias + an explicit `account_linked` event).
+ */
+export function linkAnonymousToUser(userId: string) {
+  if (typeof window === "undefined" || !userId) return;
+  const anonId = getAnonymousUserId();
+  try {
+    posthog.identify(userId, {
+      anonymous_user_id: anonId,
+      first_seen_at: getFirstSeenAt(),
+    });
+    if (anonId) posthog.alias(anonId, userId);
+    posthog.register({ user_id: userId });
+  } catch {}
+  track("account_linked", { user_id: userId, anonymous_user_id: anonId });
+}
