@@ -2973,7 +2973,7 @@ function Index() {
         <AppOnboarding
           loading={loadMutation.isPending}
           targetLang={targetLang}
-          setTargetLang={setTargetLang}
+          setTargetLang={changeExplanationLanguage}
           savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
           isAuthenticated={isAuthenticated}
           onPick={(u, lang) => {
