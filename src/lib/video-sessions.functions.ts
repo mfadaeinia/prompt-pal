@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const Input = z.object({
   sessionId: z.string().min(1).max(100),
+  anonymousId: z.string().max(128).optional().nullable(),
   videoId: z.string().min(1).max(100),
   durationSeconds: z.number().int().min(0).max(60 * 60 * 24),
   videoUrl: z.string().max(500).optional().nullable(),
@@ -38,6 +39,7 @@ export const recordVideoSession = createServerFn({ method: "POST" })
       .upsert(
         {
           session_id: data.sessionId,
+          anonymous_id: data.anonymousId ?? null,
           video_id: data.videoId,
           video_url: data.videoUrl ?? null,
           target_language: data.targetLanguage ?? null,
