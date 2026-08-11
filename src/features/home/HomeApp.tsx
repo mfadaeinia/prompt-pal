@@ -2853,12 +2853,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </button>
                 </>
               ) : (
+                /* Subtle, secondary sign-in — trying NativeFlow needs no
+                   account, so this is only for returning users. */
                 <button
-                  onClick={() => setAuthOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-                  title="Start for free to save your progress"
+                  onClick={() => {
+                    track("sign_in_clicked", { from: "header" });
+                    setAuthOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  title="Sign in to keep your activity across devices"
                 >
-                  Start for free
+                  Sign in
                 </button>
               )}
             </div>
@@ -3675,7 +3680,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     className="h-11 flex-1 rounded-xl"
                   />
                   <Button type="submit" className="h-11 rounded-xl px-4">
-                    Start for free
+                    Watch
                   </Button>
                 </form>
                 <div className="mt-3">
@@ -3900,14 +3905,14 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
             🌍 Language Learning Beta
           </span>
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-[3rem] lg:leading-[1.05]">
-            Understand real videos in any language{" "}
+            Watch Dutch videos.{" "}
             <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              instantly.
+              Actually understand what&apos;s being said.
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Click any subtitle sentence while watching YouTube and get
-            translations, explanations, and expressions in context.
+            Follow authentic Dutch with transcripts and contextual
+            explanations when you need them.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
@@ -3922,7 +3927,7 @@ function DemoHero({ onStart, loading }: { onStart: () => void; loading: boolean 
                 </>
               ) : (
                 <>
-                  Start for free <ArrowRight className="h-4 w-4" />
+                  Watch the demo <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
