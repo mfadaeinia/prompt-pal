@@ -1,14 +1,15 @@
 import { ChevronDown, Sparkles } from "lucide-react";
-import type { UsefulExpression } from "@/lib/useful-expression";
 
 type Props = {
-  expression: UsefulExpression | null;
+  /** The single recommendation that passed the quality gate, or null. */
+  expression: { head: string; meaning: string; score?: number } | null;
   /** true while the sentence explanation is still loading */
   loading?: boolean;
   expanded: boolean;
   onToggle: () => void;
   className?: string;
 };
+
 
 /**
  * The quiet learning layer. Sits directly under the video, shows at most ONE

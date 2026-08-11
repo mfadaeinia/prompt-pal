@@ -25,6 +25,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LibraryStrip } from "@/components/LibraryStrip";
+import type { CefrLevel } from "@/lib/expression-ranking";
+import {
+  DEFAULT_LEARNER_LEVEL,
+  LEARNER_LEVELS,
+  readStoredLearnerLevel,
+  storeLearnerLevel,
+} from "@/lib/learner-level";
+
 import {
   searchYouTube,
   type YouTubeSearchResult,
@@ -238,7 +246,15 @@ export function AppOnboarding({
       return "";
     }
   });
+  // Learner CEFR level — the main learner-specific input to the useful-
+  // expression ranking pipeline. Read on mount to avoid hydration mismatch.
+  const [learnerLevel, setLearnerLevel] = useState<CefrLevel>(DEFAULT_LEARNER_LEVEL);
+  useEffect(() => {
+    const stored = readStoredLearnerLevel();
+    if (stored) setLearnerLevel(stored);
+  }, []);
   const [results, setResults] = useState<YouTubeSearchResult[] | null>(null);
+
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -433,27 +449,51 @@ export function AppOnboarding({
           </p>
 
 
-          {/* Explanation language — compact inline selector */}
-          <div className="mt-3 flex items-center justify-center gap-2 sm:mt-4">
-            <span className="text-xs text-muted-foreground">Explain in</span>
-            <Select value={targetLang} onValueChange={setTargetLang}>
-              <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-lg border-border bg-background px-3 text-xs sm:h-9 sm:min-w-[140px]">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {[
-                  "English","Dutch","Spanish","French","German","Italian","Portuguese",
-                  "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
-                  "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
-                  "Vietnamese","Thai","Greek","Czech","Persian",
-                ].map((lang) => (
-                  <SelectItem key={lang} value={lang}>
-                    {lang}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Explanation language + learner level — compact inline selectors */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Explain in</span>
+              <Select value={targetLang} onValueChange={setTargetLang}>
+                <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-lg border-border bg-background px-3 text-xs sm:h-9 sm:min-w-[140px]">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {[
+                    "English","Dutch","Spanish","French","German","Italian","Portuguese",
+                    "Japanese","Chinese","Korean","Russian","Arabic","Turkish","Polish",
+                    "Swedish","Norwegian","Danish","Finnish","Hindi","Indonesian",
+                    "Vietnamese","Thai","Greek","Czech","Persian",
+                  ].map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">My level</span>
+              <Select
+                value={learnerLevel}
+                onValueChange={(v) => {
+                  storeLearnerLevel(v as CefrLevel);
+                  setLearnerLevel(v as CefrLevel);
+                }}
+              >
+                <SelectTrigger className="h-8 w-auto min-w-[80px] rounded-lg border-border bg-background px-3 text-xs sm:h-9">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEARNER_LEVELS.map((lvl) => (
+                    <SelectItem key={lvl} value={lvl}>
+                      {lvl}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
         </form>
 
         {/* Stepper — mobile below search, supports rather than competes */}

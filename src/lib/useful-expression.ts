@@ -1,7 +1,22 @@
-/** Pick ONE useful expression out of the explanation the existing pipeline
- *  already produces for a sentence. No new NLP: we reuse the "Key Expressions"
- *  (and, as a fallback, "Vocabulary") fields and rank by simple pedagogical
- *  signals that are already present — tags and phrase length. */
+/** Adapter between the explanation payload and the ranking pipeline.
+ *
+ *  Stage 1 candidates come from the machine-readable `Candidates:` block of the
+ *  explanation. When that block is missing (older cache entries, model drift)
+ *  we reconstruct weak candidates from the legacy "Key Expressions" /
+ *  "Vocabulary" lines and mark them `inferred`, which caps several signals so
+ *  they cannot pass the quality gate on their own.
+ *
+ *  Nothing here decides what is highlighted — that is `expression-ranking.ts`.
+ */
+
+import {
+  type CefrLevel,
+  type ExpressionCandidate,
+  type LearnerHistory,
+  type ScoredCandidate,
+  parseCandidatesBlock,
+  rankCandidates,
+} from "@/lib/expression-ranking";
 
 export type UsefulExpression = {
   head: string;
@@ -9,68 +24,93 @@ export type UsefulExpression = {
   tag: string | null;
 };
 
-const TAG_WEIGHT: Record<string, number> = {
-  idiom: 5,
-  "very common": 4,
-  phrasal: 3,
-  common: 3,
-  informal: 2,
-  news: 2,
-  formal: 1,
-};
-
-function parseItems(raw: string): UsefulExpression[] {
+/** Legacy `<phrase> = <meaning> [Tag] · …` list. */
+function parseLegacyItems(raw: string): ExpressionCandidate[] {
   if (!raw || raw === "—") return [];
   return raw
     .split(/\s*·\s*/)
-    .map((item) => {
+    .map((item): ExpressionCandidate | null => {
       const tagMatch = item.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
-      const tag = tagMatch ? tagMatch[2].trim() : null;
-      const core = (tagMatch ? tagMatch[1] : item).trim();
+      const tag = tagMatch ? tagMatch[2]!.trim() : null;
+      const core = (tagMatch ? tagMatch[1]! : item).trim();
       const idx = core.indexOf("=");
       if (idx < 0) return null;
       const head = core.slice(0, idx).trim();
       const meaning = core.slice(idx + 1).trim();
       if (!head || !meaning) return null;
-      return { head, meaning, tag };
+      const words = head.split(/\s+/).length;
+      return {
+        head,
+        literal: "",
+        meaning,
+        type: words >= 2 ? "chunk" : "vocab",
+        cefr: "B1",
+        reuse: 1,
+        opaque: 1,
+        context: 1,
+        tag,
+        inferred: true,
+      };
     })
-    .filter((x): x is UsefulExpression => x !== null);
+    .filter((x): x is ExpressionCandidate => x !== null);
 }
 
-function score(e: UsefulExpression) {
-  const tagScore = e.tag ? (TAG_WEIGHT[e.tag.toLowerCase()] ?? 1) : 0;
-  const words = e.head.trim().split(/\s+/).length;
-  // Multi-word expressions teach more than single words, but very long
-  // fragments are usually just a chunk of the sentence.
-  const lengthScore = words >= 2 && words <= 5 ? 2 : words === 1 ? 0.5 : 0;
-  return tagScore + lengthScore;
-}
+export type CandidateSource = {
+  /** Raw explanation text, when available — preferred source. */
+  raw?: string | null;
+  keyExpressions?: string;
+  vocabulary?: string;
+};
 
-/** The single strongest expression for this moment, or null when the
- *  sentence has nothing worth surfacing (we stay quiet then). */
-export function pickUsefulExpression(
-  keyExpressions: string,
-  vocabulary: string,
-): UsefulExpression | null {
-  const items = [...parseItems(keyExpressions), ...parseItems(vocabulary)];
-  if (items.length === 0) return null;
-  return items.slice().sort((a, b) => score(b) - score(a))[0];
-}
-
-/** All expressions from a sentence, strongest first (used for the rolling
- *  "Useful Dutch" queue). */
-export function rankUsefulExpressions(
-  keyExpressions: string,
-  vocabulary: string,
-): UsefulExpression[] {
-  const items = [...parseItems(keyExpressions), ...parseItems(vocabulary)];
+/** Stage 1 output for one sentence, deduplicated by phrase. */
+export function extractCandidates(src: CandidateSource): ExpressionCandidate[] {
+  const fromBlock = parseCandidatesBlock(src.raw);
+  const items = fromBlock.length
+    ? fromBlock
+    : [
+        ...parseLegacyItems(src.keyExpressions ?? ""),
+        ...parseLegacyItems(src.vocabulary ?? ""),
+      ];
   const seen = new Set<string>();
-  return items
-    .filter((e) => {
-      const k = e.head.toLowerCase();
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    })
-    .sort((a, b) => score(b) - score(a));
+  return items.filter((c) => {
+    const k = c.head.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+export type PickOptions = {
+  level: CefrLevel;
+  sentence?: string;
+  history?: LearnerHistory;
+};
+
+/**
+ * At most ONE recommendation per sentence, or `null` when nothing in the
+ * sentence is genuinely worth the learner's attention. `null` is expected and
+ * desirable — the UI stays quiet.
+ */
+export function pickUsefulExpression(
+  src: CandidateSource,
+  opts: PickOptions,
+): ScoredCandidate | null {
+  const ranked = rankCandidates(extractCandidates(src), {
+    level: opts.level,
+    sentence: opts.sentence,
+    history: opts.history,
+  });
+  return ranked[0] ?? null;
+}
+
+/** All candidates that pass the quality gate, strongest first. */
+export function rankUsefulExpressions(
+  src: CandidateSource,
+  opts: PickOptions,
+): ScoredCandidate[] {
+  return rankCandidates(extractCandidates(src), {
+    level: opts.level,
+    sentence: opts.sentence,
+    history: opts.history,
+  });
 }

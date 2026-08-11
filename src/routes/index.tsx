@@ -56,10 +56,20 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { LibraryStrip } from "@/components/LibraryStrip";
 import { AppFooter } from "@/components/AppFooter";
-import { type QueuedExpression } from "@/components/UsefulDutchPanel";
 import { UsefulExpressionBar } from "@/components/UsefulExpressionBar";
 import { VideoSubtitle } from "@/components/VideoSubtitle";
-import { pickUsefulExpression, rankUsefulExpressions } from "@/lib/useful-expression";
+import { pickUsefulExpression } from "@/lib/useful-expression";
+import {
+  type CefrLevel,
+  type DensityTracker,
+  type ScoredCandidate,
+  createDensityTracker,
+} from "@/lib/expression-ranking";
+import {
+  DEFAULT_LEARNER_LEVEL,
+  readStoredLearnerLevel,
+} from "@/lib/learner-level";
+
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
 
 
@@ -182,6 +192,13 @@ function Index() {
   const [url, setUrl] = useState("");
   // targetLang = learner's help/translation language (used by explainSentence).
   const [targetLang, setTargetLang] = useState("English");
+  // Learner CEFR level — main learner-specific input to expression ranking.
+  const [learnerLevel, setLearnerLevel] = useState<CefrLevel>(DEFAULT_LEARNER_LEVEL);
+  useEffect(() => {
+    const stored = readStoredLearnerLevel();
+    if (stored) setLearnerLevel(stored);
+  }, []);
+
   // spokenLang = language ACTUALLY spoken in the video, sent to the transcript
   // provider. "" means auto/original (let the provider pick the original track).
   // MUST be ISO-639-1 (e.g. "en", "nl") because that's what YouTube/OpenAI
@@ -1667,6 +1684,8 @@ function Index() {
     | { status: "loading" }
     | {
         status: "ready";
+        /** Raw model output — Stage 1 candidate block lives here. */
+        raw: string;
         translation: string;
         keyExpression: string;
         keyExpressions: string;
@@ -1724,6 +1743,7 @@ function Index() {
           ...prev,
           [s.id]: {
             status: "ready",
+            raw: res.explanation ?? "",
             translation: parsed.translation,
             keyExpression: parsed.keyExpression,
             keyExpressions: parsed.keyExpressions,
@@ -2399,40 +2419,56 @@ function Index() {
     [playingId, sentences],
   );
   const autoEntry = autoSentence ? explanationCache[autoSentence.id] : undefined;
-  const autoExpression = useMemo(() => {
-    if (!autoEntry || autoEntry.status !== "ready") return null;
-    return pickUsefulExpression(autoEntry.keyExpressions, autoEntry.vocabulary);
-  }, [autoEntry]);
 
-  // Rolling, time-based queue: the strongest expression of the sentence being
-  // spoken (current), a couple of upcoming ones, and one just heard.
-  const expressionQueue = useMemo<QueuedExpression[]>(() => {
-    const anchor = playingId != null ? sentences.findIndex((x) => x.id === playingId) : 0;
-    if (anchor < 0) return [];
-    const maxItems = isMobile ? 3 : 5;
-    const out: QueuedExpression[] = [];
-    const push = (offset: number, state: QueuedExpression["state"]) => {
-      const s = sentences[anchor + offset];
-      if (!s) return;
-      const entry = explanationCache[s.id];
-      if (!entry || entry.status !== "ready") return;
-      const ranked = rankUsefulExpressions(entry.keyExpressions, entry.vocabulary);
-      const limit = state === "current" ? 2 : 1;
-      for (const e of ranked.slice(0, limit)) {
-        if (out.some((o) => o.head.toLowerCase() === e.head.toLowerCase())) continue;
-        out.push({ ...e, sentenceId: s.id, state });
-      }
-    };
-    push(0, "current");
-    push(1, "next");
-    push(2, "next");
-    push(-1, "recent");
-    push(-2, "recent");
-    return out.slice(0, maxItems);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playingId, sentences, explanationCache, isMobile]);
+  // Stage 5 — per-video density + dedup guardrail. Rebuilt when the video or
+  // the learner level changes (a level change re-ranks every candidate).
+  const densityRef = useRef<DensityTracker>(
+    createDensityTracker(() => playerRef.current?.getDuration?.() ?? 0),
+  );
+  const [acceptedExpressions, setAcceptedExpressions] = useState<
+    Record<number, ScoredCandidate | null>
+  >({});
+  useEffect(() => {
+    densityRef.current = createDensityTracker(
+      () => playerRef.current?.getDuration?.() ?? 0,
+    );
+    setAcceptedExpressions({});
+  }, [videoId, learnerLevel]);
 
-  const queueLoading = expressionQueue.length === 0 && autoEntry?.status === "loading";
+  // Stages 1→5 for the sentence being spoken: candidates → signals → score →
+  // quality gate → density/dedup. `null` (nothing worth showing) is normal.
+  useEffect(() => {
+    if (!autoSentence || !autoEntry || autoEntry.status !== "ready") return;
+    if (autoSentence.id in acceptedExpressions) return;
+    const best = pickUsefulExpression(
+      {
+        raw: autoEntry.raw,
+        keyExpressions: autoEntry.keyExpressions,
+        vocabulary: autoEntry.vocabulary,
+      },
+      { level: learnerLevel, sentence: autoSentence.text },
+    );
+    const accepted =
+      best && densityRef.current.consider(best, autoSentence.offset) ? best : null;
+    if (accepted) {
+      perfLog("expression_selected", {
+        head: accepted.head,
+        score: accepted.score,
+        level: learnerLevel,
+        signals: accepted.trace.signals,
+      });
+    }
+    setAcceptedExpressions((prev) =>
+      autoSentence.id in prev ? prev : { ...prev, [autoSentence.id]: accepted },
+    );
+  }, [autoSentence, autoEntry, acceptedExpressions, learnerLevel]);
+
+  const autoExpression = autoSentence
+    ? acceptedExpressions[autoSentence.id] ?? null
+    : null;
+
+  const queueLoading = !autoExpression && autoEntry?.status === "loading";
+
 
   // previous / current / next sentence — enough context to follow the audio
   // without opening the full transcript.
