@@ -1,104 +1,46 @@
-# NativeFlow Public Cleanup — Inventory + Plan
+# Low-friction first value + anonymous retention analytics
 
-No code changed yet. Below is the inventory, then the proposed cleanup. Nothing destructive, no database changes, no analytics removal.
+## Inspection report (A–K)
 
-## A. Current public routes
+**A. Authentication today** — Google OAuth only, via `lovable.auth.signInWithOAuth("google")` in `src/components/AuthDialog.tsx`, session stored by the backend client; `src/hooks/use-auth.tsx` exposes `user` / `isAuthenticated`. No email/password, no signup wall anywhere in the player.
 
-| Route | What it is |
-|---|---|
-| `/` | One 5,656-line file driving three views: marketing landing → app "Learning Hub" → video player |
-| `/library` | Explore Dutch: search + filter grid of curated videos, with an optional "By level" tile section below |
-| `/library/$level` | Per-CEFR-level video list |
-| `/english-learners` | Second marketing landing variant, SEO-only, zero internal links |
-| `/contact`, `/privacy`, `/terms` | Static pages, linked from the footer |
-| `/sitemap.xml`, `/robots.txt` | SEO infrastructure |
+**B. Google sign-in** — already exists and works; button label is already "Continue with Google" (no "Gmail" wording anywhere in the codebase).
 
-## B. Internal / admin routes
+**C. "Start for free"** — three places: the public header (`HomeApp.tsx` ~2852), a landing CTA (~3669), a mid-page CTA (~3916), plus one in `YouTubeDiscovery.tsx`. All simply open the auth dialog. Nothing is gated behind it — pasting a URL, the demo, Explore Dutch and watching all already work anonymously.
 
-- `/saved` — "My Learning": saved videos + saved expressions, auth required
-- `/founder` — password-gated analytics dashboard (shared secret, `localStorage` cached)
-- `/api/public/curate-refresh` — cron, secret-header protected
-- `/api/public/transcript-stream` — transcript streaming
-- `/mcp`, `/.mcp/*`, `/.well-known/*`, `/.lovable/*`, `/lovable/email/*` — platform plumbing, not user-facing
+**D. Persistent anonymous ID** — one already exists: `nativeflow_browser_id` (UUID in localStorage, `src/lib/browser-id.ts`). It survives restarts and is already used to scope anonymous saves. It will be reused as `anonymous_user_id`; no new identifier.
 
-## C. Current navigation
+**E. session_id** — generated per page load in a `useRef` in `HomeApp` (lost on any full navigation, so today "session" ≈ page load). Sent to `page_views`, `video_sessions`, `library_events`.
 
-- **Player/app header** (`/`): back button ("Back to Learning Hub" / "Back to Home"), logo, Explore Dutch, Founder (dev only), "Signed In" pulsing badge, Sign out, My Learning (with count badge), Save video.
-- **Library sidebar**: Home, Browse, My Learning (links to `/` — dead link), Saved videos, plus three disabled "soon" stubs: History, Vocabulary, Notebook. Also an "Unlock Premium / Upgrade" card whose button does nothing.
-- **Footer**: Explore Dutch, Contact, Privacy, Terms, "Language Learning Beta".
+**F. user_id** — auth user id, attached to the same server functions when signed in, plus `getUserRetentionCohort` joins by `user_id`.
 
-## D. Major CTAs
+**G. Where events live** — PostHog (client, `src/lib/analytics.ts`, already enriched with `is_test_user`, `experience_type`, `is_internal`, `landing_variant`, `device_type`) **and** three Cloud tables: `page_views`, `video_sessions`, `library_events`.
 
-Start for free, Explore Dutch, Save video / Saved, My Learning, Sign out, transcript toggle, Useful expression "More", explain-language selector, learner-level selector (A1–C2), Replay, Back to Watch Mode, Try Another Video, Upgrade, feedback FAB, dev diagnostics panels.
+**H. Returning users today** — only for registered users (`user-retention.functions.ts`, D1/D7/D30 by `user_id`). Anonymous returning visitors cannot be computed: no table carries a persistent browser id.
 
-## E. Findings worth flagging
+**I. Landing events already present** — `page_view`, `session_started`/`session_ended`, `marketing_hero_url_submitted`, `demo_*`, `video_opened`, `video_started`, `video_watched_30s`/`60s`, percent milestones, `sentence_clicked`, `auth_dialog_opened`, `google_login_started`.
 
-- There is **no** Watch|Learning toggle switch in the current code. Mode is internal state (`studyMode`), plus a one-way "Back to Watch Mode" escape button in the transcript-failure panel. So item 2 of your brief is largely already done — only leftover "Learning Mode" wording and that button remain.
-- `UsefulDutchPanel` and `ContextStrip` are fully built but **imported nowhere** — already effectively hidden.
-- Library cards already navigate to `/?v=…`, so there is no separate experimental video route leaking into discovery.
-- Analytics has **no** `experience_type` property anywhere yet.
+**J. Schema change needed** — additive only: nullable `anonymous_id text` on `page_views`, `video_sessions`, `library_events` + indexes. No drops, no backfill, no data rewrite.
 
-## F. Recommended: KEEP
+**K. Privacy** — the id is a random UUID in first-party localStorage; no fingerprinting, no name/email/IP inference tied to it. Note `video_sessions` already stores IP/user-agent (unchanged). Linking anon→account happens only after explicit sign-in.
 
-Landing, `/library`, the player + video, transcript (it works and is already behind an on-demand toggle), `/contact`, `/privacy`, `/terms`, `/founder`, `/saved` as a route, all analytics, all server functions and data.
+## Minimum implementation
 
-## G. Recommended: HIDE from public UI (code preserved)
+**Landing / header copy**
+- Header becomes: logo · Explore Dutch · subtle text "Sign in" (signed in: "Sign out" only). Remove "Start for free" from header and the two landing CTAs (secondary CTAs become Explore Dutch / demo).
+- Hero: "Watch Dutch videos. Actually understand what's being said." / "Follow authentic Dutch with transcripts and contextual explanations when you need them." / field placeholder "Paste a Dutch YouTube link…" / helper "No account needed."
+- Demo copy de-emphasises "tap a sentence"; demo itself untouched. No new sections.
 
-1. **Save video** button in the player header — leads into `/saved`, which we're de-emphasising.
-2. **My Learning** header link + count badge, and the saved-tooltip nudge. `/saved` keeps working by direct URL.
-3. **"Signed In"** pulsing badge — replaced by nothing; Sign out stays as a small icon-only control.
-4. Library sidebar: remove History / Vocabulary / Notebook stubs, the "My Learning → /" dead link, and the non-functional **Upgrade Premium** card.
-5. **Learner-level (A1–C2) selector** in the Hub — a setting a new user shouldn't have to configure before watching; the B1 default and stored value keep driving ranking.
-6. Leftover **"Learning Mode"** wording in error/progress copy → plain language ("transcript", "sentence explanations").
+**Auth**
+- Unchanged infrastructure. Dialog copy shifts to persistence framing: "Save your progress — sign in to keep your NativeFlow activity across devices." Only save/library actions open it.
 
-## H. Recommended: /experiments
+**Identity + analytics**
+- `session_id` moves to `sessionStorage` so it means one browsing session, not one page load.
+- `anonymous_user_id` = existing `nativeflow_browser_id`; registered as a PostHog super property so every event carries it; also sent to the three tables' new `anonymous_id` column.
+- On sign-in, alias anon → user in PostHog and emit `account_linked` with both ids (existing anonymous-save claim flow stays).
 
-Create two internal-only routes, `noindex`, absent from all navigation, sitemap, and search:
+**Founder dashboard**
+- New "Visitors" block: unique / new / returning anonymous visitors, D1 and D7 anonymous return, registered users — computed from `page_views.anonymous_id` + `video_sessions.anonymous_id`, excluding internal traffic and honouring the existing date/source filter.
+- Existing activation funnel kept and relabelled "Session-based funnel"; retention section labelled "Visitor / user retention".
 
-- `/experiments` — a plain list of links, nothing else.
-- `/experiments/passive-learning` — renders the current player with the experimental layer forced on (synchronized subtitle overlay + Useful expression bar + expression ranking), so we can keep iterating.
-
-Public `/` keeps the video + subtitle overlay it has today; the **Useful expression bar** moves to experiment-only. This is the one behavioural change to the public player, and it is a prop flip, not a deletion.
-
-## I. Remove from navigation only
-
-- `/english-learners` — leave live (it may be in ads/search) but drop it from `sitemap.xml` so we stop promoting a second landing page. Not deleted.
-- "Language Learning Beta" footer text — noise.
-
-## J. Safe to DELETE
-
-- `src/components/UsefulDutchPanel.tsx` and `src/components/ContextStrip.tsx` — zero imports.
-
-Given your "hide before delete" rule, my default is to **leave both files in place** and only delete if you say so.
-
-## K. Redirects
-
-- `/library/$level` stays working (shared links) but stops being a primary path.
-- No route is removed, so no new 404s.
-
-## L. Analytics
-
-Nothing removed, no event renamed. One additive change: `trackWatch` and `track` gain an `experience_type` property — `"public"` by default, `"passive_learning_experiment"` under `/experiments/*`. Founder/test sessions already flagged by the dev-panel mechanism get `is_internal: true` so they can be excluded later. Historical rows simply lack the property, so funnels stay comparable.
-
-## M. Proposed public information architecture
-
-```text
-/                    Landing — what NativeFlow is, one CTA
-/library             Explore Dutch — interest first, CEFR as filter/badge
-/?v=<video>          Watch — video, subtitle, optional transcript
-/contact /privacy /terms
-
-hidden but working:  /saved   /founder   /experiments/*
-```
-
-Header, public: `← Explore Dutch` · logo · `Explore Dutch` · account (sign in / sign out icon). Mobile: back arrow, logo, account. Nothing else.
-
-## N. Risk notes
-
-- No database migration, no data deletion, no auth change.
-- `/saved` and its data are untouched; only its entry points are hidden.
-- The only public functional reduction is the Useful-expression bar moving behind the experiment route.
-
-## Approval needed
-
-Say go and I'll implement F–L as described. Tell me separately if you also want J (deleting the two unused components) — otherwise I leave them on disk.
+**Not built:** anything in section 26.
