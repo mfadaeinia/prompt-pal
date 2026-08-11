@@ -2847,7 +2847,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {isAuthenticated && (
+            {/* "My Learning" entry point hidden from the public header;
+                /saved stays reachable by direct URL. */}
+            {experiment && isAuthenticated && (
+
               <div className="relative">
                 <Link
                   to="/saved"
