@@ -3679,41 +3679,6 @@ function Index() {
             </section>
 
 
-            {/* Mobile persistent bottom bar */}
-            {isMobile && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                {!studyMode ? (
-                  <div className="space-y-2">
-                    <p className="text-center text-[11px] text-muted-foreground">
-                      Want translations, explanations and clickable captions?
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setStudyMode(true);
-                        track("study_mode_opened", { video_id: videoId });
-                      }}
-                      className="h-12 w-full rounded-full text-sm font-semibold shadow-sm"
-                    >
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Study This Video
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setStudyMode(false);
-                      setSelected(null);
-                      track("study_mode_closed", { video_id: videoId });
-                    }}
-                    className="h-11 w-full rounded-full text-sm font-medium"
-                  >
-                    <Tv className="mr-2 h-4 w-4" />
-                    Back to Watch Mode
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         )}
 
