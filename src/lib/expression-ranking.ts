@@ -436,10 +436,16 @@ export function createDensityTracker(
     consider(candidate, startSeconds) {
       const key = dedupKey(candidate.head) || normalizeText(candidate.head);
       if (shown.has(key)) return false;
-      const ts = tokens(candidate.head);
+      // Near-duplicate check on STEMMED tokens, using an overlap coefficient
+      // so inflected variants ("zin hebben in" / "zin had in") collapse.
+      const ts = key.split(" ").filter(Boolean);
       for (const prev of shown.keys()) {
-        if (jaccard(ts, prev.split(" ")) >= config.dedupJaccard) return false;
+        const prevTs = prev.split(" ").filter(Boolean);
+        const inter = ts.filter((t) => prevTs.includes(t)).length;
+        const denom = Math.min(ts.length, prevTs.length) || 1;
+        if (inter / denom >= config.dedupJaccard) return false;
       }
+
 
       const duration = Math.max(0, getDurationSeconds());
       const budget =
