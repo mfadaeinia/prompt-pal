@@ -74,7 +74,7 @@ import { trackWatch, deviceType } from "@/lib/watch-analytics";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine } from "lucide-react";
+import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
