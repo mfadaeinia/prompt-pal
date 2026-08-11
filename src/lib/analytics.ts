@@ -189,8 +189,11 @@ export function track(event: string, props?: Record<string, any>) {
     is_test_user: isTestUser(),
     experience_type: experienceType,
     is_internal: isInternalSession(),
+    anonymous_user_id: getAnonymousUserId(),
+    session_id: (props ?? {}).session_id ?? getSessionId(),
     ...(variant ? { landing_variant: variant } : {}),
   };
+
 
 
   try {
