@@ -45,7 +45,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { track, setUserProperties } from "@/lib/analytics";
+import { track, setUserProperties, setExperienceType } from "@/lib/analytics";
 
 import { FeedbackWidget, FeedbackFab } from "@/components/FeedbackWidget";
 import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
@@ -103,6 +103,12 @@ function normalizeSpokenLang(input?: string | null): string | undefined {
 
 
 export function HomeApp({ experiment = false }: { experiment?: boolean }) {
+  // Tag every event from this surface so public and experiment usage stay
+  // separable in analytics. Additive only — no event names change.
+  useEffect(() => {
+    setExperienceType(experiment ? "passive_learning_experiment" : "public");
+  }, [experiment]);
+
   const fetchTx = useServerFn(fetchTranscript);
   const fetchTxFast = useServerFn(fetchTranscriptFast);
   const saveManualTx = useServerFn(saveManualTranscript);
@@ -2925,6 +2931,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           setTargetLang={changeExplanationLanguage}
           savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
           isAuthenticated={isAuthenticated}
+          showLevelSelector={experiment}
           onPick={(u, lang) => {
             if (lang) setSpokenLang(lang);
             track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
