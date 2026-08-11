@@ -56,6 +56,9 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { LibraryStrip } from "@/components/LibraryStrip";
 import { AppFooter } from "@/components/AppFooter";
+import { UsefulExpressionBar } from "@/components/UsefulExpressionBar";
+import { pickUsefulExpression } from "@/lib/useful-expression";
+import { trackWatch, deviceType } from "@/lib/watch-analytics";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -226,6 +229,10 @@ function Index() {
   const [feedbackTrigger, setFeedbackTrigger] = useState<string>("");
   const isMobile = useIsMobile();
   const [studyMode, setStudyMode] = useState(true);
+  // Experiment: watching is primary. The transcript is an optional layer and
+  // the deep explanation only opens when the learner asks for it.
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [expressionExpanded, setExpressionExpanded] = useState(false);
   // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
   const [focusMode, setFocusMode] = useState(false);
@@ -1672,6 +1679,10 @@ function Index() {
     Record<number, ExplanationEntry>
   >({});
   const inFlightRef = useRef<Set<number>>(new Set());
+  // Current video id, readable from async callbacks (stale-response guard).
+  const videoIdRef = useRef<string | null>(null);
+  // Last auto-surfaced expression head, so we fire expression_auto_shown once.
+  const lastAutoExpressionRef = useRef<string | null>(null);
 
   function ensureExplanation(
     s: TranscriptSentence,
@@ -1692,6 +1703,9 @@ function Index() {
         typeof performance !== "undefined" ? performance.now() : Date.now();
     }
     inFlightRef.current.add(s.id);
+    // Guard against a response from a PREVIOUS video landing in the cache of
+    // the current one (sentence ids restart at 0 for every video).
+    const requestVideoId = videoId;
     setExplanationCache((prev) => ({ ...prev, [s.id]: { status: "loading" } }));
     const idx = sList.findIndex((x) => x.id === s.id);
     const ctx = sList
@@ -1702,6 +1716,7 @@ function Index() {
       data: { sentence: s.text, context: ctx, targetLanguage: targetLang },
     })
       .then((res) => {
+        if (videoIdRef.current !== requestVideoId) return; // stale video — drop
         const parsed = parseExplanation(res.explanation ?? null);
         setExplanationCache((prev) => ({
           ...prev,
@@ -1746,6 +1761,7 @@ function Index() {
         }
       })
       .catch((err: any) => {
+        if (videoIdRef.current !== requestVideoId) return;
         setExplanationCache((prev) => ({
           ...prev,
           [s.id]: { status: "error", error: err?.message ?? "Failed to load" },
@@ -1756,10 +1772,20 @@ function Index() {
       });
   }
 
-  // Reset explanation cache when transcript changes.
+  // Reset all explanation/expression state when the video changes so no stale
+  // meaning from a previous video can ever be displayed.
   useEffect(() => {
+    videoIdRef.current = videoId;
     setExplanationCache({});
     inFlightRef.current = new Set();
+    setSelected(null);
+    manualSelectedRef.current = false;
+    setExpressionExpanded(false);
+    setTranscriptOpen(false);
+    lastAutoExpressionRef.current = null;
+    lastAutoExplainedRef.current = null;
+    viewedExplanationRef.current = new Set();
+    autoPreselectedForVideoRef.current = null;
   }, [videoId]);
 
   // Track how long the user stays on a video session and persist to Supabase.
@@ -2284,6 +2310,9 @@ function Index() {
   // this would auto-open the bottom Sheet and cover the freshly loaded video.
   const autoPreselectedForVideoRef = useRef<string | null>(null);
   useEffect(() => {
+    // EXPERIMENT: nothing opens by itself. The learning layer under the video
+    // carries the useful expression; the deep panel is opt-in.
+    if (true) return;
     if (!studyMode) return;
     if (isMobile) return;
     if (!videoId) return;
@@ -2342,6 +2371,117 @@ function Index() {
       playerRef.current?.pauseVideo?.();
     }
   }, [currentTime]);
+
+  // ---------------------------------------------------------------------
+  // EXPERIMENT: quiet learning layer.
+  // As playback moves, make sure the explanation for the sentence currently
+  // being spoken exists (one lightweight request per sentence, reused from the
+  // existing cache) and surface at most ONE useful expression from it.
+  // Playback is never touched here.
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    if (!studyMode || limitedMode) return;
+    if (playingId == null) return;
+    const s = sentences.find((x) => x.id === playingId);
+    if (!s) return;
+    ensureExplanation(s, sentences, { isPrefetch: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingId, sentences, studyMode, limitedMode]);
+
+  const autoSentence = useMemo(
+    () => (playingId != null ? sentences.find((x) => x.id === playingId) ?? null : null),
+    [playingId, sentences],
+  );
+  const autoEntry = autoSentence ? explanationCache[autoSentence.id] : undefined;
+  const autoExpression = useMemo(() => {
+    if (!autoEntry || autoEntry.status !== "ready") return null;
+    return pickUsefulExpression(autoEntry.keyExpressions, autoEntry.vocabulary);
+  }, [autoEntry]);
+
+  useEffect(() => {
+    if (!autoExpression) return;
+    if (lastAutoExpressionRef.current === autoExpression.head) return;
+    lastAutoExpressionRef.current = autoExpression.head;
+    trackWatch("expression_auto_shown", {
+      video_id: videoId,
+      expression: autoExpression.head,
+      sentence_index: autoSentence ? sentences.findIndex((x) => x.id === autoSentence.id) : null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoExpression, videoId]);
+
+  /** Optional deep dive. Never pauses playback. */
+  function openExpressionDetails() {
+    if (!autoSentence) return;
+    const next = !expressionExpanded;
+    setExpressionExpanded(next);
+    if (next) {
+      manualSelectedRef.current = true;
+      manualUntilRef.current = 0;
+      setSelected(autoSentence);
+      ensureExplanation(autoSentence, sentences);
+      trackWatch("expression_expanded", {
+        video_id: videoId,
+        expression: autoExpression?.head ?? null,
+      });
+    } else {
+      manualSelectedRef.current = false;
+      setSelected(null);
+    }
+  }
+
+  // ---- Watch-depth analytics (same event names on every device) -----------
+  const watchMilestonesRef = useRef<Set<string>>(new Set());
+  const videoStartedRef = useRef<string | null>(null);
+  const videosStartedRef = useRef(0);
+  useEffect(() => {
+    watchMilestonesRef.current = new Set();
+  }, [videoId]);
+  useEffect(() => {
+    if (!videoId || currentTime <= 0.5) return;
+    const fired = watchMilestonesRef.current;
+    if (videoStartedRef.current !== videoId) {
+      videoStartedRef.current = videoId;
+      videosStartedRef.current += 1;
+      trackWatch("video_started", {
+        video_id: videoId,
+        user_id: userIdRef.current ?? null,
+        session_id: sessionIdRef.current,
+      });
+      if (videosStartedRef.current > 1) {
+        trackWatch("another_video_started", {
+          video_id: videoId,
+          videos_started: videosStartedRef.current,
+          user_id: userIdRef.current ?? null,
+          session_id: sessionIdRef.current,
+        });
+      }
+    }
+    const fire = (key: string, extra?: Record<string, unknown>) => {
+      if (fired.has(key)) return;
+      fired.add(key);
+      trackWatch(key, {
+        video_id: videoId,
+        current_time: Math.round(currentTime),
+        user_id: userIdRef.current ?? null,
+        session_id: sessionIdRef.current,
+        ...(extra ?? {}),
+      });
+    };
+    if (currentTime >= 30) fire("video_watched_30s");
+    if (currentTime >= 60) fire("video_watched_60s");
+    let duration = 0;
+    try {
+      duration = playerRef.current?.getDuration?.() ?? 0;
+    } catch {}
+    if (duration > 10) {
+      const pct = currentTime / duration;
+      if (pct >= 0.25) fire("video_25_percent");
+      if (pct >= 0.5) fire("video_50_percent");
+      if (pct >= 0.75) fire("video_75_percent");
+      if (pct >= 0.95) fire("video_completed", { duration_seconds: Math.round(duration) });
+    }
+  }, [currentTime, videoId]);
 
   // Sync diagnostics: log every transition between active sentences with the
   // perceived highlight delay (video currentTime vs. sentence start).
@@ -2460,14 +2600,19 @@ function Index() {
       manualSelectedRef.current = true;
       setSelected(s);
       if (!limitedMode) ensureExplanation(s, sentences);
-      // Learning Mode: pause on tap so the learner can study. Resume is explicit.
-      seekAndPause(s);
+      // EXPERIMENT: playback must never stop because the learner inspected
+      // language. Seek to the sentence and keep playing.
+      seekAndPlay(s);
     } else {
       seekAndPlay(s);
     }
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
+    trackWatch("transcript_sentence_clicked", {
+      sentence_index: idx,
+      video_id: videoId,
+    });
     track("sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
@@ -2587,7 +2732,7 @@ function Index() {
               to="/library"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Browse by level
+              Explore Dutch
             </Link>
 
 
@@ -2967,7 +3112,7 @@ function Index() {
             <div
               className={`grid gap-8 ${
                 studyMode
-                  ? "grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start"
+                  ? "grid-cols-1"
                   : "grid-cols-1"
               }`}
             >
@@ -3055,7 +3200,7 @@ function Index() {
                   </div>
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
-                  <div className="mx-auto aspect-video w-full max-w-md overflow-hidden rounded-xl bg-black">
+                  <div className="mx-auto aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
                     {embedSrc && (
                       <iframe
                         ref={iframeRef}
@@ -3068,7 +3213,7 @@ function Index() {
                     )}
                   </div>
                   {playbackError && (
-                    <div className="mx-auto mt-2 w-full max-w-md rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
                       <p className="font-medium text-destructive">Playback problem</p>
                       <p className="mt-1 text-muted-foreground">{playbackError}</p>
                       <a
@@ -3082,16 +3227,43 @@ function Index() {
                     </div>
                   )}
 
-                  {/* The duplicate "Now playing" sentence card was removed.
-                      The active sentence now stays in-context inside the
-                      transcript list via lyrics-style auto-follow. */}
                 </div>
+
+                {/* Quiet learning layer — one useful expression for the current
+                    moment. Never pauses, never blocks, never scrolls. */}
+                {studyMode && !limitedMode && (
+                  <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                    <UsefulExpressionBar
+                      expression={autoExpression}
+                      loading={autoEntry?.status === "loading"}
+                      expanded={expressionExpanded}
+                      onToggle={openExpressionDetails}
+                    />
+                  </div>
+                )}
               </div>
 
 
-              {/* Transcript — visible in both modes; passive in Watch Mode. On mobile this sits BELOW the explanation card. */}
-              <div className="min-w-0 order-3 lg:order-2">
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[calc(100vh-96px)]">
+              {/* Transcript — kept fully functional, but secondary: opened on
+                  demand so it never dominates the page. */}
+              <div className="mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !transcriptOpen;
+                    setTranscriptOpen(next);
+                    if (next) trackWatch("transcript_opened", { video_id: videoId });
+                  }}
+                  aria-expanded={transcriptOpen}
+                  className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium text-foreground shadow-sm hover:bg-muted"
+                >
+                  Transcript
+                  <ChevronDown
+                    aria-hidden
+                    className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 ${transcriptOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <aside className={`relative ${transcriptOpen ? "flex" : "hidden"} max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]`}>
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
                       <TranscriptQualityBanner
@@ -3343,14 +3515,14 @@ function Index() {
               {/* Aha Panel — primary learning surface.
                   Desktop / tablet: side panel in the right column.
                   Mobile: rendered below as a bottom Sheet so the transcript stays the primary interaction layer. */}
-              {studyMode && (
-                <div className="hidden lg:block min-w-0 order-2 lg:sticky lg:top-[68px] lg:self-start lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto">
+              {studyMode && expressionExpanded && !!selected && (
+                <div className="mx-auto hidden w-full min-w-0 order-2 lg:block md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
                   <ExplanationPanel
                     sentence={selected}
                     entry={
                       selected ? explanationCache[selected.id] : undefined
                     }
-                    onClose={closeAndResume}
+                    onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
                     onReplay={replaySelected}
                     onResume={resumeFromHere}
                     onSave={() => handleSaveExpression(selected)}
@@ -3371,9 +3543,13 @@ function Index() {
               {/* Mobile Aha Panel as a bottom Drawer. Slides up to ~50% of screen, supports swipe-to-dismiss. */}
               {studyMode && isMobile && (
                 <Drawer
-                  open={!!selected}
+                  open={expressionExpanded && !!selected}
                   onOpenChange={(open) => {
-                    if (!open) closeAndResume();
+                    if (!open) {
+                      setExpressionExpanded(false);
+                      setSelected(null);
+                      manualSelectedRef.current = false;
+                    }
                   }}
                   shouldScaleBackground={false}
                 >
@@ -3385,7 +3561,7 @@ function Index() {
                         entry={
                           selected ? explanationCache[selected.id] : undefined
                         }
-                        onClose={closeAndResume}
+                        onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
                         onReplay={replaySelected}
                         onResume={resumeFromHere}
                         onSave={() => handleSaveExpression(selected)}

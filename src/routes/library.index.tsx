@@ -337,10 +337,10 @@ function BrowsePage() {
             ← Back to home
           </Link>
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2.5rem]">
-            Browse by Level
+            Explore Dutch
           </h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Discover carefully selected Dutch YouTube videos matched to your language level.
+            Pick something you actually want to watch. Level is just a hint.
           </p>
         </div>
 
@@ -541,9 +541,9 @@ function BrowsePage() {
           {/* level tiles */}
           {!filtering && (
             <section className="mt-10">
-              <h2 className="text-lg font-semibold text-foreground">Browse by level</h2>
+              <h2 className="text-lg font-semibold text-foreground">By level</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Explore all videos in each level.
+                Optional: narrow things down if you prefer a certain level.
               </p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {CEFR_LEVELS.map((l) => {
