@@ -1,6 +1,13 @@
 import posthog from "posthog-js";
+import {
+  getAnonymousUserId,
+  getSessionId,
+  getFirstSeenAt,
+  isReturningVisitor,
+} from "./identity";
 
 let initialized = false;
+
 
 const TEST_USER_KEY = "nativeflow_is_test_user";
 
