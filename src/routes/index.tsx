@@ -56,8 +56,10 @@ import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { LibraryStrip } from "@/components/LibraryStrip";
 import { AppFooter } from "@/components/AppFooter";
-import { UsefulExpressionBar } from "@/components/UsefulExpressionBar";
-import { pickUsefulExpression } from "@/lib/useful-expression";
+import { UsefulDutchPanel, type QueuedExpression } from "@/components/UsefulDutchPanel";
+import { ContextStrip } from "@/components/ContextStrip";
+import { VideoSubtitle } from "@/components/VideoSubtitle";
+import { pickUsefulExpression, rankUsefulExpressions } from "@/lib/useful-expression";
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
 
 
@@ -2379,12 +2381,16 @@ function Index() {
   // existing cache) and surface at most ONE useful expression from it.
   // Playback is never touched here.
   // ---------------------------------------------------------------------
+  // Prefetch a small rolling window around the playing sentence so the
+  // "Useful Dutch" queue can show what is coming up next, not just now.
   useEffect(() => {
     if (!studyMode || limitedMode) return;
     if (playingId == null) return;
-    const s = sentences.find((x) => x.id === playingId);
-    if (!s) return;
-    ensureExplanation(s, sentences, { isPrefetch: true });
+    const idx = sentences.findIndex((x) => x.id === playingId);
+    if (idx < 0) return;
+    for (const s of sentences.slice(idx, idx + 3)) {
+      ensureExplanation(s, sentences, { isPrefetch: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playingId, sentences, studyMode, limitedMode]);
 
@@ -2398,6 +2404,50 @@ function Index() {
     return pickUsefulExpression(autoEntry.keyExpressions, autoEntry.vocabulary);
   }, [autoEntry]);
 
+  // Rolling, time-based queue: the strongest expression of the sentence being
+  // spoken (current), a couple of upcoming ones, and one just heard.
+  const expressionQueue = useMemo<QueuedExpression[]>(() => {
+    const anchor = playingId != null ? sentences.findIndex((x) => x.id === playingId) : 0;
+    if (anchor < 0) return [];
+    const maxItems = isMobile ? 3 : 5;
+    const out: QueuedExpression[] = [];
+    const push = (offset: number, state: QueuedExpression["state"]) => {
+      const s = sentences[anchor + offset];
+      if (!s) return;
+      const entry = explanationCache[s.id];
+      if (!entry || entry.status !== "ready") return;
+      const ranked = rankUsefulExpressions(entry.keyExpressions, entry.vocabulary);
+      const limit = state === "current" ? 2 : 1;
+      for (const e of ranked.slice(0, limit)) {
+        if (out.some((o) => o.head.toLowerCase() === e.head.toLowerCase())) continue;
+        out.push({ ...e, sentenceId: s.id, state });
+      }
+    };
+    push(0, "current");
+    push(1, "next");
+    push(2, "next");
+    push(-1, "recent");
+    push(-2, "recent");
+    return out.slice(0, maxItems);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingId, sentences, explanationCache, isMobile]);
+
+  const queueLoading = expressionQueue.length === 0 && autoEntry?.status === "loading";
+
+  // previous / current / next sentence — enough context to follow the audio
+  // without opening the full transcript.
+  const contextLines = useMemo(() => {
+    const idx = playingId != null ? sentences.findIndex((x) => x.id === playingId) : -1;
+    if (idx < 0) {
+      return { previous: null, current: sentences[0] ?? null, next: sentences[1] ?? null };
+    }
+    return {
+      previous: sentences[idx - 1] ?? null,
+      current: sentences[idx] ?? null,
+      next: sentences[idx + 1] ?? null,
+    };
+  }, [playingId, sentences]);
+
   useEffect(() => {
     if (!autoExpression) return;
     if (lastAutoExpressionRef.current === autoExpression.head) return;
@@ -2409,6 +2459,21 @@ function Index() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoExpression, videoId]);
+
+  /** Optional deep dive for any sentence. Never pauses playback. */
+  function openSentenceDetails(sentenceId: number, expression?: string | null) {
+    const s = sentences.find((x) => x.id === sentenceId);
+    if (!s) return;
+    manualSelectedRef.current = true;
+    manualUntilRef.current = 0;
+    setSelected(s);
+    setExpressionExpanded(true);
+    ensureExplanation(s, sentences);
+    trackWatch("expression_expanded", {
+      video_id: videoId,
+      expression: expression ?? null,
+    });
+  }
 
   /** Optional deep dive. Never pauses playback. */
   function openExpressionDetails() {
@@ -3200,7 +3265,7 @@ function Index() {
                   </div>
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
-                  <div className="mx-auto aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                  <div className="relative mx-auto aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
                     {embedSrc && (
                       <iframe
                         ref={iframeRef}
@@ -3209,6 +3274,16 @@ function Index() {
                         className="h-full w-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
+                      />
+                    )}
+                    {/* Synchronized Dutch subtitle — read-only, never pauses. */}
+                    {studyMode && currentSentence && (
+                      <VideoSubtitle
+                        text={currentSentence.text}
+                        highlight={autoExpression?.head ?? null}
+                        onHighlightClick={() =>
+                          openSentenceDetails(currentSentence.id, autoExpression?.head ?? null)
+                        }
                       />
                     )}
                   </div>
@@ -3229,15 +3304,23 @@ function Index() {
 
                 </div>
 
-                {/* Quiet learning layer — one useful expression for the current
-                    moment. Never pauses, never blocks, never scrolls. */}
+                {/* Language scaffolding: what is worth noticing (Useful Dutch)
+                    plus just enough context to follow along. Mobile stacks;
+                    desktop shows both side by side. Never pauses playback. */}
                 {studyMode && !limitedMode && (
-                  <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                    <UsefulExpressionBar
-                      expression={autoExpression}
-                      loading={autoEntry?.status === "loading"}
-                      expanded={expressionExpanded}
-                      onToggle={openExpressionDetails}
+                  <div className="mx-auto grid w-full gap-4 md:max-w-[900px] lg:grid-cols-2 xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                    <UsefulDutchPanel
+                      className="order-1"
+                      items={expressionQueue}
+                      loading={queueLoading}
+                      onExplain={(it) => openSentenceDetails(it.sentenceId, it.head)}
+                    />
+                    <ContextStrip
+                      className="order-2"
+                      previous={contextLines.previous}
+                      current={contextLines.current}
+                      next={contextLines.next}
+                      onSelect={(line) => openSentenceDetails(line.id)}
                     />
                   </div>
                 )}
