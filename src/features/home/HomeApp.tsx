@@ -3260,7 +3260,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
                 {/* One expression for the current moment. Anything deeper opens
                     in a drawer — nothing is stacked under the video. */}
-                {studyMode && !limitedMode && (
+                {/* Passive-learning expression bar is experiment-only. */}
+                {experiment && studyMode && !limitedMode && (
+
                   <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
                     <UsefulExpressionBar
                       expression={autoExpression}
