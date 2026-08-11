@@ -56,3 +56,21 @@ export function pickUsefulExpression(
   if (items.length === 0) return null;
   return items.slice().sort((a, b) => score(b) - score(a))[0];
 }
+
+/** All expressions from a sentence, strongest first (used for the rolling
+ *  "Useful Dutch" queue). */
+export function rankUsefulExpressions(
+  keyExpressions: string,
+  vocabulary: string,
+): UsefulExpression[] {
+  const items = [...parseItems(keyExpressions), ...parseItems(vocabulary)];
+  const seen = new Set<string>();
+  return items
+    .filter((e) => {
+      const k = e.head.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .sort((a, b) => score(b) - score(a));
+}
