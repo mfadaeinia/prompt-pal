@@ -3550,7 +3550,7 @@ function Index() {
                   }}
                   shouldScaleBackground={false}
                 >
-                  <DrawerContent className="h-[50vh] max-h-[50vh] rounded-t-2xl border-t p-0 focus:outline-none">
+                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none lg:mx-auto lg:max-w-[900px]">
                     {/* The Drawer primitive renders its own handle bar at the top. */}
                     <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
                       <ExplanationPanel
