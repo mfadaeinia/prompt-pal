@@ -1418,7 +1418,7 @@ function ExperimentMarkersSection() {
           <p className="text-sm text-slate-500">No markers yet.</p>
         )}
         <ul className="space-y-1">
-          {(q.data ?? []).map((mk) => (
+          {((q.data ?? []) as ExperimentMarker[]).map((mk) => (
             <li
               key={mk.id}
               className="flex items-center gap-2 border-t border-slate-100 py-1.5 text-sm"
