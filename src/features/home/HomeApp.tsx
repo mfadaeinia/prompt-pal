@@ -3403,6 +3403,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
                             <SelectItem value="Persian">Persian (فارسی)</SelectItem>
                           </SelectContent>
                         </Select>
