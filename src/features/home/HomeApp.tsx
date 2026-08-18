@@ -4402,30 +4402,8 @@ function ExplanationPanel({
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
-          {!limitedMode && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSave}
-              disabled={saveDisabled}
-              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-              title={
-                isSaved
-                  ? "Already in My Library"
-                  : ready
-                    ? "Save to My Library"
-                    : "Wait for explanation to load"
-              }
-            >
-              {justSaved ? (
-                <><Check className="h-3.5 w-3.5" /> Saved</>
-              ) : isSaved ? (
-                <><BookmarkCheck className="h-3.5 w-3.5" /> In Library</>
-              ) : (
-                <><Bookmark className="h-3.5 w-3.5" /> Save</>
-              )}
-            </Button>
-          )}
+          {/* Save intentionally omitted here — the explanation panel stays a
+              comprehension surface; expressions can still be saved inline. */}
         </div>
       </div>
 
