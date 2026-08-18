@@ -77,7 +77,6 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
@@ -219,7 +218,6 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const [studyMode, setStudyMode] = useState(true);
   // Experiment: watching is primary. The transcript is an optional layer and
   // the deep explanation only opens when the learner asks for it.
-  const [transcriptOpen, setTranscriptOpen] = useState(true);
   // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
   // gone: captions overlay the video and the explanation opens over it.
   const [isFullscreen, setIsFullscreen] = useState(false);
