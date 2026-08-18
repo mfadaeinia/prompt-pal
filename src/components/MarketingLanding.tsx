@@ -96,14 +96,14 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
           {/* ---------- LEFT: promise + actions ---------- */}
           <div className="max-w-xl">
             <span
-              className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
+              className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70"
               style={heading}
             >
               For Dutch learners who watch YouTube
             </span>
 
             <h1
-              className="text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[2.75rem]"
+              className="text-[2rem] font-bold leading-[1.12] tracking-tight text-white sm:text-[2.5rem] lg:text-[2.75rem]"
               style={heading}
             >
               Watch real Dutch.
@@ -111,12 +111,12 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               Never get lost.
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:text-lg">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">
               Tap anything you don't understand. NativeFlow explains it in context.
             </p>
 
             {/* Secondary: bring your own video (desktop — left column). */}
-            <div className="mt-8 hidden border-t border-slate-200 pt-6 lg:block">
+            <div className="mt-8 hidden border-t border-white/15 pt-6 lg:block">
               <UrlForm
                 value={value}
                 setValue={setValue}
@@ -125,6 +125,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               />
             </div>
           </div>
+
 
           {/* ---------- RIGHT (desktop) / BELOW (mobile): static preview + demo CTA ---------- */}
           <div className="min-w-0">
