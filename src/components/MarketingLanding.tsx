@@ -28,22 +28,16 @@ import founderPhoto from "@/assets/founder-mahta.png.asset.json";
  * NativeFlow is a bridge between authentic content and language growth.
  */
 export function MarketingLanding({
-  onStartDemo,
   onFeedback,
   onSubmitUrl,
 }: {
-  onStartDemo: () => void;
+  onStartDemo?: () => void;
   onFeedback?: () => void;
   onSubmitUrl: (url: string) => void;
 }) {
   useEffect(() => {
     track("marketing_landing_seen", {});
   }, []);
-
-  const handleDemo = () => {
-    track("marketing_cta_clicked", { target: "demo" });
-    onStartDemo();
-  };
 
   return (
     <div
@@ -63,7 +57,8 @@ export function MarketingLanding({
       </div>
 
       <div className="relative z-10">
-        <Hero onSubmitUrl={onSubmitUrl} onStartDemo={handleDemo} />
+        <Hero onSubmitUrl={onSubmitUrl} />
+
         <CompetitorComparison />
         <HowItWorks />
         <Comparison />
