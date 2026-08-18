@@ -750,6 +750,13 @@ function OverviewSection({
         )}
       </div>
 
+      <PrimaryExperimentFunnel m={m} prev={prev} />
+      <AnonymousVisitorsCard m={m} />
+      <DailyTrend m={m} />
+      <ExperimentMarkersSection />
+
+
+
       <div className="space-y-3">
         <SectionHeader
           title="Discoverability (primary)"
