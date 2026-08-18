@@ -3851,7 +3851,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       </>
                     )}
 
-                    {activeOutOfView && playingId !== null && (
+                    {activeOutOfView && playingId !== null && !explanationOpen && (
                       <button
                         onClick={jumpToCurrentSentence}
                         className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg ring-1 ring-primary/40 hover:bg-primary/90"
@@ -3861,39 +3861,33 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       </button>
                     )}
 
+                    {/* Windowed mode: the explanation is a popup INSIDE the
+                        transcript panel — never over the video. Closing it does
+                        not resume playback; the learner presses play. */}
+                    {!isFullscreen && explanationOpen && (
+                      <div className="absolute inset-x-2 bottom-2 z-20 max-h-[85%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                            Explanation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => closeExplanation(false)}
+                            aria-label="Close explanation"
+                            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {explanationPanelNode}
+                      </div>
+                    )}
+
                   </aside>
               </div>
               </div>
 
-              {/* Desktop: explanation lives in a right-side panel next to the
-                  video — no overlay, video stays visible and playable. */}
-              {sidePanelOpen && (
-                <aside
-                  aria-label="Sentence explanation"
-                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
-                >
-                  {explanationPanelNode}
-                </aside>
-              )}
 
-              {/* Mobile / tablet: bottom sheet. */}
-              {studyMode && isMobile && (
-                <Drawer
-                  open={explanationOpen}
-                  onOpenChange={(open) => {
-                    // Dismissing the explanation resumes the video the tap paused.
-                    if (!open) closeExplanation(true);
-                  }}
-                  shouldScaleBackground={false}
-                >
-                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none">
-                    {/* The Drawer primitive renders its own handle bar at the top. */}
-                    <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
-                      {explanationPanelNode}
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-              )}
 
             </div>
             )}
