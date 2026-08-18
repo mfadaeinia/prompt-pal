@@ -1749,11 +1749,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           const clickedAt = sentenceClickAtRef.current.get(s.id);
           if (clickedAt != null) {
             const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            const elapsed = Math.round(now - clickedAt);
             perfLog("first_hint_shown", {
               sentence_id: s.id,
               is_prefetch: !!opts.isPrefetch,
-              elapsed_ms_since_click: Math.round(now - clickedAt),
+              elapsed_ms_since_click: elapsed,
             });
+            if (!opts.isPrefetch) {
+              // time_to_meaning: click → meaning visible (Level 1).
+              trackWatch("explanation_meaning_shown", {
+                video_id: requestVideoId,
+                sentence_id: s.id,
+                sentence_index: idx,
+                time_to_meaning_ms: elapsed,
+              });
+            }
             sentenceClickAtRef.current.delete(s.id);
           }
         }
