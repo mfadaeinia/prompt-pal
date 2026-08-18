@@ -4358,7 +4358,9 @@ function ExplanationPanel({
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
   const error = entry && entry.status === "error" ? entry.error : null;
-  const saveDisabled = saving || isSaved || !ready;
+  void saving;
+  void isSaved;
+  void onSave;
   const srcLabel = sourceLangLabel || "Original";
   const tgtLabel = targetLangLabel || "English";
   void tgtLabel;
