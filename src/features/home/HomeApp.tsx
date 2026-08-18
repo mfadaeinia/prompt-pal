@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
+import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap, Maximize, Minimize } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track, linkAnonymousToUser, setUserProperties, setExperienceType } from "@/lib/analytics";
 
@@ -77,7 +77,6 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
@@ -219,7 +218,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const [studyMode, setStudyMode] = useState(true);
   // Experiment: watching is primary. The transcript is an optional layer and
   // the deep explanation only opens when the learner asks for it.
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
+  // gone: captions overlay the video and the explanation opens over it.
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  // Recommendations are NOT in the DOM until the video ends or the learner
+  // scrolls past the completion threshold.
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [scrolledPastThreshold, setScrolledPastThreshold] = useState(false);
+
   const [expressionExpanded, setExpressionExpanded] = useState(false);
   // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
@@ -1805,7 +1812,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     setSelected(null);
     manualSelectedRef.current = false;
     setExpressionExpanded(false);
-    setTranscriptOpen(false);
+    
     lastAutoExpressionRef.current = null;
     lastAutoExplainedRef.current = null;
     viewedExplanationRef.current = new Set();
@@ -2018,6 +2025,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 window.clearTimeout(playNudgeTimerRef.current);
                 playNudgeTimerRef.current = null;
               }
+            } else if (e.data === YT.PlayerState.ENDED) {
+              // Completion is the only moment recommendations are welcome.
+              setVideoEnded(true);
+              track("video_ended", { video_id: videoId, current_time: t });
             }
           },
         },
@@ -2809,12 +2820,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       setExpressionExpanded(true);
       if (!limitedMode) ensureExplanation(s, sentences);
 
-      // EXPERIMENT: playback must never stop because the learner inspected
-      // language. Seek to the sentence and keep playing.
-      seekAndPlay(s);
+      if (experiment) {
+        // EXPERIMENT: playback must never stop because the learner inspected
+        // language. Seek to the sentence and keep playing.
+        seekAndPlay(s);
+      } else {
+        // Default: pause immediately so no audio is missed while reading.
+        seekAndPause(s);
+        pausedForExplanationRef.current = true;
+      }
     } else {
       seekAndPlay(s);
     }
+
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
@@ -2906,9 +2924,52 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     }
   }
 
-  /** Desktop shows the explanation beside the video; mobile keeps the sheet. */
+  /**
+   * Windowed mode: the explanation is a popup inside the transcript panel.
+   * Fullscreen mode: it is a small box over a dimmed video. Same content.
+   */
   const explanationOpen = studyMode && expressionExpanded && !!selected;
-  const sidePanelOpen = explanationOpen && !isMobile;
+
+  // Track real fullscreen state of the video stage.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onChange = () => {
+      const el = document.fullscreenElement;
+      setIsFullscreen(!!el && !!stageRef.current && stageRef.current.contains(el as Node));
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await stageRef.current?.requestFullscreen?.();
+      }
+    } catch {}
+  }
+
+  // Recommendations appear only after completion (video ended) or once the
+  // learner has scrolled past the completion threshold.
+  useEffect(() => {
+    setVideoEnded(false);
+    setScrolledPastThreshold(false);
+  }, [videoId]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      const progress = window.scrollY / max;
+      if (progress >= 0.8) setScrolledPastThreshold(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const showRecommendations = videoEnded || scrolledPastThreshold;
 
   function closeExplanation(resume: boolean) {
     setExpressionExpanded(false);
@@ -2917,6 +2978,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     manualSelectedRef.current = false;
     if (resume && pausedForExplanationRef.current) resumeFromHere();
   }
+
 
   const explanationPanelNode = (
     <ExplanationPanel
@@ -3303,13 +3365,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </div>
               </div>
             ) : (
-            <div
-              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
-                sidePanelOpen
-                  ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,33%)] lg:items-start lg:gap-6"
-                  : ""
-              }`}
-            >
+            <div className="grid grid-cols-1 gap-8 transition-all duration-200">
 
               <div className="contents lg:flex lg:flex-col lg:gap-8">
 
@@ -3394,7 +3450,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </div>
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
-                  <div className="relative mx-auto aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                  <div
+                    ref={stageRef}
+                    className={`relative mx-auto w-full max-w-full overflow-hidden bg-black ${
+                      isFullscreen
+                        ? "h-full max-w-none rounded-none"
+                        : "aspect-video rounded-xl md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]"
+                    }`}
+                  >
                     {embedSrc && (
                       <iframe
                         ref={iframeRef}
@@ -3405,9 +3468,33 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         allowFullScreen
                       />
                     )}
-                    {/* Synchronized subtitle — fully interactive. Automatic
-                        updates never pause; only explicit taps do. */}
-                    {studyMode && currentSentence && (
+
+                    {/* Fullscreen toggle — our own, so captions and the
+                        explanation stay visible over the video. */}
+                    <button
+                      type="button"
+                      onClick={toggleFullscreen}
+                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                      className="absolute right-2 top-2 z-20 rounded-lg bg-black/60 p-2 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80"
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-4 w-4" />
+                      ) : (
+                        <Maximize className="h-4 w-4" />
+                      )}
+                    </button>
+
+                    {/* Fullscreen: dim the video while the learner reads. */}
+                    {isFullscreen && explanationOpen && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 z-20 bg-black/60 animate-in fade-in duration-150"
+                      />
+                    )}
+
+                    {/* Captions overlay the video in fullscreen (YouTube-style).
+                        In windowed mode the transcript panel is the surface. */}
+                    {studyMode && currentSentence && (isFullscreen || experiment) && (
                       <VideoSubtitle
                         text={currentSentence.text}
                         highlight={autoExpression?.head ?? null}
@@ -3433,7 +3520,29 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       />
                     )}
 
+                    {/* Fullscreen explanation box — small, top-right, over the
+                        dimmed video. Closing never auto-resumes playback. */}
+                    {isFullscreen && explanationOpen && (
+                      <div className="absolute right-3 top-14 z-30 w-[min(92vw,420px)] max-h-[70%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-right-2 duration-150">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                            Explanation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => closeExplanation(false)}
+                            aria-label="Close explanation"
+                            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {explanationPanelNode}
+                      </div>
+                    )}
+
                   </div>
+
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
                       <p className="font-medium text-destructive">Playback problem</p>
@@ -3472,26 +3581,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
 
 
-              {/* Transcript — kept fully functional, but secondary: opened on
-                  demand so it never dominates the page. */}
-              <div className="mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !transcriptOpen;
-                    setTranscriptOpen(next);
-                    if (next) trackWatch("transcript_opened", { video_id: videoId });
-                  }}
-                  aria-expanded={transcriptOpen}
-                  className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium text-foreground shadow-sm hover:bg-muted"
-                >
-                  Transcript
-                  <ChevronDown
-                    aria-hidden
-                    className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 ${transcriptOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                <aside className={`relative ${transcriptOpen ? "flex" : "hidden"} max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]`}>
+              {/* Transcript — windowed mode's primary reading surface: always
+                  visible directly under the video, never collapsed. Hidden in
+                  fullscreen, where captions overlay the video instead. */}
+              <div
+                className={`mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px] ${
+                  isFullscreen ? "hidden" : ""
+                }`}
+              >
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]">
+
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
                       <TranscriptQualityBanner
@@ -3743,7 +3842,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       </>
                     )}
 
-                    {activeOutOfView && playingId !== null && (
+                    {activeOutOfView && playingId !== null && !explanationOpen && (
                       <button
                         onClick={jumpToCurrentSentence}
                         className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground shadow-lg ring-1 ring-primary/40 hover:bg-primary/90"
@@ -3753,62 +3852,60 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       </button>
                     )}
 
+                    {/* Windowed mode: the explanation is a popup INSIDE the
+                        transcript panel — never over the video. Closing it does
+                        not resume playback; the learner presses play. */}
+                    {!isFullscreen && explanationOpen && (
+                      <div className="absolute inset-x-2 bottom-2 z-20 max-h-[85%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                            Explanation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => closeExplanation(false)}
+                            aria-label="Close explanation"
+                            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {explanationPanelNode}
+                      </div>
+                    )}
+
                   </aside>
               </div>
               </div>
 
-              {/* Desktop: explanation lives in a right-side panel next to the
-                  video — no overlay, video stays visible and playable. */}
-              {sidePanelOpen && (
-                <aside
-                  aria-label="Sentence explanation"
-                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
-                >
-                  {explanationPanelNode}
-                </aside>
-              )}
 
-              {/* Mobile / tablet: bottom sheet. */}
-              {studyMode && isMobile && (
-                <Drawer
-                  open={explanationOpen}
-                  onOpenChange={(open) => {
-                    // Dismissing the explanation resumes the video the tap paused.
-                    if (!open) closeExplanation(true);
-                  }}
-                  shouldScaleBackground={false}
-                >
-                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none">
-                    {/* The Drawer primitive renders its own handle bar at the top. */}
-                    <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
-                      {explanationPanelNode}
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-              )}
 
             </div>
             )}
 
-            {/* You may also like — curated library recommendations. */}
-            <LibraryStrip
-              source="player"
-              title="You may also like"
-              subtitle="Curated videos at a similar level and topic."
-              similarTo={videoId}
-              showLevels={false}
-              showFeatured={false}
-              limit={4}
-              onPick={(u, lang) => {
-                setUrl(u);
-                // `lang` is the language SPOKEN in the video, not the
-                // explanation language — never touch targetLang here.
-                if (lang) setSpokenLang(lang);
-                submitLoad(u, lang);
-                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-              }}
-              className="mt-8"
-            />
+            {/* You may also like — kept OUT of the DOM until the learner
+                finishes the video or scrolls past the completion threshold. */}
+            {showRecommendations && (
+              <LibraryStrip
+                source="player"
+                title="You may also like"
+                subtitle="Curated videos at a similar level and topic."
+                similarTo={videoId}
+                showLevels={false}
+                showFeatured={false}
+                limit={4}
+                onPick={(u, lang) => {
+                  setUrl(u);
+                  // `lang` is the language SPOKEN in the video, not the
+                  // explanation language — never touch targetLang here.
+                  if (lang) setSpokenLang(lang);
+                  submitLoad(u, lang);
+                  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                }}
+                className="mt-8"
+              />
+            )}
+
 
             {/* After the demo: turn the visitor into a doer. */}
             {isDemo && (
