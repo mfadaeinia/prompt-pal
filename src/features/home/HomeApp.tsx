@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap } from "lucide-react";
+import { Loader2, PlayCircle, Repeat, Sparkles, X, Play, MousePointerClick, Brain, Tv, Zap, ArrowRight, Bookmark, BookmarkCheck, Check, LogOut, GraduationCap, Maximize, Minimize } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track, linkAnonymousToUser, setUserProperties, setExperienceType } from "@/lib/analytics";
 
