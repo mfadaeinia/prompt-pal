@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Play,
   Check,
-  
+
   Languages,
   BookOpen,
   Youtube,
@@ -23,7 +23,7 @@ import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
 
-/* Demo embed used by both the modal (mobile) and the inline example (tablet+). */
+/* The one and only live demo — real app, embedded. */
 const DEMO_EMBED_SRC =
   "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
 
@@ -48,21 +48,11 @@ export function MarketingLanding({
       className="relative w-full overflow-hidden text-slate-900 selection:bg-accent"
       style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
     >
-      {/* Faded collage background — fixed so it persists while scrolling */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0">
-        <img
-          src={heroCollage.url}
-          alt=""
-          width={1562}
-          height={1007}
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-[0.07]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/60 via-[#F8FAFC]/90 to-[#F8FAFC]" />
-      </div>
+      {/* Neutral background — the live product provides the visual richness. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-[#F8FAFC]" />
 
       <div className="relative z-10">
         <Hero onSubmitUrl={onSubmitUrl} />
-        <LiveExample />
         <CompetitorComparison />
         <HowItWorks />
         <Comparison />
@@ -78,259 +68,131 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 
 /* ============================== HERO ============================== */
 
-// Peek tiles that wrap around the product mock on tablet+ so the screenshot
-// feels embedded in the content ecosystem instead of floating above it.
-const PEEK_TILES = [
-  {
-    src: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=500&q=75",
-    alt: "News broadcast",
-    cls: "absolute -top-6 -left-10 w-28 sm:w-36 rotate-[-4deg]",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=500&q=75",
-    alt: "Podcast",
-    cls: "absolute -top-10 right-6 w-24 sm:w-32 rotate-[5deg]",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=500&q=75",
-    alt: "TED talk",
-    cls: "absolute -bottom-8 -left-6 w-28 sm:w-36 rotate-[3deg]",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&q=75",
-    alt: "Interview",
-    cls: "absolute -bottom-10 right-0 w-24 sm:w-32 rotate-[-4deg]",
-  },
-];
-
-// Small mobile tiles — many of them, used as background texture only.
-const MOBILE_TILES = [
-  "photo-1495020689067-958852a7765e", // news
-  "photo-1478737270239-2f02b77fc618", // podcast
-  "photo-1505373877841-8d25f7d46678", // ted
-  "photo-1573496359142-b8d87734a5a2", // interview
-  "photo-1485579149621-3123dd979885", // mic
-  "photo-1517245386807-bb43f82c33c4", // documentary
-  "photo-1522202176988-66273c2fd55f", // discussion
-  "photo-1556761175-5973dc0f32e7", // newsroom
-  "photo-1531058020387-3be344556be6", // youtuber
-  "photo-1551817958-d9d86fb29431", // podcast2
-  "photo-1494059980473-813e73ee784b", // talk
-  "photo-1540317580384-e5d43616b9aa", // creator
-  "photo-1492724441997-5dc865305da7", // tv
-  "photo-1581368087028-4f4f5e0c5d6a", // interview2
-  "photo-1551836022-d5d88e9218df", // mic2
-  "photo-1503676260728-1c00da094a0b", // educational
-];
-
 function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
-
   const [value, setValue] = useState("");
-  const [demoOpen, setDemoOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const demoRef = useRef<HTMLDivElement>(null);
   const trimmed = value.trim();
 
-  const focusHeroInput = () => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    setTimeout(() => el.focus(), 350);
-  };
-
   return (
-    <section className="relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
+    <section className="relative">
+      {/* Very subtle content texture, well behind everything. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
         <img
           src={heroCollage.url}
           alt=""
           width={1562}
           height={1007}
-          fetchPriority="high"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-30"
+          className="h-full w-full object-cover object-top opacity-[0.05]"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 via-[#F8FAFC]/85 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 to-[#F8FAFC]" />
       </div>
 
-      <div className="relative mx-auto max-w-3xl px-6 pt-12 pb-14 text-center sm:pt-16 sm:pb-20 min-[1600px]:max-w-4xl min-[1600px]:pt-20">
-        <span
-          className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
-          style={heading}
-        >
-          For Dutch learners who watch YouTube
-        </span>
+      <div className="relative mx-auto max-w-7xl px-6 pt-10 pb-14 sm:pt-14 lg:pb-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,38%)_minmax(0,1fr)] lg:gap-12">
+          {/* ---------- LEFT: promise + actions ---------- */}
+          <div className="max-w-xl">
+            <span
+              className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
+              style={heading}
+            >
+              For Dutch learners who watch YouTube
+            </span>
 
-        <h1
-          className="text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem]"
-          style={heading}
-        >
-          Paste any Dutch video. Understand every sentence.
-        </h1>
+            <h1
+              className="text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[2.75rem]"
+              style={heading}
+            >
+              Watch real Dutch.
+              <br />
+              Never get lost.
+            </h1>
 
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-700 sm:text-lg">
-          Tap any sentence to get an instant explanation in context: meaning, expressions and grammar.
-        </p>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:text-lg">
+              Tap anything you don't understand. NativeFlow explains it in context.
+            </p>
 
-        <form
-          className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-2.5 sm:flex-row sm:items-center sm:rounded-full sm:border sm:border-slate-200 sm:bg-white sm:p-1.5 sm:shadow-sm"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!trimmed) return;
-            track("marketing_hero_url_submitted", {});
-            onSubmitUrl(trimmed);
-          }}
-        >
-          <div className="relative flex-1">
-            <Youtube className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-            <input
-              ref={inputRef}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              aria-label="Paste a Dutch YouTube video link"
-              placeholder="Paste a Dutch YouTube link…"
-              inputMode="url"
-              autoComplete="off"
-              className="h-12 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary sm:border-transparent sm:shadow-none sm:focus:border-transparent"
-            />
+            {/* Mobile / small-tablet primary action — scroll to the live demo below. */}
+            <div className="mt-7 lg:hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  track("demo_cta_clicked", { target: "hero_try_demo", placement: "hero" });
+                  demoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
+                style={heading}
+              >
+                <MousePointerClick className="h-4 w-4" />
+                Try the demo
+              </button>
+              <p className="mt-2.5 text-xs text-slate-500">No account needed.</p>
+            </div>
+
+            {/* Desktop cue — the demo itself is the action. */}
+            <p
+              className="mt-7 hidden items-center gap-2 text-sm font-semibold text-primary lg:inline-flex"
+              style={heading}
+            >
+              <MousePointerClick className="h-4 w-4" />
+              Tap a subtitle to understand it. No account needed.
+            </p>
+
+            {/* Secondary: bring your own video. */}
+            <div className="mt-8 border-t border-slate-200 pt-6">
+              <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
+              <form
+                className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!trimmed) return;
+                  track("marketing_hero_url_submitted", {});
+                  onSubmitUrl(trimmed);
+                }}
+              >
+                <div className="relative flex-1">
+                  <Youtube className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    ref={inputRef}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    aria-label="Paste a Dutch YouTube link"
+                    placeholder="Paste a Dutch YouTube link…"
+                    inputMode="url"
+                    autoComplete="off"
+                    className="h-11 w-full rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary disabled:opacity-50"
+                  style={heading}
+                  disabled={!trimmed}
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  Watch
+                </button>
+              </form>
+            </div>
           </div>
-          <button
-            type="submit"
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
-            style={heading}
-            disabled={!trimmed}
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-            Watch and learn
-          </button>
-        </form>
 
-        <div className="mt-3.5 flex justify-center">
-          <button
-            type="button"
-            onClick={() => {
-              track("marketing_cta_clicked", { target: "watch_demo_modal" });
-              setDemoOpen(true);
-            }}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white/70 px-6 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
-            style={heading}
-          >
-            <MousePointerClick className="h-4 w-4" />
-            Watch demo
-          </button>
-        </div>
-
-        <p className="mt-3 text-xs text-slate-500">No account needed to try it</p>
-      </div>
-
-      {demoOpen && (
-        <DemoModal
-          onClose={() => setDemoOpen(false)}
-          onTryOwn={() => {
-            setDemoOpen(false);
-            track("marketing_cta_clicked", { target: "demo_modal_try_own" });
-            requestAnimationFrame(focusHeroInput);
-          }}
-        />
-      )}
-    </section>
-  );
-}
-
-/* ============================== LIVE EXAMPLE (tablet/desktop only) ============================== */
-
-function LiveExample() {
-  return (
-    <section className="hidden md:block" aria-label="Live example">
-      <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
-        <h2
-          className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
-          style={heading}
-        >
-          Live example — tap a sentence
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-center text-base text-slate-600">
-          Try the real experience right here. No account needed.
-        </p>
-        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-          <iframe
-            src={DEMO_EMBED_SRC}
-            title="NativeFlow live example"
-            className="h-[65vh] min-h-[420px] w-full border-0"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          />
+          {/* ---------- RIGHT (desktop) / BELOW (mobile): the single live demo ---------- */}
+          <div ref={demoRef} id="live-demo" className="scroll-mt-20">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+              <iframe
+                src={DEMO_EMBED_SRC}
+                title="NativeFlow live demo"
+                loading="lazy"
+                className="h-[70vh] min-h-[440px] w-full border-0 lg:h-[min(72vh,620px)]"
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
-
-/* ============================== DEMO MODAL ============================== */
-
-function DemoModal({ onClose, onTryOwn }: { onClose: () => void; onTryOwn: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label="NativeFlow interactive demo"
-    >
-      <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="relative flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
-          <span className="text-sm font-semibold text-slate-900" style={heading}>
-            Try it — tap any sentence
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close demo"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-hidden bg-slate-50">
-          <iframe
-            src={DEMO_EMBED_SRC}
-            title="NativeFlow interactive demo"
-            className="h-full min-h-[50vh] w-full border-0"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          />
-        </div>
-
-        <div className="border-t border-slate-200 bg-white px-4 py-3">
-          <button
-            type="button"
-            onClick={onTryOwn}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98]"
-            style={heading}
-          >
-            <Youtube className="h-4 w-4" />
-            Try with your own video
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
