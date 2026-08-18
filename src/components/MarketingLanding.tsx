@@ -23,6 +23,10 @@ import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
 
+/* Demo embed used by both the modal (mobile) and the inline example (tablet+). */
+const DEMO_EMBED_SRC =
+  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+
 /**
  * Mission-first landing — philosophy over features.
  * NativeFlow is a bridge between authentic content and language growth.
