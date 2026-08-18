@@ -71,6 +71,7 @@ import {
 } from "@/lib/learner-level";
 
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
+import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -2046,28 +2047,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // constant in wall-clock time across 0.25×–2× speeds.
   const [playbackRate, setPlaybackRate] = useState(1);
 
-  // Wall-clock lookahead: the highlight switches ~120ms before the speaker
-  // reaches the next sentence at any playback rate. Convert to video-time by
-  // multiplying by the current rate (slower playback → smaller video-time
-  // lookahead, faster → larger, so perceived earliness stays the same).
-  const SYNC_OFFSET_WALL_SECONDS = 0.12;
-
+  // Selection + timing offset live in src/lib/subtitle-sync.ts (single source
+  // of truth — never re-implement or re-offset this per component).
   const playingId = useMemo(() => {
     if (!sentences.length) return null;
     if (manualActiveId !== null && performance.now() < manualUntilRef.current) {
       return manualActiveId;
     }
-    const rate = playbackRate > 0 ? playbackRate : 1;
-    const adjustedTime = currentTime + SYNC_OFFSET_WALL_SECONDS * rate;
-    // Pick the last sentence whose start time has been reached. This avoids
-    // brief "no active sentence" gaps between sentences when endTime < next
-    // sentence's offset.
-    let candidate: number | null = null;
-    for (const s of sentences) {
-      if (s.offset > adjustedTime) break;
-      candidate = s.id;
-    }
-    return candidate;
+    return activeSentenceId(sentences, currentTime, playbackRate);
   }, [currentTime, sentences, manualActiveId, playbackRate]);
 
   // Auto-scroll active sentence into view, but pause while the user scrolls.
