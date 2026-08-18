@@ -178,7 +178,7 @@ function UrlForm({
   const trimmed = value.trim();
   return (
     <>
-      <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
+      <p className="text-sm font-medium text-white/75">Have your own Dutch video?</p>
       <form
         className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
