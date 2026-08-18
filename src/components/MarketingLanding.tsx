@@ -22,10 +22,11 @@ import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
+import { StaticProductPreview } from "@/components/StaticProductPreview";
 
-/* The one and only live demo — real app, embedded. */
-const DEMO_EMBED_SRC =
-  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+/* The one and only interactive demo destination — the real app with a Dutch video. */
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
+
 
 /**
  * Mission-first landing — philosophy over features.
@@ -71,8 +72,7 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const demoRef = useRef<HTMLDivElement>(null);
-  const trimmed = value.trim();
+
 
   return (
     <section className="relative">
@@ -112,87 +112,106 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               Tap anything you don't understand. NativeFlow explains it in context.
             </p>
 
-            {/* Mobile / small-tablet primary action — scroll to the live demo below. */}
-            <div className="mt-7 lg:hidden">
+            {/* Secondary: bring your own video (desktop — left column). */}
+            <div className="mt-8 hidden border-t border-slate-200 pt-6 lg:block">
+              <UrlForm
+                value={value}
+                setValue={setValue}
+                inputRef={inputRef}
+                onSubmitUrl={onSubmitUrl}
+              />
+            </div>
+          </div>
+
+          {/* ---------- RIGHT (desktop) / BELOW (mobile): static preview + demo CTA ---------- */}
+          <div className="min-w-0">
+            <StaticProductPreview />
+
+            <div className="mt-5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
               <button
                 type="button"
                 onClick={() => {
                   track("demo_cta_clicked", { target: "hero_try_demo", placement: "hero" });
-                  demoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  onSubmitUrl(DEMO_VIDEO_URL);
                 }}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
                 style={heading}
               >
                 <MousePointerClick className="h-4 w-4" />
-                Try the demo
+                Try the interactive demo
               </button>
-              <p className="mt-2.5 text-xs text-slate-500">No account needed.</p>
+              <p className="text-xs text-slate-500">No account needed.</p>
             </div>
 
-            {/* Desktop cue — the demo itself is the action. */}
-            <p
-              className="mt-7 hidden items-center gap-2 text-sm font-semibold text-primary lg:inline-flex"
-              style={heading}
-            >
-              <MousePointerClick className="h-4 w-4" />
-              Tap a subtitle to understand it. No account needed.
-            </p>
-
-            {/* Secondary: bring your own video. */}
-            <div className="mt-8 border-t border-slate-200 pt-6">
-              <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
-              <form
-                className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!trimmed) return;
-                  track("marketing_hero_url_submitted", {});
-                  onSubmitUrl(trimmed);
-                }}
-              >
-                <div className="relative flex-1">
-                  <Youtube className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    ref={inputRef}
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    aria-label="Paste a Dutch YouTube link"
-                    placeholder="Paste a Dutch YouTube link…"
-                    inputMode="url"
-                    autoComplete="off"
-                    className="h-11 w-full rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary disabled:opacity-50"
-                  style={heading}
-                  disabled={!trimmed}
-                >
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                  Watch
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* ---------- RIGHT (desktop) / BELOW (mobile): the single live demo ---------- */}
-          <div ref={demoRef} id="live-demo" className="scroll-mt-20">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-              <iframe
-                src={DEMO_EMBED_SRC}
-                title="NativeFlow live demo"
-                loading="lazy"
-                className="h-[70vh] min-h-[440px] w-full border-0 lg:h-[min(72vh,620px)]"
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            {/* Secondary: bring your own video (mobile / tablet). */}
+            <div className="mt-7 border-t border-slate-200 pt-6 lg:hidden">
+              <UrlForm
+                value={value}
+                setValue={setValue}
+                inputRef={inputRef}
+                onSubmitUrl={onSubmitUrl}
               />
             </div>
           </div>
+
         </div>
       </div>
     </section>
   );
 }
+
+function UrlForm({
+  value,
+  setValue,
+  inputRef,
+  onSubmitUrl,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  onSubmitUrl: (url: string) => void;
+}) {
+  const trimmed = value.trim();
+  return (
+    <>
+      <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
+      <form
+        className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!trimmed) return;
+          track("marketing_hero_url_submitted", {});
+          onSubmitUrl(trimmed);
+        }}
+      >
+        <div className="relative flex-1">
+          <Youtube className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            aria-label="Paste a Dutch YouTube link"
+            placeholder="Paste a Dutch YouTube link…"
+            inputMode="url"
+            autoComplete="off"
+            className="h-11 w-full rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary"
+          />
+        </div>
+        <button
+          type="submit"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary disabled:opacity-50"
+          style={heading}
+          disabled={!trimmed}
+        >
+          <Play className="h-3.5 w-3.5 fill-current" />
+          Watch
+        </button>
+      </form>
+    </>
+  );
+}
+
+
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
