@@ -3590,26 +3590,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
 
 
-              {/* Transcript — kept fully functional, but secondary: opened on
-                  demand so it never dominates the page. */}
-              <div className="mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !transcriptOpen;
-                    setTranscriptOpen(next);
-                    if (next) trackWatch("transcript_opened", { video_id: videoId });
-                  }}
-                  aria-expanded={transcriptOpen}
-                  className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium text-foreground shadow-sm hover:bg-muted"
-                >
-                  Transcript
-                  <ChevronDown
-                    aria-hidden
-                    className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-150 ${transcriptOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                <aside className={`relative ${transcriptOpen ? "flex" : "hidden"} max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]`}>
+              {/* Transcript — windowed mode's primary reading surface: always
+                  visible directly under the video, never collapsed. Hidden in
+                  fullscreen, where captions overlay the video instead. */}
+              <div
+                className={`mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px] ${
+                  isFullscreen ? "hidden" : ""
+                }`}
+              >
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]">
+
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
                       <TranscriptQualityBanner
