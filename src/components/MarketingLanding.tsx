@@ -72,8 +72,7 @@ const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const demoRef = useRef<HTMLDivElement>(null);
-  const trimmed = value.trim();
+
 
   return (
     <section className="relative">
