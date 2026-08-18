@@ -578,5 +578,25 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
         activated: activatedSessions,
         rate: fVisitors > 0 ? activatedSessions / fVisitors : 0,
       },
+      primary: {
+        trackingStartedAt: FUNNEL_TRACKING_START_ISO,
+        coversTrackedPeriod: trackingCoversWindow,
+        visitors: fVisitors,
+        videoOpened: pStarted.size,
+        watched30s: s2.size,
+        explanationRequested: s3.size,
+        continuedAfterExplanation: s4.size,
+        anotherVideoStarted: s5.size,
+      },
+      anonymous: {
+        trackingStartedAt: ANON_TRACKING_START_ISO,
+        unique: anonInWindow.size,
+        newVisitors: anonNew,
+        returningVisitors: anonReturning,
+        returnedAnotherDay,
+        d1: { returned: d1Returned, eligible: d1Eligible },
+        d7: { returned: d7Returned, eligible: d7Eligible },
+      },
+      daily,
     };
   });
