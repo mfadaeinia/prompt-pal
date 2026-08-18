@@ -701,6 +701,33 @@ export type Database = {
         }
         Relationships: []
       }
+      experiment_markers: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          occurred_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feedback_responses: {
         Row: {
           created_at: string
