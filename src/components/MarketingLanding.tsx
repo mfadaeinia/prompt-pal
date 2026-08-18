@@ -83,7 +83,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
           alt=""
           width={1562}
           height={1007}
-          className="h-full w-full object-cover object-top opacity-[0.20]"
+          className="h-full w-full object-cover object-top opacity-[0.70]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 to-[#F8FAFC]" />
       </div>
