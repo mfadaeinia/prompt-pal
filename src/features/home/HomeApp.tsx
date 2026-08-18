@@ -219,7 +219,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const [studyMode, setStudyMode] = useState(true);
   // Experiment: watching is primary. The transcript is an optional layer and
   // the deep explanation only opens when the learner asks for it.
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(true);
+  // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
+  // gone: captions overlay the video and the explanation opens over it.
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+  // Recommendations are NOT in the DOM until the video ends or the learner
+  // scrolls past the completion threshold.
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [scrolledPastThreshold, setScrolledPastThreshold] = useState(false);
+
   const [expressionExpanded, setExpressionExpanded] = useState(false);
   // Auto-follow: in Watch Mode the transcript scrolls with playback. In Learning Mode
   // the spec says auto-follow defaults OFF — the learner drives via sentence taps.
