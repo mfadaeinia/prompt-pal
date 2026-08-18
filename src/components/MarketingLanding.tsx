@@ -62,7 +62,7 @@ export function MarketingLanding({
 
       <div className="relative z-10">
         <Hero onSubmitUrl={onSubmitUrl} />
-
+        <LiveExample />
         <CompetitorComparison />
         <HowItWorks />
         <Comparison />
