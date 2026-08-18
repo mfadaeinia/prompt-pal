@@ -237,32 +237,45 @@ function wordCount(s: string): number {
 
 // Segment via punctuation. May return a few huge segments when the provider
 // returns unpunctuated text — caller decides whether to fall back.
+//
+// SYNC-CRITICAL: `charTime[i]` must line up with `decoded[i]`. HTML entities are
+// therefore decoded PER CHUNK, before the char→time table is built. Decoding the
+// joined string afterwards shortened it (e.g. "&#39;" → "'") and shifted every
+// later character against its timestamp, which desynchronized the whole
+// transcript progressively.
 function segmentByPunctuation(
   cleaned: RawChunk[]
 ): TranscriptSentence[] {
-  let joined = "";
+  let decoded = "";
   const charTime: number[] = [];
   for (let i = 0; i < cleaned.length; i++) {
     const c = cleaned[i];
+    const text = decodeEntities(c.text);
     if (i > 0) {
-      joined += " ";
-      charTime.push(cleaned[i - 1].offset + cleaned[i - 1].duration);
+      // The separating space belongs to the START of the upcoming chunk, not to
+      // the end of the previous cue: using the previous cue's end time made
+      // every sentence that begins on a chunk boundary start late.
+      decoded += " ";
+      charTime.push(c.offset);
     }
-    const len = c.text.length;
+    const len = text.length;
     for (let j = 0; j < len; j++) {
       charTime.push(c.offset + (len > 0 ? (j / len) * c.duration : 0));
     }
-    joined += c.text;
+    decoded += text;
   }
 
-  const decoded = decodeEntities(joined);
   const out: TranscriptSentence[] = [];
   let id = 0;
 
   const pushSeg = (startChar: number, endChar: number) => {
     const text = decoded.slice(startChar, endChar).trim();
     if (!text) return;
-    const startTime = charTime[Math.min(startChar, charTime.length - 1)] ?? 0;
+    // Time the FIRST spoken character, never the leading whitespace/punctuation
+    // that the trim above removes — otherwise the start drifts later.
+    let firstChar = startChar;
+    while (firstChar < endChar && /\s/.test(decoded[firstChar]!)) firstChar++;
+    const startTime = charTime[Math.min(firstChar, charTime.length - 1)] ?? 0;
     out.push({ id: id++, text, offset: startTime, duration: 0, endTime: 0 });
   };
 
