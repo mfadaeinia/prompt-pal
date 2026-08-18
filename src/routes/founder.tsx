@@ -460,6 +460,38 @@ function FilterBar({
           </option>
         ))}
       </select>
+      <div className="mx-2 h-5 w-px bg-slate-200" />
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Device</label>
+      <select
+        value={device}
+        onChange={(e) => onDeviceChange(e.target.value as DeviceFilter)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        <option value="all">All devices</option>
+        <option value="desktop">Desktop</option>
+        <option value="mobile">Mobile</option>
+        <option value="tablet">Tablet</option>
+      </select>
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Experience
+      </label>
+      <select
+        value={experience}
+        onChange={(e) => onExperienceChange(e.target.value as ExperienceFilter)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        <option value="all">All</option>
+        <option value="public">Public</option>
+        <option value="passive_learning_experiment">Passive learning</option>
+      </select>
+      <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <input
+          type="checkbox"
+          checked={internal === "exclude"}
+          onChange={(e) => onInternalChange(e.target.checked ? "exclude" : "include")}
+        />
+        Exclude internal
+      </label>
       <span className="ml-auto text-xs text-slate-400">
         {range.from ? `${range.from.slice(0, 10)} → ${(range.to ?? "now").slice(0, 10)}` : "all time"}
       </span>
