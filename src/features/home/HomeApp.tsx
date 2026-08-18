@@ -2919,6 +2919,42 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     }
   }
 
+  /** Desktop shows the explanation beside the video; mobile keeps the sheet. */
+  const explanationOpen = studyMode && expressionExpanded && !!selected;
+  const sidePanelOpen = explanationOpen && !isMobile;
+
+  function closeExplanation(resume: boolean) {
+    setExpressionExpanded(false);
+    setSelected(null);
+    setFocusExpression(null);
+    manualSelectedRef.current = false;
+    if (resume && pausedForExplanationRef.current) resumeFromHere();
+  }
+
+  const explanationPanelNode = (
+    <ExplanationPanel
+      sentence={selected}
+      entry={selected ? explanationCache[selected.id] : undefined}
+      onClose={() => closeExplanation(false)}
+      onReplay={replaySelected}
+      onResume={resumeFromHere}
+      onSave={() => handleSaveExpression(selected)}
+      isSaved={isSentenceSaved(selected)}
+      justSaved={!!selected && justSavedId === selected.id}
+      saving={saveExpressionMutation.isPending}
+      limitedMode={limitedMode}
+      sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
+      targetLangLabel={targetLang}
+      onSaveExpression={(head, meaning) =>
+        handleSaveSingleExpression(selected, head, meaning)
+      }
+      savedExpressionHeads={savedExpressionHeads}
+      savingExpressionHead={savingExpressionHead}
+      justSavedExpressionHead={justSavedExpressionHead}
+      focusPhrase={focusExpression}
+    />
+  );
+
 
 
 
