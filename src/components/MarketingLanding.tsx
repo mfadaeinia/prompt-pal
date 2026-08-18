@@ -79,14 +79,15 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
       {/* Cinematic tiled mosaic behind the hero only — dimmed for legibility. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
-          className="absolute -inset-8 blur-[6px]"
+          className="absolute -inset-8 blur-[5px]"
           style={{
             backgroundImage: `url(${heroMosaic.url})`,
             backgroundRepeat: "repeat",
             backgroundSize: "760px auto",
+            filter: "contrast(1.45) saturate(1.35) brightness(1.15)",
           }}
         />
-        <div className="absolute inset-0 bg-black/[0.78]" />
+        <div className="absolute inset-0 bg-black/[0.72]" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-[#F8FAFC]" />
       </div>
 
