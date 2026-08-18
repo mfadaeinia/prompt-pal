@@ -3459,7 +3459,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </div>
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
-                  <div className="relative mx-auto aspect-video w-full max-w-full overflow-hidden rounded-xl bg-black md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                  <div
+                    ref={stageRef}
+                    className={`relative mx-auto w-full max-w-full overflow-hidden bg-black ${
+                      isFullscreen
+                        ? "h-full max-w-none rounded-none"
+                        : "aspect-video rounded-xl md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]"
+                    }`}
+                  >
                     {embedSrc && (
                       <iframe
                         ref={iframeRef}
@@ -3470,9 +3477,33 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         allowFullScreen
                       />
                     )}
-                    {/* Synchronized subtitle — fully interactive. Automatic
-                        updates never pause; only explicit taps do. */}
-                    {studyMode && currentSentence && (
+
+                    {/* Fullscreen toggle — our own, so captions and the
+                        explanation stay visible over the video. */}
+                    <button
+                      type="button"
+                      onClick={toggleFullscreen}
+                      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                      className="absolute right-2 top-2 z-20 rounded-lg bg-black/60 p-2 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/80"
+                    >
+                      {isFullscreen ? (
+                        <Minimize className="h-4 w-4" />
+                      ) : (
+                        <Maximize className="h-4 w-4" />
+                      )}
+                    </button>
+
+                    {/* Fullscreen: dim the video while the learner reads. */}
+                    {isFullscreen && explanationOpen && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 z-20 bg-black/60 animate-in fade-in duration-150"
+                      />
+                    )}
+
+                    {/* Captions overlay the video in fullscreen (YouTube-style).
+                        In windowed mode the transcript panel is the surface. */}
+                    {studyMode && currentSentence && (isFullscreen || experiment) && (
                       <VideoSubtitle
                         text={currentSentence.text}
                         highlight={autoExpression?.head ?? null}
@@ -3498,7 +3529,29 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       />
                     )}
 
+                    {/* Fullscreen explanation box — small, top-right, over the
+                        dimmed video. Closing never auto-resumes playback. */}
+                    {isFullscreen && explanationOpen && (
+                      <div className="absolute right-3 top-14 z-30 w-[min(92vw,420px)] max-h-[70%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-right-2 duration-150">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                            Explanation
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => closeExplanation(false)}
+                            aria-label="Close explanation"
+                            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {explanationPanelNode}
+                      </div>
+                    )}
+
                   </div>
+
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
                       <p className="font-medium text-destructive">Playback problem</p>
