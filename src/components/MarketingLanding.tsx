@@ -161,6 +161,59 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   );
 }
 
+function UrlForm({
+  value,
+  setValue,
+  inputRef,
+  onSubmitUrl,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  onSubmitUrl: (url: string) => void;
+}) {
+  const trimmed = value.trim();
+  return (
+    <>
+      <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
+      <form
+        className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!trimmed) return;
+          track("marketing_hero_url_submitted", {});
+          onSubmitUrl(trimmed);
+        }}
+      >
+        <div className="relative flex-1">
+          <Youtube className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            aria-label="Paste a Dutch YouTube link"
+            placeholder="Paste a Dutch YouTube link…"
+            inputMode="url"
+            autoComplete="off"
+            className="h-11 w-full rounded-full border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary"
+          />
+        </div>
+        <button
+          type="submit"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary disabled:opacity-50"
+          style={heading}
+          disabled={!trimmed}
+        >
+          <Play className="h-3.5 w-3.5 fill-current" />
+          Watch
+        </button>
+      </form>
+    </>
+  );
+}
+
+
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section>
