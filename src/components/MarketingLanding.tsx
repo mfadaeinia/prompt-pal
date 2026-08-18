@@ -144,11 +144,11 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
                 <MousePointerClick className="h-4 w-4" />
                 Try the interactive demo
               </button>
-              <p className="text-xs text-slate-500">No account needed.</p>
+              <p className="text-xs text-white/70">No account needed.</p>
             </div>
 
             {/* Secondary: bring your own video (mobile / tablet). */}
-            <div className="mt-7 border-t border-slate-200 pt-6 lg:hidden">
+            <div className="mt-7 border-t border-white/15 pt-6 lg:hidden">
               <UrlForm
                 value={value}
                 setValue={setValue}
