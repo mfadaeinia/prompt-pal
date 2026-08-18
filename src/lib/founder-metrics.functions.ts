@@ -157,11 +157,11 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
     const { from, to, source } = data;
 
     // Pull rows with source columns; date-filter at DB level.
-    const [pv, vs, fb, ea, sx, svRows, le] = await Promise.all([
+    const [pv, vs, fb, ea, sx, svRows, le, pe, anonHistory] = await Promise.all([
       applyDateRange(
         supabaseAdmin
           .from("page_views" as any)
-          .select("session_id,acquisition_source,utm_source,created_at"),
+          .select("session_id,anonymous_id,acquisition_source,utm_source,created_at"),
         from,
         to,
       ),
