@@ -2644,7 +2644,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // selection are independent: resuming must never clear the selected sentence
   // or replace the explanation the learner is reading.
   function resumeFromHere() {
+    // The explanation lives in a drawer that covers the video, so resuming must
+    // also close it — otherwise playback restarts out of sight and the button
+    // feels broken.
+    setExpressionExpanded(false);
     const p = playerRef.current;
+    // Clear any pending "pause at end of sentence" so playback isn't stopped
+    // again immediately after the user asked to continue.
+    pauseAtRef.current = null;
     p?.playVideo?.();
     track("learning_resume", { video_id: videoId });
   }
