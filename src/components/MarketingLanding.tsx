@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { LibraryStrip } from "@/components/LibraryStrip";
-import heroCollage from "@/assets/hero-collage.png.asset.json";
+import heroMosaic from "@/assets/hero-mosaic.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
