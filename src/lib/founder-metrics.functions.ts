@@ -218,6 +218,25 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
         from,
         to,
       ),
+      // Primary funnel events (persisted since FUNNEL_TRACKING_START_ISO).
+      applyDateRange(
+        supabaseAdmin
+          .from("library_events" as any)
+          .select(
+            "session_id,anonymous_id,event_name,metadata,acquisition_source,utm_source,created_at",
+          )
+          .in("event_name", PRIMARY_EVENTS as unknown as string[]),
+        from,
+        to,
+      ),
+      // Anonymous visitor history (needed for return-visit / D1 / D7). Small
+      // table slice: only rows that actually carry an anonymous_id.
+      supabaseAdmin
+        .from("page_views" as any)
+        .select("anonymous_id,created_at")
+        .not("anonymous_id", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(20000),
     ]);
 
     type Row<T> = T & SourceRow;
