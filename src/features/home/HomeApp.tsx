@@ -3892,25 +3892,29 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             </div>
             )}
 
-            {/* You may also like — curated library recommendations. */}
-            <LibraryStrip
-              source="player"
-              title="You may also like"
-              subtitle="Curated videos at a similar level and topic."
-              similarTo={videoId}
-              showLevels={false}
-              showFeatured={false}
-              limit={4}
-              onPick={(u, lang) => {
-                setUrl(u);
-                // `lang` is the language SPOKEN in the video, not the
-                // explanation language — never touch targetLang here.
-                if (lang) setSpokenLang(lang);
-                submitLoad(u, lang);
-                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-              }}
-              className="mt-8"
-            />
+            {/* You may also like — kept OUT of the DOM until the learner
+                finishes the video or scrolls past the completion threshold. */}
+            {showRecommendations && (
+              <LibraryStrip
+                source="player"
+                title="You may also like"
+                subtitle="Curated videos at a similar level and topic."
+                similarTo={videoId}
+                showLevels={false}
+                showFeatured={false}
+                limit={4}
+                onPick={(u, lang) => {
+                  setUrl(u);
+                  // `lang` is the language SPOKEN in the video, not the
+                  // explanation language — never touch targetLang here.
+                  if (lang) setSpokenLang(lang);
+                  submitLoad(u, lang);
+                  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+                }}
+                className="mt-8"
+              />
+            )}
+
 
             {/* After the demo: turn the visitor into a doer. */}
             {isDemo && (
