@@ -237,7 +237,13 @@ function FounderGate() {
             if (res.ok) {
               sessionStorage.setItem(AUTH_KEY, "1");
               sessionStorage.setItem(TOKEN_KEY, res.token);
+              // Persistently mark this browser as internal traffic so founder
+              // usage of the app (any tab) is excluded from experiment metrics.
+              try {
+                localStorage.setItem("nativeflow_debug", "1");
+              } catch {}
               setAuthed(true);
+
 
             } else {
               setError("Incorrect password");
