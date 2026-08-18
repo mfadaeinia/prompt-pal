@@ -81,7 +81,6 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
 const DEMO_VIDEO_ID = "3GHwKtBtdfk";
-const DEMO_LANGUAGE = "Dutch";
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
 const LANG_LABEL_TO_ISO: Record<string, string> = {
@@ -918,7 +917,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
-    setTargetLang(DEMO_LANGUAGE);
+    // Keep the learner's chosen explanation language (default English) — the
+    // demo video is Dutch audio, not Dutch explanations.
     setSpokenLang("nl");
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
@@ -3403,6 +3403,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
                             <SelectItem value="Persian">Persian (فارسی)</SelectItem>
                           </SelectContent>
                         </Select>

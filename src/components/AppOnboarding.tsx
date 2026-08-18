@@ -463,6 +463,7 @@ export function AppOnboarding({
                 <SelectContent>
                   {[
                     { value: "English", label: "English" },
+                    { value: "Dutch", label: "Dutch (Nederlands)" },
                     { value: "Persian", label: "Persian (فارسی)" },
                   ].map((lang) => (
                     <SelectItem key={lang.value} value={lang.value}>
