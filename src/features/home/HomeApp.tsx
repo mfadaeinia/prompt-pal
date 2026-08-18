@@ -71,6 +71,7 @@ import {
 } from "@/lib/learner-level";
 
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
+import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
