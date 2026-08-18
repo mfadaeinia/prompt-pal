@@ -918,7 +918,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   const startDemo = () => {
     setUrl(DEMO_VIDEO_URL);
-    setTargetLang(DEMO_LANGUAGE);
+    // Keep the learner's chosen explanation language (default English) — the
+    // demo video is Dutch audio, not Dutch explanations.
     setSpokenLang("nl");
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
