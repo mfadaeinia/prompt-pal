@@ -132,7 +132,16 @@ function Hero({
   onStartDemo: () => void;
 }) {
   const [value, setValue] = useState("");
+  const [demoOpen, setDemoOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const trimmed = value.trim();
+
+  const focusHeroInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => el.focus(), 350);
+  };
 
   return (
     <section className="relative overflow-hidden">
@@ -148,7 +157,7 @@ function Hero({
         <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 via-[#F8FAFC]/85 to-[#F8FAFC]" />
       </div>
 
-      <div className="relative mx-auto max-w-3xl px-6 pt-12 pb-10 text-center sm:pt-16 sm:pb-12 min-[1600px]:max-w-4xl min-[1600px]:pt-20">
+      <div className="relative mx-auto max-w-3xl px-6 pt-12 pb-14 text-center sm:pt-16 sm:pb-20 min-[1600px]:max-w-4xl min-[1600px]:pt-20">
         <span
           className="mb-5 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
           style={heading}
@@ -179,6 +188,7 @@ function Hero({
           <div className="relative flex-1">
             <Youtube className="pointer-events-none absolute left-4 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
             <input
+              ref={inputRef}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               aria-label="Paste a Dutch YouTube video link"
@@ -199,13 +209,109 @@ function Hero({
           </button>
         </form>
 
+        <div className="mt-3.5 flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              track("marketing_cta_clicked", { target: "watch_demo_modal" });
+              setDemoOpen(true);
+            }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white/70 px-6 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
+            style={heading}
+          >
+            <MousePointerClick className="h-4 w-4" />
+            Watch demo
+          </button>
+        </div>
+
         <p className="mt-3 text-xs text-slate-500">No account needed to try it</p>
       </div>
 
-      <LiveExample onStartDemo={onStartDemo} />
+      {demoOpen && (
+        <DemoModal
+          onClose={() => setDemoOpen(false)}
+          onTryOwn={() => {
+            setDemoOpen(false);
+            track("marketing_cta_clicked", { target: "demo_modal_try_own" });
+            requestAnimationFrame(focusHeroInput);
+          }}
+        />
+      )}
     </section>
   );
 }
+
+/* ============================== DEMO MODAL ============================== */
+
+const DEMO_EMBED_SRC =
+  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+
+function DemoModal({ onClose, onTryOwn }: { onClose: () => void; onTryOwn: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="NativeFlow interactive demo"
+    >
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+      />
+      <div className="relative flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <span className="text-sm font-semibold text-slate-900" style={heading}>
+            Try it — tap any sentence
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close demo"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-hidden bg-slate-50">
+          <iframe
+            src={DEMO_EMBED_SRC}
+            title="NativeFlow interactive demo"
+            className="h-full min-h-[50vh] w-full border-0"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          />
+        </div>
+
+        <div className="border-t border-slate-200 bg-white px-4 py-3">
+          <button
+            type="button"
+            onClick={onTryOwn}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98]"
+            style={heading}
+          >
+            <Youtube className="h-4 w-4" />
+            Try with your own video
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ============================== LIVE EXAMPLE ============================== */
 
