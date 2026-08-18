@@ -4217,6 +4217,7 @@ function ExplanationPanel({
   savedExpressionHeads,
   savingExpressionHead,
   justSavedExpressionHead,
+  focusPhrase,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -4234,13 +4235,16 @@ function ExplanationPanel({
   savedExpressionHeads?: Set<string>;
   savingExpressionHead?: string | null;
   justSavedExpressionHead?: string | null;
+  /** Expression the learner tapped, pre-highlighted in the sentence. */
+  focusPhrase?: string | null;
 }) {
   // Active expression state — only one phrase highlighted at a time in the original sentence.
   // (Hoisted above the early empty-state return so hook order stays stable across renders.)
-  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  const [activePhrase, setActivePhrase] = useState<string | null>(focusPhrase ?? null);
   useEffect(() => {
-    setActivePhrase(null);
-  }, [sentence?.id]);
+    setActivePhrase(focusPhrase ?? null);
+  }, [sentence?.id, focusPhrase]);
+
 
   if (!sentence) {
     // Onboarding/empty state — uses the SAME ExplanationSections renderer as the real panel,
