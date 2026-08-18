@@ -3281,10 +3281,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
             ) : (
             <div
-              className={`grid gap-8 ${
-                studyMode
-                  ? "grid-cols-1"
-                  : "grid-cols-1"
+              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
+                sidePanelOpen
+                  ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,33%)] lg:items-start lg:gap-6"
+                  : ""
               }`}
             >
 
