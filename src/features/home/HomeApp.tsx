@@ -2511,6 +2511,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // subtitle/expression updates never pause anything.
   // ------------------------------------------------------------------
   const [subtitleHintVisible, setSubtitleHintVisible] = useState(false);
+  const [focusExpression, setFocusExpression] = useState<string | null>(null);
+
   const subtitleDiscoveredRef = useRef(false);
   const subtitleHintFiredRef = useRef(false);
   const pausedForExplanationRef = useRef(false);
