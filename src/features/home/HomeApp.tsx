@@ -206,6 +206,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     return "landing";
   });
 
+  // Rendered inside the landing page's demo modal (iframe) — hide site chrome.
+  const [embedded] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("embed") === "1";
+  });
+
   const [tryUrl, setTryUrl] = useState("");
 
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -3010,6 +3016,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
+      {!embedded && (
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4 min-[1600px]:max-w-[1600px] min-[1600px]:px-12">
           <div className="flex min-w-0 items-center gap-2">
@@ -3138,7 +3145,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           </div>
         </div>
       </header>
-
+      )}
 
       {view === "landing" && (
         <MarketingLanding
