@@ -22,10 +22,11 @@ import heroCollage from "@/assets/hero-collage.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
+import { StaticProductPreview } from "@/components/StaticProductPreview";
 
-/* The one and only live demo — real app, embedded. */
-const DEMO_EMBED_SRC =
-  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+/* The one and only interactive demo destination — the real app with a Dutch video. */
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
+
 
 /**
  * Mission-first landing — philosophy over features.
