@@ -2822,12 +2822,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       setExpressionExpanded(true);
       if (!limitedMode) ensureExplanation(s, sentences);
 
-      // EXPERIMENT: playback must never stop because the learner inspected
-      // language. Seek to the sentence and keep playing.
-      seekAndPlay(s);
+      if (experiment) {
+        // EXPERIMENT: playback must never stop because the learner inspected
+        // language. Seek to the sentence and keep playing.
+        seekAndPlay(s);
+      } else {
+        // Default: pause immediately so no audio is missed while reading.
+        seekAndPause(s);
+        pausedForExplanationRef.current = true;
+      }
     } else {
       seekAndPlay(s);
     }
+
     const idx = sentences.findIndex((x) => x.id === s.id);
     clickCountRef.current += 1;
     uniqueClickedRef.current.add(idx);
