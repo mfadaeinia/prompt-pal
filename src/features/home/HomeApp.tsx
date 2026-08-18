@@ -2929,7 +2929,6 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    * Fullscreen mode: it is a small box over a dimmed video. Same content.
    */
   const explanationOpen = studyMode && expressionExpanded && !!selected;
-  const sidePanelOpen = false;
 
   // Track real fullscreen state of the video stage.
   useEffect(() => {
@@ -3366,13 +3365,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </div>
               </div>
             ) : (
-            <div
-              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
-                sidePanelOpen
-                  ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,33%)] lg:items-start lg:gap-6"
-                  : ""
-              }`}
-            >
+            <div className="grid grid-cols-1 gap-8 transition-all duration-200">
 
               <div className="contents lg:flex lg:flex-col lg:gap-8">
 
