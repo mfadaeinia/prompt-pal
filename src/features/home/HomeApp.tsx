@@ -2027,6 +2027,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 window.clearTimeout(playNudgeTimerRef.current);
                 playNudgeTimerRef.current = null;
               }
+            } else if (e.data === YT.PlayerState.ENDED) {
+              // Completion is the only moment recommendations are welcome.
+              setVideoEnded(true);
+              track("video_ended", { video_id: videoId, current_time: t });
             }
           },
         },
