@@ -1749,11 +1749,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           const clickedAt = sentenceClickAtRef.current.get(s.id);
           if (clickedAt != null) {
             const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+            const elapsed = Math.round(now - clickedAt);
             perfLog("first_hint_shown", {
               sentence_id: s.id,
               is_prefetch: !!opts.isPrefetch,
-              elapsed_ms_since_click: Math.round(now - clickedAt),
+              elapsed_ms_since_click: elapsed,
             });
+            if (!opts.isPrefetch) {
+              // time_to_meaning: click → meaning visible (Level 1).
+              trackWatch("explanation_meaning_shown", {
+                video_id: requestVideoId,
+                sentence_id: s.id,
+                sentence_index: idx,
+                time_to_meaning_ms: elapsed,
+              });
+            }
             sentenceClickAtRef.current.delete(s.id);
           }
         }
@@ -2564,6 +2574,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     expression?: string | null,
   ) {
     const cached = !!explanationCache[s.id];
+    // time_to_meaning measurement starts at the explicit help request.
+    sentenceClickAtRef.current.set(
+      s.id,
+      typeof performance !== "undefined" ? performance.now() : Date.now(),
+    );
     manualSelectedRef.current = true;
     manualUntilRef.current = 0;
     setSelected(s);
@@ -2903,6 +2918,42 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       }
     }
   }
+
+  /** Desktop shows the explanation beside the video; mobile keeps the sheet. */
+  const explanationOpen = studyMode && expressionExpanded && !!selected;
+  const sidePanelOpen = explanationOpen && !isMobile;
+
+  function closeExplanation(resume: boolean) {
+    setExpressionExpanded(false);
+    setSelected(null);
+    setFocusExpression(null);
+    manualSelectedRef.current = false;
+    if (resume && pausedForExplanationRef.current) resumeFromHere();
+  }
+
+  const explanationPanelNode = (
+    <ExplanationPanel
+      sentence={selected}
+      entry={selected ? explanationCache[selected.id] : undefined}
+      onClose={() => closeExplanation(false)}
+      onReplay={replaySelected}
+      onResume={resumeFromHere}
+      onSave={() => handleSaveExpression(selected)}
+      isSaved={isSentenceSaved(selected)}
+      justSaved={!!selected && justSavedId === selected.id}
+      saving={saveExpressionMutation.isPending}
+      limitedMode={limitedMode}
+      sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
+      targetLangLabel={targetLang}
+      onSaveExpression={(head, meaning) =>
+        handleSaveSingleExpression(selected, head, meaning)
+      }
+      savedExpressionHeads={savedExpressionHeads}
+      savingExpressionHead={savingExpressionHead}
+      justSavedExpressionHead={justSavedExpressionHead}
+      focusPhrase={focusExpression}
+    />
+  );
 
 
 
@@ -3266,10 +3317,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
             ) : (
             <div
-              className={`grid gap-8 ${
-                studyMode
-                  ? "grid-cols-1"
-                  : "grid-cols-1"
+              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
+                sidePanelOpen
+                  ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,33%)] lg:items-start lg:gap-6"
+                  : ""
               }`}
             >
 
@@ -3719,49 +3770,31 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
               </div>
 
-              {/* Explanations live in one drawer on every screen size — never
-                  stacked beneath the video. */}
-              {studyMode && (
-                <Drawer
-                  open={expressionExpanded && !!selected}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setExpressionExpanded(false);
-                      setSelected(null);
-                      setFocusExpression(null);
-                      manualSelectedRef.current = false;
-                      // Dismissing the explanation resumes the video the tap paused.
-                      if (pausedForExplanationRef.current) resumeFromHere();
-                    }
+              {/* Desktop: explanation lives in a right-side panel next to the
+                  video — no overlay, video stays visible and playable. */}
+              {sidePanelOpen && (
+                <aside
+                  aria-label="Sentence explanation"
+                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
+                >
+                  {explanationPanelNode}
+                </aside>
+              )}
 
+              {/* Mobile / tablet: bottom sheet. */}
+              {studyMode && isMobile && (
+                <Drawer
+                  open={explanationOpen}
+                  onOpenChange={(open) => {
+                    // Dismissing the explanation resumes the video the tap paused.
+                    if (!open) closeExplanation(true);
                   }}
                   shouldScaleBackground={false}
                 >
-                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none lg:mx-auto lg:max-w-[900px]">
+                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none">
                     {/* The Drawer primitive renders its own handle bar at the top. */}
                     <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
-                      <ExplanationPanel
-                        sentence={selected}
-                        entry={
-                          selected ? explanationCache[selected.id] : undefined
-                        }
-                        onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
-                        onReplay={replaySelected}
-                        onResume={resumeFromHere}
-                        onSave={() => handleSaveExpression(selected)}
-                        isSaved={isSentenceSaved(selected)}
-                        justSaved={!!selected && justSavedId === selected.id}
-                        saving={saveExpressionMutation.isPending}
-                        limitedMode={limitedMode}
-                        sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
-                        targetLangLabel={targetLang}
-                        onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
-                        savedExpressionHeads={savedExpressionHeads}
-                        savingExpressionHead={savingExpressionHead}
-                        justSavedExpressionHead={justSavedExpressionHead}
-                        focusPhrase={focusExpression}
-
-                      />
+                      {explanationPanelNode}
                     </div>
                   </DrawerContent>
                 </Drawer>
@@ -4325,7 +4358,9 @@ function ExplanationPanel({
   const ready = entry && entry.status === "ready" ? entry : null;
   const isLoading = !entry || entry.status === "loading";
   const error = entry && entry.status === "error" ? entry.error : null;
-  const saveDisabled = saving || isSaved || !ready;
+  void saving;
+  void isSaved;
+  void onSave;
   const srcLabel = sourceLangLabel || "Original";
   const tgtLabel = targetLangLabel || "English";
   void tgtLabel;
@@ -4369,30 +4404,8 @@ function ExplanationPanel({
           >
             <Repeat className="h-3.5 w-3.5" /> Replay
           </Button>
-          {!limitedMode && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSave}
-              disabled={saveDisabled}
-              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-              title={
-                isSaved
-                  ? "Already in My Library"
-                  : ready
-                    ? "Save to My Library"
-                    : "Wait for explanation to load"
-              }
-            >
-              {justSaved ? (
-                <><Check className="h-3.5 w-3.5" /> Saved</>
-              ) : isSaved ? (
-                <><BookmarkCheck className="h-3.5 w-3.5" /> In Library</>
-              ) : (
-                <><Bookmark className="h-3.5 w-3.5" /> Save</>
-              )}
-            </Button>
-          )}
+          {/* Save intentionally omitted here — the explanation panel stays a
+              comprehension surface; expressions can still be saved inline. */}
         </div>
       </div>
 
