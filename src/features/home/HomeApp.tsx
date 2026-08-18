@@ -3775,7 +3775,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               {sidePanelOpen && (
                 <aside
                   aria-label="Sentence explanation"
-                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-sm"
+                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
                 >
                   {explanationPanelNode}
                 </aside>
