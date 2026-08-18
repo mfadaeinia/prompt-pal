@@ -2501,6 +2501,99 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     });
   }
 
+  // ------------------------------------------------------------------
+  // CORE PUBLIC EXPERIMENT — on-demand contextual comprehension.
+  // Every synchronized subtitle is an interaction surface: tapping it pauses
+  // playback and explains the sentence that was just spoken. Automatic
+  // subtitle/expression updates never pause anything.
+  // ------------------------------------------------------------------
+  const [subtitleHintVisible, setSubtitleHintVisible] = useState(false);
+  const subtitleDiscoveredRef = useRef(false);
+  const subtitleHintFiredRef = useRef(false);
+  const pausedForExplanationRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      subtitleDiscoveredRef.current =
+        localStorage.getItem(SUBTITLE_DISCOVERED_KEY) === "1";
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    subtitleHintFiredRef.current = false;
+    setSubtitleHintVisible(false);
+    pausedForExplanationRef.current = false;
+  }, [videoId]);
+
+  // First-time discovery hint: once per browser, a few seconds, right above the
+  // subtitle. Non-blocking, no dismissal required.
+  useEffect(() => {
+    if (experiment || !studyMode) return;
+    if (subtitleDiscoveredRef.current || subtitleHintFiredRef.current) return;
+    if (!currentSentence || !videoId) return;
+    subtitleHintFiredRef.current = true;
+    setSubtitleHintVisible(true);
+    trackWatch("subtitle_hint_shown", { video_id: videoId });
+    const t = window.setTimeout(() => setSubtitleHintVisible(false), 6000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSentence, videoId, studyMode, experiment]);
+
+  function markSubtitleDiscovered() {
+    setSubtitleHintVisible(false);
+    if (subtitleDiscoveredRef.current) return;
+    subtitleDiscoveredRef.current = true;
+    try {
+      localStorage.setItem(SUBTITLE_DISCOVERED_KEY, "1");
+    } catch {}
+  }
+
+  /**
+   * Explicit help request from the video subtitle.
+   * `source: "sentence"` → explain the whole sentence in context.
+   * `source: "expression"` → explain the highlighted expression in that context.
+   */
+  function requestSubtitleExplanation(
+    s: TranscriptSentence,
+    source: "sentence" | "expression",
+    expression?: string | null,
+  ) {
+    const cached = !!explanationCache[s.id];
+    manualSelectedRef.current = true;
+    manualUntilRef.current = 0;
+    setSelected(s);
+    setExpressionExpanded(true);
+    setFocusExpression(source === "expression" ? expression ?? null : null);
+    if (!limitedMode) ensureExplanation(s, sentences);
+    // The learner signalled a comprehension problem — give them reading time.
+    if (!experiment) {
+      pauseAtRef.current = null;
+      playerRef.current?.pauseVideo?.();
+      pausedForExplanationRef.current = true;
+    }
+    markSubtitleDiscovered();
+    const idx = sentences.findIndex((x) => x.id === s.id);
+    const common = {
+      video_id: videoId,
+      sentence_index: idx,
+      sentence_id: s.id,
+      playback_time: Math.round(currentTime),
+      user_id: userIdRef.current ?? null,
+      session_id: sessionIdRef.current,
+      cached,
+    };
+    if (source === "expression") {
+      trackWatch("highlighted_expression_clicked", {
+        ...common,
+        expression: expression ?? null,
+      });
+    } else {
+      trackWatch("subtitle_explanation_requested", common);
+    }
+  }
+
+
+
   /** Optional deep dive. Never pauses playback. */
   function openExpressionDetails() {
     if (!autoSentence) return;
