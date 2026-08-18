@@ -93,7 +93,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
 
 
       <div className="relative mx-auto max-w-7xl px-6 pt-10 pb-14 sm:pt-14 lg:pb-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,38%)_minmax(0,1fr)] lg:gap-12">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,45%)_minmax(0,55%)] lg:gap-12">
           {/* ---------- LEFT: promise + actions ---------- */}
           <div className="max-w-xl">
             <span
@@ -116,23 +116,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               Tap anything you don't understand. NativeFlow explains it in context.
             </p>
 
-            {/* Secondary: bring your own video (desktop — left column). */}
-            <div className="mt-8 hidden border-t border-white/15 pt-6 lg:block">
-              <UrlForm
-                value={value}
-                setValue={setValue}
-                inputRef={inputRef}
-                onSubmitUrl={onSubmitUrl}
-              />
-            </div>
-          </div>
-
-
-          {/* ---------- RIGHT (desktop) / BELOW (mobile): static preview + demo CTA ---------- */}
-          <div className="min-w-0">
-            <StaticProductPreview />
-
-            <div className="mt-5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <div className="mt-7 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
               <button
                 type="button"
                 onClick={() => {
@@ -148,8 +132,8 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               <p className="text-xs text-white/70">No account needed.</p>
             </div>
 
-            {/* Secondary: bring your own video (mobile / tablet). */}
-            <div className="mt-7 border-t border-white/15 pt-6 lg:hidden">
+            {/* Secondary: bring your own video. */}
+            <div className="mt-8 border-t border-white/15 pt-6">
               <UrlForm
                 value={value}
                 setValue={setValue}
@@ -157,6 +141,11 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
                 onSubmitUrl={onSubmitUrl}
               />
             </div>
+          </div>
+
+          {/* ---------- RIGHT (desktop) / BELOW (tablet + mobile): static preview ---------- */}
+          <div className="min-w-0">
+            <StaticProductPreview />
           </div>
 
         </div>
