@@ -237,9 +237,6 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
 
 /* ============================== DEMO MODAL ============================== */
 
-const DEMO_EMBED_SRC =
-  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
-
 function DemoModal({ onClose, onTryOwn }: { onClose: () => void; onTryOwn: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
