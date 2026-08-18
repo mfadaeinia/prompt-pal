@@ -3770,49 +3770,31 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
               </div>
 
-              {/* Explanations live in one drawer on every screen size — never
-                  stacked beneath the video. */}
-              {studyMode && (
-                <Drawer
-                  open={expressionExpanded && !!selected}
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setExpressionExpanded(false);
-                      setSelected(null);
-                      setFocusExpression(null);
-                      manualSelectedRef.current = false;
-                      // Dismissing the explanation resumes the video the tap paused.
-                      if (pausedForExplanationRef.current) resumeFromHere();
-                    }
+              {/* Desktop: explanation lives in a right-side panel next to the
+                  video — no overlay, video stays visible and playable. */}
+              {sidePanelOpen && (
+                <aside
+                  aria-label="Sentence explanation"
+                  className="hidden min-w-0 animate-in fade-in slide-in-from-right-2 duration-200 lg:block lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto rounded-xl border border-border bg-card p-4 shadow-sm"
+                >
+                  {explanationPanelNode}
+                </aside>
+              )}
 
+              {/* Mobile / tablet: bottom sheet. */}
+              {studyMode && isMobile && (
+                <Drawer
+                  open={explanationOpen}
+                  onOpenChange={(open) => {
+                    // Dismissing the explanation resumes the video the tap paused.
+                    if (!open) closeExplanation(true);
                   }}
                   shouldScaleBackground={false}
                 >
-                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none lg:mx-auto lg:max-w-[900px]">
+                  <DrawerContent className="h-[55vh] max-h-[55vh] rounded-t-2xl border-t p-0 focus:outline-none">
                     {/* The Drawer primitive renders its own handle bar at the top. */}
                     <div className="flex-1 overflow-y-auto px-4 pb-6 pt-3">
-                      <ExplanationPanel
-                        sentence={selected}
-                        entry={
-                          selected ? explanationCache[selected.id] : undefined
-                        }
-                        onClose={() => { setExpressionExpanded(false); setSelected(null); manualSelectedRef.current = false; }}
-                        onReplay={replaySelected}
-                        onResume={resumeFromHere}
-                        onSave={() => handleSaveExpression(selected)}
-                        isSaved={isSentenceSaved(selected)}
-                        justSaved={!!selected && justSavedId === selected.id}
-                        saving={saveExpressionMutation.isPending}
-                        limitedMode={limitedMode}
-                        sourceLangLabel={languageLabel(transcriptLanguage || spokenLang)}
-                        targetLangLabel={targetLang}
-                        onSaveExpression={(head, meaning) => handleSaveSingleExpression(selected, head, meaning)}
-                        savedExpressionHeads={savedExpressionHeads}
-                        savingExpressionHead={savingExpressionHead}
-                        justSavedExpressionHead={justSavedExpressionHead}
-                        focusPhrase={focusExpression}
-
-                      />
+                      {explanationPanelNode}
                     </div>
                   </DrawerContent>
                 </Drawer>
