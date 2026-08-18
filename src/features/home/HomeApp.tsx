@@ -2690,7 +2690,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (studyMode) {
       manualSelectedRef.current = true;
       setSelected(s);
+      // Clicking a sentence must always reveal the explanation surface.
+      setExpressionExpanded(true);
       if (!limitedMode) ensureExplanation(s, sentences);
+
       // EXPERIMENT: playback must never stop because the learner inspected
       // language. Seek to the sentence and keep playing.
       seekAndPlay(s);
