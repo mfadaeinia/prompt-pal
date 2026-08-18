@@ -629,8 +629,14 @@ function FounderPage() {
           preset={preset}
           source={source}
           range={range}
+          device={device}
+          experience={experience}
+          internal={internal}
           onPresetChange={(p) => setPreset(p)}
           onSourceChange={(s) => setSource(s)}
+          onDeviceChange={(d) => setDevice(d)}
+          onExperienceChange={(e) => setExperience(e)}
+          onInternalChange={(i) => setInternal(i)}
           onCustomChange={(r) => {
             setPreset("custom");
             setCustomRange(r);
