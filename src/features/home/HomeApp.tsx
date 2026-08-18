@@ -1812,7 +1812,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     setSelected(null);
     manualSelectedRef.current = false;
     setExpressionExpanded(false);
-    setTranscriptOpen(false);
+    
     lastAutoExpressionRef.current = null;
     lastAutoExplainedRef.current = null;
     viewedExplanationRef.current = new Set();
