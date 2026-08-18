@@ -75,18 +75,21 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
 
 
   return (
-    <section className="relative">
-      {/* Very subtle content texture, well behind everything. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
-        <img
-          src={heroCollage.url}
-          alt=""
-          width={1562}
-          height={1007}
-          className="h-full w-full object-cover object-top opacity-[0.90]"
+    <section className="relative isolate">
+      {/* Cinematic tiled mosaic behind the hero only — dimmed for legibility. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -inset-8 blur-[6px]"
+          style={{
+            backgroundImage: `url(${heroMosaic.url})`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "760px auto",
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-black/[0.78]" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-[#F8FAFC]" />
       </div>
+
 
       <div className="relative mx-auto max-w-7xl px-6 pt-10 pb-14 sm:pt-14 lg:pb-20">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,38%)_minmax(0,1fr)] lg:gap-12">
