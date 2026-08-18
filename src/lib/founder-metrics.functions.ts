@@ -66,9 +66,56 @@ export type FounderMetrics = {
     activated: number;
     rate: number;
   };
+  /**
+   * PRIMARY product funnel (sessions): watch → need help → request explanation
+   * → get unstuck → continue → next video. Rows only exist from
+   * FUNNEL_TRACKING_START_ISO onward.
+   */
+  primary: {
+    trackingStartedAt: string;
+    coversTrackedPeriod: boolean;
+    visitors: number;
+    videoOpened: number;
+    watched30s: number;
+    explanationRequested: number;
+    continuedAfterExplanation: number;
+    anotherVideoStarted: number;
+  };
+  /** Anonymous VISITOR level metrics (anonymous_id). Limited before ANON_TRACKING_START_ISO. */
+  anonymous: {
+    trackingStartedAt: string;
+    unique: number;
+    newVisitors: number;
+    returningVisitors: number;
+    returnedAnotherDay: number;
+    d1: { returned: number; eligible: number };
+    d7: { returned: number; eligible: number };
+  };
+  /** One row per calendar day (UTC date key) for the trend chart. */
+  daily: Array<{
+    date: string;
+    visitors: number;
+    videoStarts: number;
+    watched30s: number;
+    explanations: number;
+    anotherVideo: number;
+  }>;
 };
 
 export const ACTIVATION_DURATION_SECONDS = 30;
+
+/** First day the primary funnel events were persisted to the database. */
+export const FUNNEL_TRACKING_START_ISO = "2026-08-18T00:00:00.000Z";
+/** First day anonymous_id was written to analytics rows. */
+export const ANON_TRACKING_START_ISO = "2026-08-11T00:00:00.000Z";
+
+const PRIMARY_EVENTS = [
+  "video_started",
+  "video_watched_30s",
+  "subtitle_explanation_requested",
+  "video_resumed_after_explanation",
+  "another_video_started",
+] as const;
 
 const FilterInput = z.object({
   from: z.string().datetime().nullable().optional(),
@@ -76,6 +123,10 @@ const FilterInput = z.object({
   source: z
     .enum(["all", "instagram", "facebook", "reddit", "google", "direct", "unknown"])
     .default("all"),
+  device: z.enum(["all", "desktop", "mobile", "tablet"]).default("all"),
+  experience: z.enum(["all", "public", "passive_learning_experiment"]).default("all"),
+  /** exclude = drop rows explicitly flagged internal (founder/debug/test traffic). */
+  internal: z.enum(["exclude", "include"]).default("exclude"),
 });
 
 type SourceRow = { acquisition_source?: string | null; utm_source?: string | null };
