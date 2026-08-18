@@ -119,13 +119,8 @@ const MOBILE_TILES = [
   "photo-1503676260728-1c00da094a0b", // educational
 ];
 
-function Hero({
-  onSubmitUrl,
-  onStartDemo,
-}: {
-  onSubmitUrl: (url: string) => void;
-  onStartDemo: () => void;
-}) {
+function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
+
   const [value, setValue] = useState("");
   const [demoOpen, setDemoOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
