@@ -81,6 +81,9 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
 const DEMO_VIDEO_ID = "3GHwKtBtdfk";
+/** Set once the learner has tapped a subtitle for an explanation. */
+const SUBTITLE_DISCOVERED_KEY = "nativeflow_subtitle_explanation_discovered";
+
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
 const LANG_LABEL_TO_ISO: Record<string, string> = {
@@ -2501,6 +2504,101 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     });
   }
 
+  // ------------------------------------------------------------------
+  // CORE PUBLIC EXPERIMENT — on-demand contextual comprehension.
+  // Every synchronized subtitle is an interaction surface: tapping it pauses
+  // playback and explains the sentence that was just spoken. Automatic
+  // subtitle/expression updates never pause anything.
+  // ------------------------------------------------------------------
+  const [subtitleHintVisible, setSubtitleHintVisible] = useState(false);
+  const [focusExpression, setFocusExpression] = useState<string | null>(null);
+
+  const subtitleDiscoveredRef = useRef(false);
+  const subtitleHintFiredRef = useRef(false);
+  const pausedForExplanationRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      subtitleDiscoveredRef.current =
+        localStorage.getItem(SUBTITLE_DISCOVERED_KEY) === "1";
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    subtitleHintFiredRef.current = false;
+    setSubtitleHintVisible(false);
+    pausedForExplanationRef.current = false;
+  }, [videoId]);
+
+  // First-time discovery hint: once per browser, a few seconds, right above the
+  // subtitle. Non-blocking, no dismissal required.
+  useEffect(() => {
+    if (experiment || !studyMode) return;
+    if (subtitleDiscoveredRef.current || subtitleHintFiredRef.current) return;
+    if (!currentSentence || !videoId) return;
+    subtitleHintFiredRef.current = true;
+    setSubtitleHintVisible(true);
+    trackWatch("subtitle_hint_shown", { video_id: videoId });
+    const t = window.setTimeout(() => setSubtitleHintVisible(false), 6000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSentence, videoId, studyMode, experiment]);
+
+  function markSubtitleDiscovered() {
+    setSubtitleHintVisible(false);
+    if (subtitleDiscoveredRef.current) return;
+    subtitleDiscoveredRef.current = true;
+    try {
+      localStorage.setItem(SUBTITLE_DISCOVERED_KEY, "1");
+    } catch {}
+  }
+
+  /**
+   * Explicit help request from the video subtitle.
+   * `source: "sentence"` → explain the whole sentence in context.
+   * `source: "expression"` → explain the highlighted expression in that context.
+   */
+  function requestSubtitleExplanation(
+    s: TranscriptSentence,
+    source: "sentence" | "expression",
+    expression?: string | null,
+  ) {
+    const cached = !!explanationCache[s.id];
+    manualSelectedRef.current = true;
+    manualUntilRef.current = 0;
+    setSelected(s);
+    setExpressionExpanded(true);
+    setFocusExpression(source === "expression" ? expression ?? null : null);
+    if (!limitedMode) ensureExplanation(s, sentences);
+    // The learner signalled a comprehension problem — give them reading time.
+    if (!experiment) {
+      pauseAtRef.current = null;
+      playerRef.current?.pauseVideo?.();
+      pausedForExplanationRef.current = true;
+    }
+    markSubtitleDiscovered();
+    const idx = sentences.findIndex((x) => x.id === s.id);
+    const common = {
+      video_id: videoId,
+      sentence_index: idx,
+      sentence_id: s.id,
+      playback_time: Math.round(currentTime),
+      user_id: userIdRef.current ?? null,
+      session_id: sessionIdRef.current,
+      cached,
+    };
+    if (source === "expression") {
+      trackWatch("highlighted_expression_clicked", {
+        ...common,
+        expression: expression ?? null,
+      });
+    } else {
+      trackWatch("subtitle_explanation_requested", common);
+    }
+  }
+
+
+
   /** Optional deep dive. Never pauses playback. */
   function openExpressionDetails() {
     if (!autoSentence) return;
@@ -2653,7 +2751,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // again immediately after the user asked to continue.
     pauseAtRef.current = null;
     p?.playVideo?.();
+    if (pausedForExplanationRef.current) {
+      pausedForExplanationRef.current = false;
+      trackWatch("video_resumed_after_explanation", {
+        video_id: videoId,
+        sentence_id: selected?.id ?? null,
+      });
+    }
     track("learning_resume", { video_id: videoId });
+
   }
 
   // Explicitly close the Aha Panel (clears manual selection) and resume playback.
@@ -3261,16 +3367,34 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         allowFullScreen
                       />
                     )}
-                    {/* Synchronized Dutch subtitle — read-only, never pauses. */}
+                    {/* Synchronized subtitle — fully interactive. Automatic
+                        updates never pause; only explicit taps do. */}
                     {studyMode && currentSentence && (
                       <VideoSubtitle
                         text={currentSentence.text}
                         highlight={autoExpression?.head ?? null}
+                        hint={
+                          subtitleHintVisible
+                            ? "Didn't catch that? Tap the subtitle for an explanation."
+                            : null
+                        }
+                        onSentenceClick={
+                          experiment
+                            ? undefined
+                            : () => requestSubtitleExplanation(currentSentence, "sentence")
+                        }
                         onHighlightClick={() =>
-                          openSentenceDetails(currentSentence.id, autoExpression?.head ?? null)
+                          experiment
+                            ? openSentenceDetails(currentSentence.id, autoExpression?.head ?? null)
+                            : requestSubtitleExplanation(
+                                currentSentence,
+                                "expression",
+                                autoExpression?.head ?? null,
+                              )
                         }
                       />
                     )}
+
                   </div>
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
@@ -3604,8 +3728,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     if (!open) {
                       setExpressionExpanded(false);
                       setSelected(null);
+                      setFocusExpression(null);
                       manualSelectedRef.current = false;
+                      // Dismissing the explanation resumes the video the tap paused.
+                      if (pausedForExplanationRef.current) resumeFromHere();
                     }
+
                   }}
                   shouldScaleBackground={false}
                 >
@@ -3631,6 +3759,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         savedExpressionHeads={savedExpressionHeads}
                         savingExpressionHead={savingExpressionHead}
                         justSavedExpressionHead={justSavedExpressionHead}
+                        focusPhrase={focusExpression}
+
                       />
                     </div>
                   </DrawerContent>
@@ -4124,6 +4254,7 @@ function ExplanationPanel({
   savedExpressionHeads,
   savingExpressionHead,
   justSavedExpressionHead,
+  focusPhrase,
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -4141,13 +4272,16 @@ function ExplanationPanel({
   savedExpressionHeads?: Set<string>;
   savingExpressionHead?: string | null;
   justSavedExpressionHead?: string | null;
+  /** Expression the learner tapped, pre-highlighted in the sentence. */
+  focusPhrase?: string | null;
 }) {
   // Active expression state — only one phrase highlighted at a time in the original sentence.
   // (Hoisted above the early empty-state return so hook order stays stable across renders.)
-  const [activePhrase, setActivePhrase] = useState<string | null>(null);
+  const [activePhrase, setActivePhrase] = useState<string | null>(focusPhrase ?? null);
   useEffect(() => {
-    setActivePhrase(null);
-  }, [sentence?.id]);
+    setActivePhrase(focusPhrase ?? null);
+  }, [sentence?.id, focusPhrase]);
+
 
   if (!sentence) {
     // Onboarding/empty state — uses the SAME ExplanationSections renderer as the real panel,
@@ -4224,7 +4358,7 @@ function ExplanationPanel({
               onClick={onResume}
               className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
             >
-              <Play className="h-3.5 w-3.5" /> Resume
+              <Play className="h-3.5 w-3.5" /> Continue watching
             </Button>
           )}
           <Button
