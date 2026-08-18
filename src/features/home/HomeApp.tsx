@@ -2915,9 +2915,53 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     }
   }
 
-  /** Desktop shows the explanation beside the video; mobile keeps the sheet. */
+  /**
+   * Windowed mode: the explanation is a popup inside the transcript panel.
+   * Fullscreen mode: it is a small box over a dimmed video. Same content.
+   */
   const explanationOpen = studyMode && expressionExpanded && !!selected;
-  const sidePanelOpen = explanationOpen && !isMobile;
+  const sidePanelOpen = false;
+
+  // Track real fullscreen state of the video stage.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onChange = () => {
+      const el = document.fullscreenElement;
+      setIsFullscreen(!!el && !!stageRef.current && stageRef.current.contains(el as Node));
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await stageRef.current?.requestFullscreen?.();
+      }
+    } catch {}
+  }
+
+  // Recommendations appear only after completion (video ended) or once the
+  // learner has scrolled past the completion threshold.
+  useEffect(() => {
+    setVideoEnded(false);
+    setScrolledPastThreshold(false);
+  }, [videoId]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      const progress = window.scrollY / max;
+      if (progress >= 0.8) setScrolledPastThreshold(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const showRecommendations = videoEnded || scrolledPastThreshold;
 
   function closeExplanation(resume: boolean) {
     setExpressionExpanded(false);
@@ -2926,6 +2970,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     manualSelectedRef.current = false;
     if (resume && pausedForExplanationRef.current) resumeFromHere();
   }
+
 
   const explanationPanelNode = (
     <ExplanationPanel
