@@ -529,6 +529,9 @@ function FounderPage() {
   const [preset, setPreset] = useState<DatePreset>("last7d");
   const [customRange, setCustomRange] = useState<DateRange>({ from: null, to: null });
   const [source, setSource] = useState<SourceBucket>("all");
+  const [device, setDevice] = useState<DeviceFilter>("all");
+  const [experience, setExperience] = useState<ExperienceFilter>("all");
+  const [internal, setInternal] = useState<InternalFilter>("exclude");
 
   const range = useMemo<DateRange>(
     () => (preset === "custom" ? customRange : presetToRange(preset)),
@@ -536,21 +539,31 @@ function FounderPage() {
   );
   const prevRange = useMemo<DateRange>(() => previousRange(range), [range]);
   const filterPayload = useMemo(
-    () => ({ data: { from: range.from, to: range.to, source } }),
-    [range, source],
+    () => ({ data: { from: range.from, to: range.to, source, device, experience, internal } }),
+    [range, source, device, experience, internal],
   );
   const prevFilterPayload = useMemo(
-    () => ({ data: { from: prevRange.from, to: prevRange.to, source } }),
-    [prevRange, source],
+    () => ({
+      data: { from: prevRange.from, to: prevRange.to, source, device, experience, internal },
+    }),
+    [prevRange, source, device, experience, internal],
   );
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["founder-metrics", range.from, range.to, source],
+    queryKey: ["founder-metrics", range.from, range.to, source, device, experience, internal],
     queryFn: () => fetcher(filterPayload),
     refetchInterval: 30_000,
   });
   const prevQ = useQuery({
-    queryKey: ["founder-metrics-prev", prevRange.from, prevRange.to, source],
+    queryKey: [
+      "founder-metrics-prev",
+      prevRange.from,
+      prevRange.to,
+      source,
+      device,
+      experience,
+      internal,
+    ],
     queryFn: () => fetcher(prevFilterPayload),
     enabled: !!prevRange.from && !!prevRange.to,
     refetchInterval: 60_000,
