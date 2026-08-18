@@ -3997,7 +3997,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             } catch {}
           }}
         />
-      ) : (
+      ) : embedded ? null : (
         <FeedbackFab onClick={openFeedbackManually} />
       )}
       {devPanelEnabled && (
