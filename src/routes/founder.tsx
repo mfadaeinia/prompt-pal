@@ -370,20 +370,36 @@ function formatDelta(curr: number, prev: number): { text: string; dir: "up" | "d
   return { text: `${sign}${pct.toFixed(0)}%`, dir };
 }
 
+export type DeviceFilter = "all" | "desktop" | "mobile" | "tablet";
+export type ExperienceFilter = "all" | "public" | "passive_learning_experiment";
+export type InternalFilter = "exclude" | "include";
+
 function FilterBar({
   preset,
   source,
   range,
+  device,
+  experience,
+  internal,
   onPresetChange,
   onSourceChange,
   onCustomChange,
+  onDeviceChange,
+  onExperienceChange,
+  onInternalChange,
 }: {
   preset: DatePreset;
   source: SourceBucket;
   range: DateRange;
+  device: DeviceFilter;
+  experience: ExperienceFilter;
+  internal: InternalFilter;
   onPresetChange: (p: DatePreset) => void;
   onSourceChange: (s: SourceBucket) => void;
   onCustomChange: (r: DateRange) => void;
+  onDeviceChange: (d: DeviceFilter) => void;
+  onExperienceChange: (e: ExperienceFilter) => void;
+  onInternalChange: (i: InternalFilter) => void;
 }) {
   const fromDate = range.from ? range.from.slice(0, 10) : "";
   const toDate = range.to ? range.to.slice(0, 10) : "";
