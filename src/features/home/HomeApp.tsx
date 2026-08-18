@@ -2574,6 +2574,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     expression?: string | null,
   ) {
     const cached = !!explanationCache[s.id];
+    // time_to_meaning measurement starts at the explicit help request.
+    sentenceClickAtRef.current.set(
+      s.id,
+      typeof performance !== "undefined" ? performance.now() : Date.now(),
+    );
     manualSelectedRef.current = true;
     manualUntilRef.current = 0;
     setSelected(s);
