@@ -2751,7 +2751,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // again immediately after the user asked to continue.
     pauseAtRef.current = null;
     p?.playVideo?.();
+    if (pausedForExplanationRef.current) {
+      pausedForExplanationRef.current = false;
+      trackWatch("video_resumed_after_explanation", {
+        video_id: videoId,
+        sentence_id: selected?.id ?? null,
+      });
+    }
     track("learning_resume", { video_id: videoId });
+
   }
 
   // Explicitly close the Aha Panel (clears manual selection) and resume playback.
