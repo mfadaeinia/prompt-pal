@@ -3523,7 +3523,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     {/* Fullscreen explanation box — small, top-right, over the
                         dimmed video. Closing never auto-resumes playback. */}
                     {isFullscreen && explanationOpen && (
-                      <div className="absolute right-3 top-14 z-30 w-[min(92vw,420px)] max-h-[70%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-right-2 duration-150">
+                      <div className="absolute right-3 top-14 z-30 w-[min(92vw,420px)] max-h-[70%] overflow-y-auto rounded-2xl border border-primary/20 bg-secondary p-3 shadow-2xl animate-in fade-in slide-in-from-right-2 duration-150">
                         <div className="mb-2 flex items-center justify-between gap-2">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                             Explanation
@@ -3856,7 +3856,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         transcript panel — never over the video. Closing it does
                         not resume playback; the learner presses play. */}
                     {!isFullscreen && explanationOpen && (
-                      <div className="absolute inset-x-2 bottom-2 z-20 max-h-[85%] overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
+                      <div className="absolute inset-x-2 bottom-2 z-20 max-h-[85%] overflow-y-auto rounded-2xl border border-primary/20 bg-secondary p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
                         <div className="mb-2 flex items-center justify-between gap-2">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                             Explanation
