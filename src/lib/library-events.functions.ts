@@ -17,6 +17,12 @@ const LogInput = z.object({
     "hint_shown",
     "hint_dismissed",
     "hint_clicked",
+    // Primary product funnel (persisted from 2026-08-18 onward).
+    "video_started",
+    "video_watched_30s",
+    "subtitle_explanation_requested",
+    "video_resumed_after_explanation",
+    "another_video_started",
   ]),
   sessionId: z.string().min(1).max(128),
   anonymousId: z.string().max(128).nullable().optional(),

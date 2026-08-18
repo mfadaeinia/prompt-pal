@@ -66,9 +66,56 @@ export type FounderMetrics = {
     activated: number;
     rate: number;
   };
+  /**
+   * PRIMARY product funnel (sessions): watch → need help → request explanation
+   * → get unstuck → continue → next video. Rows only exist from
+   * FUNNEL_TRACKING_START_ISO onward.
+   */
+  primary: {
+    trackingStartedAt: string;
+    coversTrackedPeriod: boolean;
+    visitors: number;
+    videoOpened: number;
+    watched30s: number;
+    explanationRequested: number;
+    continuedAfterExplanation: number;
+    anotherVideoStarted: number;
+  };
+  /** Anonymous VISITOR level metrics (anonymous_id). Limited before ANON_TRACKING_START_ISO. */
+  anonymous: {
+    trackingStartedAt: string;
+    unique: number;
+    newVisitors: number;
+    returningVisitors: number;
+    returnedAnotherDay: number;
+    d1: { returned: number; eligible: number };
+    d7: { returned: number; eligible: number };
+  };
+  /** One row per calendar day (UTC date key) for the trend chart. */
+  daily: Array<{
+    date: string;
+    visitors: number;
+    videoStarts: number;
+    watched30s: number;
+    explanations: number;
+    anotherVideo: number;
+  }>;
 };
 
 export const ACTIVATION_DURATION_SECONDS = 30;
+
+/** First day the primary funnel events were persisted to the database. */
+export const FUNNEL_TRACKING_START_ISO = "2026-08-18T00:00:00.000Z";
+/** First day anonymous_id was written to analytics rows. */
+export const ANON_TRACKING_START_ISO = "2026-08-11T00:00:00.000Z";
+
+const PRIMARY_EVENTS = [
+  "video_started",
+  "video_watched_30s",
+  "subtitle_explanation_requested",
+  "video_resumed_after_explanation",
+  "another_video_started",
+] as const;
 
 const FilterInput = z.object({
   from: z.string().datetime().nullable().optional(),
@@ -76,6 +123,10 @@ const FilterInput = z.object({
   source: z
     .enum(["all", "instagram", "facebook", "reddit", "google", "direct", "unknown"])
     .default("all"),
+  device: z.enum(["all", "desktop", "mobile", "tablet"]).default("all"),
+  experience: z.enum(["all", "public", "passive_learning_experiment"]).default("all"),
+  /** exclude = drop rows explicitly flagged internal (founder/debug/test traffic). */
+  internal: z.enum(["exclude", "include"]).default("exclude"),
 });
 
 type SourceRow = { acquisition_source?: string | null; utm_source?: string | null };
@@ -106,11 +157,11 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
     const { from, to, source } = data;
 
     // Pull rows with source columns; date-filter at DB level.
-    const [pv, vs, fb, ea, sx, svRows, le] = await Promise.all([
+    const [pv, vs, fb, ea, sx, svRows, le, pe, anonHistory] = await Promise.all([
       applyDateRange(
         supabaseAdmin
           .from("page_views" as any)
-          .select("session_id,acquisition_source,utm_source,created_at"),
+          .select("session_id,anonymous_id,acquisition_source,utm_source,created_at"),
         from,
         to,
       ),
@@ -167,6 +218,25 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
         from,
         to,
       ),
+      // Primary funnel events (persisted since FUNNEL_TRACKING_START_ISO).
+      applyDateRange(
+        supabaseAdmin
+          .from("library_events" as any)
+          .select(
+            "session_id,anonymous_id,event_name,metadata,acquisition_source,utm_source,created_at",
+          )
+          .in("event_name", PRIMARY_EVENTS as unknown as string[]),
+        from,
+        to,
+      ),
+      // Anonymous visitor history (needed for return-visit / D1 / D7). Small
+      // table slice: only rows that actually carry an anonymous_id.
+      supabaseAdmin
+        .from("page_views" as any)
+        .select("anonymous_id,created_at")
+        .not("anonymous_id", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(20000),
     ]);
 
     type Row<T> = T & SourceRow;
@@ -300,6 +370,153 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
       .map(([bucket, set]) => ({ bucket, sessions: set.size }))
       .sort((a, b) => b.sessions - a.sessions);
 
+    // ---- PRIMARY FUNNEL (session level, from persisted watch events) -------
+    type PrimaryRow = Row<{
+      session_id: string | null;
+      anonymous_id: string | null;
+      event_name: string;
+      metadata: Record<string, any> | null;
+      created_at: string;
+    }>;
+    const primaryRowsAll = ((pe.data ?? []) as unknown) as PrimaryRow[];
+    const primaryRows = filter(primaryRowsAll).filter((r) => {
+      const md = r.metadata ?? {};
+      if (data.internal === "exclude" && md.is_internal === true) return false;
+      if (data.device !== "all" && md.device_type && md.device_type !== data.device) return false;
+      if (
+        data.experience !== "all" &&
+        md.experience_type &&
+        md.experience_type !== data.experience
+      )
+        return false;
+      return true;
+    });
+    const sessionsWith = (event: string) =>
+      new Set(
+        primaryRows
+          .filter((r) => r.event_name === event)
+          .map((r) => r.session_id)
+          .filter(Boolean) as string[],
+      );
+    const pStarted = sessionsWith("video_started");
+    const pWatched30 = sessionsWith("video_watched_30s");
+    const pAsked = sessionsWith("subtitle_explanation_requested");
+    const pContinued = sessionsWith("video_resumed_after_explanation");
+    const pAnother = sessionsWith("another_video_started");
+    // Each step is scoped to the sessions that reached the previous step, so
+    // denominators are honest.
+    const inter = (a: Set<string>, b: Set<string>) => {
+      const out = new Set<string>();
+      for (const v of a) if (b.has(v)) out.add(v);
+      return out;
+    };
+    const s2 = inter(pWatched30, pStarted);
+    const s3 = inter(pAsked, s2);
+    const s4 = inter(pContinued, s3);
+    const s5 = inter(pAnother, s3);
+    const trackingCoversWindow = !from || new Date(from).getTime() >= new Date(FUNNEL_TRACKING_START_ISO).getTime();
+
+    // ---- ANONYMOUS VISITORS ------------------------------------------------
+    const anonRowsWindow = filter(
+      ((pv.data ?? []) as unknown) as Row<{ anonymous_id: string | null; created_at: string }>[],
+    );
+    const anonInWindow = new Set(
+      anonRowsWindow.map((r) => r.anonymous_id).filter(Boolean) as string[],
+    );
+    const anonHist = ((anonHistory.data ?? []) as unknown) as Array<{
+      anonymous_id: string;
+      created_at: string;
+    }>;
+    const dayKey = (iso: string) => iso.slice(0, 10);
+    const daysByAnon = new Map<string, Set<string>>();
+    const firstSeenByAnon = new Map<string, number>();
+    for (const r of anonHist) {
+      if (!r.anonymous_id) continue;
+      if (!daysByAnon.has(r.anonymous_id)) daysByAnon.set(r.anonymous_id, new Set());
+      daysByAnon.get(r.anonymous_id)!.add(dayKey(r.created_at));
+      const t = new Date(r.created_at).getTime();
+      const prev = firstSeenByAnon.get(r.anonymous_id);
+      if (prev === undefined || t < prev) firstSeenByAnon.set(r.anonymous_id, t);
+    }
+    const windowStartMs = from ? new Date(from).getTime() : 0;
+    let anonNew = 0;
+    let anonReturning = 0;
+    let returnedAnotherDay = 0;
+    let d1Returned = 0;
+    let d1Eligible = 0;
+    let d7Returned = 0;
+    let d7Eligible = 0;
+    const DAY = 86400_000;
+    const nowMs = Date.now();
+    for (const id of anonInWindow) {
+      const first = firstSeenByAnon.get(id) ?? windowStartMs;
+      if (first >= windowStartMs) anonNew += 1;
+      else anonReturning += 1;
+      const days = daysByAnon.get(id) ?? new Set<string>();
+      if (days.size > 1) returnedAnotherDay += 1;
+      const firstDay = dayKey(new Date(first).toISOString());
+      const hasLater = (minDays: number, maxDays: number) => {
+        for (const d of days) {
+          const diff = Math.round((new Date(d + "T00:00:00.000Z").getTime() - new Date(firstDay + "T00:00:00.000Z").getTime()) / DAY);
+          if (diff >= minDays && diff <= maxDays) return true;
+        }
+        return false;
+      };
+      // Only count visitors who have had the chance to come back.
+      if (nowMs - first >= DAY) {
+        d1Eligible += 1;
+        if (hasLater(1, 1)) d1Returned += 1;
+      }
+      if (nowMs - first >= 7 * DAY) {
+        d7Eligible += 1;
+        if (hasLater(2, 7)) d7Returned += 1;
+      }
+    }
+
+    // ---- DAILY SERIES ------------------------------------------------------
+    const dailyMap = new Map<
+      string,
+      { visitors: Set<string>; videoStarts: Set<string>; watched30s: Set<string>; explanations: number; anotherVideo: number }
+    >();
+    const ensureDay = (d: string) => {
+      let row = dailyMap.get(d);
+      if (!row) {
+        row = {
+          visitors: new Set(),
+          videoStarts: new Set(),
+          watched30s: new Set(),
+          explanations: 0,
+          anotherVideo: 0,
+        };
+        dailyMap.set(d, row);
+      }
+      return row;
+    };
+    for (const r of filter(
+      ((pv.data ?? []) as unknown) as Row<{ session_id: string | null; created_at: string }>[],
+    )) {
+      if (!r.session_id) continue;
+      ensureDay(dayKey(r.created_at)).visitors.add(r.session_id);
+    }
+    for (const r of primaryRows) {
+      const d = ensureDay(dayKey(r.created_at));
+      if (r.event_name === "video_started" && r.session_id) d.videoStarts.add(r.session_id);
+      if (r.event_name === "video_watched_30s" && r.session_id) d.watched30s.add(r.session_id);
+      if (r.event_name === "subtitle_explanation_requested") d.explanations += 1;
+      if (r.event_name === "another_video_started") d.anotherVideo += 1;
+    }
+    const daily = Array.from(dailyMap.entries())
+      .map(([date, v]) => ({
+        date,
+        visitors: v.visitors.size,
+        videoStarts: v.videoStarts.size,
+        watched30s: v.watched30s.size,
+        explanations: v.explanations,
+        anotherVideo: v.anotherVideo,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+
     return {
       windowLabel: windowLabelFor(from, to),
       range: { from: from ?? null, to: to ?? null, source },
@@ -361,5 +578,25 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
         activated: activatedSessions,
         rate: fVisitors > 0 ? activatedSessions / fVisitors : 0,
       },
+      primary: {
+        trackingStartedAt: FUNNEL_TRACKING_START_ISO,
+        coversTrackedPeriod: trackingCoversWindow,
+        visitors: fVisitors,
+        videoOpened: pStarted.size,
+        watched30s: s2.size,
+        explanationRequested: s3.size,
+        continuedAfterExplanation: s4.size,
+        anotherVideoStarted: s5.size,
+      },
+      anonymous: {
+        trackingStartedAt: ANON_TRACKING_START_ISO,
+        unique: anonInWindow.size,
+        newVisitors: anonNew,
+        returningVisitors: anonReturning,
+        returnedAnotherDay,
+        d1: { returned: d1Returned, eligible: d1Eligible },
+        d7: { returned: d7Returned, eligible: d7Eligible },
+      },
+      daily,
     };
   });

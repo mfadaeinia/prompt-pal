@@ -4,6 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getFounderMetrics, type FounderMetrics } from "@/lib/founder-metrics.functions";
 import { SOURCE_BUCKETS, SOURCE_LABELS, type SourceBucket } from "@/lib/source-bucket";
+import {
+  listExperimentMarkers,
+  addExperimentMarker,
+  deleteExperimentMarker,
+  type ExperimentMarker,
+} from "@/lib/experiment-markers.functions";
 import { getLibraryHealth, revalidateLibrary } from "@/lib/library-health.functions";
 
 import {
@@ -370,20 +376,36 @@ function formatDelta(curr: number, prev: number): { text: string; dir: "up" | "d
   return { text: `${sign}${pct.toFixed(0)}%`, dir };
 }
 
+export type DeviceFilter = "all" | "desktop" | "mobile" | "tablet";
+export type ExperienceFilter = "all" | "public" | "passive_learning_experiment";
+export type InternalFilter = "exclude" | "include";
+
 function FilterBar({
   preset,
   source,
   range,
+  device,
+  experience,
+  internal,
   onPresetChange,
   onSourceChange,
   onCustomChange,
+  onDeviceChange,
+  onExperienceChange,
+  onInternalChange,
 }: {
   preset: DatePreset;
   source: SourceBucket;
   range: DateRange;
+  device: DeviceFilter;
+  experience: ExperienceFilter;
+  internal: InternalFilter;
   onPresetChange: (p: DatePreset) => void;
   onSourceChange: (s: SourceBucket) => void;
   onCustomChange: (r: DateRange) => void;
+  onDeviceChange: (d: DeviceFilter) => void;
+  onExperienceChange: (e: ExperienceFilter) => void;
+  onInternalChange: (i: InternalFilter) => void;
 }) {
   const fromDate = range.from ? range.from.slice(0, 10) : "";
   const toDate = range.to ? range.to.slice(0, 10) : "";
@@ -444,6 +466,38 @@ function FilterBar({
           </option>
         ))}
       </select>
+      <div className="mx-2 h-5 w-px bg-slate-200" />
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">Device</label>
+      <select
+        value={device}
+        onChange={(e) => onDeviceChange(e.target.value as DeviceFilter)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        <option value="all">All devices</option>
+        <option value="desktop">Desktop</option>
+        <option value="mobile">Mobile</option>
+        <option value="tablet">Tablet</option>
+      </select>
+      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Experience
+      </label>
+      <select
+        value={experience}
+        onChange={(e) => onExperienceChange(e.target.value as ExperienceFilter)}
+        className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+      >
+        <option value="all">All</option>
+        <option value="public">Public</option>
+        <option value="passive_learning_experiment">Passive learning</option>
+      </select>
+      <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+        <input
+          type="checkbox"
+          checked={internal === "exclude"}
+          onChange={(e) => onInternalChange(e.target.checked ? "exclude" : "include")}
+        />
+        Exclude internal
+      </label>
       <span className="ml-auto text-xs text-slate-400">
         {range.from ? `${range.from.slice(0, 10)} → ${(range.to ?? "now").slice(0, 10)}` : "all time"}
       </span>
@@ -481,6 +535,9 @@ function FounderPage() {
   const [preset, setPreset] = useState<DatePreset>("last7d");
   const [customRange, setCustomRange] = useState<DateRange>({ from: null, to: null });
   const [source, setSource] = useState<SourceBucket>("all");
+  const [device, setDevice] = useState<DeviceFilter>("all");
+  const [experience, setExperience] = useState<ExperienceFilter>("all");
+  const [internal, setInternal] = useState<InternalFilter>("exclude");
 
   const range = useMemo<DateRange>(
     () => (preset === "custom" ? customRange : presetToRange(preset)),
@@ -488,21 +545,31 @@ function FounderPage() {
   );
   const prevRange = useMemo<DateRange>(() => previousRange(range), [range]);
   const filterPayload = useMemo(
-    () => ({ data: { from: range.from, to: range.to, source } }),
-    [range, source],
+    () => ({ data: { from: range.from, to: range.to, source, device, experience, internal } }),
+    [range, source, device, experience, internal],
   );
   const prevFilterPayload = useMemo(
-    () => ({ data: { from: prevRange.from, to: prevRange.to, source } }),
-    [prevRange, source],
+    () => ({
+      data: { from: prevRange.from, to: prevRange.to, source, device, experience, internal },
+    }),
+    [prevRange, source, device, experience, internal],
   );
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ["founder-metrics", range.from, range.to, source],
+    queryKey: ["founder-metrics", range.from, range.to, source, device, experience, internal],
     queryFn: () => fetcher(filterPayload),
     refetchInterval: 30_000,
   });
   const prevQ = useQuery({
-    queryKey: ["founder-metrics-prev", prevRange.from, prevRange.to, source],
+    queryKey: [
+      "founder-metrics-prev",
+      prevRange.from,
+      prevRange.to,
+      source,
+      device,
+      experience,
+      internal,
+    ],
     queryFn: () => fetcher(prevFilterPayload),
     enabled: !!prevRange.from && !!prevRange.to,
     refetchInterval: 60_000,
@@ -568,8 +635,14 @@ function FounderPage() {
           preset={preset}
           source={source}
           range={range}
+          device={device}
+          experience={experience}
+          internal={internal}
           onPresetChange={(p) => setPreset(p)}
           onSourceChange={(s) => setSource(s)}
+          onDeviceChange={(d) => setDevice(d)}
+          onExperienceChange={(e) => setExperience(e)}
+          onInternalChange={(i) => setInternal(i)}
           onCustomChange={(r) => {
             setPreset("custom");
             setCustomRange(r);
@@ -682,6 +755,13 @@ function OverviewSection({
           </span>
         )}
       </div>
+
+      <PrimaryExperimentFunnel m={m} prev={prev} />
+      <AnonymousVisitorsCard m={m} />
+      <DailyTrend m={m} />
+      <ExperimentMarkersSection />
+
+
 
       <div className="space-y-3">
         <SectionHeader
@@ -1098,6 +1178,272 @@ function DiscoveryFunnel({ m }: { m: FounderMetrics }) {
   );
 }
 
+
+/** Minimum sessions per step before percentages are trustworthy. */
+const SMALL_SAMPLE_THRESHOLD = 20;
+
+function PrimaryExperimentFunnel({ m, prev }: { m: FounderMetrics; prev?: FounderMetrics }) {
+  const p = m.primary;
+  const stages = [
+    { key: "videoOpened", label: "Video Opened", value: p.videoOpened, tooltip: "Sessions with a video_started event." },
+    { key: "watched30s", label: "Watched 30s+", value: p.watched30s, tooltip: "Sessions that also reached 30s of playback." },
+    {
+      key: "explanationRequested",
+      label: "Explanation Requested",
+      value: p.explanationRequested,
+      tooltip: "Sessions that tapped a subtitle to ask for help (subtitle_explanation_requested).",
+    },
+    {
+      key: "continuedAfterExplanation",
+      label: "Continued After Explanation",
+      value: p.continuedAfterExplanation,
+      tooltip: "Sessions that resumed playback after reading an explanation.",
+    },
+    {
+      key: "anotherVideoStarted",
+      label: "Another Video Started",
+      value: p.anotherVideoStarted,
+      tooltip: "Sessions that started a second video after asking for help.",
+    },
+  ];
+  const noData = stages.every((s) => s.value === 0);
+  const smallSample = !noData && p.videoOpened < SMALL_SAMPLE_THRESHOLD;
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        title="Primary Experiment Funnel"
+        subtitle="Watch → get stuck → ask for help → keep watching → come back for more. Every step counts unique sessions."
+      />
+      {!p.coversTrackedPeriod && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          These events have only been persisted since {p.trackingStartedAt.slice(0, 10)} — earlier
+          days in this window will read as zero.
+        </div>
+      )}
+      {smallSample && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Small sample ({p.videoOpened} sessions) — treat percentages as directional only.
+        </div>
+      )}
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-2">
+        {noData ? (
+          <p className="text-sm text-slate-500">Awaiting data for this window.</p>
+        ) : (
+          stages.map((s, i) => {
+            const prevVal = i === 0 ? s.value : stages[i - 1].value;
+            const cont = prevVal > 0 ? Math.round((s.value / prevVal) * 100) : null;
+            return (
+              <div key={s.key}>
+                {i > 0 && (
+                  <div className="ml-4 text-xs text-slate-400">
+                    {cont === null ? (
+                      <span className="text-amber-600">↓ awaiting data</span>
+                    ) : (
+                      <>
+                        ↓ {cont}% continue ({100 - cont}% drop-off)
+                      </>
+                    )}
+                  </div>
+                )}
+                <FunnelRow
+                  label={s.label}
+                  unit="session"
+                  value={s.value}
+                  pct={i === 0 ? 100 : (cont ?? 0)}
+                  tooltip={s.tooltip}
+                  awaiting={s.value === 0 && i > 0}
+                />
+              </div>
+            );
+          })
+        )}
+      </div>
+      {prev && (
+        <p className="text-xs text-slate-400">
+          Previous period: {prev.primary.videoOpened} opened · {prev.primary.explanationRequested}{" "}
+          asked for help · {prev.primary.anotherVideoStarted} started another video
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AnonymousVisitorsCard({ m }: { m: FounderMetrics }) {
+  const a = m.anonymous;
+  const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : "—");
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        title="Anonymous Visitors"
+        subtitle={`Visitor-level (anonymous_id). Tracked since ${a.trackingStartedAt.slice(0, 10)}.`}
+      />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {[
+          { label: "Unique visitors", value: String(a.unique) },
+          { label: "New", value: String(a.newVisitors) },
+          { label: "Returning", value: String(a.returningVisitors) },
+          {
+            label: "Returned another day",
+            value: `${a.returnedAnotherDay} (${pct(a.returnedAnotherDay, a.unique)})`,
+          },
+          {
+            label: "D1 / D7 return",
+            value: `${pct(a.d1.returned, a.d1.eligible)} / ${pct(a.d7.returned, a.d7.eligible)}`,
+          },
+        ].map((k) => (
+          <div key={k.label} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500">{k.label}</div>
+            <div className="mt-1 text-lg font-bold tabular-nums text-slate-900">{k.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DailyTrend({ m }: { m: FounderMetrics }) {
+  const rows = m.daily;
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.visitors, r.videoStarts, r.explanations)));
+  if (!rows.length) {
+    return (
+      <div className="space-y-3">
+        <SectionHeader title="Daily Trend" subtitle="Visitors, video starts and explanations per day." />
+        <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
+          Awaiting data for this window.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      <SectionHeader title="Daily Trend" subtitle="Visitors, video starts and explanations per day." />
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-end gap-2 overflow-x-auto pb-2" style={{ height: 160 }}>
+          {rows.map((r) => (
+            <div key={r.date} className="flex flex-col items-center gap-1" title={`${r.date}: ${r.visitors} visitors · ${r.videoStarts} starts · ${r.explanations} explanations`}>
+              <div className="flex h-[120px] items-end gap-0.5">
+                <div className="w-2 rounded-t bg-slate-900" style={{ height: `${(r.visitors / max) * 120}px` }} />
+                <div className="w-2 rounded-t bg-violet-500" style={{ height: `${(r.videoStarts / max) * 120}px` }} />
+                <div className="w-2 rounded-t bg-emerald-500" style={{ height: `${(r.explanations / max) * 120}px` }} />
+              </div>
+              <span className="text-[9px] text-slate-400">{r.date.slice(5)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-4 text-[11px] text-slate-500">
+          <Legend color="bg-slate-900" label="Visitors" />
+          <Legend color="bg-violet-500" label="Video starts" />
+          <Legend color="bg-emerald-500" label="Explanations" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`h-2 w-2 rounded ${color}`} />
+      {label}
+    </span>
+  );
+}
+
+function ExperimentMarkersSection() {
+  const list = useServerFn(listExperimentMarkers);
+  const add = useServerFn(addExperimentMarker);
+  const del = useServerFn(deleteExperimentMarker);
+  const q = useQuery({ queryKey: ["experiment-markers"], queryFn: () => list() });
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [date, setDate] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    try {
+      await add({
+        data: {
+          title: title.trim(),
+          note: note.trim() || null,
+          occurredAt: date ? new Date(date + "T12:00:00").toISOString() : null,
+        },
+      });
+      setTitle("");
+      setNote("");
+      setDate("");
+      await q.refetch();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <SectionHeader
+        title="Experiment Markers"
+        subtitle="Log product/experiment changes so metric shifts can be explained."
+      />
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="What changed?"
+            className="min-w-[220px] flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Note (optional)"
+            className="min-w-[180px] flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+          />
+          <button
+            onClick={submit}
+            disabled={busy || !title.trim()}
+            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+          >
+            {busy ? "Saving…" : "Add marker"}
+          </button>
+        </div>
+        {q.isLoading && <p className="text-sm text-slate-500">Loading markers…</p>}
+        {!q.isLoading && !(q.data ?? []).length && (
+          <p className="text-sm text-slate-500">No markers yet.</p>
+        )}
+        <ul className="space-y-1">
+          {((q.data ?? []) as ExperimentMarker[]).map((mk) => (
+            <li
+              key={mk.id}
+              className="flex items-center gap-2 border-t border-slate-100 py-1.5 text-sm"
+            >
+              <span className="w-24 font-mono text-xs text-slate-500">
+                {mk.occurred_at.slice(0, 10)}
+              </span>
+              <span className="font-medium text-slate-800">{mk.title}</span>
+              {mk.note && <span className="text-slate-500">— {mk.note}</span>}
+              <button
+                onClick={async () => {
+                  await del({ data: { id: mk.id } });
+                  await q.refetch();
+                }}
+                className="ml-auto text-xs text-slate-400 hover:text-red-600"
+              >
+                remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function FunnelRow({
   label,
