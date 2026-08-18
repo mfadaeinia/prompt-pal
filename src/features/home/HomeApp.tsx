@@ -81,6 +81,9 @@ import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
 const DEMO_VIDEO_ID = "3GHwKtBtdfk";
+/** Set once the learner has tapped a subtitle for an explanation. */
+const SUBTITLE_DISCOVERED_KEY = "nativeflow_subtitle_explanation_discovered";
+
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
 const LANG_LABEL_TO_ISO: Record<string, string> = {
