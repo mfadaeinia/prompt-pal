@@ -235,6 +235,34 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   );
 }
 
+/* ============================== LIVE EXAMPLE (tablet/desktop only) ============================== */
+
+function LiveExample() {
+  return (
+    <section className="hidden md:block" aria-label="Live example">
+      <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
+        <h2
+          className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+          style={heading}
+        >
+          Live example — tap a sentence
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-base text-slate-600">
+          Try the real experience right here. No account needed.
+        </p>
+        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+          <iframe
+            src={DEMO_EMBED_SRC}
+            title="NativeFlow live example"
+            className="h-[65vh] min-h-[420px] w-full border-0"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ============================== DEMO MODAL ============================== */
 
 function DemoModal({ onClose, onTryOwn }: { onClose: () => void; onTryOwn: () => void }) {
