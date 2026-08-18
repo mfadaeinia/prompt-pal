@@ -3367,16 +3367,34 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         allowFullScreen
                       />
                     )}
-                    {/* Synchronized Dutch subtitle — read-only, never pauses. */}
+                    {/* Synchronized subtitle — fully interactive. Automatic
+                        updates never pause; only explicit taps do. */}
                     {studyMode && currentSentence && (
                       <VideoSubtitle
                         text={currentSentence.text}
                         highlight={autoExpression?.head ?? null}
+                        hint={
+                          subtitleHintVisible
+                            ? "Didn't catch that? Tap the subtitle for an explanation."
+                            : null
+                        }
+                        onSentenceClick={
+                          experiment
+                            ? undefined
+                            : () => requestSubtitleExplanation(currentSentence, "sentence")
+                        }
                         onHighlightClick={() =>
-                          openSentenceDetails(currentSentence.id, autoExpression?.head ?? null)
+                          experiment
+                            ? openSentenceDetails(currentSentence.id, autoExpression?.head ?? null)
+                            : requestSubtitleExplanation(
+                                currentSentence,
+                                "expression",
+                                autoExpression?.head ?? null,
+                              )
                         }
                       />
                     )}
+
                   </div>
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
