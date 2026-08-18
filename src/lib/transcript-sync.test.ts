@@ -29,3 +29,18 @@ describe("transcript/video sync timing", () => {
     expect(sentences[0].offset).toBeGreaterThan(10);
   });
 });
+describe("entity decoding does not shift timestamps", () => {
+  it("keeps a sentence after an HTML entity aligned with its cue start", () => {
+    const chunks: RawChunk[] = [
+      { text: "Het&#39;s goed.", offset: 0, duration: 2 },
+      { text: "Dat is heel mooi.", offset: 2, duration: 2 },
+      { text: "Nu gaan we verder kijken.", offset: 4, duration: 3 },
+    ];
+    const sentences = buildSentencesFromChunksExport(chunks);
+    // The second and third sentences must start at their own cue, not later.
+    const second = sentences.find((s) => s.text.startsWith("Dat"));
+    const third = sentences.find((s) => s.text.startsWith("Nu"));
+    expect(second?.offset).toBeCloseTo(2, 1);
+    expect(third?.offset).toBeCloseTo(4, 1);
+  });
+});
