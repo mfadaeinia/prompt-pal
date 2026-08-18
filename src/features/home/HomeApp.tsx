@@ -227,6 +227,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
   // gone: captions overlay the video and the explanation opens over it.
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // Transcript is an OPTIONAL layer — never part of the default hierarchy.
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+
   const stageRef = useRef<HTMLDivElement>(null);
   // Recommendations are NOT in the DOM until the video ends or the learner
   // scrolls past the completion threshold.
@@ -2936,6 +2939,23 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    */
   const explanationOpen = studyMode && expressionExpanded && !!selected;
 
+  // Where the explanation renders, based on usable width:
+  //  side   → beside the video (>= 1024px)
+  //  inline → stacked under the video (768–1023px)
+  //  sheet  → bottom sheet (< 768px)
+  const [layoutMode, setLayoutMode] = useState<"side" | "inline" | "sheet">("side");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const compute = () => {
+      const w = window.innerWidth;
+      setLayoutMode(w >= 1024 ? "side" : w >= 768 ? "inline" : "sheet");
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
+
+
   // Track real fullscreen state of the video stage.
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -3372,9 +3392,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </div>
               </div>
             ) : (
-            <div className="grid grid-cols-1 gap-8 transition-all duration-200">
+            <div
+              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
+                explanationOpen && layoutMode === "side" && !isFullscreen
+                  ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,34%)] lg:items-start"
+                  : ""
+              }`}
+            >
 
-              <div className="contents lg:flex lg:flex-col lg:gap-8">
+              <div className="contents lg:flex lg:flex-col lg:gap-8 lg:min-w-0 lg:order-1">
+
 
 
               <div className="space-y-4 min-w-0 order-1">
@@ -3501,7 +3528,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
                     {/* Captions overlay the video in fullscreen (YouTube-style).
                         In windowed mode the transcript panel is the surface. */}
-                    {studyMode && currentSentence && (isFullscreen || experiment) && (
+                    {studyMode && currentSentence && (
                       <VideoSubtitle
                         text={currentSentence.text}
                         highlight={autoExpression?.head ?? null}
@@ -3587,15 +3614,35 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 )}
               </div>
 
+              {/* Optional transcript control — the default watching experience
+                  is video + synchronized subtitle only. */}
+              {!isFullscreen && studyMode && (
+                <div className="order-3 mx-auto w-full min-w-0 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTranscriptOpen((v) => !v);
+                      track("transcript_toggled", {
+                        video_id: videoId,
+                        open: !transcriptOpen,
+                      });
+                    }}
+                    aria-expanded={transcriptOpen}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    {transcriptOpen ? "Hide transcript" : "Transcript"}
+                  </button>
+                </div>
+              )}
 
-              {/* Transcript — windowed mode's primary reading surface: always
-                  visible directly under the video, never collapsed. Hidden in
-                  fullscreen, where captions overlay the video instead. */}
+              {/* Transcript — optional, user-requested reading surface. */}
+              {transcriptOpen && (
               <div
-                className={`mx-auto min-w-0 w-full order-3 lg:order-2 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px] ${
+                className={`mx-auto min-w-0 w-full order-4 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px] ${
                   isFullscreen ? "hidden" : ""
                 }`}
               >
+
                 <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]">
 
 
@@ -3859,31 +3906,62 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                       </button>
                     )}
 
-                    {/* Windowed mode: the explanation is a popup INSIDE the
-                        transcript panel — never over the video. Closing it does
-                        not resume playback; the learner presses play. */}
-                    {!isFullscreen && explanationOpen && (
-                      <div className="absolute inset-x-2 bottom-2 z-20 max-h-[85%] overflow-y-auto rounded-2xl border border-primary/20 bg-secondary p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150">
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                            Explanation
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => closeExplanation(false)}
-                            aria-label="Close explanation"
-                            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                        {explanationPanelNode}
-                      </div>
-                    )}
+                    {/* Explanation never renders inside the transcript panel:
+                        desktop uses the right-side panel, narrow tablet inline,
+                        mobile the bottom sheet. */}
+
 
                   </aside>
               </div>
+              )}
               </div>
+
+              {/* Desktop / wide tablet: explanation sits BESIDE the video —
+                  never underneath it, never as a modal. */}
+              {explanationOpen && layoutMode === "side" && (
+                <aside className="order-2 min-w-0 lg:sticky lg:top-[84px] lg:self-start">
+                  <div className="relative max-h-[80vh] overflow-y-auto rounded-2xl border border-primary/20 bg-secondary p-4 shadow-lg animate-in fade-in slide-in-from-right-2 duration-150">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        Explanation
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => closeExplanation(false)}
+                        aria-label="Close explanation"
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {explanationPanelNode}
+                  </div>
+                </aside>
+              )}
+
+              {/* Narrow tablet: not enough width for a side panel — stack the
+                  explanation inline directly under the video (no modal). */}
+              {explanationOpen && layoutMode === "inline" && (
+                <div className="order-2 mx-auto w-full min-w-0 md:max-w-[900px]">
+                  <div className="relative rounded-2xl border border-primary/20 bg-secondary p-4 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-150">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                        Explanation
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => closeExplanation(false)}
+                        aria-label="Close explanation"
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {explanationPanelNode}
+                  </div>
+                </div>
+              )}
+
 
 
 
@@ -3975,7 +4053,23 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
 
+      {/* Mobile: explanation opens as a bottom sheet within reach. */}
+      <Sheet
+        open={explanationOpen && layoutMode === "sheet"}
+        onOpenChange={(open) => {
+          if (!open) closeExplanation(false);
+        }}
+      >
+        <SheetContent
+          side="bottom"
+          className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-primary/20 bg-secondary p-4"
+        >
+          {explanationPanelNode}
+        </SheetContent>
+      </Sheet>
+
       {showOnboarding && view === "demo" && studyMode && (
+
         <SentenceCoachmark
           containerRef={listRef}
           onDismiss={() => dismissOnboarding(false)}
