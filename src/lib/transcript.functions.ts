@@ -752,16 +752,21 @@ function chunksFromManualText(text: string): RawChunk[] {
  *   v2: progressive Whisper stream, still byte-derived offsets (drifted).
  *   v3: cumulative Whisper-decoded durations across chunks. Eliminates
  *       progressive drift caused by VBR/padding/frame alignment.
- *   v4: prefer full-file ASR when the extracted audio fits the provider
- *       limit, preserving absolute video time through initial music/silence
- *       instead of starting timestamps at the first spoken phrase.
- *
- * Any cached row with `source_version < TRANSCRIPT_PIPELINE_VERSION` is
- * treated as stale and the pipeline re-runs. We do NOT delete the old row —
- * the upsert on (video_id, requested_language, provider, source_version)
- * just writes a new row at the current version.
- */
-export const TRANSCRIPT_PIPELINE_VERSION = 4;
+  *   v4: prefer full-file ASR when the extracted audio fits the provider
+  *       limit, preserving absolute video time through initial music/silence
+  *       instead of starting timestamps at the first spoken phrase.
+  *   v5: sentence start times no longer drift late. HTML entities are decoded
+  *       per chunk before the char→time table is built (previously decoding the
+  *       joined string shifted every later character against its timestamp),
+  *       chunk-boundary spaces take the NEXT cue's start instead of the previous
+  *       cue's end, and a sentence is timed from its first spoken character.
+  *
+  * Any cached row with `source_version < TRANSCRIPT_PIPELINE_VERSION` is
+  * treated as stale and the pipeline re-runs. We do NOT delete the old row —
+  * the upsert on (video_id, requested_language, provider, source_version)
+  * just writes a new row at the current version.
+  */
+export const TRANSCRIPT_PIPELINE_VERSION = 5;
 const SOURCE_VERSION = TRANSCRIPT_PIPELINE_VERSION;
 
 function makeCacheKey(videoId: string, requestedLanguage: string, provider: string, version = SOURCE_VERSION) {
