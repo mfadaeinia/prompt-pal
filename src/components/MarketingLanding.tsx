@@ -23,6 +23,10 @@ import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
 
+/* Demo embed used by both the modal (mobile) and the inline example (tablet+). */
+const DEMO_EMBED_SRC =
+  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+
 /**
  * Mission-first landing — philosophy over features.
  * NativeFlow is a bridge between authentic content and language growth.
@@ -58,7 +62,7 @@ export function MarketingLanding({
 
       <div className="relative z-10">
         <Hero onSubmitUrl={onSubmitUrl} />
-
+        <LiveExample />
         <CompetitorComparison />
         <HowItWorks />
         <Comparison />
@@ -231,10 +235,35 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   );
 }
 
-/* ============================== DEMO MODAL ============================== */
+/* ============================== LIVE EXAMPLE (tablet/desktop only) ============================== */
 
-const DEMO_EMBED_SRC =
-  "/?embed=1&url=" + encodeURIComponent("https://www.youtube.com/watch?v=3GHwKtBtdfk");
+function LiveExample() {
+  return (
+    <section className="hidden md:block" aria-label="Live example">
+      <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
+        <h2
+          className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+          style={heading}
+        >
+          Live example — tap a sentence
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-center text-base text-slate-600">
+          Try the real experience right here. No account needed.
+        </p>
+        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+          <iframe
+            src={DEMO_EMBED_SRC}
+            title="NativeFlow live example"
+            className="h-[65vh] min-h-[420px] w-full border-0"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================== DEMO MODAL ============================== */
 
 function DemoModal({ onClose, onTryOwn }: { onClose: () => void; onTryOwn: () => void }) {
   useEffect(() => {
