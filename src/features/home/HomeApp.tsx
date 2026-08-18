@@ -3728,8 +3728,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     if (!open) {
                       setExpressionExpanded(false);
                       setSelected(null);
+                      setFocusExpression(null);
                       manualSelectedRef.current = false;
+                      // Dismissing the explanation resumes the video the tap paused.
+                      if (pausedForExplanationRef.current) resumeFromHere();
                     }
+
                   }}
                   shouldScaleBackground={false}
                 >
