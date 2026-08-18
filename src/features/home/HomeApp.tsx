@@ -3755,6 +3755,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         savedExpressionHeads={savedExpressionHeads}
                         savingExpressionHead={savingExpressionHead}
                         justSavedExpressionHead={justSavedExpressionHead}
+                        focusPhrase={focusExpression}
+
                       />
                     </div>
                   </DrawerContent>
