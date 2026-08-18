@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { LibraryStrip } from "@/components/LibraryStrip";
-import heroCollage from "@/assets/hero-collage.png.asset.json";
+import heroMosaic from "@/assets/hero-mosaic.png.asset.json";
 import youtubePlayer from "@/assets/youtube-player.png.asset.json";
 import productMock from "@/assets/product-mock-v3.png.asset.json";
 import founderPhoto from "@/assets/founder-mahta.png.asset.json";
@@ -75,32 +75,36 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
 
 
   return (
-    <section className="relative">
-      {/* Very subtle content texture, well behind everything. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
-        <img
-          src={heroCollage.url}
-          alt=""
-          width={1562}
-          height={1007}
-          className="h-full w-full object-cover object-top opacity-[0.90]"
+    <section className="relative isolate">
+      {/* Cinematic tiled mosaic behind the hero only — dimmed for legibility. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -inset-8 blur-[5px]"
+          style={{
+            backgroundImage: `url(${heroMosaic.url})`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "760px auto",
+            filter: "contrast(1.45) saturate(1.35) brightness(1.15)",
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F8FAFC]/70 to-[#F8FAFC]" />
+        <div className="absolute inset-0 bg-black/[0.72]" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-[#F8FAFC]" />
       </div>
+
 
       <div className="relative mx-auto max-w-7xl px-6 pt-10 pb-14 sm:pt-14 lg:pb-20">
         <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,38%)_minmax(0,1fr)] lg:gap-12">
           {/* ---------- LEFT: promise + actions ---------- */}
           <div className="max-w-xl">
             <span
-              className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/80"
+              className="mb-4 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70"
               style={heading}
             >
               For Dutch learners who watch YouTube
             </span>
 
             <h1
-              className="text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[2.75rem]"
+              className="text-[2rem] font-bold leading-[1.12] tracking-tight text-white sm:text-[2.5rem] lg:text-[2.75rem]"
               style={heading}
             >
               Watch real Dutch.
@@ -108,12 +112,12 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               Never get lost.
             </h1>
 
-            <p className="mt-5 max-w-md text-base leading-relaxed text-slate-700 sm:text-lg">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">
               Tap anything you don't understand. NativeFlow explains it in context.
             </p>
 
             {/* Secondary: bring your own video (desktop — left column). */}
-            <div className="mt-8 hidden border-t border-slate-200 pt-6 lg:block">
+            <div className="mt-8 hidden border-t border-white/15 pt-6 lg:block">
               <UrlForm
                 value={value}
                 setValue={setValue}
@@ -122,6 +126,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               />
             </div>
           </div>
+
 
           {/* ---------- RIGHT (desktop) / BELOW (mobile): static preview + demo CTA ---------- */}
           <div className="min-w-0">
@@ -140,11 +145,11 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
                 <MousePointerClick className="h-4 w-4" />
                 Try the interactive demo
               </button>
-              <p className="text-xs text-slate-500">No account needed.</p>
+              <p className="text-xs text-white/70">No account needed.</p>
             </div>
 
             {/* Secondary: bring your own video (mobile / tablet). */}
-            <div className="mt-7 border-t border-slate-200 pt-6 lg:hidden">
+            <div className="mt-7 border-t border-white/15 pt-6 lg:hidden">
               <UrlForm
                 value={value}
                 setValue={setValue}
@@ -174,7 +179,7 @@ function UrlForm({
   const trimmed = value.trim();
   return (
     <>
-      <p className="text-sm font-medium text-slate-600">Have your own Dutch video?</p>
+      <p className="text-sm font-medium text-white/75">Have your own Dutch video?</p>
       <form
         className="mt-3 flex w-full max-w-md flex-col gap-2 sm:flex-row sm:items-center"
         onSubmit={(e) => {
