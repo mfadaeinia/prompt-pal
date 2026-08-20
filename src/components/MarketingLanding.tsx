@@ -47,7 +47,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
     <section className="mx-auto max-w-6xl px-6 pb-20 pt-12 sm:pt-16">
       <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,44%)_minmax(0,56%)] lg:gap-14">
         {/* ---------- Promise + one obvious action ---------- */}
-        <div className="max-w-xl">
+        <div className="max-w-xl text-center">
           <h1
             className="text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[2.75rem]"
             style={heading}
@@ -57,11 +57,11 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
             Never get lost.
           </h1>
 
-          <p className="mt-5 max-w-md text-base leading-relaxed text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-slate-600 sm:text-lg">
             Tap anything you don't understand. NativeFlow explains it in context.
           </p>
 
-          <div className="mt-8 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
             <button
               type="button"
               onClick={() => startDemo("hero")}
