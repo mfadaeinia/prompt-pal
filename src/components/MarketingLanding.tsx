@@ -44,8 +44,8 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-20 pt-12 sm:pt-16">
-      <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,44%)_minmax(0,56%)] lg:gap-14">
+    <section className="mx-auto max-w-4xl px-6 pb-20 pt-12 sm:pt-16">
+      <div className="flex flex-col items-center gap-10">
         {/* ---------- Promise + one obvious action ---------- */}
         <div className="max-w-xl text-center">
           <h1
@@ -75,10 +75,10 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
           </div>
         </div>
 
-        {/* ---------- Real curated example ---------- */}
-        <div className="min-w-0">
+        {/* ---------- Real curated example, directly underneath ---------- */}
+        <div className="w-full min-w-0">
           <StaticProductPreview onClick={() => startDemo("preview")} />
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex justify-center">
             <button
               type="button"
               onClick={() => startDemo("preview_link")}
@@ -91,6 +91,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
           </div>
         </div>
       </div>
+
 
       {/* ---------- Secondary path: bring your own video ---------- */}
       <div className="mt-14 border-t border-slate-200 pt-7">
