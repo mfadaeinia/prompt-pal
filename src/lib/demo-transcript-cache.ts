@@ -5,7 +5,7 @@
 
 import type { FetchTranscriptResult } from "./transcript.functions";
 
-const VERSION = "v2";
+const VERSION = "v3";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function key(videoId: string) {
