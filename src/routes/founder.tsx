@@ -240,7 +240,9 @@ function FounderGate() {
               // Persistently mark this browser as internal traffic so founder
               // usage of the app (any tab) is excluded from experiment metrics.
               try {
-                localStorage.setItem("nativeflow_debug", "1");
+                localStorage.setItem("nativeflow_internal", "1");
+                // Never enable the on-screen debug overlay as a side effect.
+                localStorage.removeItem("nativeflow_debug");
               } catch {}
               setAuthed(true);
 
