@@ -6,13 +6,13 @@ import { Play } from "lucide-react";
  * Visual communication only — no live player, no interaction, no internal scrolling.
  */
 const MOMENT = {
-  t: "0:10",
-  videoId: "L6EWbqiRbME",
-  channel: "LUBACH",
-  title: "LUBACH",
-  sentence: "Dit is een voorbeeldzin uit de video.",
-  translation: "This is an example sentence from the video.",
-  expression: "een voorbeeldzin — an example sentence",
+  t: "0:12",
+  videoId: "GVk3rV4-J6k",
+  channel: "NOS Jeugdjournaal",
+  title: "Dalí is nog nooit naar de kapper geweest...tot nu!",
+  sentence: "Ik ga nog weleens naar de kapper om de puntjes eraf te laten knippen.",
+  translation: "I still go to the hairdresser now and then to have the ends trimmed.",
+  expression: "de puntjes eraf laten knippen — to get the ends trimmed",
 };
 
 export function StaticProductPreview({ onClick }: { onClick?: () => void }) {

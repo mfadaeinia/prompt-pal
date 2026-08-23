@@ -31,11 +31,11 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "L6EWbqiRbME",
-    url: "https://www.youtube.com/watch?v=L6EWbqiRbME",
-    title: "LUBACH",
-    channel: "LUBACH",
-    thumbnail: "https://i.ytimg.com/vi/L6EWbqiRbME/hqdefault.jpg",
+    videoId: "GVk3rV4-J6k",
+    url: "https://www.youtube.com/watch?v=GVk3rV4-J6k",
+    title: "Dalí is nog nooit naar de kapper geweest...tot nu!",
+    channel: "NOS Jeugdjournaal",
+    thumbnail: "https://i.ytimg.com/vi/GVk3rV4-J6k/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
   },
