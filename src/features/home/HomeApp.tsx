@@ -227,8 +227,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
   // gone: captions overlay the video and the explanation opens over it.
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Transcript is an OPTIONAL layer — never part of the default hierarchy.
+  // Transcript is optional, but on large screens ("screen view") it is open by
+  // default and sits under a slightly smaller player so learners can read and
+  // scroll along with the highlighted sentence.
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 1024) setTranscriptOpen(true);
+  }, []);
 
   const stageRef = useRef<HTMLDivElement>(null);
   // Recommendations are NOT in the DOM until the video ends or the learner
