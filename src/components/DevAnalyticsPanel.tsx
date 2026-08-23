@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { isTestUser, setTestUser } from "@/lib/analytics";
 
 // Developer-only analytics validation panel.
-// Visible when URL contains ?debug=1 OR localStorage["nativeflow_debug"] === "1".
-// Used to verify analytics correctness during testing — NOT shown to real users.
+// Visible ONLY when the URL contains ?debug=1 (or ?debug=0 to turn it off again).
+// Internal-traffic marking lives in localStorage["nativeflow_internal"] and must
+// never make this overlay appear for a founder just watching a video.
 
 export type DevPanelState = {
   sessionId: string;
@@ -19,7 +20,14 @@ export function isDevPanelEnabled(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("debug") === "1") return true;
+    if (params.get("debug") === "1") {
+      localStorage.setItem("nativeflow_debug", "1");
+      return true;
+    }
+    if (params.get("debug") === "0") {
+      localStorage.removeItem("nativeflow_debug");
+      return false;
+    }
     return localStorage.getItem("nativeflow_debug") === "1";
   } catch {
     return false;

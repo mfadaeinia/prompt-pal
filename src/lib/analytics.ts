@@ -172,6 +172,7 @@ export function isInternalSession(): boolean {
   if (typeof window === "undefined") return false;
   try {
     if (isTestUser()) return true;
+    if (localStorage.getItem("nativeflow_internal") === "1") return true;
     if (localStorage.getItem("nativeflow_debug") === "1") return true;
     if (sessionStorage.getItem("founder-auth-v1") === "1") return true;
     return new URLSearchParams(window.location.search).get("debug") === "1";
