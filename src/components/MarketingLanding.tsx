@@ -69,7 +69,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               style={heading}
             >
               <MousePointerClick className="h-4 w-4" />
-              Try the demo
+              Watch Demo
             </button>
             <p className="text-xs text-slate-500">No account needed.</p>
           </div>
@@ -85,7 +85,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80"
               style={heading}
             >
-              Try the demo
+              Watch Demo
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
