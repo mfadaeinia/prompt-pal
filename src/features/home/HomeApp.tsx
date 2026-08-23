@@ -3495,7 +3495,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     className={`relative mx-auto w-full max-w-full overflow-hidden bg-black ${
                       isFullscreen
                         ? "h-full max-w-none rounded-none"
-                        : "aspect-video rounded-xl md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]"
+                        : "aspect-video rounded-xl md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]"
                     }`}
                   >
                     {embedSrc && (
@@ -3605,7 +3605,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 {/* Passive-learning expression bar is experiment-only. */}
                 {experiment && studyMode && !limitedMode && (
 
-                  <div className="mx-auto w-full md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                  <div className="mx-auto w-full md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                     <UsefulExpressionBar
                       expression={autoExpression}
                       loading={queueLoading}
@@ -3623,7 +3623,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               {/* Optional transcript control — the default watching experience
                   is video + synchronized subtitle only. */}
               {!isFullscreen && studyMode && (
-                <div className="order-3 mx-auto w-full min-w-0 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px]">
+                <div className="order-3 mx-auto w-full min-w-0 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
                     onClick={() => {
@@ -3644,7 +3644,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               {/* Transcript — optional, user-requested reading surface. */}
               {transcriptOpen && (
               <div
-                className={`mx-auto min-w-0 w-full order-4 md:max-w-[900px] xl:max-w-[1100px] min-[1600px]:max-w-[1280px] ${
+                className={`mx-auto min-w-0 w-full order-4 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px] ${
                   isFullscreen ? "hidden" : ""
                 }`}
               >
