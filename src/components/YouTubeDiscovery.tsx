@@ -31,11 +31,11 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "4GutxLa-p50",
-    url: "https://www.youtube.com/watch?v=4GutxLa-p50",
-    title: "Hoe staat het ervoor met de oorlog in Oekraïne?",
+    videoId: "L6EWbqiRbME",
+    url: "https://www.youtube.com/watch?v=L6EWbqiRbME",
+    title: "LUBACH",
     channel: "LUBACH",
-    thumbnail: "https://i.ytimg.com/vi/4GutxLa-p50/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/L6EWbqiRbME/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
   },
