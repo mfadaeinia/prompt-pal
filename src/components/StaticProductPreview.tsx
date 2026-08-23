@@ -6,13 +6,13 @@ import { Play } from "lucide-react";
  * Visual communication only — no live player, no interaction, no internal scrolling.
  */
 const MOMENT = {
-  t: "0:08",
-  videoId: "4GutxLa-p50",
+  t: "0:10",
+  videoId: "L6EWbqiRbME",
   channel: "LUBACH",
-  title: "Hoe staat het ervoor met de oorlog in Oekraïne?",
-  sentence: "Hoe staat het ervoor met de oorlog in Oekraïne?",
-  translation: "How are things with the war in Ukraine?",
-  expression: "Hoe staat het ervoor met... — How are things with...",
+  title: "LUBACH",
+  sentence: "Dit is een voorbeeldzin uit de video.",
+  translation: "This is an example sentence from the video.",
+  expression: "een voorbeeldzin — an example sentence",
 };
 
 export function StaticProductPreview({ onClick }: { onClick?: () => void }) {
