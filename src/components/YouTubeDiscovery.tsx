@@ -31,11 +31,11 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "VTo7yLBMND4",
-    url: "https://www.youtube.com/watch?v=VTo7yLBMND4",
-    title: "Greg Davies & Alex Horne over de Nederlandse versie van Taskmaster",
+    videoId: "4GutxLa-p50",
+    url: "https://www.youtube.com/watch?v=4GutxLa-p50",
+    title: "Hoe staat het ervoor met de oorlog in Oekraïne?",
     channel: "LUBACH",
-    thumbnail: "https://i.ytimg.com/vi/VTo7yLBMND4/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/4GutxLa-p50/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
   },

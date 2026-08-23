@@ -6,13 +6,13 @@ import { Play } from "lucide-react";
  * Visual communication only — no live player, no interaction, no internal scrolling.
  */
 const MOMENT = {
-  t: "0:24",
-  videoId: "VTo7yLBMND4",
+  t: "0:08",
+  videoId: "4GutxLa-p50",
   channel: "LUBACH",
-  title: "Greg Davies & Alex Horne over de Nederlandse versie van Taskmaster",
-  sentence: "Dat is een geweldig concept.",
-  translation: "That's a great concept.",
-  expression: "een geweldig concept — a great concept",
+  title: "Hoe staat het ervoor met de oorlog in Oekraïne?",
+  sentence: "Hoe staat het ervoor met de oorlog in Oekraïne?",
+  translation: "How are things with the war in Ukraine?",
+  expression: "Hoe staat het ervoor met... — How are things with...",
 };
 
 export function StaticProductPreview({ onClick }: { onClick?: () => void }) {
