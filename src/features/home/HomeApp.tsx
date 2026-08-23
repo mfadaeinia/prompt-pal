@@ -79,8 +79,8 @@ import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react"
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
-const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
-const DEMO_VIDEO_ID = "3GHwKtBtdfk";
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=VTo7yLBMND4";
+const DEMO_VIDEO_ID = "VTo7yLBMND4";
 /** Set once the learner has tapped a subtitle for an explanation. */
 const SUBTITLE_DISCOVERED_KEY = "nativeflow_subtitle_explanation_discovered";
 

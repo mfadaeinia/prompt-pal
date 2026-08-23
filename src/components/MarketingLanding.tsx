@@ -4,7 +4,7 @@ import { track } from "@/lib/analytics";
 import { StaticProductPreview } from "@/components/StaticProductPreview";
 
 /* The one and only interactive demo destination — the real app with a curated Dutch video. */
-const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=3GHwKtBtdfk";
+const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=VTo7yLBMND4";
 
 const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
 

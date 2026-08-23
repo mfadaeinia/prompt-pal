@@ -6,13 +6,13 @@ import { Play } from "lucide-react";
  * Visual communication only — no live player, no interaction, no internal scrolling.
  */
 const MOMENT = {
-  t: "0:42",
-  videoId: "3GHwKtBtdfk",
-  channel: "NOS Journaal",
-  title: "Artsen: 'Zorg voor goede bril om zonsverduistering te zien'",
-  sentence: "Zonder de juiste bril kun je oogschade oplopen.",
-  translation: "Without the right glasses you can suffer eye damage.",
-  expression: "oogschade oplopen — to suffer eye damage",
+  t: "0:24",
+  videoId: "VTo7yLBMND4",
+  channel: "LUBACH",
+  title: "Greg Davies & Alex Horne over de Nederlandse versie van Taskmaster",
+  sentence: "Dat is een geweldig concept.",
+  translation: "That's a great concept.",
+  expression: "een geweldig concept — a great concept",
 };
 
 export function StaticProductPreview({ onClick }: { onClick?: () => void }) {

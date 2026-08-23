@@ -31,11 +31,11 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "3GHwKtBtdfk",
-    url: "https://www.youtube.com/watch?v=3GHwKtBtdfk",
-    title: "Artsen: 'Zorg voor goede bril om zonsverduistering te zien'",
-    channel: "NOS Journaal",
-    thumbnail: "https://i.ytimg.com/vi/3GHwKtBtdfk/hqdefault.jpg",
+    videoId: "VTo7yLBMND4",
+    url: "https://www.youtube.com/watch?v=VTo7yLBMND4",
+    title: "Greg Davies & Alex Horne over de Nederlandse versie van Taskmaster",
+    channel: "LUBACH",
+    thumbnail: "https://i.ytimg.com/vi/VTo7yLBMND4/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
   },
