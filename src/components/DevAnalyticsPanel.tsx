@@ -19,16 +19,21 @@ export type DevPanelState = {
 export function isDevPanelEnabled(): boolean {
   if (typeof window === "undefined") return false;
   try {
+    // Legacy: this key used to switch the overlay on permanently, including on
+    // phones that once opened a ?debug=1 link. Purge it everywhere.
+    localStorage.removeItem("nativeflow_debug");
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("debug") === "1") {
-      localStorage.setItem("nativeflow_debug", "1");
+      sessionStorage.setItem("nativeflow_devpanel", "1");
       return true;
     }
     if (params.get("debug") === "0") {
-      localStorage.removeItem("nativeflow_debug");
+      sessionStorage.removeItem("nativeflow_devpanel");
       return false;
     }
-    return localStorage.getItem("nativeflow_debug") === "1";
+    // Session-scoped only: closing the tab always returns to the clean UI.
+    return sessionStorage.getItem("nativeflow_devpanel") === "1";
   } catch {
     return false;
   }
