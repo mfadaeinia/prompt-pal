@@ -10,11 +10,11 @@
  * Applied to every surface (landing, learning mode, video analysis, library,
  * settings, pricing, auth, onboarding) so the product feels like one product.
  *
- * Typography: Sora (display/headings) + Manrope (body/UI). Loaded via <link>
- * in src/routes/__root.tsx.
+ * Typography: Playfair Display (display/headings) + Plus Jakarta Sans (body/UI).
+ * Loaded via <link> in src/routes/__root.tsx.
  *
  * Color: light SaaS surfaces (#F8FAFC bg / #FFFFFF surface) with NativeFlow
- * blue primary. Semantic tokens only — never hardcode colors in components.
+ * purple primary. Semantic tokens only — never hardcode colors in components.
  *
  * Radius scale: 12 / 16 / 24 px (sm / md / lg).
  * Spacing: Tailwind default 4px grid (use 8/16/24/32/48/64 multiples).
@@ -25,8 +25,8 @@
  */
 
 @theme inline {
-  --font-sans: "Manrope", system-ui, -apple-system, sans-serif;
-  --font-display: "Sora", system-ui, -apple-system, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 24px;
