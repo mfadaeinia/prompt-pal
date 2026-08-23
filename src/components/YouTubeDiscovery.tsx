@@ -31,11 +31,11 @@ const DUTCH_EXTRA: YouTubeSearchResult[] = [
 
 const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
-    videoId: "L6EWbqiRbME",
-    url: "https://www.youtube.com/watch?v=L6EWbqiRbME",
+    videoId: "GVk3rV4-J6k",
+    url: "https://www.youtube.com/watch?v=GVk3rV4-J6k",
     title: "LUBACH",
     channel: "LUBACH",
-    thumbnail: "https://i.ytimg.com/vi/L6EWbqiRbME/hqdefault.jpg",
+    thumbnail: "https://i.ytimg.com/vi/GVk3rV4-J6k/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
   },
