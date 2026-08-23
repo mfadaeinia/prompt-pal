@@ -59,7 +59,7 @@ export const Route = createFileRoute("/english-learners")({
   component: EnglishLearnersLanding,
 });
 
-const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
+const heading = { fontFamily: "'Playfair Display', Georgia, serif" } as const;
 
 /* ------------------------------- data ------------------------------- */
 
@@ -157,7 +157,7 @@ function EnglishLearnersLanding() {
   return (
     <div
       className="relative w-full overflow-hidden bg-[#F8FAFC] text-slate-900 selection:bg-accent"
-      style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
       <Hero onTryFree={onTryFree} onDemo={onDemo} />
       <Audience />

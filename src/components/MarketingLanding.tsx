@@ -6,7 +6,7 @@ import { StaticProductPreview } from "@/components/StaticProductPreview";
 /* The one and only interactive demo destination — the real app with a curated Dutch video. */
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=L6EWbqiRbME";
 
-const heading = { fontFamily: "'Sora', system-ui, sans-serif" } as const;
+const heading = { fontFamily: "'Playfair Display', Georgia, serif" } as const;
 
 /**
  * Activation-first landing page.
@@ -27,7 +27,7 @@ export function MarketingLanding({
   return (
     <div
       className="relative w-full bg-[#F8FAFC] text-slate-900 selection:bg-accent"
-      style={{ fontFamily: "'Manrope', system-ui, sans-serif" }}
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
       <Hero onSubmitUrl={onSubmitUrl} />
     </div>
