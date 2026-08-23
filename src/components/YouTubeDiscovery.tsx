@@ -33,8 +33,8 @@ const DUTCH_EXAMPLES: YouTubeSearchResult[] = [
   {
     videoId: "GVk3rV4-J6k",
     url: "https://www.youtube.com/watch?v=GVk3rV4-J6k",
-    title: "LUBACH",
-    channel: "LUBACH",
+    title: "Dalí is nog nooit naar de kapper geweest...tot nu!",
+    channel: "NOS Jeugdjournaal",
     thumbnail: "https://i.ytimg.com/vi/GVk3rV4-J6k/hqdefault.jpg",
     durationSec: 90,
     language: "nl",
