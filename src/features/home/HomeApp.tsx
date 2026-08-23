@@ -3072,7 +3072,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               to="/library"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Explore Dutch
+              Explore&nbsp; Library
             </Link>
 
 
