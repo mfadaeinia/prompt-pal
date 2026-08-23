@@ -78,17 +78,6 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
         {/* ---------- Real curated example, directly underneath ---------- */}
         <div className="w-full min-w-0">
           <StaticProductPreview onClick={() => startDemo("preview")} />
-          <div className="mt-3 flex justify-center">
-            <button
-              type="button"
-              onClick={() => startDemo("preview_link")}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80"
-              style={heading}
-            >
-              Watch Demo
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
         </div>
       </div>
 
