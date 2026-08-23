@@ -58,7 +58,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
           </h1>
 
           <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-slate-600 sm:text-lg">
-            Tap anything you don't understand. NativeFlow explains it in context.
+            Tap any subtitle you don't understand. NativeFlow explains it in context.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
