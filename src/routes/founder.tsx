@@ -11,6 +11,9 @@ import {
   type ExperimentMarker,
 } from "@/lib/experiment-markers.functions";
 import { getLibraryHealth, revalidateLibrary } from "@/lib/library-health.functions";
+import { getCoreMetrics } from "@/lib/core-metrics.functions";
+import { CoreMetricsSection } from "@/components/founder/CoreMetricsSection";
+
 
 import {
   getLibraryMetrics,
@@ -547,7 +550,9 @@ function FounderPage() {
   const txFetcher = useServerFn(getTranscriptQualityMetrics);
   const cohortFetcher = useServerFn(getTesterCohort);
   const retentionFetcher = useServerFn(getUserRetentionCohort);
-  const [tab, setTab] = useState<FounderTab>("overview");
+  const coreFetcher = useServerFn(getCoreMetrics);
+  const [tab, setTab] = useState<FounderTab>("core");
+
 
   // Global filter state — defaults: Last 7 Days + All Sources.
   const [preset, setPreset] = useState<DatePreset>("last7d");
@@ -612,7 +617,16 @@ function FounderPage() {
     queryFn: () => cohortFetcher(),
     refetchInterval: 30_000,
   });
+  const coreQ = useQuery({
+    queryKey: ["core-metrics", range.from, range.to, device, experience, internal],
+    queryFn: () =>
+      coreFetcher({
+        data: { from: range.from, to: range.to, device, experience, internal },
+      }),
+    refetchInterval: 30_000,
+  });
   const retentionQ = useQuery({
+
     queryKey: ["user-retention"],
     queryFn: () => retentionFetcher(),
     refetchInterval: 60_000,
@@ -626,6 +640,8 @@ function FounderPage() {
     txQ.refetch();
     cohortQ.refetch();
     retentionQ.refetch();
+    coreQ.refetch();
+
   };
 
 
@@ -687,7 +703,9 @@ function FounderPage() {
         {isLoading && <p>Loading…</p>}
         {error && <p className="text-red-600">{(error as Error).message}</p>}
 
+        {tab === "core" && <CoreMetricsSection c={coreQ.data} />}
         {tab === "overview" && data && (
+
           <OverviewSection
             m={data}
             prev={prevQ.data}
