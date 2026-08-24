@@ -125,8 +125,18 @@ export function CoreMetricsSection({ c }: { c?: CoreMetrics }) {
     <div className="space-y-6">
       <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
         Unified session tracking started{" "}
-        <span className="font-medium text-slate-700">
-          {c.tracking.unifiedSessionStart.slice(0, 10)}
+        <span
+          className="font-medium text-slate-700"
+          title={`Exact start: ${c.tracking.unifiedSessionStart}`}
+        >
+          {formatExact(c.tracking.unifiedSessionStart)}
+        </span>
+        {" · "}Funnel events since{" "}
+        <span
+          className="font-medium text-slate-700"
+          title={`Exact start: ${c.tracking.funnelEventStart}`}
+        >
+          {formatExact(c.tracking.funnelEventStart)}
         </span>
         {" · "}Internal excluded: {c.filters.internal === "exclude" ? "yes" : "no"} (
         {c.internalExcluded.users} user{c.internalExcluded.users === 1 ? "" : "s"},{" "}
@@ -134,11 +144,13 @@ export function CoreMetricsSection({ c }: { c?: CoreMetrics }) {
         {c.internalExcluded.visitors === 1 ? "" : "s"}, {c.internalExcluded.rows} rows)
         {awaiting && (
           <span className="ml-2 font-medium text-amber-600">
-            Selected period predates unified session tracking — session-scoped steps show
-            “awaiting data”.
+            Selected period starts before {formatExact(c.tracking.unifiedSessionStart)} — sessions
+            before that timestamp were logged with a different session identifier, so
+            session-scoped steps show “awaiting data”.
           </span>
         )}
       </div>
+
 
       <div className="space-y-3">
         <div>
