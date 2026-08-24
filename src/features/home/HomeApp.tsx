@@ -557,6 +557,45 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   }, [browserId, claimAnonFx, qc]);
 
 
+  // After a full-page OAuth round-trip: restore the watch session (if the
+  // return path was lost) and complete the save the user asked for before
+  // being prompted to sign in. Single-use: the stored context is cleared on
+  // read, so it never leaks into a later, unrelated login.
+  const postAuthReplayRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || postAuthReplayRef.current) return;
+    postAuthReplayRef.current = true;
+    const ctx = takePostAuthRedirect();
+    if (!ctx) return;
+
+    // Missing/invalid watch context → stay on the current page (home).
+    if (!url && !videoId && ctx.path.includes("v=")) {
+      setPostAuthRedirect(ctx.path, ctx.intent ?? null);
+      window.location.replace(ctx.path);
+      return;
+    }
+
+    const intent = ctx.intent;
+    if (!intent) return;
+    void (async () => {
+      try {
+        if (intent.kind === "expression") {
+          await saveExpressionFx({ data: intent.data as any });
+          track("expression_saved", { video_id: videoId, source: "post_auth_resume" });
+          qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        } else {
+          await saveVideoFx({ data: intent.data as any });
+          track("video_saved", { video_id: videoId, source: "post_auth_resume" });
+          qc.invalidateQueries({ queryKey: ["saved-videos"] });
+        }
+      } catch {
+        // Best-effort: the user can still tap Save again.
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
+
+
   // Authenticated users can still visit the landing page directly — the
   // marketing CTAs route them into the app on click. No forced redirect here.
 
