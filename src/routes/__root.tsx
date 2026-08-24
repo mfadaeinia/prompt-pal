@@ -166,6 +166,9 @@ function RootComponent() {
     import("../lib/analytics").then(({ initAnalytics, track }) => {
       initAnalytics();
       import("../lib/entry-path").then(({ restoreEntryPath }) => restoreEntryPath());
+      import("../lib/content-entry").then(({ restoreContentEntryPath }) =>
+        restoreContentEntryPath(),
+      );
       track("page_view", { path: window.location.pathname });
     });
     // True visitor signal: one page_views row carrying BOTH the per-session id
