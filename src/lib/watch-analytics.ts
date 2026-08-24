@@ -1,28 +1,20 @@
-import { track, getExperienceType, isInternalSession } from "./analytics";
-import { getAnonymousUserId, getSessionId } from "./identity";
-import { logLibraryEvent } from "./library-events.functions";
+import { track } from "./analytics";
+import { deviceType as canonicalDeviceType, logProductEvent } from "./product-events";
 
 export type DeviceType = "mobile" | "tablet" | "desktop";
 
 /** Device bucket derived from viewport width. Same event names everywhere —
  *  the device only travels as metadata (never as a separate event name). */
-export function deviceType(): DeviceType {
-  if (typeof window === "undefined") return "desktop";
-  const w = window.innerWidth;
-  if (w < 640) return "mobile";
-  if (w < 1024) return "tablet";
-  return "desktop";
-}
+export const deviceType = canonicalDeviceType;
 
 /**
  * Watch/comprehension events that must ALSO be persisted in the database,
  * because the Founder Dashboard reads the database (not PostHog). These are the
- * primary product funnel steps. PostHog behaviour is unchanged — this is purely
- * an additional write.
+ * primary product funnel steps.
  *
- * Tracking for these DB rows began 2026-08-18 (see FUNNEL_TRACKING_START_ISO in
- * founder-metrics.functions.ts) — earlier periods have no rows, which must be
- * shown as "tracking not available", never as 0%.
+ * All DB rows go through `logProductEvent`, which attaches the CANONICAL
+ * session_id + anonymous_user_id + is_internal/experience_type metadata. Never
+ * pass a component-local id here.
  */
 const MIRRORED_TO_DB = new Set([
   "video_started",
@@ -39,22 +31,10 @@ export function trackWatch(event: string, props?: Record<string, unknown>) {
   track(event, { ...(props ?? {}), device_type: device });
   if (typeof window === "undefined" || !MIRRORED_TO_DB.has(event)) return;
   const p = (props ?? {}) as Record<string, any>;
-  try {
-    void logLibraryEvent({
-      data: {
-        eventName: event as any,
-        sessionId: (p.session_id as string) || getSessionId() || "unknown",
-        anonymousId: getAnonymousUserId() || null,
-        videoId: typeof p.video_id === "string" ? p.video_id.slice(0, 64) : null,
-        userId: (p.user_id as string) ?? null,
-        metadata: {
-          device_type: device,
-          experience_type: getExperienceType(),
-          is_internal: isInternalSession(),
-        },
-      },
-    }).catch(() => {});
-  } catch {}
+  logProductEvent(event, {
+    videoId: typeof p.video_id === "string" ? p.video_id : null,
+    userId: (p.user_id as string) ?? null,
+  });
 }
 
 export const WATCH_MILESTONES = [
