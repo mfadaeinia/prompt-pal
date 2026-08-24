@@ -61,7 +61,11 @@ import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
-import { AppOnboarding } from "@/components/AppOnboarding";
+import { WatchHub } from "@/components/WatchHub";
+import {
+  markDemoStarted,
+  maybeTrackFirstNonDemoVideoStarted,
+} from "@/lib/content-entry";
 import { LibraryStrip } from "@/components/LibraryStrip";
 import { AppFooter } from "@/components/AppFooter";
 import { UsefulExpressionBar } from "@/components/UsefulExpressionBar";
@@ -1056,6 +1060,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     setSpokenLang("nl");
     setView("demo");
     track("demo_started", { video_id: DEMO_VIDEO_ID });
+    markDemoStarted();
     if (videoId !== DEMO_VIDEO_ID) {
       submitLoad(DEMO_VIDEO_URL);
     }
@@ -1094,9 +1099,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   };
 
 
+  /**
+   * Exit from the player/demo goes to the Watch hub — the product
+   * destination — for everyone, authenticated or not. Home (the marketing
+   * landing page) is no longer the post-demo destination.
+   */
+  const goWatchHub = () => {
+    track("watch_hub_arrived", { from: view });
+    setView("app");
+    setVideoId(null);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  };
+
   const goHome = () => {
-    // Authenticated users stay inside the app experience (Learning Hub)
-    // rather than being kicked back to the marketing landing page.
     setView(isAuthenticated ? "app" : "landing");
     setVideoId(null);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -2752,6 +2767,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         user_id: userIdRef.current ?? null,
         session_id: sessionIdRef.current,
       });
+      if (videoId !== DEMO_VIDEO_ID) {
+        maybeTrackFirstNonDemoVideoStarted({
+          videoId,
+          userId: userIdRef.current ?? null,
+        });
+      }
       if (videosStartedRef.current > 1) {
         trackWatch("another_video_started", {
           video_id: videoId,
@@ -3113,14 +3134,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           <div className="flex min-w-0 items-center gap-2">
             {view === "demo" && (
               <button
-                onClick={goHome}
+                onClick={goWatchHub}
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
-                aria-label={isAuthenticated ? "Back to Learning Hub" : "Back to home"}
+                aria-label="Find a video"
               >
                 <span aria-hidden>←</span>
-                <span className="hidden sm:inline">
-                  {isAuthenticated ? "Back to Learning Hub" : "Back to Home"}
-                </span>
+                <span className="hidden sm:inline">Find a video</span>
               </button>
             )}
             <button
@@ -3253,13 +3272,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       )}
 
       {view === "app" && (
-        <AppOnboarding
+        <WatchHub
           loading={loadMutation.isPending}
           targetLang={targetLang}
           setTargetLang={changeExplanationLanguage}
-          savedVideos={(savedVideosQuery.data?.items ?? []) as any[]}
-          isAuthenticated={isAuthenticated}
-          showLevelSelector={experiment}
           onPick={(u, lang) => {
             if (lang) setSpokenLang(lang);
             track("custom_video_attempted", { video_url: u, spoken_language: lang || spokenLang || "auto" });
