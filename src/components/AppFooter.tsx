@@ -7,7 +7,7 @@ export function AppFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
         <span className="flex items-center gap-2">
           <BrandLogo iconOnly markClassName="h-5 w-5" gradientId="nf-footer" />
-          © 2026 NativeFlow — understand content in context.
+          © 2026 NativeFlow - understand content in context.
         </span>
         <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/library" className="hover:text-foreground">
