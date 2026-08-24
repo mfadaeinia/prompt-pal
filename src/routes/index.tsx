@@ -5,20 +5,20 @@ import { HomeApp } from "@/features/home/HomeApp";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NativeFlow — Understand any video, sentence by sentence" },
+      { title: "NativeFlow - Watch Native Dutch Content, Understand It Completely" },
       {
         name: "description",
         content:
-          "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience.",
+          "Turn any YouTube video or podcast you love into a language lesson, without leaving the experience.",
       },
-      { property: "og:title", content: "NativeFlow — Enjoy Native Content. Understand more of it." },
-      { property: "og:description", content: "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience." },
+      { property: "og:title", content: "NativeFlow - Watch Native Dutch Content, Understand It Completely" },
+      { property: "og:description", content: "Turn any YouTube video or podcast you love into a language lesson, without leaving the experience." },
       { property: "og:url", content: "https://nativeflow.life/" },
       { property: "og:image", content: "https://nativeflow.life/og-image.jpg?v=2" },
       { property: "og:image:width", content: "1216" },
       { property: "og:image:height", content: "640" },
-      { name: "twitter:title", content: "NativeFlow — Enjoy Native Content. Understand more of it." },
-      { name: "twitter:description", content: "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience." },
+      { name: "twitter:title", content: "NativeFlow - Watch Native Dutch Content, Understand It Completely" },
+      { name: "twitter:description", content: "Turn any YouTube video or podcast you love into a language lesson, without leaving the experience." },
       { name: "twitter:image", content: "https://nativeflow.life/og-image.jpg?v=2" },
     ],
     links: [
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
           operatingSystem: "Web",
           url: "https://nativeflow.life/",
           description:
-            "Turn any YouTube video or podcast you love into a language lesson — without leaving the experience.",
+            "Turn any YouTube video or podcast you love into a language lesson, without leaving the experience.",
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         }),
       },
