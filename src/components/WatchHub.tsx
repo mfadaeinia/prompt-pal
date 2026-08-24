@@ -29,11 +29,11 @@ type LastVideo = {
   ts: number;
 };
 
-const SEARCH_STATE_KEY = "nativeflow_hub_search";
+export const SEARCH_STATE_KEY = "nativeflow_hub_search";
 const LAST_VIDEO_KEY = "nativeflow_last_video";
 const RECENT_SEARCHES_KEY = "nativeflow_recent_searches";
 
-function looksLikeUrl(term: string) {
+export function looksLikeUrl(term: string) {
   return /^https?:\/\//i.test(term) || /youtu\.?be/i.test(term);
 }
 
