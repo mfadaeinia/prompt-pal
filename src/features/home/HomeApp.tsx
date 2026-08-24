@@ -61,7 +61,7 @@ import { SentenceCoachmark, PlayNudge } from "@/components/OnboardingOverlay";
 import { DevAnalyticsPanel, isDevPanelEnabled } from "@/components/DevAnalyticsPanel";
 import { MarketingLanding } from "@/components/MarketingLanding";
 import { YouTubeDiscovery } from "@/components/YouTubeDiscovery";
-import { WatchHub } from "@/components/WatchHub";
+import { WatchHub, SEARCH_STATE_KEY } from "@/components/WatchHub";
 import {
   markDemoStarted,
   maybeTrackFirstNonDemoVideoStarted,
@@ -3266,6 +3266,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             setSpokenLang("nl");
             setView("demo");
             submitLoad(u, "nl");
+          }}
+          onSearch={(query) => {
+            try {
+              sessionStorage.setItem(SEARCH_STATE_KEY, query);
+            } catch {}
+            setView("app");
           }}
           onFeedback={openFeedbackManually}
         />
