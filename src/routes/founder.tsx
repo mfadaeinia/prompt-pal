@@ -283,9 +283,18 @@ function FounderGate() {
   );
 }
 
-type FounderTab = "overview" | "users" | "funnel" | "cohort" | "health" | "feedback" | "engineering";
+type FounderTab =
+  | "core"
+  | "overview"
+  | "users"
+  | "funnel"
+  | "cohort"
+  | "health"
+  | "feedback"
+  | "engineering";
 
 const TABS: Array<{ id: FounderTab; label: string }> = [
+  { id: "core", label: "Core Metrics" },
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
   { id: "funnel", label: "Activation Funnel" },
@@ -294,6 +303,7 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "feedback", label: "Feedback" },
   { id: "engineering", label: "Engineering" },
 ];
+
 
 type DatePreset =
   | "today"
