@@ -130,17 +130,42 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
   const [authOpen, setAuthOpen] = useState(false);
+  const [authReturnUrl, setAuthReturnUrl] = useState<string | undefined>(undefined);
   const pendingActionRef = useRef<null | (() => void)>(null);
   const initialAuthHandledRef = useRef(false);
 
-  function requireAuth(action: () => void) {
+  /**
+   * Path to return to after an OAuth round-trip: the current watch session
+   * (video + playback position + explanation language) so learners land back
+   * exactly where they were instead of on the landing page.
+   */
+  function currentReturnPath(): string {
+    if (typeof window === "undefined") return "/";
+    const watchUrl = url || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : "");
+    if (!watchUrl) return window.location.pathname || "/";
+    const params = new URLSearchParams();
+    params.set("v", watchUrl);
+    params.set("t", String(Math.max(0, Math.floor(currentTime))));
+    if (targetLang) params.set("lang", targetLang);
+    return `${window.location.pathname || "/"}?${params.toString()}`;
+  }
+
+  function requireAuth(action: () => void, intent?: PendingSaveIntent) {
     if (isAuthenticated) {
       action();
     } else {
-      pendingActionRef.current = action;
+      const path = currentReturnPath();
+      setPostAuthRedirect(path, intent ?? null);
+      setAuthReturnUrl(absoluteReturnUrl(path));
+      pendingActionRef.current = () => {
+        // The popup flow keeps the page alive, so the stored context is unused.
+        clearPostAuthRedirect();
+        action();
+      };
       setAuthOpen(true);
     }
   }
+
 
 
 
