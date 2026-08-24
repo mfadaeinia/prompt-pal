@@ -4,6 +4,7 @@ import { Play, Youtube, MousePointerClick, ArrowRight } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { setEntryPath } from "@/lib/entry-path";
 import { StaticProductPreview } from "@/components/StaticProductPreview";
+import { looksLikeUrl } from "@/components/WatchHub";
 
 /* The one and only interactive demo destination — the real app with a curated Dutch video. */
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=GVk3rV4-J6k";
@@ -17,10 +18,13 @@ const heading = { fontFamily: "'Playfair Display', Georgia, serif" } as const;
  */
 export function MarketingLanding({
   onSubmitUrl,
+  onSearch,
 }: {
   onStartDemo?: () => void;
   onFeedback?: () => void;
   onSubmitUrl: (url: string) => void;
+  /** Plain (non-URL) input is a YouTube search — handled by the Watch hub. */
+  onSearch?: (query: string) => void;
 }) {
   useEffect(() => {
     track("marketing_landing_seen", {});
@@ -31,12 +35,18 @@ export function MarketingLanding({
       className="relative w-full bg-[#F8FAFC] text-slate-900 selection:bg-accent"
       style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
-      <Hero onSubmitUrl={onSubmitUrl} />
+      <Hero onSubmitUrl={onSubmitUrl} onSearch={onSearch} />
     </div>
   );
 }
 
-function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
+function Hero({
+  onSubmitUrl,
+  onSearch,
+}: {
+  onSubmitUrl: (url: string) => void;
+  onSearch?: (query: string) => void;
+}) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +93,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
         {/* ---------- Start with your own video (primary on desktop) ---------- */}
         <div className="flex w-full flex-col items-center">
           <p className="text-sm font-semibold text-slate-500 lg:text-[0.95rem]">
-            <span className="lg:hidden">Have your own video?</span>
+            <span className="lg:hidden">Search or paste a video</span>
             <span className="hidden lg:inline">Start with a video</span>
           </p>
 
@@ -92,6 +102,7 @@ function Hero({ onSubmitUrl }: { onSubmitUrl: (url: string) => void }) {
             setValue={setValue}
             inputRef={inputRef}
             onSubmitUrl={onSubmitUrl}
+            onSearch={onSearch}
           />
 
           <p className="mt-3 text-xs text-slate-400">or</p>
@@ -139,11 +150,13 @@ function UrlForm({
   setValue,
   inputRef,
   onSubmitUrl,
+  onSearch,
 }: {
   value: string;
   setValue: (v: string) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
   onSubmitUrl: (url: string) => void;
+  onSearch?: (query: string) => void;
 }) {
   const trimmed = value.trim();
   return (
@@ -152,6 +165,11 @@ function UrlForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!trimmed) return;
+        if (!looksLikeUrl(trimmed) && onSearch) {
+          setEntryPath("explore");
+          onSearch(trimmed);
+          return;
+        }
         setEntryPath("own_url");
         track("own_video_url_submitted", { placement: "hero" });
         onSubmitUrl(trimmed);
@@ -163,9 +181,9 @@ function UrlForm({
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          aria-label="Paste a Dutch YouTube link"
-          placeholder="Paste a Dutch YouTube link…"
-          inputMode="url"
+          aria-label="Search Dutch YouTube or paste a link"
+          placeholder="Search Dutch YouTube or paste a link…"
+          inputMode="search"
           autoComplete="off"
           className="h-12 w-full rounded-full border border-slate-300 bg-white pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
