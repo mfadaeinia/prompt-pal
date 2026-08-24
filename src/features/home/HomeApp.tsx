@@ -30,6 +30,7 @@ import { saveVideo, listSavedVideos } from "@/lib/saved-videos.functions";
 import { logLibraryEvent } from "@/lib/library-events.functions";
 import { getBrowserId } from "@/lib/browser-id";
 import { getSessionId, getAnonymousUserId } from "@/lib/identity";
+import { logProductEvent } from "@/lib/product-events";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
 import {
@@ -630,16 +631,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         timestamp_seconds: Math.round(vars.sentence.offset),
         target_language: targetLang,
       });
-      void logLibraryEventFx({
-        data: {
-          eventName: "expression_saved",
-          sessionId: browserId,
-          anonymousId: browserId || null,
-          videoId: videoId ?? null,
-          userId,
-          metadata: { source: "explanation_panel" },
-        },
-      }).catch(() => {});
+      logProductEvent("expression_saved", {
+        videoId,
+        userId,
+        metadata: { source: "explanation_panel" },
+      });
       setJustSavedId(vars.sentence.id);
       window.setTimeout(() => setJustSavedId(null), 1800);
       qc.invalidateQueries({ queryKey: ["saved-expressions"] });
@@ -753,16 +749,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           target_language: targetLang,
           source: "expression_row",
         });
-        void logLibraryEventFx({
-          data: {
-            eventName: "expression_saved",
-            sessionId: browserId,
-            anonymousId: browserId || null,
-            videoId: videoId ?? null,
-            userId,
-            metadata: { source: "expression_row" },
-          },
-        }).catch(() => {});
+        logProductEvent("expression_saved", {
+          videoId,
+          userId,
+          metadata: { source: "expression_row" },
+        });
         qc.invalidateQueries({ queryKey: ["saved-expressions"] });
         setJustSavedExpressionHead(headKey);
         window.setTimeout(() => setJustSavedExpressionHead(null), 1400);
@@ -859,16 +850,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           timestamp_seconds: Math.round(sentence.offset),
           selected_length: text.length,
         });
-        void logLibraryEventFx({
-          data: {
-            eventName: "expression_saved",
-            sessionId: browserId,
-            anonymousId: browserId || null,
-            videoId: videoId ?? null,
-            userId,
-            metadata: { source: "text_selection", selected_length: text.length },
-          },
-        }).catch(() => {});
+        logProductEvent("expression_saved", {
+          videoId,
+          userId,
+          metadata: { source: "text_selection", selected_length: text.length },
+        });
         qc.invalidateQueries({ queryKey: ["saved-expressions"] });
         setSelJustSaved(true);
         window.setTimeout(() => setSelJustSaved(false), 1400);
@@ -2267,24 +2253,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       | "hint_clicked",
     extra: Record<string, unknown> = {},
   ) => {
-    const sid = browserId;
-    if (!sid) return;
     const meta = {
       seconds_since_video_open: secondsSinceOpen(),
       ts: new Date().toISOString(),
       ...extra,
     };
     track(eventName, { video_id: videoId, ...meta });
-    void logLibraryEventFx({
-      data: {
-        eventName,
-        sessionId: sid,
-        anonymousId: getAnonymousUserId() || null,
-        videoId: videoId ?? null,
-        userId,
-        metadata: meta,
-      },
-    }).catch(() => {});
+    logProductEvent(eventName, { videoId, userId, metadata: meta });
   };
 
   // Fire `transcript_visible` once per session when the transcript first
@@ -2292,7 +2267,6 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   useEffect(() => {
     if (transcriptVisibleFiredRef.current) return;
     if (sentences.length === 0) return;
-    if (!browserId) return;
     transcriptVisibleFiredRef.current = true;
     logDiscovery("transcript_visible", { sentence_count: sentences.length });
 
@@ -2317,7 +2291,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   useEffect(() => {
     if (transcriptSeenFiredRef.current) return;
     const el = listRef.current;
-    if (!el || sentences.length === 0 || !browserId) return;
+    if (!el || sentences.length === 0) return;
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -2338,7 +2312,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   // Fire `hint_shown` once when the hint becomes visible.
   useEffect(() => {
-    if (!showSentenceHint || hintShownFiredRef.current || !browserId) return;
+    if (!showSentenceHint || hintShownFiredRef.current) return;
     hintShownFiredRef.current = true;
     logDiscovery("hint_shown");
     try {
@@ -2504,16 +2478,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       video_id: videoId,
       explanations_opened: explanationsOpenedRef.current,
     });
-    if (browserId) {
-      void logLibraryEventFx({
-        data: {
-          eventName: "explanation_viewed",
-          sessionId: browserId,
-          videoId: videoId ?? null,
-          userId,
-        },
-      }).catch(() => {});
-    }
+    logProductEvent("explanation_viewed", { videoId, userId });
     // Primary feedback trigger: after the 3rd explanation in this session.
     // Slight delay so the user has time to actually read the explanation.
     if (explanationsOpenedRef.current === 3) {
@@ -2990,29 +2955,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         video_id: videoId,
       });
     }
-    if (browserId) {
-      console.log("sentence_click_start", { sessionId: browserId, videoId });
-      void logLibraryEventFx({
-        data: {
-          eventName: "sentence_clicked",
-          sessionId: browserId,
-          videoId: videoId ?? null,
-          userId,
-        },
-      })
-        .then((res) => {
-          if (res && (res as any).ok === false) {
-            console.error("sentence_click_failed", (res as any).error);
-          } else {
-            console.log("sentence_click_success");
-          }
-        })
-        .catch((err) => {
-          console.error("sentence_click_failed", err);
-        });
-    } else {
-      console.warn("sentence_click_skipped: no browserId yet");
-    }
+    logProductEvent("sentence_clicked", { videoId, userId });
     // First click of the session — separate funnel event.
     if (!firstClickFiredRef.current) {
       firstClickFiredRef.current = true;
