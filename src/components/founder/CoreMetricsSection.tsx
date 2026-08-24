@@ -1,6 +1,20 @@
 import type { CoreMetrics } from "@/lib/core-metrics.functions";
 
 /**
+ * Exact UTC timestamp, to the minute, so tracking-start notes are unambiguous.
+ * Example: "2026-08-24 00:00 UTC".
+ */
+function formatExact(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(
+    d.getUTCHours(),
+  )}:${p(d.getUTCMinutes())} UTC`;
+}
+
+
+/**
  * Single source of truth panel for the corrected measurement foundation.
  * Every number states its UNIT (session / visitor / user) and never mixes them.
  */
