@@ -37,7 +37,7 @@ export function StaticProductPreview({ onClick }: { onClick?: () => void }) {
         </span>
         {/* Subtitle overlay, as in the real player */}
         <div className="absolute inset-x-3 bottom-3 flex justify-center">
-          <span className="inline-block max-w-full rounded bg-black/75 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white sm:text-xs">
+          <span className="inline-block max-w-full rounded bg-black/80 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white ring-2 ring-primary sm:text-xs">
             {MOMENT.sentence}
           </span>
         </div>
