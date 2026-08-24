@@ -11,7 +11,10 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   title?: string;
   description?: string;
+  /** Absolute URL to return to after OAuth. Defaults to the current page. */
+  returnUrl?: string;
 };
+
 
 const BENEFITS = [
   "Save words and phrases automatically",
