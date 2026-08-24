@@ -32,6 +32,13 @@ import { getBrowserId } from "@/lib/browser-id";
 import { getSessionId, getAnonymousUserId } from "@/lib/identity";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthDialog } from "@/components/AuthDialog";
+import {
+  absoluteReturnUrl,
+  clearPostAuthRedirect,
+  setPostAuthRedirect,
+  takePostAuthRedirect,
+  type PendingSaveIntent,
+} from "@/lib/post-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,17 +137,42 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
   const [authOpen, setAuthOpen] = useState(false);
+  const [authReturnUrl, setAuthReturnUrl] = useState<string | undefined>(undefined);
   const pendingActionRef = useRef<null | (() => void)>(null);
   const initialAuthHandledRef = useRef(false);
 
-  function requireAuth(action: () => void) {
+  /**
+   * Path to return to after an OAuth round-trip: the current watch session
+   * (video + playback position + explanation language) so learners land back
+   * exactly where they were instead of on the landing page.
+   */
+  function currentReturnPath(): string {
+    if (typeof window === "undefined") return "/";
+    const watchUrl = url || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : "");
+    if (!watchUrl) return window.location.pathname || "/";
+    const params = new URLSearchParams();
+    params.set("v", watchUrl);
+    params.set("t", String(Math.max(0, Math.floor(currentTime))));
+    if (targetLang) params.set("lang", targetLang);
+    return `${window.location.pathname || "/"}?${params.toString()}`;
+  }
+
+  function requireAuth(action: () => void, intent?: PendingSaveIntent) {
     if (isAuthenticated) {
       action();
     } else {
-      pendingActionRef.current = action;
+      const path = currentReturnPath();
+      setPostAuthRedirect(path, intent ?? null);
+      setAuthReturnUrl(absoluteReturnUrl(path));
+      pendingActionRef.current = () => {
+        // The popup flow keeps the page alive, so the stored context is unused.
+        clearPostAuthRedirect();
+        action();
+      };
       setAuthOpen(true);
     }
   }
+
 
 
 
@@ -525,6 +557,45 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   }, [browserId, claimAnonFx, qc]);
 
 
+  // After a full-page OAuth round-trip: restore the watch session (if the
+  // return path was lost) and complete the save the user asked for before
+  // being prompted to sign in. Single-use: the stored context is cleared on
+  // read, so it never leaks into a later, unrelated login.
+  const postAuthReplayRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || postAuthReplayRef.current) return;
+    postAuthReplayRef.current = true;
+    const ctx = takePostAuthRedirect();
+    if (!ctx) return;
+
+    // Missing/invalid watch context → stay on the current page (home).
+    if (!url && !videoId && ctx.path.includes("v=")) {
+      setPostAuthRedirect(ctx.path, ctx.intent ?? null);
+      window.location.replace(ctx.path);
+      return;
+    }
+
+    const intent = ctx.intent;
+    if (!intent) return;
+    void (async () => {
+      try {
+        if (intent.kind === "expression") {
+          await saveExpressionFx({ data: intent.data as any });
+          track("expression_saved", { video_id: videoId, source: "post_auth_resume" });
+          qc.invalidateQueries({ queryKey: ["saved-expressions"] });
+        } else {
+          await saveVideoFx({ data: intent.data as any });
+          track("video_saved", { video_id: videoId, source: "post_auth_resume" });
+          qc.invalidateQueries({ queryKey: ["saved-videos"] });
+        }
+      } catch {
+        // Best-effort: the user can still tap Save again.
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated]);
+
+
   // Authenticated users can still visit the landing page directly — the
   // marketing CTAs route them into the app on click. No forced redirect here.
 
@@ -604,12 +675,35 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       translation: ready?.translation || null,
       note: ready?.note && ready.note !== "—" ? ready.note : null,
     };
-    requireAuth(() => saveExpressionMutation.mutate(payload));
+    requireAuth(() => saveExpressionMutation.mutate(payload), {
+      kind: "expression",
+      data: {
+        sessionId: browserId,
+        sentenceText: s.text,
+        translation: payload.translation,
+        expressionNotes: payload.note,
+        videoTitle: videoTitle,
+        videoUrl: url || null,
+        videoId: videoId,
+        timestampSeconds: Math.max(0, Math.round(s.offset)),
+        targetLanguage: targetLang || null,
+      },
+    });
   }
 
   function handleSaveVideo() {
     if (!videoId) return;
-    requireAuth(() => saveVideoMutation.mutate());
+    requireAuth(() => saveVideoMutation.mutate(), {
+      kind: "video",
+      data: {
+        videoId,
+        videoUrl: url || `https://www.youtube.com/watch?v=${videoId}`,
+        videoTitle: videoTitle || null,
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        targetLanguage: targetLang || null,
+        sessionId: browserId || null,
+      },
+    });
   }
 
   // Per-expression save (the bookmark icon inside Useful expressions).
@@ -623,6 +717,20 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (!sentence || !head.trim()) return;
     const headKey = head.trim().toLowerCase();
     if (savedExpressionHeads.has(headKey)) return;
+    const intent: PendingSaveIntent = {
+      kind: "expression",
+      data: {
+        sessionId: browserId,
+        sentenceText: head.trim(),
+        translation: meaning || null,
+        expressionNotes: `From: "${sentence.text}"`,
+        videoTitle: videoTitle,
+        videoUrl: url || null,
+        videoId: videoId,
+        timestampSeconds: Math.max(0, Math.round(sentence.offset)),
+        targetLanguage: targetLang || null,
+      },
+    };
     requireAuth(async () => {
       setSavingExpressionHead(headKey);
       try {
@@ -661,7 +769,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       } finally {
         setSavingExpressionHead(null);
       }
-    });
+    }, intent);
   }
 
   // ── Selection-based "Save expression" floating menu ──────────────────────
@@ -772,7 +880,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         setSelSaving(false);
       }
     };
-    requireAuth(() => void doSave());
+    requireAuth(() => void doSave(), {
+      kind: "expression",
+      data: {
+        sessionId: browserId,
+        sentenceText: popover.text,
+        translation: null,
+        meaning: null,
+        expressionNotes: `Selected from: "${popover.sentence.text}"`,
+        videoTitle: videoTitle,
+        videoUrl: url || null,
+        videoId: videoId,
+        timestampSeconds: Math.max(0, Math.round(popover.sentence.offset)),
+        targetLanguage: targetLang || null,
+      },
+    });
   }
 
 
@@ -4152,9 +4274,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       )}
       <AuthDialog
         open={authOpen}
+        returnUrl={authReturnUrl}
         onOpenChange={(v) => {
           setAuthOpen(v);
-          if (!v) pendingActionRef.current = null;
+          if (!v) {
+            pendingActionRef.current = null;
+            clearPostAuthRedirect();
+          }
         }}
       />
     </div>

@@ -11,7 +11,10 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   title?: string;
   description?: string;
+  /** Absolute URL to return to after OAuth. Defaults to the current page. */
+  returnUrl?: string;
 };
+
 
 const BENEFITS = [
   "Save words and phrases automatically",
@@ -25,6 +28,7 @@ export function AuthDialog({
   onOpenChange,
   title = "Create your free account",
   description = "Save vocabulary, track your progress, and continue learning across devices.",
+  returnUrl,
 }: Props) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export function AuthDialog({
     track("google_login_started", {});
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.href,
+        redirect_uri: returnUrl || window.location.href,
       });
       if (result.error) {
         setError(result.error.message || "Could not sign in with Google.");
