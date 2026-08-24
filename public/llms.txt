@@ -1,6 +1,6 @@
 # NativeFlow
 
-> Turn any YouTube video into an interactive language lesson. Click any sentence in the transcript to get instant translations, explanations, and expression notes — so you can learn from real native content without losing the flow.
+> Turn any YouTube video or podcast you love into a language lesson, without leaving the experience.
 
 NativeFlow helps intermediate language learners understand and stay engaged with authentic podcasts and videos. Paste a YouTube URL, pick the language you want explanations in, and tap sentences in the transcript whenever you need help.
 

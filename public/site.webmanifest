@@ -1,7 +1,7 @@
 {
   "name": "NativeFlow",
   "short_name": "NativeFlow",
-  "description": "Turn any Dutch YouTube video into an interactive lesson.",
+  "description": "Turn any YouTube video or podcast you love into a language lesson, without leaving the experience.",
   "icons": [
     { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
