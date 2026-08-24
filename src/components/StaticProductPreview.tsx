@@ -36,9 +36,12 @@ export function StaticProductPreview({ onClick }: { onClick?: () => void }) {
           <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> {MOMENT.channel}
         </span>
         {/* Subtitle overlay, as in the real player */}
-        <div className="absolute inset-x-3 bottom-3 flex justify-center">
-          <span className="inline-block max-w-full rounded bg-black/75 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white sm:text-xs">
+        <div className="absolute inset-x-3 bottom-3 flex flex-col items-center gap-1">
+          <span className="inline-block max-w-full rounded bg-black/80 px-2 py-1 text-center text-[11px] font-medium leading-tight text-white ring-2 ring-primary sm:text-xs">
             {MOMENT.sentence}
+          </span>
+          <span className="rounded-full bg-primary px-2 py-[2px] text-[9px] font-semibold uppercase tracking-wider text-white">
+            tapped
           </span>
         </div>
       </div>
