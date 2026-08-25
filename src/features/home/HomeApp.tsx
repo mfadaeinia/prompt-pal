@@ -87,7 +87,7 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
@@ -264,14 +264,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // Windowed vs fullscreen viewing mode. In fullscreen the transcript panel is
   // gone: captions overlay the video and the explanation opens over it.
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Transcript is optional, but on large screens ("screen view") it is open by
-  // default and sits under a slightly smaller player so learners can read and
-  // scroll along with the highlighted sentence.
+  // The transcript is OPTIONAL on every screen size — the interactive subtitle
+  // overlay on the video is the primary learning surface. It only mounts when
+  // the learner explicitly asks for it ("Transcript" control under the video).
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.innerWidth >= 1024) setTranscriptOpen(true);
-  }, []);
 
   const stageRef = useRef<HTMLDivElement>(null);
   // Recommendations are NOT in the DOM until the video ends or the learner
@@ -2722,9 +2718,20 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         ...common,
         expression: expression ?? null,
       });
+      track("expression_clicked", {
+        ...common,
+        expression: expression ?? null,
+        source: "video_overlay",
+      });
     } else {
       trackWatch("subtitle_explanation_requested", common);
+      track("subtitle_clicked", { ...common, source: "video_overlay" });
     }
+    track("explanation_opened", {
+      ...common,
+      trigger: source,
+      source: "video_overlay",
+    });
   }
 
 
@@ -2895,7 +2902,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       });
     }
     track("learning_resume", { video_id: videoId });
+    track("resume_clicked", {
+      video_id: videoId,
+      sentence_id: selected?.id ?? null,
+      source: "explanation_panel",
+    });
 
+  }
+
+  /** Transcript is a supporting surface — opening/closing it is measured so we
+   *  can tell whether learners live in the video overlay or the transcript. */
+  function toggleTranscript() {
+    const next = !transcriptOpen;
+    setTranscriptOpen(next);
+    track("transcript_toggled", { video_id: videoId, open: next });
+    track(next ? "transcript_opened" : "transcript_closed", { video_id: videoId });
   }
 
   // Explicitly close the Aha Panel (clears manual selection) and resume playback.
@@ -2961,8 +2982,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     uniqueClickedRef.current.add(idx);
     trackWatch("transcript_sentence_clicked", {
       sentence_index: idx,
+      sentence_id: s.id,
       video_id: videoId,
+      source: "transcript",
     });
+    if (studyMode) {
+      track("explanation_opened", {
+        video_id: videoId,
+        sentence_id: s.id,
+        source: "transcript",
+      });
+    }
     track("sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
@@ -3014,6 +3044,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       track("sentence_replayed", {
         sentence_index: idx,
         sentence_start_time: selected.offset,
+        video_id: videoId,
+      });
+      track("replay_clicked", {
+        sentence_index: idx,
+        sentence_id: selected.id,
         video_id: videoId,
       });
       if (isDemo) {
@@ -3624,7 +3659,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     {studyMode && currentSentence && (
                       <VideoSubtitle
                         text={currentSentence.text}
-                        highlight={autoExpression?.head ?? null}
+                        highlight={
+                          explanationOpen && focusExpression
+                            ? focusExpression
+                            : autoExpression?.head ?? null
+                        }
+                        emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
                           subtitleHintVisible
                             ? "Didn't catch that? Tap the subtitle for an explanation."
@@ -3713,13 +3753,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 <div className="order-3 mx-auto w-full min-w-0 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
-                    onClick={() => {
-                      setTranscriptOpen((v) => !v);
-                      track("transcript_toggled", {
-                        video_id: videoId,
-                        open: !transcriptOpen,
-                      });
-                    }}
+                    onClick={toggleTranscript}
                     aria-expanded={transcriptOpen}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
@@ -4129,10 +4163,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </section>
             )}
 
-            {/* Supporting/marketing content lives BELOW the product. */}
+            {/* Supporting/marketing content lives BELOW the product.
+                First-time/demo visitors get the concept cards; returning
+                signed-in users get useful actions instead of a re-explanation
+                of a product they already understand. */}
             <section className="space-y-4 pt-8">
               <HowItWorksStrip />
-              <ValueCards />
+              {isAuthenticated ? (
+                <ReturningUserActions
+                  transcriptOpen={transcriptOpen}
+                  onToggleTranscript={toggleTranscript}
+                  onFindVideo={goWatchHub}
+                />
+              ) : (
+                <ValueCards />
+              )}
             </section>
 
 
@@ -5936,6 +5981,49 @@ function LoadingProgress() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * Returning signed-in users already understand NativeFlow — the space below
+ * the player offers actions (transcript, saved expressions, discovery) rather
+ * than cards re-explaining the concept.
+ */
+function ReturningUserActions({
+  transcriptOpen,
+  onToggleTranscript,
+  onFindVideo,
+}: {
+  transcriptOpen: boolean;
+  onToggleTranscript: () => void;
+  onFindVideo: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button type="button" variant="outline" size="sm" onClick={onToggleTranscript}>
+        <Captions className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        {transcriptOpen ? "Hide transcript" : "Transcript"}
+      </Button>
+      <Button asChild variant="outline" size="sm">
+        <Link
+          to="/saved"
+          onClick={() => track("saved_expressions_opened", { source: "watch_page" })}
+        >
+          <Bookmark className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Saved expressions
+        </Link>
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onFindVideo}>
+        <Search className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        Find a video
+      </Button>
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/library">
+          <BookOpen className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Explore Dutch videos
+        </Link>
+      </Button>
     </div>
   );
 }

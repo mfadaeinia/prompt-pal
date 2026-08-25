@@ -3,6 +3,15 @@ type Props = {
   text: string;
   /** Expression inside the text worth noticing (rendered emphasized). */
   highlight?: string | null;
+  /**
+   * Interaction state: true while the explanation for this sentence is open.
+   * Normal watching keeps the expression calm (a quiet dotted underline — the
+   * video stays dominant); an explicit tap promotes the SAME phrase to a
+   * strong continuous highlight so the link "this phrase → this explanation"
+   * is visually obvious. The phrase is always ONE semantic unit, never
+   * tokenized into separate word boxes.
+   */
+  emphasized?: boolean;
   /** Explicit tap on the highlighted expression (expression explanation). */
   onHighlightClick?: () => void;
   /** Explicit tap anywhere else in the subtitle (sentence explanation). */
@@ -32,6 +41,7 @@ function splitAround(text: string, phrase?: string | null) {
 export function VideoSubtitle({
   text,
   highlight,
+  emphasized = false,
   onHighlightClick,
   onSentenceClick,
   hint,
@@ -82,7 +92,13 @@ export function VideoSubtitle({
                   e.stopPropagation();
                   onHighlightClick?.();
                 }}
-                className="rounded bg-primary/85 px-1 font-semibold text-primary-foreground underline decoration-primary-foreground/50 decoration-dotted underline-offset-2"
+                // box-decoration-clone keeps a wrapped multi-word phrase
+                // visually continuous — ONE expression, never word-sized boxes.
+                className={
+                  emphasized
+                    ? "box-decoration-clone rounded bg-primary/85 px-1 font-semibold text-primary-foreground"
+                    : "box-decoration-clone font-semibold underline decoration-primary-foreground/70 decoration-dotted underline-offset-4 transition-colors hover:decoration-solid"
+                }
               >
                 {parts[1]}
               </button>
