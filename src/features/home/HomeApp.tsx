@@ -5214,7 +5214,7 @@ function SentenceWithHighlights({ text, phrases }: { text: string; phrases: stri
         return (
           <mark
             key={i}
-            className="rounded bg-primary/20 px-0.5 text-foreground"
+            className="rounded bg-primary/20 box-decoration-clone px-0.5 text-foreground"
           >
             {part}
           </mark>
