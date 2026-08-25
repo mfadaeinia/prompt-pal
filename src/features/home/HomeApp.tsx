@@ -4675,7 +4675,7 @@ function ExplanationPanel({
               onClick={onResume}
               className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
             >
-              <Play className="h-3.5 w-3.5" /> Continue watching
+              <Play className="h-3.5 w-3.5" /> Resume
             </Button>
           )}
           <Button
