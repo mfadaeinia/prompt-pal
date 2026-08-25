@@ -92,7 +92,13 @@ export function VideoSubtitle({
                   e.stopPropagation();
                   onHighlightClick?.();
                 }}
-                className="rounded bg-primary/85 px-1 font-semibold text-primary-foreground underline decoration-primary-foreground/50 decoration-dotted underline-offset-2"
+                // box-decoration-clone keeps a wrapped multi-word phrase
+                // visually continuous — ONE expression, never word-sized boxes.
+                className={
+                  emphasized
+                    ? "box-decoration-clone rounded bg-primary/85 px-1 font-semibold text-primary-foreground"
+                    : "box-decoration-clone font-semibold underline decoration-primary-foreground/70 decoration-dotted underline-offset-4 transition-colors hover:decoration-solid"
+                }
               >
                 {parts[1]}
               </button>
