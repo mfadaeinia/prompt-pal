@@ -4874,27 +4874,33 @@ function ExplanationSections({
               const isExprSaved = !!savedExpressionHeads?.has(headKey);
               const isExprSaving = savingExpressionHead === headKey;
               const isExprJustSaved = justSavedExpressionHead === headKey;
+              // Atomic phrase layout: the expression always gets the full
+              // usable width; meaning + tag sit on the line below so nothing
+              // competes horizontally with the phrase itself.
               const inner = (
-                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                <div className="min-w-0">
                   <span
-                    className={`font-bold text-foreground ${
-                      isActive ? "rounded bg-primary/15 px-1 -mx-1" : ""
+                    className={`block font-bold leading-snug text-foreground ${
+                      isActive ? "rounded bg-primary/15 box-decoration-clone px-1 -mx-1" : ""
                     }`}
                   >
                     {it.head}
                   </span>
-                  <span className="flex items-baseline gap-2">
-                    {it.meaning && (
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {it.meaning}
-                      </span>
-                    )}
-                    {it.tag && (
-                      <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
-                        {it.tag}
-                      </span>
-                    )}
-                  </span>
+                  {(it.meaning || it.tag) && (
+                    <span className="mt-0.5 block text-sm font-normal leading-snug text-muted-foreground">
+                      {it.meaning}
+                      {it.tag && (
+                        <>
+                          <span className="mx-1 text-muted-foreground/50" aria-hidden>
+                            ·
+                          </span>
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                            {it.tag}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
               );
               return (
@@ -5105,19 +5111,24 @@ function ExpressionList({
           const clickable = !!onSelect;
           const Inner = (
             <>
-              <span className={`font-bold text-foreground ${isActive ? "bg-primary/15 rounded px-1 -mx-1" : ""}`}>
+              <span className={`block font-bold leading-snug text-foreground ${isActive ? "bg-primary/15 box-decoration-clone rounded px-1 -mx-1" : ""}`}>
                 {it.head}
               </span>
-              <span className="flex items-baseline gap-2">
-                {it.meaning && (
-                  <span className="text-sm font-normal text-muted-foreground">{it.meaning}</span>
-                )}
-                {it.tag && (
-                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wide text-muted-foreground/70">
-                    {it.tag}
-                  </span>
-                )}
-              </span>
+              {(it.meaning || it.tag) && (
+                <span className="mt-0.5 block text-sm font-normal leading-snug text-muted-foreground">
+                  {it.meaning}
+                  {it.tag && (
+                    <>
+                      <span className="mx-1 text-muted-foreground/50" aria-hidden>
+                        ·
+                      </span>
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                        {it.tag}
+                      </span>
+                    </>
+                  )}
+                </span>
+              )}
             </>
           );
           return (
@@ -5126,13 +5137,13 @@ function ExpressionList({
                 <button
                   type="button"
                   onClick={() => onSelect?.(it.head)}
-                  className="flex w-full flex-col gap-0 rounded-md text-left transition-colors hover:bg-muted/40 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3"
+                  className="block w-full min-w-0 rounded-md text-left transition-colors hover:bg-muted/40"
                   aria-pressed={isActive}
                 >
                   {Inner}
                 </button>
               ) : (
-                <div className="flex flex-col gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                <div className="min-w-0">
                   {Inner}
                 </div>
               )}
@@ -5203,7 +5214,7 @@ function SentenceWithHighlights({ text, phrases }: { text: string; phrases: stri
         return (
           <mark
             key={i}
-            className="rounded bg-primary/20 px-0.5 text-foreground"
+            className="rounded bg-primary/20 box-decoration-clone px-0.5 text-foreground"
           >
             {part}
           </mark>
