@@ -41,6 +41,7 @@ function splitAround(text: string, phrase?: string | null) {
 export function VideoSubtitle({
   text,
   highlight,
+  emphasized = false,
   onHighlightClick,
   onSentenceClick,
   hint,
