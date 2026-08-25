@@ -4163,10 +4163,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </section>
             )}
 
-            {/* Supporting/marketing content lives BELOW the product. */}
+            {/* Supporting/marketing content lives BELOW the product.
+                First-time/demo visitors get the concept cards; returning
+                signed-in users get useful actions instead of a re-explanation
+                of a product they already understand. */}
             <section className="space-y-4 pt-8">
               <HowItWorksStrip />
-              <ValueCards />
+              {isAuthenticated ? (
+                <ReturningUserActions
+                  transcriptOpen={transcriptOpen}
+                  onToggleTranscript={toggleTranscript}
+                  onFindVideo={goWatchHub}
+                />
+              ) : (
+                <ValueCards />
+              )}
             </section>
 
 
@@ -5970,6 +5981,49 @@ function LoadingProgress() {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * Returning signed-in users already understand NativeFlow — the space below
+ * the player offers actions (transcript, saved expressions, discovery) rather
+ * than cards re-explaining the concept.
+ */
+function ReturningUserActions({
+  transcriptOpen,
+  onToggleTranscript,
+  onFindVideo,
+}: {
+  transcriptOpen: boolean;
+  onToggleTranscript: () => void;
+  onFindVideo: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button type="button" variant="outline" size="sm" onClick={onToggleTranscript}>
+        <Captions className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        {transcriptOpen ? "Hide transcript" : "Transcript"}
+      </Button>
+      <Button asChild variant="outline" size="sm">
+        <Link
+          to="/saved"
+          onClick={() => track("saved_expressions_opened", { source: "watch_page" })}
+        >
+          <Bookmark className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Saved expressions
+        </Link>
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onFindVideo}>
+        <Search className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+        Find a video
+      </Button>
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/library">
+          <BookOpen className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+          Explore Dutch videos
+        </Link>
+      </Button>
     </div>
   );
 }
