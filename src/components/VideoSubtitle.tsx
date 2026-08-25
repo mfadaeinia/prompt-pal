@@ -3,6 +3,15 @@ type Props = {
   text: string;
   /** Expression inside the text worth noticing (rendered emphasized). */
   highlight?: string | null;
+  /**
+   * Interaction state: true while the explanation for this sentence is open.
+   * Normal watching keeps the expression calm (a quiet dotted underline — the
+   * video stays dominant); an explicit tap promotes the SAME phrase to a
+   * strong continuous highlight so the link "this phrase → this explanation"
+   * is visually obvious. The phrase is always ONE semantic unit, never
+   * tokenized into separate word boxes.
+   */
+  emphasized?: boolean;
   /** Explicit tap on the highlighted expression (expression explanation). */
   onHighlightClick?: () => void;
   /** Explicit tap anywhere else in the subtitle (sentence explanation). */
