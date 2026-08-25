@@ -87,7 +87,7 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ChevronDown, ArrowDownToLine, Languages } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
@@ -2718,9 +2718,20 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         ...common,
         expression: expression ?? null,
       });
+      track("expression_clicked", {
+        ...common,
+        expression: expression ?? null,
+        source: "video_overlay",
+      });
     } else {
       trackWatch("subtitle_explanation_requested", common);
+      track("subtitle_clicked", { ...common, source: "video_overlay" });
     }
+    track("explanation_opened", {
+      ...common,
+      trigger: source,
+      source: "video_overlay",
+    });
   }
 
 
@@ -2891,7 +2902,21 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       });
     }
     track("learning_resume", { video_id: videoId });
+    track("resume_clicked", {
+      video_id: videoId,
+      sentence_id: selected?.id ?? null,
+      source: "explanation_panel",
+    });
 
+  }
+
+  /** Transcript is a supporting surface — opening/closing it is measured so we
+   *  can tell whether learners live in the video overlay or the transcript. */
+  function toggleTranscript() {
+    const next = !transcriptOpen;
+    setTranscriptOpen(next);
+    track("transcript_toggled", { video_id: videoId, open: next });
+    track(next ? "transcript_opened" : "transcript_closed", { video_id: videoId });
   }
 
   // Explicitly close the Aha Panel (clears manual selection) and resume playback.
@@ -2957,8 +2982,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     uniqueClickedRef.current.add(idx);
     trackWatch("transcript_sentence_clicked", {
       sentence_index: idx,
+      sentence_id: s.id,
       video_id: videoId,
+      source: "transcript",
     });
+    if (studyMode) {
+      track("explanation_opened", {
+        video_id: videoId,
+        sentence_id: s.id,
+        source: "transcript",
+      });
+    }
     track("sentence_clicked", {
       sentence_index: idx,
       sentence_text: s.text,
@@ -3010,6 +3044,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       track("sentence_replayed", {
         sentence_index: idx,
         sentence_start_time: selected.offset,
+        video_id: videoId,
+      });
+      track("replay_clicked", {
+        sentence_index: idx,
+        sentence_id: selected.id,
         video_id: videoId,
       });
       if (isDemo) {
@@ -3620,7 +3659,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     {studyMode && currentSentence && (
                       <VideoSubtitle
                         text={currentSentence.text}
-                        highlight={autoExpression?.head ?? null}
+                        highlight={
+                          explanationOpen && focusExpression
+                            ? focusExpression
+                            : autoExpression?.head ?? null
+                        }
+                        emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
                           subtitleHintVisible
                             ? "Didn't catch that? Tap the subtitle for an explanation."
@@ -3709,13 +3753,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 <div className="order-3 mx-auto w-full min-w-0 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
-                    onClick={() => {
-                      setTranscriptOpen((v) => !v);
-                      track("transcript_toggled", {
-                        video_id: videoId,
-                        open: !transcriptOpen,
-                      });
-                    }}
+                    onClick={toggleTranscript}
                     aria-expanded={transcriptOpen}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
