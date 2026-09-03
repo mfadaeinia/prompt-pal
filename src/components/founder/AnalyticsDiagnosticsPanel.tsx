@@ -3,7 +3,7 @@
  * Validation/debugging only — it reads client state and never writes analytics.
  */
 import { useEffect, useState } from "react";
-import { getAnonymousId, getSessionId } from "@/lib/identity";
+import { getAnonymousUserId, getSessionId } from "@/lib/identity";
 import { currentTrafficContext } from "@/lib/traffic-class";
 import { getWatchTimeSnapshot } from "@/lib/watch-time";
 import { getDiagnosticEvents, type DiagnosticEvent } from "@/lib/analytics-diagnostics";
@@ -42,7 +42,7 @@ export function AnalyticsDiagnosticsPanel() {
       if (cancelled) return;
       setSnap({
         sessionId: getSessionId(),
-        anonymousId: getAnonymousId(),
+        anonymousId: getAnonymousUserId(),
         userId: data.session?.user?.id ?? null,
         trafficClass: ctx.trafficClass,
         environment: ctx.environment,
