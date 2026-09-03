@@ -34,6 +34,8 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { CANONICAL_EQUIVALENTS } from "./analytics-events";
+import type { TrafficClass } from "./traffic-class";
 
 /** Unified canonical session_id across video_sessions + library_events. */
 export const UNIFIED_SESSION_TRACKING_START_ISO = "2026-08-24T00:00:00.000Z";
@@ -42,19 +44,28 @@ export const FUNNEL_EVENT_TRACKING_START_ISO = "2026-08-18T00:00:00.000Z";
 /** anonymous_user_id written to analytics rows. */
 export const ANON_TRACKING_START_ISO = "2026-08-11T00:00:00.000Z";
 
+/** Canonical traffic classification start (Phase 1 analytics repair). Rows
+ *  written before this timestamp carry no `traffic_class`. */
+export const TRAFFIC_CLASS_TRACKING_START_ISO = "2026-09-03T00:00:00.000Z";
+
 export const MEANINGFUL_EVENTS = [
   "video_started",
   "video_watched_30s",
+  "meaningful_watch_30s",
   "subtitle_explanation_requested",
+  "explanation_viewed",
   "video_resumed_after_explanation",
   "another_video_started",
   "sentence_clicked",
 ] as const;
 
 const FUNNEL_EVENTS = [
+  "video_selected",
   "video_started",
   "video_watched_30s",
+  "meaningful_watch_30s",
   "subtitle_explanation_requested",
+  "explanation_viewed",
   "video_resumed_after_explanation",
   "another_video_started",
 ] as const;
@@ -65,6 +76,12 @@ const Input = z.object({
   device: z.enum(["all", "desktop", "mobile", "tablet"]).default("all"),
   experience: z.enum(["all", "public", "passive_learning_experiment"]).default("all"),
   internal: z.enum(["exclude", "include"]).default("exclude"),
+  /**
+   * CANONICAL TRAFFIC FILTER. Product metrics default to production users only:
+   * demo, founder/admin, development, benchmark, automated-test and bot rows are
+   * excluded. `all` is a debugging escape hatch, never the product default.
+   */
+  traffic: z.enum(["production_only", "all"]).default("production_only"),
 });
 
 export type CoreMetrics = {
@@ -76,12 +93,23 @@ export type CoreMetrics = {
     periodCoversUnifiedTracking: boolean;
     periodCoversFunnelTracking: boolean;
   };
-  filters: { device: string; experience: string; internal: string };
+  filters: { device: string; experience: string; internal: string; traffic: string };
+  /**
+   * Documented denominator for every conversion rate the dashboard renders.
+   * Units are explicit; VISITOR / SESSION / USER are never mixed silently.
+   */
+  denominators: Record<string, string>;
+  /** How many rows in the window carry each traffic_class (post date-window,
+   *  pre traffic filter). `unclassified` = historical rows written before
+   *  traffic classification existed. */
+  trafficBreakdown: Record<string, number>;
   /** ACQUISITION */
   acquisition: {
     visitors: number; // VISITOR
     sessions: number; // SESSION
   };
+  /** Canonical video selection step (SESSION). */
+  selection: { videoSelected: number };
   /** CORE ACTIVATION — all SESSION unit, each step scoped to the previous. */
   activation: {
     videoStarted: number;
@@ -188,7 +216,26 @@ export const getCoreMetrics = createServerFn({ method: "POST" })
       (!!r.user_id && internalUsers.has(r.user_id)) ||
       (!!r.anonymous_id && internalVisitors.has(r.anonymous_id));
 
+    const trafficOf = (r: Row): TrafficClass | "unclassified" =>
+      (r.metadata?.traffic_class as TrafficClass | undefined) ?? "unclassified";
+
+    /**
+     * HISTORICAL ROWS: rows written before TRAFFIC_CLASS_TRACKING_START_ISO have
+     * no `traffic_class`. They are NEVER deleted or rewritten. Under
+     * `production_only` they are admitted only when the legacy internal
+     * heuristic says they are not internal, and they are counted separately as
+     * `trafficBreakdown.unclassified` so any number that leans on them is
+     * visible as such.
+     */
+    const passesTraffic = (r: Row) => {
+      if (data.traffic === "all") return true;
+      const tc = trafficOf(r);
+      if (tc === "unclassified") return !isInternalRow(r);
+      return tc === "production_user";
+    };
+
     const passes = (r: Row) => {
+      if (!passesTraffic(r)) return false;
       if (data.internal === "exclude" && isInternalRow(r)) return false;
       const md = r.metadata ?? {};
       if (data.device !== "all" && md.device_type && md.device_type !== data.device) return false;
@@ -199,6 +246,12 @@ export const getCoreMetrics = createServerFn({ method: "POST" })
 
     let internalRows = 0;
     for (const r of hist) if (isInternalRow(r)) internalRows += 1;
+
+    const trafficBreakdown: Record<string, number> = {};
+    for (const r of win) {
+      const tc = trafficOf(r);
+      trafficBreakdown[tc] = (trafficBreakdown[tc] ?? 0) + 1;
+    }
 
     const windowRows = win.filter(passes);
     const histRows = hist.filter(passes);
@@ -216,9 +269,20 @@ export const getCoreMetrics = createServerFn({ method: "POST" })
       for (const v of a) if (b.has(v)) out.add(v);
       return out;
     };
+    /** Canonical step: canonical event name OR its documented legacy
+     *  equivalent (historical rows), unioned. */
+    const sessionsWithCanonical = (step: string) => {
+      const names = CANONICAL_EQUIVALENTS[step] ?? [step];
+      const out = new Set<string>();
+      for (const n of names) for (const sid of sessionsWith(n)) out.add(sid);
+      return out;
+    };
+
+    const selected = sessionsWithCanonical("video_selected");
     const started = sessionsWith("video_started");
-    const watched30 = inter(sessionsWith("video_watched_30s"), started);
-    const asked = inter(sessionsWith("subtitle_explanation_requested"), started);
+    // TRUE SET INTERSECTION everywhere — no Math.min clamping, ever.
+    const watched30 = inter(sessionsWithCanonical("meaningful_watch_30s"), started);
+    const asked = inter(sessionsWithCanonical("explanation_viewed"), started);
     const coreActivated = inter(watched30, asked);
     const continued = inter(sessionsWith("video_resumed_after_explanation"), asked);
     const another = inter(sessionsWith("another_video_started"), started);
@@ -304,8 +368,22 @@ export const getCoreMetrics = createServerFn({ method: "POST" })
         device: data.device,
         experience: data.experience,
         internal: data.internal,
+        traffic: data.traffic,
       },
+      denominators: {
+        watched30s: "sessions with video_started (SESSION)",
+        explanationRequested: "sessions with video_started (SESSION)",
+        coreActivated: "sessions with video_started (SESSION)",
+        continuedAfterExplanation: "sessions with video_started (SESSION)",
+        anotherVideoStarted: "sessions with video_started (SESSION)",
+        videoStarted: "sessions with video_selected, when present (SESSION)",
+        activationRate: "core-activated sessions / sessions with video_started (SESSION)",
+        retentionD1: "eligible = visitors/users whose first meaningful day is ≥1 day old",
+        retentionD7: "eligible = visitors/users whose first meaningful day is ≥7 days old",
+      },
+      trafficBreakdown,
       acquisition: { visitors: allVisitors.size, sessions: allSessions.size },
+      selection: { videoSelected: selected.size },
       activation: {
         videoStarted: started.size,
         watched30s: watched30.size,
