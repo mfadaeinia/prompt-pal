@@ -12,6 +12,7 @@ import {
 } from "@/lib/experiment-markers.functions";
 import { getLibraryHealth, revalidateLibrary } from "@/lib/library-health.functions";
 import { getCoreMetrics } from "@/lib/core-metrics.functions";
+import { AnalyticsDiagnosticsPanel } from "@/components/founder/AnalyticsDiagnosticsPanel";
 import { CoreMetricsSection } from "@/components/founder/CoreMetricsSection";
 
 
@@ -294,7 +295,8 @@ type FounderTab =
   | "cohort"
   | "health"
   | "feedback"
-  | "engineering";
+  | "engineering"
+  | "diagnostics";
 
 const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "core", label: "Core Metrics" },
@@ -305,6 +307,7 @@ const TABS: Array<{ id: FounderTab; label: string }> = [
   { id: "health", label: "Product Health" },
   { id: "feedback", label: "Feedback" },
   { id: "engineering", label: "Engineering" },
+  { id: "diagnostics", label: "Diagnostics" },
 ];
 
 
@@ -737,6 +740,7 @@ function FounderPage() {
         )}
 
         {tab === "feedback" && data && <FeedbackTab m={data} />}
+        {tab === "diagnostics" && <AnalyticsDiagnosticsPanel />}
         {tab === "engineering" && (
           <div className="space-y-6">
             <AsrProbeSection />
