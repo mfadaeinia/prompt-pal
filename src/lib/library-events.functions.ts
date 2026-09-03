@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { classifyEnvironment, type TrafficClass } from "./traffic-class";
 
 const LogInput = z.object({
   eventName: z.enum([
@@ -23,6 +24,9 @@ const LogInput = z.object({
     "subtitle_explanation_requested",
     "video_resumed_after_explanation",
     "another_video_started",
+    // Canonical events (Phase 1 analytics repair).
+    "video_selected",
+    "meaningful_watch_30s",
   ]),
   sessionId: z.string().min(1).max(128),
   anonymousId: z.string().max(128).nullable().optional(),
@@ -30,6 +34,19 @@ const LogInput = z.object({
   expressionId: z.string().uuid().nullable().optional(),
   userId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.any()).nullable().optional(),
+  /** Client-computed traffic classification (server re-derives + downgrades). */
+  trafficClass: z
+    .enum([
+      "production_user",
+      "demo",
+      "founder_admin",
+      "development",
+      "benchmark",
+      "automated_test",
+      "bot",
+    ])
+    .optional(),
+  hostname: z.string().max(255).nullable().optional(),
 });
 
 
@@ -37,6 +54,35 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LogInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // ---- server-side traffic classification -------------------------------
+    // The request host is authoritative: it cannot be spoofed by a client
+    // flag, and it is the only reliable way to keep preview/local traffic out
+    // of production-user metrics.
+    let serverHost: string | null = null;
+    let userAgent: string | null = null;
+    try {
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const h = getRequestHeaders() as Record<string, string | undefined>;
+      serverHost = h["host"] ?? h["x-forwarded-host"] ?? null;
+      userAgent = h["user-agent"] ?? null;
+    } catch {}
+    const environment = classifyEnvironment(serverHost ?? data.hostname ?? null);
+    let trafficClass: TrafficClass = data.trafficClass ?? "production_user";
+    // Environment always wins over the client's opinion.
+    if (environment === "local" || environment === "preview") trafficClass = "development";
+    if (userAgent && /(bot|crawler|spider|headlesschrome|lighthouse)/i.test(userAgent)) {
+      trafficClass = "bot";
+    }
+
+    const metadata = {
+      ...(data.metadata ?? {}),
+      traffic_class: trafficClass,
+      environment,
+      hostname: serverHost ?? data.hostname ?? null,
+      classified_by: "server",
+    };
+
     const { error } = await supabaseAdmin.from("library_events" as any).insert({
       event_name: data.eventName,
       session_id: data.sessionId,
@@ -44,7 +90,7 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
       video_id: data.videoId ?? null,
       expression_id: data.expressionId ?? null,
       user_id: data.userId ?? null,
-      metadata: data.metadata ?? null,
+      metadata,
     });
     if (error) {
       // Don't fail UI flows for analytics — log and return ok
