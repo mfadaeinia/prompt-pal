@@ -83,6 +83,8 @@ import {
 } from "@/lib/learner-level";
 
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
+import { resetWatchTime, sampleWatchTime } from "@/lib/watch-time";
+import { setDemoTraffic } from "@/lib/traffic-class";
 import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
@@ -2781,6 +2783,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const videosStartedRef = useRef(0);
   useEffect(() => {
     watchMilestonesRef.current = new Set();
+    if (videoId) resetWatchTime(videoId);
+    // Demo playback is its own traffic class and must not enter product metrics.
+    setDemoTraffic(videoId === DEMO_VIDEO_ID);
   }, [videoId]);
   useEffect(() => {
     if (!videoId || currentTime <= 0.5) return;
