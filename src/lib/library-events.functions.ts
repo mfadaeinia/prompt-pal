@@ -62,10 +62,9 @@ export const logLibraryEvent = createServerFn({ method: "POST" })
     let serverHost: string | null = null;
     let userAgent: string | null = null;
     try {
-      const { getRequestHeaders } = await import("@tanstack/react-start/server");
-      const h = getRequestHeaders() as Record<string, string | undefined>;
-      serverHost = h["host"] ?? h["x-forwarded-host"] ?? null;
-      userAgent = h["user-agent"] ?? null;
+      const { getRequestHeader } = await import("@tanstack/react-start/server");
+      serverHost = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host") ?? null;
+      userAgent = getRequestHeader("user-agent") ?? null;
     } catch {}
     const environment = classifyEnvironment(serverHost ?? data.hostname ?? null);
     let trafficClass: TrafficClass = data.trafficClass ?? "production_user";
