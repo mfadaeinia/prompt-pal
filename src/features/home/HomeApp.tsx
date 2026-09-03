@@ -2102,9 +2102,28 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             pollId = window.setInterval(() => {
               const p = playerRef.current;
               if (p && typeof p.getCurrentTime === "function") {
-                setCurrentTime(p.getCurrentTime() || 0);
+                const t = p.getCurrentTime() || 0;
+                setCurrentTime(t);
+                // Canonical, seek-proof watch accumulation. Only time that
+                // actually elapsed while PLAYING is counted; seeks and pauses
+                // never add watch time.
+                let playing = false;
+                try {
+                  playing = p.getPlayerState?.() === 1;
+                } catch {}
+                const sample = sampleWatchTime({ videoId, currentTime: t, playing });
+                if (sample.crossedMeaningful) {
+                  trackWatch("meaningful_watch_30s", {
+                    video_id: videoId,
+                    accumulated_seconds: Math.round(sample.accumulated),
+                    current_time: Math.round(t),
+                    user_id: userIdRef.current ?? null,
+                    session_id: sessionIdRef.current,
+                  });
+                }
               }
             }, 40);
+
 
           },
           onError: (e: any) => {
