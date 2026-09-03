@@ -2,6 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { bucketSource, matchesSource, type SourceBucket } from "./source-bucket";
 
+/**
+ * DEPRECATED (Phase 1 analytics repair): this legacy metrics layer keeps its own
+ * definitions of Visitors / activation / retention and is retained only for
+ * historical comparison. The canonical business metrics live in
+ * `src/lib/core-metrics.functions.ts`. Do not add new product metrics here.
+ */
 export type FounderMetrics = {
   windowLabel: string;
   range: { from: string | null; to: string | null; source: SourceBucket };
