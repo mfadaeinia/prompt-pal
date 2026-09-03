@@ -22,6 +22,9 @@ const MIRRORED_TO_DB = new Set([
   "subtitle_explanation_requested",
   "video_resumed_after_explanation",
   "another_video_started",
+  // Canonical (Phase 1): seek-proof watch milestone + explicit video selection.
+  "meaningful_watch_30s",
+  "video_selected",
 ]);
 
 /** Thin wrapper around the existing analytics `track` that always attaches

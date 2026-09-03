@@ -83,6 +83,8 @@ import {
 } from "@/lib/learner-level";
 
 import { trackWatch, deviceType } from "@/lib/watch-analytics";
+import { resetWatchTime, sampleWatchTime } from "@/lib/watch-time";
+import { setDemoTraffic } from "@/lib/traffic-class";
 import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
@@ -2102,9 +2104,28 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             pollId = window.setInterval(() => {
               const p = playerRef.current;
               if (p && typeof p.getCurrentTime === "function") {
-                setCurrentTime(p.getCurrentTime() || 0);
+                const t = p.getCurrentTime() || 0;
+                setCurrentTime(t);
+                // Canonical, seek-proof watch accumulation. Only time that
+                // actually elapsed while PLAYING is counted; seeks and pauses
+                // never add watch time.
+                let playing = false;
+                try {
+                  playing = p.getPlayerState?.() === 1;
+                } catch {}
+                const sample = sampleWatchTime({ videoId, currentTime: t, playing });
+                if (sample.crossedMeaningful) {
+                  trackWatch("meaningful_watch_30s", {
+                    video_id: videoId,
+                    accumulated_seconds: Math.round(sample.accumulated),
+                    current_time: Math.round(t),
+                    user_id: userIdRef.current ?? null,
+                    session_id: sessionIdRef.current,
+                  });
+                }
               }
             }, 40);
+
 
           },
           onError: (e: any) => {
@@ -2724,7 +2745,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         source: "video_overlay",
       });
     } else {
+      // Legacy event kept for historical continuity; the canonical funnel step
+      // is `sentence_clicked` (overlay + transcript) and `explanation_viewed`.
       trackWatch("subtitle_explanation_requested", common);
+      logProductEvent("sentence_clicked", { videoId, userId: userIdRef.current ?? null });
       track("subtitle_clicked", { ...common, source: "video_overlay" });
     }
     track("explanation_opened", {
@@ -2762,6 +2786,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   const videosStartedRef = useRef(0);
   useEffect(() => {
     watchMilestonesRef.current = new Set();
+    if (videoId) resetWatchTime(videoId);
+    // Demo playback is its own traffic class and must not enter product metrics.
+    setDemoTraffic(videoId === DEMO_VIDEO_ID);
   }, [videoId]);
   useEffect(() => {
     if (!videoId || currentTime <= 0.5) return;
