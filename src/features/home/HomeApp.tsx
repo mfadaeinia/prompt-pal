@@ -2745,7 +2745,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         source: "video_overlay",
       });
     } else {
+      // Legacy event kept for historical continuity; the canonical funnel step
+      // is `sentence_clicked` (overlay + transcript) and `explanation_viewed`.
       trackWatch("subtitle_explanation_requested", common);
+      logProductEvent("sentence_clicked", { videoId, userId: userIdRef.current ?? null });
       track("subtitle_clicked", { ...common, source: "video_overlay" });
     }
     track("explanation_opened", {
