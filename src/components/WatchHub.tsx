@@ -143,7 +143,7 @@ export function WatchHub({
     const term = q.trim();
     if (!term) return;
     if (looksLikeUrl(term)) {
-      setContentEntryPath("pasted_url");
+      setContentEntryPath("pasted_url", { url: term });
       track("own_video_url_submitted", { source: "watch_hub" });
       onPick(term);
     }
@@ -249,7 +249,7 @@ export function WatchHub({
                     key={r.videoId}
                     type="button"
                     onClick={() => {
-                      setContentEntryPath("youtube_search");
+                      setContentEntryPath("youtube_search", { url: r.url });
                       track("youtube_search_result_selected", { video_id: r.videoId });
                       onPick(r.url, r.language);
                     }}
@@ -283,7 +283,7 @@ export function WatchHub({
             <button
               type="button"
               onClick={() => {
-                setContentEntryPath("continue_watching");
+                setContentEntryPath("continue_watching", { url: lastVideo.url });
                 track("continue_watching_clicked", { video_id: lastVideo.videoId });
                 onPick(lastVideo.url, lastVideo.targetLang ?? undefined);
               }}
@@ -328,7 +328,7 @@ export function WatchHub({
               showLevels={false}
               limit={8}
               onPick={(u, lang) => {
-                setContentEntryPath("curated_library");
+                setContentEntryPath("curated_library", { url: u });
                 track("curated_video_selected", { source: "watch_hub" });
                 onPick(u, lang);
               }}

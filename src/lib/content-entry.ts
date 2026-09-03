@@ -1,4 +1,6 @@
 import { posthog, track } from "@/lib/analytics";
+import { trackWatch } from "@/lib/watch-analytics";
+import { extractVideoId } from "@/lib/youtube-id";
 
 /**
  * Which action inside the Watch hub brought the user to a video. Registered as
@@ -18,7 +20,7 @@ export type ContentEntryPath =
 
 const KEY = "nativeflow_content_entry_path";
 
-export function setContentEntryPath(path: ContentEntryPath) {
+export function setContentEntryPath(path: ContentEntryPath, opts?: { url?: string | null }) {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(KEY, path);
@@ -26,6 +28,10 @@ export function setContentEntryPath(path: ContentEntryPath) {
   try {
     posthog.register({ content_entry_path: path });
   } catch {}
+  // CANONICAL: `video_selected` — the learner chose a video (any entry path).
+  // Persisted to the database via trackWatch's DB mirror.
+  const videoId = opts?.url ? extractVideoId(opts.url) : null;
+  trackWatch("video_selected", { video_id: videoId, content_entry_path: path });
 }
 
 export function getContentEntryPath(): ContentEntryPath | null {
