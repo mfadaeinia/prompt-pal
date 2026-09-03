@@ -319,14 +319,24 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
       ...savedSessions,
     ]);
 
+    // TRUE SET INTERSECTION at every step — clamping with Math.min() used to
+    // manufacture a monotonic funnel and hid real ordering problems.
+    const intersect = (a: Set<string>, b: Set<string>) => {
+      const out = new Set<string>();
+      for (const v of a) if (b.has(v)) out.add(v);
+      return out;
+    };
     const fVisitors = allKnownSessions.size;
-    const fVideoOpened = Math.min(videoSessionIds.size, fVisitors);
-    const fWatched30 = Math.min(watched30Sessions.size, fVideoOpened);
-    // True intersection (was previously just clamped)
+    const openedSet = intersect(videoSessionIds, allKnownSessions);
+    const watched30Set = intersect(watched30Sessions, openedSet);
+    const clickedSet = intersect(clickedSessions, watched30Set);
+    const savedSet = intersect(savedSessions, clickedSet);
+    const fVideoOpened = openedSet.size;
+    const fWatched30 = watched30Set.size;
     let activatedSessions = 0;
     for (const sid of watched30Sessions) if (clickedSessions.has(sid)) activatedSessions += 1;
-    const fClicked = Math.min(clickedSessions.size, fWatched30);
-    const fSaved = Math.min(savedSessions.size, fClicked);
+    const fClicked = clickedSet.size;
+    const fSaved = savedSet.size;
 
     // Discovery
     const transcriptSeenSessions = new Set(
@@ -335,10 +345,14 @@ export const getFounderMetrics = createServerFn({ method: "POST" })
     const hoveredSessions = new Set(
       hoveredRows.map((r) => r.session_id).filter(Boolean) as string[],
     );
-    const dTranscriptSeen = Math.min(transcriptSeenSessions.size, fWatched30);
-    const dHovered = Math.min(hoveredSessions.size, dTranscriptSeen);
-    const dClicked = Math.min(clickedSessions.size, fWatched30);
-    const dSaved = Math.min(savedSessions.size, dClicked);
+    const transcriptSeenSet = intersect(transcriptSeenSessions, watched30Set);
+    const hoveredSet = intersect(hoveredSessions, transcriptSeenSet);
+    const dClickedSet = intersect(clickedSessions, watched30Set);
+    const dSavedSet = intersect(savedSessions, dClickedSet);
+    const dTranscriptSeen = transcriptSeenSet.size;
+    const dHovered = hoveredSet.size;
+    const dClicked = dClickedSet.size;
+    const dSaved = dSavedSet.size;
 
     let watchedNoClick = 0;
     for (const sid of watched30Sessions) {

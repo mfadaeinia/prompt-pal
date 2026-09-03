@@ -89,6 +89,8 @@ export type CoreMetrics = {
     unifiedSessionStart: string;
     funnelEventStart: string;
     anonStart: string;
+    /** Canonical traffic classification start. */
+    trafficClassStart: string;
     /** false → selected period predates unified session tracking. */
     periodCoversUnifiedTracking: boolean;
     periodCoversFunnelTracking: boolean;
@@ -359,6 +361,7 @@ export const getCoreMetrics = createServerFn({ method: "POST" })
         unifiedSessionStart: UNIFIED_SESSION_TRACKING_START_ISO,
         funnelEventStart: FUNNEL_EVENT_TRACKING_START_ISO,
         anonStart: ANON_TRACKING_START_ISO,
+        trafficClassStart: TRAFFIC_CLASS_TRACKING_START_ISO,
         periodCoversUnifiedTracking:
           fromMs >= new Date(UNIFIED_SESSION_TRACKING_START_ISO).getTime(),
         periodCoversFunnelTracking:
