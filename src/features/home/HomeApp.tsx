@@ -89,7 +89,7 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube, FileText } from "lucide-react";
 
 /** Understated handwritten-style annotation used around the "Now try it yourself" panel. */
 function WatchCallout({
