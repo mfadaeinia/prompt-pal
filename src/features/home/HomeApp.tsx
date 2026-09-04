@@ -89,7 +89,48 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube } from "lucide-react";
+
+/** Understated handwritten-style annotation used around the "Now try it yourself" panel. */
+function WatchCallout({
+  className,
+  lines,
+  arrow,
+}: {
+  className: string;
+  lines: string[];
+  arrow: "left" | "right";
+}) {
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute hidden select-none xl:block ${className}`}
+    >
+      <p
+        className="text-sm italic leading-snug text-muted-foreground/80"
+        style={{ fontFamily: "'Playfair Display', Georgia, serif", transform: "rotate(-6deg)" }}
+      >
+        {lines.map((l) => (
+          <span key={l} className="block whitespace-nowrap">
+            {l}
+          </span>
+        ))}
+      </p>
+      <svg
+        viewBox="0 0 80 60"
+        className={`mt-1 h-12 w-16 text-muted-foreground/50 ${arrow === "right" ? "-scale-x-100 ml-auto" : ""}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      >
+        <path d="M6 6 C 20 40, 45 50, 72 46" />
+        <path d="M62 38 L 73 46 L 61 51" />
+      </svg>
+    </div>
+  );
+}
+
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
