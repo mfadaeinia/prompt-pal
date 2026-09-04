@@ -106,22 +106,21 @@ function Hero({
           />
 
           <p className="mt-4 hidden text-xs text-slate-500 lg:block">No account needed.</p>
+
+          <button
+            type="button"
+            onClick={() => startDemo("below_input")}
+            className="mt-4 hidden h-11 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary lg:inline-flex"
+            style={heading}
+          >
+            Try the demo
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* ---------- Proof: real curated example ---------- */}
         <div className="mt-4 w-full min-w-0">
           <StaticProductPreview onClick={() => startDemo("preview")} />
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              onClick={() => startDemo("below_preview")}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary"
-              style={heading}
-            >
-              Try the demo
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
         </div>
       </div>
     </section>
