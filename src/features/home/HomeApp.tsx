@@ -3758,7 +3758,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
                           subtitleHintVisible
-                            ? "Didn't catch that? Tap the subtitle for an explanation."
+                            ? "Click any subtitle to understand it"
+                            : null
+                        }
+                        hintSecondary={
+                          subtitleHintVisible
+                            ? "Or open Transcript to choose a sentence."
                             : null
                         }
                         onSentenceClick={
