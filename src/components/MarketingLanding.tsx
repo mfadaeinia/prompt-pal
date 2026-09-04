@@ -82,8 +82,7 @@ function Hero({
             type="button"
             onClick={() => startDemo("mobile_hero")}
             className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] sm:w-auto"
-            style={heading}
-          >
+            >
             <MousePointerClick className="h-4 w-4" />
             Try the demo
           </button>
@@ -111,8 +110,7 @@ function Hero({
             type="button"
             onClick={() => startDemo("below_input")}
             className="mt-4 hidden h-11 items-center justify-center gap-1.5 rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition-colors hover:border-primary/40 hover:bg-accent hover:text-primary lg:inline-flex"
-            style={heading}
-          >
+            >
             Try the demo
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -173,7 +171,6 @@ function UrlForm({
       <button
         type="submit"
         className="inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-7 text-sm font-semibold text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
-        style={heading}
         disabled={!trimmed}
       >
         <Play className="h-3.5 w-3.5 fill-current" />
