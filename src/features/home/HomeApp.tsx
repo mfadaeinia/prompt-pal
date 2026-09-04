@@ -3855,18 +3855,57 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               {/* Optional transcript control — the default watching experience
                   is video + synchronized subtitle only. */}
               {!isFullscreen && studyMode && (
-                <div className="order-3 mx-auto w-full min-w-0 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
+                <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
                     onClick={toggleTranscript}
                     aria-expanded={transcriptOpen}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
                   >
-                    <FileText className="h-3.5 w-3.5" />
+                    <FileText className="h-3.5 w-3.5 text-primary" />
                     {transcriptOpen ? "Hide transcript" : "Open transcript"}
                   </button>
+
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground">
+                    Transcript
+                    {sentences.length > 0
+                      ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                      : transcriptStatus === "checking_cache"
+                        ? " · checking cache…"
+                        : transcriptStatus === "looking_for_captions"
+                          ? " · looking for captions…"
+                          : transcriptStatus === "generating_transcript"
+                            ? " · generating transcript…"
+                            : transcriptStatus === "building_sentences"
+                              ? " · building sentences…"
+                              : ""}
+                  </span>
+
+                  {limitedMode && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                      Basic Transcript Mode
+                    </span>
+                  )}
+
+                  {/* Explanation language — learners read meanings here. */}
+                  <Select value={targetLang} onValueChange={changeExplanationLanguage}>
+                    <SelectTrigger
+                      className="h-8 w-auto shrink-0 gap-1 rounded-full border-border bg-card px-3 text-[11px] font-medium shadow-sm"
+                      aria-label="Explanation language"
+                      title="Language used for meanings and explanations"
+                    >
+                      <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
+                      <SelectItem value="Persian">Persian (فارسی)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
+
 
               {/* Transcript — optional, user-requested reading surface. */}
               {transcriptOpen && (
