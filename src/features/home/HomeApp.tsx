@@ -2735,7 +2735,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (subtitleDiscoveredRef.current) return;
     subtitleDiscoveredRef.current = true;
     try {
-      localStorage.setItem(SUBTITLE_DISCOVERED_KEY, "1");
+      sessionStorage.setItem(SUBTITLE_DISCOVERED_KEY, "1");
     } catch {}
   }
 
