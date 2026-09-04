@@ -110,9 +110,6 @@ function Hero({
 
         {/* ---------- Proof: real curated example ---------- */}
         <div className="mt-4 w-full min-w-0">
-          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400">
-            See how it works
-          </p>
           <StaticProductPreview onClick={() => startDemo("preview")} />
           <div className="mt-4 flex justify-center">
             <button
