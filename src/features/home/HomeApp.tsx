@@ -89,7 +89,7 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube, FileText } from "lucide-react";
 
 /** Understated handwritten-style annotation used around the "Now try it yourself" panel. */
 function WatchCallout({
@@ -2983,6 +2983,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   function toggleTranscript() {
     const next = !transcriptOpen;
     setTranscriptOpen(next);
+    // Opening the transcript is one of the two ways to get an explanation —
+    // the discovery tooltip has done its job.
+    if (next) markSubtitleDiscovered();
     track("transcript_toggled", { video_id: videoId, open: next });
     track(next ? "transcript_opened" : "transcript_closed", { video_id: videoId });
   }
@@ -3758,7 +3761,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
                           subtitleHintVisible
-                            ? "Didn't catch that? Tap the subtitle for an explanation."
+                            ? "Click any subtitle to understand it"
+                            : null
+                        }
+                        hintSecondary={
+                          subtitleHintVisible
+                            ? "Or open Transcript to choose a sentence."
                             : null
                         }
                         onSentenceClick={
@@ -3851,7 +3859,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     aria-expanded={transcriptOpen}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
-                    {transcriptOpen ? "Hide transcript" : "Transcript"}
+                    <FileText className="h-3.5 w-3.5" />
+                    {transcriptOpen ? "Hide transcript" : "Open transcript"}
                   </button>
                 </div>
               )}
