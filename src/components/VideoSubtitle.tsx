@@ -47,6 +47,7 @@ export function VideoSubtitle({
   onHighlightClick,
   onSentenceClick,
   hint,
+  hintSecondary,
   className,
 }: Props) {
   const parts = splitAround(text, highlight);
