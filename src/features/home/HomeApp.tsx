@@ -2983,6 +2983,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   function toggleTranscript() {
     const next = !transcriptOpen;
     setTranscriptOpen(next);
+    // Opening the transcript is one of the two ways to get an explanation —
+    // the discovery tooltip has done its job.
+    if (next) markSubtitleDiscovered();
     track("transcript_toggled", { video_id: videoId, open: next });
     track(next ? "transcript_opened" : "transcript_closed", { video_id: videoId });
   }
