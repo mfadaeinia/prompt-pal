@@ -18,6 +18,8 @@ type Props = {
   onSentenceClick?: () => void;
   /** Subtle, temporary first-time discovery hint rendered above the subtitle. */
   hint?: string | null;
+  /** Optional second line under the hint title. */
+  hintSecondary?: string | null;
   className?: string;
 };
 
