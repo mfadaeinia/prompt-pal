@@ -80,7 +80,7 @@ function Hero({
           className="mt-7 max-w-3xl text-center text-[2.25rem] font-bold leading-[1.08] tracking-tight sm:text-[3.25rem] lg:text-[3.75rem]"
           style={heading}
         >
-          Watch real Dutch.
+          Watch Native Dutch.
           <br />
           <span
             className="bg-clip-text text-transparent"
