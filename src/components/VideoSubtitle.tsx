@@ -59,8 +59,20 @@ export function VideoSubtitle({
       aria-live="off"
     >
       {hint && (
-        <div className="pointer-events-none max-w-[92%] animate-in fade-in slide-in-from-bottom-1 rounded-full bg-primary/95 px-3 py-1 text-center text-[11px] font-medium text-primary-foreground shadow-md sm:text-[13px]">
-          {hint}
+        <div className="pointer-events-none relative mb-2 max-w-[92%] animate-in fade-in slide-in-from-bottom-1 rounded-xl border border-primary/20 bg-secondary px-3.5 py-2 text-center shadow-lg">
+          <p className="text-[12px] font-semibold text-foreground sm:text-[13px]">
+            {hint}
+          </p>
+          {hintSecondary && (
+            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:text-[12px]">
+              {hintSecondary}
+            </p>
+          )}
+          {/* small pointer toward the subtitle */}
+          <span
+            aria-hidden
+            className="absolute -bottom-[6px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-primary/20 bg-secondary"
+          />
         </div>
       )}
       <div
