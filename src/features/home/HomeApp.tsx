@@ -3262,7 +3262,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {view === "landing" && (
+            {(view === "landing" || view === "demo" || !isDemo) && (
+
               <button
                 type="button"
                 onClick={startDemo}
