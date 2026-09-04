@@ -2702,10 +2702,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   useEffect(() => {
     try {
+      // Once-per-session (not once-forever): the tip reappears in a new visit
+      // until the user actually clicks a subtitle during that visit.
       subtitleDiscoveredRef.current =
-        localStorage.getItem(SUBTITLE_DISCOVERED_KEY) === "1";
+        sessionStorage.getItem(SUBTITLE_DISCOVERED_KEY) === "1";
     } catch {}
   }, []);
+
 
   useEffect(() => {
     subtitleHintFiredRef.current = false;
