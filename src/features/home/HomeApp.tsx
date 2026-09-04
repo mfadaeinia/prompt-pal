@@ -3749,6 +3749,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     )}
 
                   </div>
+                  </div>
+
+
 
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
