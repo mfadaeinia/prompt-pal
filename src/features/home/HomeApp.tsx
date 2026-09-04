@@ -3855,18 +3855,57 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               {/* Optional transcript control — the default watching experience
                   is video + synchronized subtitle only. */}
               {!isFullscreen && studyMode && (
-                <div className="order-3 mx-auto w-full min-w-0 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
+                <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
                     onClick={toggleTranscript}
                     aria-expanded={transcriptOpen}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
                   >
-                    <FileText className="h-3.5 w-3.5" />
+                    <FileText className="h-3.5 w-3.5 text-primary" />
                     {transcriptOpen ? "Hide transcript" : "Open transcript"}
                   </button>
+
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground">
+                    Transcript
+                    {sentences.length > 0
+                      ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
+                      : transcriptStatus === "checking_cache"
+                        ? " · checking cache…"
+                        : transcriptStatus === "looking_for_captions"
+                          ? " · looking for captions…"
+                          : transcriptStatus === "generating_transcript"
+                            ? " · generating transcript…"
+                            : transcriptStatus === "building_sentences"
+                              ? " · building sentences…"
+                              : ""}
+                  </span>
+
+                  {limitedMode && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                      Basic Transcript Mode
+                    </span>
+                  )}
+
+                  {/* Explanation language — learners read meanings here. */}
+                  <Select value={targetLang} onValueChange={changeExplanationLanguage}>
+                    <SelectTrigger
+                      className="h-8 w-auto shrink-0 gap-1 rounded-full border-border bg-card px-3 text-[11px] font-medium shadow-sm"
+                      aria-label="Explanation language"
+                      title="Language used for meanings and explanations"
+                    >
+                      <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
+                      <SelectItem value="Persian">Persian (فارسی)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
+
 
               {/* Transcript — optional, user-requested reading surface. */}
               {transcriptOpen && (
@@ -3876,7 +3915,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 }`}
               >
 
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]">
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]">
 
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
@@ -3927,41 +3966,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         reprocessing={loadMutation.isPending}
                       />
                     )}
-                    <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2 text-xs font-medium text-muted-foreground">
-                      <span>
-                        Transcript
-                        <span className="hidden sm:inline">
-                          {sentences.length > 0
-                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
-                            : transcriptStatus === "checking_cache"
-                              ? " · checking cache…"
-                              : transcriptStatus === "looking_for_captions"
-                                ? " · looking for captions…"
-                                : transcriptStatus === "generating_transcript"
-                                  ? " · generating transcript…"
-                                  : transcriptStatus === "building_sentences"
-                                    ? " · building sentences…"
-                                    : ""}
-                        </span>
-                      </span>
-
+                    {/* Count + language selector live in the single control row
+                        directly below the video. */}
+                    <div className="flex items-center justify-end gap-2 px-4 pt-3 text-xs font-medium text-muted-foreground empty:hidden">
                       <div className="flex items-center gap-2">
-                        {/* Explanation language — learners read meanings here. */}
-                        <Select value={targetLang} onValueChange={changeExplanationLanguage}>
-                          <SelectTrigger
-                            className="h-7 w-auto gap-1 rounded-full border-border bg-background px-2.5 text-[11px] font-medium"
-                            aria-label="Explanation language"
-                            title="Language used for meanings and explanations"
-                          >
-                            <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="English">English</SelectItem>
-                            <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
-                            <SelectItem value="Persian">Persian (فارسی)</SelectItem>
-                          </SelectContent>
-                        </Select>
+
 
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
@@ -4000,11 +4009,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                             Inspect
                           </button>
                         )}
-                        {limitedMode && (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                            Basic Transcript Mode
-                          </span>
-                        )}
+
+
                       </div>
                     </div>
 
@@ -4226,7 +4232,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
             {/* After the demo: turn the visitor into a doer. */}
-            {isDemo && (
+            {isDemo && !transcriptOpen && !explanationOpen && (
               <section className="relative mt-8 overflow-hidden rounded-3xl border border-primary/15 bg-secondary/60 px-5 py-8 text-center sm:px-10 sm:py-10">
                 <WatchCallout
                   className="left-6 top-1/2 -translate-y-1/2"
@@ -4295,18 +4301,24 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 First-time/demo visitors get the concept cards; returning
                 signed-in users get useful actions instead of a re-explanation
                 of a product they already understand. */}
-            <section className="space-y-4 pt-8">
-              <HowItWorksStrip />
-              {isAuthenticated ? (
-                <ReturningUserActions
-                  transcriptOpen={transcriptOpen}
-                  onToggleTranscript={toggleTranscript}
-                  onFindVideo={goWatchHub}
-                />
-              ) : (
-                <ValueCards />
-              )}
-            </section>
+            {/* While the learner is actively reading a transcript or an
+                explanation, the learning interface owns the page — marketing
+                support content only returns once that state is closed. */}
+            {!transcriptOpen && !explanationOpen && (
+              <section className="space-y-4 pt-8">
+                <HowItWorksStrip />
+                {isAuthenticated ? (
+                  <ReturningUserActions
+                    transcriptOpen={transcriptOpen}
+                    onToggleTranscript={toggleTranscript}
+                    onFindVideo={goWatchHub}
+                  />
+                ) : (
+                  <ValueCards />
+                )}
+              </section>
+            )}
+
 
 
           </div>
