@@ -3915,7 +3915,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 }`}
               >
 
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-xl bg-muted/30 lg:max-h-[60vh]">
+                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]">
 
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
