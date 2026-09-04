@@ -4301,18 +4301,24 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 First-time/demo visitors get the concept cards; returning
                 signed-in users get useful actions instead of a re-explanation
                 of a product they already understand. */}
-            <section className="space-y-4 pt-8">
-              <HowItWorksStrip />
-              {isAuthenticated ? (
-                <ReturningUserActions
-                  transcriptOpen={transcriptOpen}
-                  onToggleTranscript={toggleTranscript}
-                  onFindVideo={goWatchHub}
-                />
-              ) : (
-                <ValueCards />
-              )}
-            </section>
+            {/* While the learner is actively reading a transcript or an
+                explanation, the learning interface owns the page — marketing
+                support content only returns once that state is closed. */}
+            {!transcriptOpen && !explanationOpen && (
+              <section className="space-y-4 pt-8">
+                <HowItWorksStrip />
+                {isAuthenticated ? (
+                  <ReturningUserActions
+                    transcriptOpen={transcriptOpen}
+                    onToggleTranscript={toggleTranscript}
+                    onFindVideo={goWatchHub}
+                  />
+                ) : (
+                  <ValueCards />
+                )}
+              </section>
+            )}
+
 
 
           </div>
