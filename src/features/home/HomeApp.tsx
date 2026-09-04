@@ -3262,21 +3262,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {(view === "landing" || view === "demo" || !isDemo) && (
+            <button
+              type="button"
+              onClick={startDemo}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
+              }}
+            >
+              Try the demo
+              <span aria-hidden>→</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={startDemo}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
-                }}
-              >
-                Try the demo
-                <span aria-hidden>→</span>
-              </button>
-            )}
             {/* "My Learning" entry point hidden from the public header;
                 /saved stays reachable by direct URL. */}
             {experiment && isAuthenticated && (
