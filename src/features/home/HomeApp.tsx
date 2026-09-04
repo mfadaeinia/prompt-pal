@@ -4232,7 +4232,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
             {/* After the demo: turn the visitor into a doer. */}
-            {isDemo && (
+            {isDemo && !transcriptOpen && !explanationOpen && (
               <section className="relative mt-8 overflow-hidden rounded-3xl border border-primary/15 bg-secondary/60 px-5 py-8 text-center sm:px-10 sm:py-10">
                 <WatchCallout
                   className="left-6 top-1/2 -translate-y-1/2"
