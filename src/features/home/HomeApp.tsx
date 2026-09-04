@@ -3966,41 +3966,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         reprocessing={loadMutation.isPending}
                       />
                     )}
-                    <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2 text-xs font-medium text-muted-foreground">
-                      <span>
-                        Transcript
-                        <span className="hidden sm:inline">
-                          {sentences.length > 0
-                            ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
-                            : transcriptStatus === "checking_cache"
-                              ? " · checking cache…"
-                              : transcriptStatus === "looking_for_captions"
-                                ? " · looking for captions…"
-                                : transcriptStatus === "generating_transcript"
-                                  ? " · generating transcript…"
-                                  : transcriptStatus === "building_sentences"
-                                    ? " · building sentences…"
-                                    : ""}
-                        </span>
-                      </span>
-
+                    {/* Count + language selector live in the single control row
+                        directly below the video. */}
+                    <div className="flex items-center justify-end gap-2 px-4 pt-3 text-xs font-medium text-muted-foreground empty:hidden">
                       <div className="flex items-center gap-2">
-                        {/* Explanation language — learners read meanings here. */}
-                        <Select value={targetLang} onValueChange={changeExplanationLanguage}>
-                          <SelectTrigger
-                            className="h-7 w-auto gap-1 rounded-full border-border bg-background px-2.5 text-[11px] font-medium"
-                            aria-label="Explanation language"
-                            title="Language used for meanings and explanations"
-                          >
-                            <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="English">English</SelectItem>
-                            <SelectItem value="Dutch">Dutch (Nederlands)</SelectItem>
-                            <SelectItem value="Persian">Persian (فارسی)</SelectItem>
-                          </SelectContent>
-                        </Select>
+
 
                         {devPanelEnabled && sentences.length > 0 && (
                           <button
