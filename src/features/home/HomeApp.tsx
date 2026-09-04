@@ -137,7 +137,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=GVk3rV4-J6k";
 const DEMO_VIDEO_ID = "GVk3rV4-J6k";
 /** Set once the learner has tapped a subtitle for an explanation. */
-const SUBTITLE_DISCOVERED_KEY = "nativeflow_subtitle_explanation_discovered";
+const SUBTITLE_DISCOVERED_KEY = "nativeflow_subtitle_explanation_discovered_v2";
 
 
 /** Map a language label or tag to ISO-639-1 for the caption pipeline. */
@@ -2725,7 +2725,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     subtitleHintFiredRef.current = true;
     setSubtitleHintVisible(true);
     trackWatch("subtitle_hint_shown", { video_id: videoId });
-    const t = window.setTimeout(() => setSubtitleHintVisible(false), 6000);
+    const t = window.setTimeout(() => setSubtitleHintVisible(false), 12000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSentence, videoId, studyMode, experiment]);
