@@ -6164,13 +6164,19 @@ function ValueCards() {
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      {cards.map((c) => (
+      {cards.map((c, i) => (
         <div
           key={c.title}
-          className="rounded-xl border border-border bg-card p-4 shadow-sm"
+          className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
         >
-          <div className="text-xl">{c.emoji}</div>
-          <p className="mt-2 text-sm font-semibold tracking-tight text-foreground">
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ${
+              ["bg-primary/10", "bg-[color-mix(in_oklab,var(--brand-orange,#FF5A3D)_14%,transparent)]", "bg-[color-mix(in_oklab,var(--brand-pink)_14%,transparent)]"][i]
+            }`}
+          >
+            {c.emoji}
+          </div>
+          <p className="mt-3 text-sm font-semibold tracking-tight text-foreground">
             {c.title}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -6180,6 +6186,7 @@ function ValueCards() {
       ))}
     </div>
   );
+
 }
 
 function ReadinessBadges({ videoId }: { videoId: string | null }) {
