@@ -3859,7 +3859,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     aria-expanded={transcriptOpen}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
-                    {transcriptOpen ? "Hide transcript" : "Transcript"}
+                    <FileText className="h-3.5 w-3.5" />
+                    {transcriptOpen ? "Hide transcript" : "Open transcript"}
                   </button>
                 </div>
               )}
