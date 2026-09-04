@@ -105,20 +105,6 @@ function Hero({
             onSearch={onSearch}
           />
 
-          <p className="mt-3 text-xs text-slate-400">or</p>
-
-          <Link
-            to="/library"
-            onClick={() => {
-              setEntryPath("explore");
-              track("explore_dutch_clicked", { placement: "hero" });
-            }}
-            className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-          >
-            Explore Dutch videos
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-
           <p className="mt-4 hidden text-xs text-slate-500 lg:block">No account needed.</p>
         </div>
 
