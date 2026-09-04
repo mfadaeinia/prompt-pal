@@ -5446,28 +5446,42 @@ function InlineExplanation({
 
 function HowItWorksStrip() {
   const steps = [
-    { icon: Tv, label: "Watch" },
-    { icon: MousePointerClick, label: "Click a sentence" },
-    { icon: Brain, label: "Understand instantly" },
+    { icon: Tv, label: "Watch", desc: "Play any Dutch video", tint: "bg-primary/10 text-primary" },
+    {
+      icon: MousePointerClick,
+      label: "Click a sentence",
+      desc: "Tap any subtitle",
+      tint: "bg-[color-mix(in_oklab,var(--brand-pink)_16%,transparent)] text-[var(--brand-pink)]",
+    },
+    {
+      icon: Brain,
+      label: "Understand instantly",
+      desc: "Get meaning and context",
+      tint: "bg-[color-mix(in_oklab,var(--brand-orange,#FF5A3D)_14%,transparent)] text-primary",
+    },
   ];
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:gap-3 sm:text-sm">
+    <div className="grid items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:gap-2 sm:px-6 sm:py-4">
       {steps.map((s, i) => (
-        <span key={s.label} className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <s.icon className="h-3.5 w-3.5" />
+        <Fragment key={s.label}>
+          <div className="flex items-center gap-3">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${s.tint}`}>
+              <s.icon className="h-4 w-4" />
             </span>
-            {s.label}
-          </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">{s.label}</span>
+              <span className="block text-xs text-muted-foreground">{s.desc}</span>
+            </span>
+          </div>
           {i < steps.length - 1 && (
-            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground/60 sm:block" />
           )}
-        </span>
+        </Fragment>
       ))}
     </div>
   );
 }
+
 
 function CustomVideoSection({
   url,
