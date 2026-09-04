@@ -4172,15 +4172,25 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
             {/* After the demo: turn the visitor into a doer. */}
             {isDemo && (
-              <section className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
-                <h2 className="text-lg font-bold text-foreground sm:text-xl">
+              <section className="relative mt-8 overflow-hidden rounded-3xl border border-primary/15 bg-secondary/60 px-5 py-8 text-center sm:px-10 sm:py-10">
+                <WatchCallout
+                  className="left-6 top-1/2 -translate-y-1/2"
+                  lines={["Any Dutch", "YouTube video."]}
+                  arrow="left"
+                />
+                <WatchCallout
+                  className="right-6 top-1/2 -translate-y-1/2 text-right"
+                  lines={["Real content.", "Real learning."]}
+                  arrow="right"
+                />
+                <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Now try it yourself
                 </h2>
-                <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
                   Search any YouTube video or start with one of our curated lessons.
                 </p>
                 <form
-                  className="mx-auto mt-4 flex max-w-md items-center gap-2"
+                  className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const u = tryUrl.trim();
@@ -4194,22 +4204,34 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     );
                   }}
                 >
-                  <Input
-                    value={tryUrl}
-                    onChange={(e) => setTryUrl(e.target.value)}
-                    placeholder="Paste a YouTube link…"
-                    className="h-11 flex-1 rounded-xl"
-                  />
-                  <Button type="submit" className="h-11 rounded-xl px-4">
+                  <div className="relative flex-1">
+                    <Youtube className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={tryUrl}
+                      onChange={(e) => setTryUrl(e.target.value)}
+                      placeholder="Paste a YouTube link or search for a video…"
+                      className="h-13 w-full rounded-2xl border-border bg-card pl-11 text-[15px] shadow-sm"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-2xl px-7 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
+                    }}
+                  >
+                    <Play className="h-4 w-4" fill="currentColor" />
                     Watch
-                  </Button>
+                  </button>
                 </form>
-                <div className="mt-3">
-                  <Button asChild variant="outline" size="sm">
+                <div className="mt-4">
+                  <Button asChild variant="outline" size="sm" className="rounded-full bg-card">
                     <Link to="/library" onClick={() => track("library_opened", { source: "post_demo" })}>
                       Browse Library
                     </Link>
                   </Button>
+
                 </div>
               </section>
             )}
