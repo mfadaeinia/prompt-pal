@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   fetchTranscript,
   fetchTranscriptFast,
@@ -89,7 +89,48 @@ import { activeSentenceId } from "@/lib/subtitle-sync";
 
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search } from "lucide-react";
+import { BookOpen, Captions, ChevronDown, ArrowDownToLine, Languages, Search, Youtube } from "lucide-react";
+
+/** Understated handwritten-style annotation used around the "Now try it yourself" panel. */
+function WatchCallout({
+  className,
+  lines,
+  arrow,
+}: {
+  className: string;
+  lines: string[];
+  arrow: "left" | "right";
+}) {
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute hidden select-none xl:block ${className}`}
+    >
+      <p
+        className="text-sm italic leading-snug text-muted-foreground/80"
+        style={{ fontFamily: "'Playfair Display', Georgia, serif", transform: "rotate(-6deg)" }}
+      >
+        {lines.map((l) => (
+          <span key={l} className="block whitespace-nowrap">
+            {l}
+          </span>
+        ))}
+      </p>
+      <svg
+        viewBox="0 0 80 60"
+        className={`mt-1 h-12 w-16 text-muted-foreground/50 ${arrow === "right" ? "-scale-x-100 ml-auto" : ""}`}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      >
+        <path d="M6 6 C 20 40, 45 50, 72 46" />
+        <path d="M62 38 L 73 46 L 61 51" />
+      </svg>
+    </div>
+  );
+}
+
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 
@@ -3262,20 +3303,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {view === "landing" && (
-              <button
-                type="button"
-                onClick={startDemo}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
-                }}
-              >
-                Try the demo
-                <span aria-hidden>→</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={startDemo}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
+              style={{
+                backgroundImage:
+                  "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
+              }}
+            >
+              Try the demo
+              <span aria-hidden>→</span>
+            </button>
+
             {/* "My Learning" entry point hidden from the public header;
                 /saved stays reachable by direct URL. */}
             {experiment && isAuthenticated && (
@@ -3654,6 +3694,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
                   <div
+                    className={
+                      isFullscreen
+                        ? ""
+                        : "mx-auto w-full rounded-2xl border border-border bg-card p-1.5 shadow-[0_18px_50px_-24px_rgba(17,24,39,0.35)] md:max-w-[772px] xl:max-w-[912px] min-[1600px]:max-w-[1052px]"
+                    }
+                  >
+                  <div
+
                     ref={stageRef}
                     className={`relative mx-auto w-full max-w-full overflow-hidden bg-black ${
                       isFullscreen
@@ -3750,6 +3798,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     )}
 
                   </div>
+                  </div>
+
+
 
                   {playbackError && (
                     <div className="mx-auto mt-2 w-full max-w-[900px] rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
@@ -4162,15 +4213,25 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
             {/* After the demo: turn the visitor into a doer. */}
             {isDemo && (
-              <section className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-5 text-center">
-                <h2 className="text-lg font-bold text-foreground sm:text-xl">
+              <section className="relative mt-8 overflow-hidden rounded-3xl border border-primary/15 bg-secondary/60 px-5 py-8 text-center sm:px-10 sm:py-10">
+                <WatchCallout
+                  className="left-6 top-1/2 -translate-y-1/2"
+                  lines={["Any Dutch", "YouTube video."]}
+                  arrow="left"
+                />
+                <WatchCallout
+                  className="right-6 top-1/2 -translate-y-1/2 text-right"
+                  lines={["Real content.", "Real learning."]}
+                  arrow="right"
+                />
+                <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   Now try it yourself
                 </h2>
-                <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
                   Search any YouTube video or start with one of our curated lessons.
                 </p>
                 <form
-                  className="mx-auto mt-4 flex max-w-md items-center gap-2"
+                  className="mx-auto mt-6 flex max-w-xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const u = tryUrl.trim();
@@ -4184,22 +4245,34 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     );
                   }}
                 >
-                  <Input
-                    value={tryUrl}
-                    onChange={(e) => setTryUrl(e.target.value)}
-                    placeholder="Paste a YouTube link…"
-                    className="h-11 flex-1 rounded-xl"
-                  />
-                  <Button type="submit" className="h-11 rounded-xl px-4">
+                  <div className="relative flex-1">
+                    <Youtube className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={tryUrl}
+                      onChange={(e) => setTryUrl(e.target.value)}
+                      placeholder="Paste a YouTube link or search for a video…"
+                      className="h-13 w-full rounded-2xl border-border bg-card pl-11 text-[15px] shadow-sm"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex h-13 shrink-0 items-center justify-center gap-2 rounded-2xl px-7 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-95"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(135deg, var(--brand-purple), color-mix(in oklab, var(--brand-pink) 55%, var(--brand-purple)))",
+                    }}
+                  >
+                    <Play className="h-4 w-4" fill="currentColor" />
                     Watch
-                  </Button>
+                  </button>
                 </form>
-                <div className="mt-3">
-                  <Button asChild variant="outline" size="sm">
+                <div className="mt-4">
+                  <Button asChild variant="outline" size="sm" className="rounded-full bg-card">
                     <Link to="/library" onClick={() => track("library_opened", { source: "post_demo" })}>
                       Browse Library
                     </Link>
                   </Button>
+
                 </div>
               </section>
             )}
@@ -5373,28 +5446,42 @@ function InlineExplanation({
 
 function HowItWorksStrip() {
   const steps = [
-    { icon: Tv, label: "Watch" },
-    { icon: MousePointerClick, label: "Click a sentence" },
-    { icon: Brain, label: "Understand instantly" },
+    { icon: Tv, label: "Watch", desc: "Play any Dutch video", tint: "bg-primary/10 text-primary" },
+    {
+      icon: MousePointerClick,
+      label: "Click a sentence",
+      desc: "Tap any subtitle",
+      tint: "bg-[color-mix(in_oklab,var(--brand-pink)_16%,transparent)] text-[var(--brand-pink)]",
+    },
+    {
+      icon: Brain,
+      label: "Understand instantly",
+      desc: "Get meaning and context",
+      tint: "bg-[color-mix(in_oklab,var(--brand-orange,#FF5A3D)_14%,transparent)] text-primary",
+    },
   ];
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-sm sm:gap-3 sm:text-sm">
+    <div className="grid items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:gap-2 sm:px-6 sm:py-4">
       {steps.map((s, i) => (
-        <span key={s.label} className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <s.icon className="h-3.5 w-3.5" />
+        <Fragment key={s.label}>
+          <div className="flex items-center gap-3">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${s.tint}`}>
+              <s.icon className="h-4 w-4" />
             </span>
-            {s.label}
-          </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">{s.label}</span>
+              <span className="block text-xs text-muted-foreground">{s.desc}</span>
+            </span>
+          </div>
           {i < steps.length - 1 && (
-            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground/60 sm:block" />
           )}
-        </span>
+        </Fragment>
       ))}
     </div>
   );
 }
+
 
 function CustomVideoSection({
   url,
@@ -6077,13 +6164,19 @@ function ValueCards() {
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      {cards.map((c) => (
+      {cards.map((c, i) => (
         <div
           key={c.title}
-          className="rounded-xl border border-border bg-card p-4 shadow-sm"
+          className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
         >
-          <div className="text-xl">{c.emoji}</div>
-          <p className="mt-2 text-sm font-semibold tracking-tight text-foreground">
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ${
+              ["bg-primary/10", "bg-[color-mix(in_oklab,var(--brand-orange,#FF5A3D)_14%,transparent)]", "bg-[color-mix(in_oklab,var(--brand-pink)_14%,transparent)]"][i]
+            }`}
+          >
+            {c.emoji}
+          </div>
+          <p className="mt-3 text-sm font-semibold tracking-tight text-foreground">
             {c.title}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -6093,6 +6186,7 @@ function ValueCards() {
       ))}
     </div>
   );
+
 }
 
 function ReadinessBadges({ videoId }: { videoId: string | null }) {
