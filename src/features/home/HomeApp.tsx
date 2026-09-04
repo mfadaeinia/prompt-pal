@@ -3653,6 +3653,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 )}
                 <div className="sticky top-[68px] z-10 lg:static">
                   <div
+                    className={
+                      isFullscreen
+                        ? ""
+                        : "mx-auto w-full rounded-2xl border border-border bg-card p-1.5 shadow-[0_18px_50px_-24px_rgba(17,24,39,0.35)] md:max-w-[772px] xl:max-w-[912px] min-[1600px]:max-w-[1052px]"
+                    }
+                  >
+                  <div
+
                     ref={stageRef}
                     className={`relative mx-auto w-full max-w-full overflow-hidden bg-black ${
                       isFullscreen
