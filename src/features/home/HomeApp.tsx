@@ -3256,7 +3256,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 <span className="hidden sm:inline">Find a video</span>
               </button>
             )}
-            {view === "app" && videoId && (
+            {view === "app" && cameFromDemo && (
               <button
                 onClick={() => setView("demo")}
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
@@ -3325,7 +3325,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {!isDemo && !(view === "app" && videoId) && (
+            {!isDemo && !(view === "app" && cameFromDemo) && (
               <button
                 type="button"
                 onClick={startDemo}
