@@ -2438,11 +2438,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Keep the active sentence near the top of the transcript viewport
-    // (second visible row) so users always see what is playing now.
-    const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — roughly one sentence below the top edge
+    // Keep the playing sentence in the MIDDLE row of the compact 3-row window
+    // so the previous and next sentences stay visible around it.
+    const targetVisibleTop = Math.max(0, (cHeight - eHeight) / 2);
     const drift = visibleTop - targetVisibleTop;
-    const band = 24; // px dead-zone — don't jitter on tiny drifts
+    const band = 12; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
@@ -2470,7 +2470,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — align with auto-follow target
+      const targetVisibleTop = Math.max(0, (container.clientHeight - el.offsetHeight) / 2);
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
@@ -4061,7 +4061,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                             </button>
                           </div>
                         )}
-                      <ol ref={listRef} className="flex-1 divide-y divide-border/40 overflow-y-auto px-1 pb-3">
+                      {/* Compact 3-row transcript window: previous / current /
+                          next. Fixed height regardless of sentence count; the
+                          full transcript stays reachable by scrolling. */}
+                      <ol
+                        ref={listRef}
+                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto px-1 py-1"
+                      >
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
@@ -4079,10 +4085,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                             : selectedRow
                             ? "selected"
                             : "default";
-                          // One sentence = one row. Collapsed rows stay on a
-                          // single line (truncated); the active/selected row
-                          // expands so the full sentence is always readable.
-                          const expanded = playing || selectedRow;
+                          // One sentence = one row, and every row keeps the
+                          // SAME height so the compact window always frames
+                          // previous / current / next cleanly.
+                          const expanded = false;
                           const inlineEntry = selectedRow ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
