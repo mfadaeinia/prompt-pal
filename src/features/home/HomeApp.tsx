@@ -4061,7 +4061,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                             </button>
                           </div>
                         )}
-                      <ol ref={listRef} className="flex-1 divide-y divide-border/40 overflow-y-auto px-1 pb-3">
+                      {/* Compact 3-row transcript window: previous / current /
+                          next. Fixed height regardless of sentence count; the
+                          full transcript stays reachable by scrolling. */}
+                      <ol
+                        ref={listRef}
+                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto px-1 py-1"
+                      >
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
                             current sentence visible. */}
