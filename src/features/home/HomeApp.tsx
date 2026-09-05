@@ -1145,10 +1145,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    */
   const goWatchHub = () => {
     track("watch_hub_arrived", { from: view });
+    if (view === "demo") setCameFromDemo(true);
     setView("app");
     setVideoId(null);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
 
   const goHome = () => {
     setView(isAuthenticated ? "app" : "landing");
