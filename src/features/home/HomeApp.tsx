@@ -1137,6 +1137,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (completed) track("onboarding_completed", { video_id: videoId });
   };
 
+  /** True once the user has left the demo for the Watch hub. */
+  const [cameFromDemo, setCameFromDemo] = useState(false);
+
 
   /**
    * Exit from the player/demo goes to the Watch hub — the product
