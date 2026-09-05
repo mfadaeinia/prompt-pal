@@ -174,10 +174,10 @@ export function WatchHub({
     <section className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
+        className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 60% 55% at 15% 5%, color-mix(in oklab, var(--brand-pink) 9%, transparent) 0%, transparent 70%), radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%)",
+            "radial-gradient(ellipse 75% 60% at 6% 10%, color-mix(in oklab, var(--brand-purple) 8%, transparent) 0%, transparent 65%), radial-gradient(ellipse 70% 55% at 94% 8%, color-mix(in oklab, var(--brand-pink) 7%, transparent) 0%, transparent 65%), radial-gradient(ellipse 85% 50% at 50% 100%, color-mix(in oklab, var(--brand-purple) 6%, transparent) 0%, transparent 60%), radial-gradient(ellipse 65% 45% at 50% 0%, color-mix(in oklab, var(--primary) 6%, transparent) 0%, transparent 65%)",
         }}
       />
 
