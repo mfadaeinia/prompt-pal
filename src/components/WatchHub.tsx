@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Clock,
-  Library,
   Loader2,
   Play,
   Search,
@@ -411,21 +409,16 @@ function FeaturedDutchVideos({
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border/60 pt-8">
+      <div className="border-t border-border/60 pt-8">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground sm:text-xl">
             <Star className="h-4 w-4 text-primary" />
             Featured Dutch videos
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            A small selection to get you started.
+            Hand-picked videos that work well with NativeFlow.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm" className="h-10 shrink-0 rounded-full px-4">
-          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub" })}>
-            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
-          </Link>
-        </Button>
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -487,22 +480,6 @@ function FeaturedDutchVideos({
         })}
       </div>
 
-      <div className="mt-8 flex flex-col items-start gap-4 rounded-3xl border border-primary/20 bg-primary/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <Library className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="text-base font-bold text-foreground">Want to see more?</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Browse the full library of hand-picked Dutch videos.
-            </p>
-          </div>
-        </div>
-        <Button asChild variant="outline" className="h-10 shrink-0 rounded-full bg-card px-5">
-          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub_cta" })}>
-            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
     </>
   );
 }
