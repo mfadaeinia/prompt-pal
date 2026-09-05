@@ -162,6 +162,14 @@ export function WatchHub({
     }
   }
 
+  function resumeLast() {
+    if (!lastVideo || loading) return;
+    setContentEntryPath("continue_watching", { url: lastVideo.url });
+    track("continue_watching_clicked", { video_id: lastVideo.videoId });
+    onPick(lastVideo.url, lastVideo.targetLang ?? undefined);
+  }
+
+
   return (
     <section className="relative">
       <div
