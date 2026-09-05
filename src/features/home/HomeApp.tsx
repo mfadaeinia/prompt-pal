@@ -2470,7 +2470,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     const container = listRef.current;
     const el = container.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
     if (el) {
-      const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — align with auto-follow target
+      const targetVisibleTop = Math.max(0, (container.clientHeight - el.offsetHeight) / 2);
       container.scrollTo({
         top: Math.max(0, el.offsetTop - targetVisibleTop),
         behavior: "smooth",
