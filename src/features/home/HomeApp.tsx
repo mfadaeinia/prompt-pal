@@ -4085,10 +4085,10 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                             : selectedRow
                             ? "selected"
                             : "default";
-                          // One sentence = one row. Collapsed rows stay on a
-                          // single line (truncated); the active/selected row
-                          // expands so the full sentence is always readable.
-                          const expanded = playing || selectedRow;
+                          // One sentence = one row, and every row keeps the
+                          // SAME height so the compact window always frames
+                          // previous / current / next cleanly.
+                          const expanded = false;
                           const inlineEntry = selectedRow ? explanationCache[s.id] : undefined;
                           return (
                             <li key={s.id}>
