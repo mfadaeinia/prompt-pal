@@ -4843,7 +4843,10 @@ function ExplanationPanel({
 
   const sentenceHighlights = activePhrase
     ? highlightPhrases.filter((p) => p.toLowerCase() === activePhrase.toLowerCase())
-    : [];
+    : // No explicit pick yet: show the leading useful expression highlighted in
+      // the sentence so the link phrase → explanation is immediately visible.
+      highlightPhrases.slice(0, 1);
+
 
 
   return (
