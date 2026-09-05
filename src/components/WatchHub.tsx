@@ -174,33 +174,33 @@ export function WatchHub({
     <section className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 55% at 15% 5%, color-mix(in oklab, var(--brand-pink) 9%, transparent) 0%, transparent 70%), radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%)",
         }}
       />
 
-      <div className="mx-auto max-w-5xl px-5 pb-20 pt-6 sm:pt-12">
+      <div className="mx-auto max-w-5xl px-5 pb-20 pt-10 sm:pt-16">
         <div className="text-center">
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-foreground sm:text-[44px]">
             What do you want to watch?
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground sm:text-base">
             Search Dutch YouTube or paste a video link.
           </p>
         </div>
 
-        <form onSubmit={submit} className="mx-auto mt-6 max-w-2xl">
-          <div className="flex items-stretch gap-2">
+        <form onSubmit={submit} className="mx-auto mt-8 max-w-2xl">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 aria-label="Search Dutch YouTube or paste a YouTube link"
                 placeholder="Search Dutch YouTube or paste a link…"
-                className="h-13 w-full rounded-xl border-border bg-card pl-11 pr-10 text-[15px] shadow-sm sm:h-14"
+                className="h-14 w-full rounded-full border-border bg-card pl-12 pr-10 text-[15px] shadow-sm"
                 inputMode="search"
                 enterKeyHint="search"
                 autoComplete="off"
@@ -209,7 +209,7 @@ export function WatchHub({
                 <button
                   type="button"
                   onClick={() => setQ("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Clear"
                 >
                   ×
@@ -220,7 +220,7 @@ export function WatchHub({
               type="submit"
               disabled={!q.trim() || loading}
               aria-label="Watch"
-              className="h-13 w-13 shrink-0 rounded-xl sm:h-14 sm:w-14"
+              className="h-14 w-14 shrink-0 rounded-full shadow-sm"
             >
               {loading || searching ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -228,6 +228,7 @@ export function WatchHub({
                 <ArrowRight className="h-5 w-5" />
               )}
             </Button>
+
           </div>
 
           {/* Secondary, non-competing preference. */}
