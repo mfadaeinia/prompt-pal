@@ -364,3 +364,144 @@ export function WatchHub({
     </section>
   );
 }
+
+function fmtDur(s: number | null) {
+  if (!s) return null;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+/**
+ * A small, calm selection of curated Dutch videos (3 on desktop) plus a single
+ * lavender "see more" CTA. Deliberately not a dense library grid — the full
+ * library lives on /library.
+ */
+function FeaturedDutchVideos({
+  onPick,
+  loading,
+}: {
+  onPick: PickFn;
+  loading?: boolean;
+}) {
+  const q = useCuratedVideos(60);
+  const all = q.data?.items ?? [];
+
+  const items = useMemo(
+    () =>
+      [...all]
+        .sort((a, b) => Number(b.quality_score) - Number(a.quality_score))
+        .slice(0, 3),
+    [all],
+  );
+
+  if (q.isLoading || q.isError || items.length === 0) return null;
+
+  const open = (v: CuratedVideo) => {
+    if (loading) return;
+    track("library_video_selected", {
+      source: "watch_hub",
+      video_id: v.external_id,
+      level: v.cefr_level,
+      category: v.category,
+    });
+    onPick(v.url, (v.language || "nl").toLowerCase().split(/[-_]/)[0]);
+  };
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border/60 pt-8">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground sm:text-xl">
+            <Star className="h-4 w-4 text-primary" />
+            Featured Dutch videos
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A small selection to get you started.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="h-10 shrink-0 rounded-full px-4">
+          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub" })}>
+            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((v) => {
+          const dur = fmtDur(v.duration_sec);
+          const tags = [v.cefr_level, v.category, (v.topics ?? [])[0]]
+            .filter(Boolean)
+            .slice(0, 3) as string[];
+          return (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => open(v)}
+              disabled={loading}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+            >
+              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                {v.thumbnail_url ? (
+                  <img
+                    src={v.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+                  />
+                ) : null}
+                {dur ? (
+                  <span className="absolute bottom-2 left-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">
+                    {dur}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-1 flex-col gap-1 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 text-[15px] font-semibold text-foreground">
+                      {v.title}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">{v.channel}</p>
+                  </div>
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                    <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
+                  </span>
+                </div>
+                {tags.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {tags.map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 flex flex-col items-start gap-4 rounded-3xl border border-primary/20 bg-primary/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <Library className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="text-base font-bold text-foreground">Want to see more?</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Browse the full library of hand-picked Dutch videos.
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="outline" className="h-10 shrink-0 rounded-full bg-card px-5">
+          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub_cta" })}>
+            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    </>
+  );
+}
