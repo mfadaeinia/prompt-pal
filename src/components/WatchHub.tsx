@@ -1,6 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Loader2, Play, Search, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Library,
+  Loader2,
+  Play,
+  Search,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LibraryStrip } from "@/components/LibraryStrip";
+import { useCuratedVideos } from "@/components/LibraryStrip";
+import type { CuratedVideo } from "@/lib/curated-library.functions";
 import { track } from "@/lib/analytics";
 import { setContentEntryPath } from "@/lib/content-entry";
 import {
@@ -26,8 +37,10 @@ type LastVideo = {
   url: string;
   targetLang: string | null;
   thumbnail?: string;
+  channel?: string;
   ts: number;
 };
+
 
 export const SEARCH_STATE_KEY = "nativeflow_hub_search";
 const LAST_VIDEO_KEY = "nativeflow_last_video";
