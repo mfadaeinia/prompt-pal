@@ -3320,7 +3320,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {!isDemo && (
+            {!isDemo && !(view === "app" && videoId) && (
               <button
                 type="button"
                 onClick={startDemo}
