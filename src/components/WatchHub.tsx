@@ -1,6 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowRight, Loader2, Play, Search, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Library,
+  Loader2,
+  Play,
+  Search,
+  Sparkles,
+  Star,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LibraryStrip } from "@/components/LibraryStrip";
+import { useCuratedVideos } from "@/components/LibraryStrip";
+import type { CuratedVideo } from "@/lib/curated-library.functions";
 import { track } from "@/lib/analytics";
 import { setContentEntryPath } from "@/lib/content-entry";
 import {
@@ -26,8 +37,10 @@ type LastVideo = {
   url: string;
   targetLang: string | null;
   thumbnail?: string;
+  channel?: string;
   ts: number;
 };
+
 
 export const SEARCH_STATE_KEY = "nativeflow_hub_search";
 const LAST_VIDEO_KEY = "nativeflow_last_video";
@@ -149,37 +162,45 @@ export function WatchHub({
     }
   }
 
+  function resumeLast() {
+    if (!lastVideo || loading) return;
+    setContentEntryPath("continue_watching", { url: lastVideo.url });
+    track("continue_watching_clicked", { video_id: lastVideo.videoId });
+    onPick(lastVideo.url, lastVideo.targetLang ?? undefined);
+  }
+
+
   return (
     <section className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px]"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 55% at 15% 5%, color-mix(in oklab, var(--brand-pink) 9%, transparent) 0%, transparent 70%), radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 70%)",
         }}
       />
 
-      <div className="mx-auto max-w-5xl px-5 pb-20 pt-6 sm:pt-12">
+      <div className="mx-auto max-w-5xl px-5 pb-20 pt-10 sm:pt-16">
         <div className="text-center">
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-foreground sm:text-[44px]">
             What do you want to watch?
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground sm:text-base">
             Search Dutch YouTube or paste a video link.
           </p>
         </div>
 
-        <form onSubmit={submit} className="mx-auto mt-6 max-w-2xl">
-          <div className="flex items-stretch gap-2">
+        <form onSubmit={submit} className="mx-auto mt-8 max-w-2xl">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 aria-label="Search Dutch YouTube or paste a YouTube link"
                 placeholder="Search Dutch YouTube or paste a link…"
-                className="h-13 w-full rounded-xl border-border bg-card pl-11 pr-10 text-[15px] shadow-sm sm:h-14"
+                className="h-14 w-full rounded-full border-border bg-card pl-12 pr-10 text-[15px] shadow-sm"
                 inputMode="search"
                 enterKeyHint="search"
                 autoComplete="off"
@@ -188,7 +209,7 @@ export function WatchHub({
                 <button
                   type="button"
                   onClick={() => setQ("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Clear"
                 >
                   ×
@@ -199,7 +220,7 @@ export function WatchHub({
               type="submit"
               disabled={!q.trim() || loading}
               aria-label="Watch"
-              className="h-13 w-13 shrink-0 rounded-xl sm:h-14 sm:w-14"
+              className="h-14 w-14 shrink-0 rounded-full shadow-sm"
             >
               {loading || searching ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -207,6 +228,7 @@ export function WatchHub({
                 <ArrowRight className="h-5 w-5" />
               )}
             </Button>
+
           </div>
 
           {/* Secondary, non-competing preference. */}
@@ -275,58 +297,61 @@ export function WatchHub({
 
         {/* Continue watching — only when there is genuinely resumable content */}
         {!q.trim() && lastVideo && (
-          <section className="mx-auto mt-10 max-w-2xl">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Play className="h-4 w-4 text-primary" fill="currentColor" />
-              Continue watching
-            </h2>
-            <button
-              type="button"
-              onClick={() => {
-                setContentEntryPath("continue_watching", { url: lastVideo.url });
-                track("continue_watching_clicked", { video_id: lastVideo.videoId });
-                onPick(lastVideo.url, lastVideo.targetLang ?? undefined);
-              }}
-              disabled={loading}
-              className="group flex w-full items-center gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-2.5 text-left transition hover:bg-primary/10"
-            >
-              <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-32">
-                <img
-                  src={
-                    lastVideo.thumbnail ??
-                    `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`
-                  }
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-lg">
-                    <Play className="ml-0.5 h-3.5 w-3.5 text-primary" fill="currentColor" />
+          <section className="mx-auto mt-10 max-w-3xl">
+            <div className="rounded-3xl border border-primary/25 bg-primary/[0.06] p-4 sm:p-5">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-foreground">
+                <Clock className="h-4 w-4 text-primary" />
+                Continue watching
+              </h2>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <button
+                  type="button"
+                  onClick={resumeLast}
+                  disabled={loading}
+                  className="group relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-muted sm:w-44"
+                  aria-label="Resume last video"
+                >
+                  <img
+                    src={
+                      lastVideo.thumbnail ??
+                      `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`
+                    }
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover:bg-black/30">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                      <Play className="ml-0.5 h-4 w-4 text-primary" fill="currentColor" />
+                    </span>
                   </span>
-                </span>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-[15px] font-semibold text-foreground">
+                    {lastVideo.videoTitle || "Last watched video"}
+                  </p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {lastVideo.channel ?? "YouTube"}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={resumeLast}
+                    disabled={loading}
+                    className="mt-3 h-10 rounded-full px-5 text-sm font-semibold"
+                  >
+                    Resume <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                  {lastVideo.videoTitle || "Last watched video"}
-                </p>
-                <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                  Resume <ArrowRight className="h-3 w-3" />
-                </p>
-              </div>
-            </button>
+            </div>
           </section>
         )}
 
-        {/* Curated discovery — compact, secondary */}
+        {/* Featured Dutch videos — a small, calm selection */}
         {!q.trim() && (
-          <div className="mx-auto mt-10 max-w-5xl">
-            <LibraryStrip
-              source="watch_hub"
-              title="Explore Dutch videos"
-              subtitle="Hand-picked Dutch videos, ready to watch."
-              showLevels={false}
-              limit={8}
+          <div className="mx-auto mt-12 max-w-5xl">
+            <FeaturedDutchVideos
+              loading={loading}
               onPick={(u, lang) => {
                 setContentEntryPath("curated_library", { url: u });
                 track("curated_video_selected", { source: "watch_hub" });
@@ -335,7 +360,149 @@ export function WatchHub({
             />
           </div>
         )}
+
       </div>
     </section>
+  );
+}
+
+function fmtDur(s: number | null) {
+  if (!s) return null;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}
+
+/**
+ * A small, calm selection of curated Dutch videos (3 on desktop) plus a single
+ * lavender "see more" CTA. Deliberately not a dense library grid — the full
+ * library lives on /library.
+ */
+function FeaturedDutchVideos({
+  onPick,
+  loading,
+}: {
+  onPick: PickFn;
+  loading?: boolean;
+}) {
+  const q = useCuratedVideos(60);
+  const all = q.data?.items ?? [];
+
+  const items = useMemo(
+    () =>
+      [...all]
+        .sort((a, b) => Number(b.quality_score) - Number(a.quality_score))
+        .slice(0, 3),
+    [all],
+  );
+
+  if (q.isLoading || q.isError || items.length === 0) return null;
+
+  const open = (v: CuratedVideo) => {
+    if (loading) return;
+    track("library_video_selected", {
+      source: "watch_hub",
+      video_id: v.external_id,
+      level: v.cefr_level,
+      category: v.category,
+    });
+    onPick(v.url, (v.language || "nl").toLowerCase().split(/[-_]/)[0]);
+  };
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border/60 pt-8">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground sm:text-xl">
+            <Star className="h-4 w-4 text-primary" />
+            Featured Dutch videos
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A small selection to get you started.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="h-10 shrink-0 rounded-full px-4">
+          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub" })}>
+            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((v) => {
+          const dur = fmtDur(v.duration_sec);
+          const tags = [v.cefr_level, v.category, (v.topics ?? [])[0]]
+            .filter(Boolean)
+            .slice(0, 3) as string[];
+          return (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => open(v)}
+              disabled={loading}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+            >
+              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                {v.thumbnail_url ? (
+                  <img
+                    src={v.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition group-hover:scale-[1.03]"
+                  />
+                ) : null}
+                {dur ? (
+                  <span className="absolute bottom-2 left-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">
+                    {dur}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-1 flex-col gap-1 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="line-clamp-2 text-[15px] font-semibold text-foreground">
+                      {v.title}
+                    </p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">{v.channel}</p>
+                  </div>
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                    <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
+                  </span>
+                </div>
+                {tags.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {tags.map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 flex flex-col items-start gap-4 rounded-3xl border border-primary/20 bg-primary/[0.06] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <Library className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <div>
+            <p className="text-base font-bold text-foreground">Want to see more?</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Browse the full library of hand-picked Dutch videos.
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="outline" className="h-10 shrink-0 rounded-full bg-card px-5">
+          <Link to="/library" onClick={() => track("library_opened", { source: "watch_hub_cta" })}>
+            Browse Library <ArrowRight className="ml-1.5 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    </>
   );
 }

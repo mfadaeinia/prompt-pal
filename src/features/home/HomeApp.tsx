@@ -1137,6 +1137,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (completed) track("onboarding_completed", { video_id: videoId });
   };
 
+  /** True once the user has left the demo for the Watch hub. */
+  const [cameFromDemo, setCameFromDemo] = useState(false);
+
 
   /**
    * Exit from the player/demo goes to the Watch hub — the product
@@ -1145,10 +1148,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    */
   const goWatchHub = () => {
     track("watch_hub_arrived", { from: view });
+    if (view === "demo") setCameFromDemo(true);
     setView("app");
     setVideoId(null);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
   };
+
 
   const goHome = () => {
     setView(isAuthenticated ? "app" : "landing");
@@ -3251,6 +3256,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 <span className="hidden sm:inline">Find a video</span>
               </button>
             )}
+            {view === "app" && cameFromDemo && (
+              <button
+                onClick={() => setView("demo")}
+                className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
+                aria-label="Back to demo"
+              >
+                <span aria-hidden>←</span>
+                <span className="hidden sm:inline">Back to demo</span>
+              </button>
+            )}
+
             <button
               onClick={goHome}
               className="flex min-w-0 items-center gap-2.5"
@@ -3309,7 +3325,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 </button>
               )}
             </div>
-            {!isDemo && (
+            {!isDemo && !(view === "app" && cameFromDemo) && (
               <button
                 type="button"
                 onClick={startDemo}
