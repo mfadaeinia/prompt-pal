@@ -2438,11 +2438,11 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Keep the active sentence near the top of the transcript viewport
-    // (second visible row) so users always see what is playing now.
-    const targetVisibleTop = (isMobile && showSentenceHint) ? 120 : 48; // px — roughly one sentence below the top edge
+    // Keep the playing sentence in the MIDDLE row of the compact 3-row window
+    // so the previous and next sentences stay visible around it.
+    const targetVisibleTop = Math.max(0, (cHeight - eHeight) / 2);
     const drift = visibleTop - targetVisibleTop;
-    const band = 24; // px dead-zone — don't jitter on tiny drifts
+    const band = 12; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
 
     const desiredScrollTop = Math.max(0, eTop - targetVisibleTop);
