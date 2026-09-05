@@ -177,7 +177,7 @@ export function WatchHub({
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 8% 12%, color-mix(in oklab, var(--brand-purple) 7%, transparent) 0%, transparent 60%), radial-gradient(ellipse 65% 55% at 92% 8%, color-mix(in oklab, var(--brand-pink) 6%, transparent) 0%, transparent 60%), radial-gradient(ellipse 80% 45% at 50% 100%, color-mix(in oklab, var(--brand-purple) 5%, transparent) 0%, transparent 55%), radial-gradient(ellipse 60% 40% at 50% 0%, color-mix(in oklab, var(--primary) 5%, transparent) 0%, transparent 60%)",
+            "radial-gradient(ellipse 75% 60% at 6% 10%, color-mix(in oklab, var(--brand-purple) 8%, transparent) 0%, transparent 65%), radial-gradient(ellipse 70% 55% at 94% 8%, color-mix(in oklab, var(--brand-pink) 7%, transparent) 0%, transparent 65%), radial-gradient(ellipse 85% 50% at 50% 100%, color-mix(in oklab, var(--brand-purple) 6%, transparent) 0%, transparent 60%), radial-gradient(ellipse 65% 45% at 50% 0%, color-mix(in oklab, var(--primary) 6%, transparent) 0%, transparent 65%)",
         }}
       />
 
