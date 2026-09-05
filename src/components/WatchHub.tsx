@@ -275,58 +275,61 @@ export function WatchHub({
 
         {/* Continue watching — only when there is genuinely resumable content */}
         {!q.trim() && lastVideo && (
-          <section className="mx-auto mt-10 max-w-2xl">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Play className="h-4 w-4 text-primary" fill="currentColor" />
-              Continue watching
-            </h2>
-            <button
-              type="button"
-              onClick={() => {
-                setContentEntryPath("continue_watching", { url: lastVideo.url });
-                track("continue_watching_clicked", { video_id: lastVideo.videoId });
-                onPick(lastVideo.url, lastVideo.targetLang ?? undefined);
-              }}
-              disabled={loading}
-              className="group flex w-full items-center gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-2.5 text-left transition hover:bg-primary/10"
-            >
-              <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-32">
-                <img
-                  src={
-                    lastVideo.thumbnail ??
-                    `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`
-                  }
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-lg">
-                    <Play className="ml-0.5 h-3.5 w-3.5 text-primary" fill="currentColor" />
+          <section className="mx-auto mt-10 max-w-3xl">
+            <div className="rounded-3xl border border-primary/25 bg-primary/[0.06] p-4 sm:p-5">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-foreground">
+                <Clock className="h-4 w-4 text-primary" />
+                Continue watching
+              </h2>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <button
+                  type="button"
+                  onClick={resumeLast}
+                  disabled={loading}
+                  className="group relative aspect-video w-full shrink-0 overflow-hidden rounded-2xl bg-muted sm:w-44"
+                  aria-label="Resume last video"
+                >
+                  <img
+                    src={
+                      lastVideo.thumbnail ??
+                      `https://i.ytimg.com/vi/${lastVideo.videoId}/hqdefault.jpg`
+                    }
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover:bg-black/30">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 shadow-lg">
+                      <Play className="ml-0.5 h-4 w-4 text-primary" fill="currentColor" />
+                    </span>
                   </span>
-                </span>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-[15px] font-semibold text-foreground">
+                    {lastVideo.videoTitle || "Last watched video"}
+                  </p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {lastVideo.channel ?? "YouTube"}
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={resumeLast}
+                    disabled={loading}
+                    className="mt-3 h-10 rounded-full px-5 text-sm font-semibold"
+                  >
+                    Resume <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                  {lastVideo.videoTitle || "Last watched video"}
-                </p>
-                <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                  Resume <ArrowRight className="h-3 w-3" />
-                </p>
-              </div>
-            </button>
+            </div>
           </section>
         )}
 
-        {/* Curated discovery — compact, secondary */}
+        {/* Featured Dutch videos — a small, calm selection */}
         {!q.trim() && (
-          <div className="mx-auto mt-10 max-w-5xl">
-            <LibraryStrip
-              source="watch_hub"
-              title="Explore Dutch videos"
-              subtitle="Hand-picked Dutch videos, ready to watch."
-              showLevels={false}
-              limit={8}
+          <div className="mx-auto mt-12 max-w-5xl">
+            <FeaturedDutchVideos
+              loading={loading}
               onPick={(u, lang) => {
                 setContentEntryPath("curated_library", { url: u });
                 track("curated_video_selected", { source: "watch_hub" });
@@ -335,6 +338,7 @@ export function WatchHub({
             />
           </div>
         )}
+
       </div>
     </section>
   );
