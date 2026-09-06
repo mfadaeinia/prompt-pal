@@ -143,11 +143,57 @@ export function detectLanguage(text: string, opts?: { sampleChars?: number }): L
   return { language, confidence: Number(confidence.toFixed(3)), scores, sampledChars };
 }
 
+/**
+ * Provider labels are inconsistent: some report ISO-639-1 ("nl"), some
+ * ISO-639-2 ("nld"/"dut"), some the English name ("dutch"). Map all of those
+ * onto the base ISO-639-1 code before comparing.
+ */
+const LANGUAGE_ALIASES: Record<string, string> = {
+  dutch: "nl", nederlands: "nl", flemish: "nl", nld: "nl", dut: "nl",
+  english: "en", eng: "en",
+  german: "de", deutsch: "de", deu: "de", ger: "de",
+  french: "fr", français: "fr", francais: "fr", fra: "fr", fre: "fr",
+  spanish: "es", español: "es", espanol: "es", spa: "es",
+  italian: "it", italiano: "it", ita: "it",
+  portuguese: "pt", português: "pt", portugues: "pt", por: "pt",
+  swedish: "sv", swe: "sv",
+  danish: "da", dan: "da",
+  norwegian: "no", nor: "no", nob: "no",
+  polish: "pl", pol: "pl",
+  turkish: "tr", tur: "tr",
+  indonesian: "id", ind: "id",
+  arabic: "ar", ara: "ar",
+  persian: "fa", farsi: "fa", fas: "fa", per: "fa",
+  russian: "ru", rus: "ru",
+  chinese: "zh", mandarin: "zh", zho: "zh", chi: "zh",
+  japanese: "ja", jpn: "ja",
+  korean: "ko", kor: "ko",
+  hindi: "hi", hin: "hi",
+  ukrainian: "uk", ukr: "uk",
+  romanian: "ro", ron: "ro", rum: "ro",
+  greek: "el", ell: "el", gre: "el",
+  czech: "cs", ces: "cs", cze: "cs",
+  hungarian: "hu", hun: "hu",
+  finnish: "fi", fin: "fi",
+  hebrew: "he", heb: "he",
+  vietnamese: "vi", vie: "vi",
+  thai: "th", tha: "th",
+};
+
+/** Normalize any provider language label to a base ISO-639-1 code. */
+export function normalizeLanguageCode(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const base = value.trim().toLowerCase().split(/[-_]/)[0];
+  if (!base) return null;
+  return LANGUAGE_ALIASES[base] ?? base;
+}
+
 /** Returns true when two language codes refer to the same base language. */
 export function sameBaseLanguage(a: string | null | undefined, b: string | null | undefined): boolean {
-  if (!a || !b) return false;
-  const norm = (s: string) => s.toLowerCase().split(/[-_]/)[0];
-  return norm(a) === norm(b);
+  const na = normalizeLanguageCode(a);
+  const nb = normalizeLanguageCode(b);
+  if (!na || !nb) return false;
+  return na === nb;
 }
 
 /**
