@@ -953,8 +953,7 @@ export function validateTranscript(params: {
 }
 
 function languagesMatch(a: string, b: string): boolean {
-  const norm = (s: string) => s.toLowerCase().split(/[-_]/)[0];
-  return norm(a) === norm(b);
+  return sameBaseLanguage(a, b);
 }
 
 async function writeCache(params: {
