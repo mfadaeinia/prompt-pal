@@ -3258,7 +3258,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             )}
             {view === "app" && cameFromDemo && (
               <button
-                onClick={() => setView("demo")}
+                onClick={startDemo}
                 className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 py-1.5 text-xs font-medium text-foreground hover:bg-accent sm:px-3"
                 aria-label="Back to demo"
               >
