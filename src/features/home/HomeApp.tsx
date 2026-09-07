@@ -3838,11 +3838,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
                           subtitleHintVisible
-                            ? "Click any subtitle to understand it"
+                            ? mobileFocus
+                              ? "Didn't understand that? Tap it."
+                              : "Click any subtitle to understand it"
                             : null
                         }
                         hintSecondary={
-                          subtitleHintVisible
+                          subtitleHintVisible && !mobileFocus
                             ? "Or open Transcript to choose a sentence."
                             : null
                         }
