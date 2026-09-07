@@ -3201,7 +3201,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [layoutMode, transcriptOpen, mobileAhaDone]);
+  }, [layoutMode, transcriptOpen]);
 
   /**
    * MOBILE-ONLY focus mode (< 768px, same breakpoint as the explanation sheet).
