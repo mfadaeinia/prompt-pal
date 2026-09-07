@@ -2975,7 +2975,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       trackWatch("video_resumed_after_explanation", {
         video_id: videoId,
         sentence_id: selected?.id ?? null,
+        ...(layoutMode === "sheet"
+          ? { source: "mobile_demo", interaction_source: "video_overlay" }
+          : {}),
       });
+      // Mobile focus mode: the aha loop is complete — unlock the secondary
+      // surfaces (transcript link, "Now try it yourself").
+      if (layoutMode === "sheet") setMobileAhaDone(true);
     }
     track("learning_resume", { video_id: videoId });
     track("resume_clicked", {
@@ -3161,6 +3167,36 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
+  /**
+   * MOBILE-ONLY focus mode (< 768px, same breakpoint as the explanation sheet).
+   * Everything gated on `mobileFocus` is invisible on tablet/desktop, so the
+   * approved desktop "video | explanation" experience renders unchanged.
+   */
+  const mobileFocus = layoutMode === "sheet" && view === "demo" && !!videoId;
+  /** Set once the learner completed tap → explanation → Continue on mobile. */
+  const [mobileAhaDone, setMobileAhaDone] = useState(false);
+  /** "Now try it yourself" only appears after the aha loop + a breathing pause. */
+  const [mobileTryItVisible, setMobileTryItVisible] = useState(false);
+  useEffect(() => {
+    setMobileAhaDone(false);
+    setMobileTryItVisible(false);
+  }, [videoId]);
+  useEffect(() => {
+    if (!mobileAhaDone || mobileTryItVisible) return;
+    const t = window.setTimeout(() => setMobileTryItVisible(true), 14000);
+    return () => window.clearTimeout(t);
+  }, [mobileAhaDone, mobileTryItVisible]);
+  useEffect(() => {
+    if (!mobileFocus || !mobileTryItVisible) return;
+    track("try_it_yourself_viewed", { video_id: videoId, source: "mobile_demo" });
+  }, [mobileFocus, mobileTryItVisible, videoId]);
+  /** Guidance copy under the video mirrors the approved mobile mockup. */
+  const mobileStage: "watch" | "tap" | "explained" = mobileAhaDone
+    ? "explained"
+    : explanationOpen
+      ? "tap"
+      : "watch";
+
 
   // Track real fullscreen state of the video stage.
   useEffect(() => {
@@ -3242,7 +3278,29 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      {!embedded && (
+      {/* MOBILE ONLY (< 768px) — focus-mode header: close + wordmark, nothing else. */}
+      {!embedded && mobileFocus && (
+        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+          <div
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-2.5"
+            style={{ paddingTop: "max(0.625rem, env(safe-area-inset-top))" }}
+          >
+            <button
+              type="button"
+              onClick={goWatchHub}
+              aria-label="Close the demo"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex justify-center">
+              <BrandLogo markClassName="h-7 w-7" />
+            </div>
+            <span aria-hidden />
+          </div>
+        </header>
+      )}
+      {!embedded && !mobileFocus && (
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4 min-[1600px]:max-w-[1600px] min-[1600px]:px-12">
           <div className="flex min-w-0 items-center gap-2">
