@@ -3003,6 +3003,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    *  can tell whether learners live in the video overlay or the transcript. */
   function toggleTranscript() {
     const next = !transcriptOpen;
+    transcriptTouchedRef.current = true;
     setTranscriptOpen(next);
     // Opening the transcript is one of the two ways to get an explanation —
     // the discovery tooltip has done its job.
