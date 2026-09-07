@@ -2975,7 +2975,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       trackWatch("video_resumed_after_explanation", {
         video_id: videoId,
         sentence_id: selected?.id ?? null,
+        ...(layoutMode === "sheet"
+          ? { source: "mobile_demo", interaction_source: "video_overlay" }
+          : {}),
       });
+      // Mobile focus mode: the aha loop is complete — unlock the secondary
+      // surfaces (transcript link, "Now try it yourself").
+      if (layoutMode === "sheet") setMobileAhaDone(true);
     }
     track("learning_resume", { video_id: videoId });
     track("resume_clicked", {
