@@ -3174,6 +3174,35 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
+  // MOBILE ONLY (<768px): the transcript is open by default so the initial
+  // hierarchy is header → video → transcript controls → transcript. A manual
+  // toggle (transcriptTouchedRef) wins; desktop default state is unchanged.
+  useEffect(() => {
+    if (layoutMode === "sheet" && !transcriptTouchedRef.current) {
+      setTranscriptOpen(true);
+    }
+  }, [layoutMode]);
+
+  // MOBILE ONLY: size the transcript from the available viewport height
+  // (100dvh minus everything above it minus a small bottom safe gap) instead
+  // of the fixed ~3-row desktop height. Recalculated on resize/orientation.
+  useEffect(() => {
+    if (layoutMode !== "sheet" || !transcriptOpen) {
+      setMobileTranscriptH(null);
+      return;
+    }
+    const update = () => {
+      const el = transcriptPanelRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const avail = window.innerHeight - top - 12;
+      setMobileTranscriptH(Math.max(160, Math.floor(avail)));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [layoutMode, transcriptOpen, mobileAhaDone]);
+
   /**
    * MOBILE-ONLY focus mode (< 768px, same breakpoint as the explanation sheet).
    * Everything gated on `mobileFocus` is invisible on tablet/desktop, so the
