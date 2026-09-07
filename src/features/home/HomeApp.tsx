@@ -3278,7 +3278,29 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      {!embedded && (
+      {/* MOBILE ONLY (< 768px) — focus-mode header: close + wordmark, nothing else. */}
+      {!embedded && mobileFocus && (
+        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+          <div
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-2.5"
+            style={{ paddingTop: "max(0.625rem, env(safe-area-inset-top))" }}
+          >
+            <button
+              type="button"
+              onClick={goWatchHub}
+              aria-label="Close the demo"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex justify-center">
+              <BrandLogo markClassName="h-7 w-7" />
+            </div>
+            <span aria-hidden />
+          </div>
+        </header>
+      )}
+      {!embedded && !mobileFocus && (
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4 min-[1600px]:max-w-[1600px] min-[1600px]:px-12">
           <div className="flex min-w-0 items-center gap-2">
