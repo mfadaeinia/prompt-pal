@@ -311,6 +311,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // overlay on the video is the primary learning surface. It only mounts when
   // the learner explicitly asks for it ("Transcript" control under the video).
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  // Set once the learner manually toggles the transcript — a manual choice
+  // overrides the mobile default-open behavior below.
+  const transcriptTouchedRef = useRef(false);
+  // Mobile only: measured pixel height for the transcript panel so it fills
+  // the viewport space left below header + video + control row.
+  const transcriptPanelRef = useRef<HTMLElement | null>(null);
+  const [mobileTranscriptH, setMobileTranscriptH] = useState<number | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   // Recommendations are NOT in the DOM until the video ends or the learner
@@ -2996,6 +3003,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
    *  can tell whether learners live in the video overlay or the transcript. */
   function toggleTranscript() {
     const next = !transcriptOpen;
+    transcriptTouchedRef.current = true;
     setTranscriptOpen(next);
     // Opening the transcript is one of the two ways to get an explanation —
     // the discovery tooltip has done its job.
@@ -3166,6 +3174,35 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
   }, []);
+
+  // MOBILE ONLY (<768px): the transcript is open by default so the initial
+  // hierarchy is header → video → transcript controls → transcript. A manual
+  // toggle (transcriptTouchedRef) wins; desktop default state is unchanged.
+  useEffect(() => {
+    if (layoutMode === "sheet" && !transcriptTouchedRef.current) {
+      setTranscriptOpen(true);
+    }
+  }, [layoutMode]);
+
+  // MOBILE ONLY: size the transcript from the available viewport height
+  // (100dvh minus everything above it minus a small bottom safe gap) instead
+  // of the fixed ~3-row desktop height. Recalculated on resize/orientation.
+  useEffect(() => {
+    if (layoutMode !== "sheet" || !transcriptOpen) {
+      setMobileTranscriptH(null);
+      return;
+    }
+    const update = () => {
+      const el = transcriptPanelRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const avail = window.innerHeight - top - 12;
+      setMobileTranscriptH(Math.max(160, Math.floor(avail)));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [layoutMode, transcriptOpen]);
 
   /**
    * MOBILE-ONLY focus mode (< 768px, same breakpoint as the explanation sheet).
@@ -3943,7 +3980,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </p>
                 </div>
               )}
-              {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone) && (
+              {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone || transcriptOpen) && (
                 <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
@@ -4004,7 +4041,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 }`}
               >
 
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]">
+                <aside
+                  ref={transcriptPanelRef}
+                  style={
+                    layoutMode === "sheet" && mobileTranscriptH
+                      ? { height: mobileTranscriptH, maxHeight: mobileTranscriptH }
+                      : undefined
+                  }
+                  className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]"
+                >
 
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
@@ -4155,7 +4200,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                           full transcript stays reachable by scrolling. */}
                       <ol
                         ref={listRef}
-                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto overflow-x-hidden px-1 py-1"
+                        className={`nf-slim-scroll divide-y divide-border/40 overflow-y-auto overflow-x-hidden px-1 py-1 ${
+                          layoutMode === "sheet" ? "min-h-0 flex-1" : "h-[10.5rem] shrink-0"
+                        }`}
                       >
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
@@ -4464,7 +4511,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             } catch {}
           }}
         />
-      ) : embedded ? null : (
+      ) : embedded || (layoutMode === "sheet" && transcriptOpen) ? null : (
+        // On mobile the transcript fills the lower viewport — never float
+        // the feedback button over its content or controls.
         <FeedbackFab onClick={openFeedbackManually} />
       )}
       {devPanelEnabled && (
