@@ -311,6 +311,13 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
   // overlay on the video is the primary learning surface. It only mounts when
   // the learner explicitly asks for it ("Transcript" control under the video).
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  // Set once the learner manually toggles the transcript — a manual choice
+  // overrides the mobile default-open behavior below.
+  const transcriptTouchedRef = useRef(false);
+  // Mobile only: measured pixel height for the transcript panel so it fills
+  // the viewport space left below header + video + control row.
+  const transcriptPanelRef = useRef<HTMLElement | null>(null);
+  const [mobileTranscriptH, setMobileTranscriptH] = useState<number | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   // Recommendations are NOT in the DOM until the video ends or the learner
