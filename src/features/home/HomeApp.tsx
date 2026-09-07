@@ -4421,7 +4421,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         {/* Custom-video section moved directly under DemoHero — see CustomVideoSection. */}
       </main>
 
-      <AppFooter />
+      {!mobileFocus && <AppFooter />}
 
 
 
