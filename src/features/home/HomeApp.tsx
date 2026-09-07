@@ -3161,6 +3161,36 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
+  /**
+   * MOBILE-ONLY focus mode (< 768px, same breakpoint as the explanation sheet).
+   * Everything gated on `mobileFocus` is invisible on tablet/desktop, so the
+   * approved desktop "video | explanation" experience renders unchanged.
+   */
+  const mobileFocus = layoutMode === "sheet" && view === "demo" && !!videoId;
+  /** Set once the learner completed tap → explanation → Continue on mobile. */
+  const [mobileAhaDone, setMobileAhaDone] = useState(false);
+  /** "Now try it yourself" only appears after the aha loop + a breathing pause. */
+  const [mobileTryItVisible, setMobileTryItVisible] = useState(false);
+  useEffect(() => {
+    setMobileAhaDone(false);
+    setMobileTryItVisible(false);
+  }, [videoId]);
+  useEffect(() => {
+    if (!mobileAhaDone || mobileTryItVisible) return;
+    const t = window.setTimeout(() => setMobileTryItVisible(true), 14000);
+    return () => window.clearTimeout(t);
+  }, [mobileAhaDone, mobileTryItVisible]);
+  useEffect(() => {
+    if (!mobileFocus || !mobileTryItVisible) return;
+    track("try_it_yourself_viewed", { video_id: videoId, source: "mobile_demo" });
+  }, [mobileFocus, mobileTryItVisible, videoId]);
+  /** Guidance copy under the video mirrors the approved mobile mockup. */
+  const mobileStage: "watch" | "tap" | "explained" = mobileAhaDone
+    ? "explained"
+    : explanationOpen
+      ? "tap"
+      : "watch";
+
 
   // Track real fullscreen state of the video stage.
   useEffect(() => {
