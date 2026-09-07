@@ -4155,7 +4155,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                           full transcript stays reachable by scrolling. */}
                       <ol
                         ref={listRef}
-                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto px-1 py-1"
+                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto overflow-x-hidden px-1 py-1"
                       >
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
@@ -4189,7 +4189,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                                 title={s.text}
                                 aria-label={`Explain: ${s.text}`}
                                 aria-expanded={expanded}
-                                className={`group grid w-full grid-cols-[3.25rem_1fr_1rem] items-baseline gap-3 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.65] transition-colors duration-150 hover:border-primary/40 hover:bg-muted ${
+                                className={`group grid min-w-0 w-full grid-cols-[3.25rem_minmax(0,1fr)_1rem] items-start gap-3 cursor-pointer touch-manipulation rounded-lg border-l-2 px-3 py-3 text-left text-[15px] leading-[1.65] transition-colors duration-150 hover:border-primary/40 hover:bg-muted md:items-baseline ${
                                   visualState === "playing"
                                     ? "border-primary bg-accent font-medium text-foreground"
                                     : visualState === "selected"
@@ -4202,7 +4202,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                                   {formatTime(s.offset)}
                                 </span>
                                 <span
-                                  className={`min-w-0 ${expanded ? "whitespace-normal" : "truncate"}`}
+                                  className="min-w-0 whitespace-normal break-words [overflow-wrap:anywhere] md:truncate"
                                 >
                                   {s.text}
                                 </span>
