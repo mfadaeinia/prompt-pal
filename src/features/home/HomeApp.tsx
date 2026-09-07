@@ -3255,6 +3255,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       onClose={() => closeExplanation(false)}
       onReplay={replaySelected}
       onResume={resumeFromHere}
+      resumeLabel={mobileFocus ? "Continue" : "Resume"}
       onSave={() => handleSaveExpression(selected)}
       isSaved={isSentenceSaved(selected)}
       justSaved={!!selected && justSavedId === selected.id}
@@ -4849,6 +4850,7 @@ function ExplanationPanel({
   savingExpressionHead,
   justSavedExpressionHead,
   focusPhrase,
+  resumeLabel = "Resume",
 }: {
   sentence: TranscriptSentence | null;
   entry: ExplanationPanelEntry | undefined;
@@ -4868,6 +4870,8 @@ function ExplanationPanel({
   justSavedExpressionHead?: string | null;
   /** Expression the learner tapped, pre-highlighted in the sentence. */
   focusPhrase?: string | null;
+  /** Mobile focus mode labels the primary action "Continue". */
+  resumeLabel?: string;
 }) {
   // Active expression state — only one phrase highlighted at a time in the original sentence.
   // (Hoisted above the early empty-state return so hook order stays stable across renders.)
@@ -4957,7 +4961,7 @@ function ExplanationPanel({
               onClick={onResume}
               className="h-8 gap-1.5 rounded-full px-3 text-xs font-semibold"
             >
-              <Play className="h-3.5 w-3.5" /> Resume
+              <Play className="h-3.5 w-3.5" /> {resumeLabel}
             </Button>
           )}
           <Button
