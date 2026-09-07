@@ -4511,7 +4511,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             } catch {}
           }}
         />
-      ) : embedded ? null : (
+      ) : embedded || (layoutMode === "sheet" && transcriptOpen) ? null : (
+        // On mobile the transcript fills the lower viewport — never float
+        // the feedback button over its content or controls.
         <FeedbackFab onClick={openFeedbackManually} />
       )}
       {devPanelEnabled && (
