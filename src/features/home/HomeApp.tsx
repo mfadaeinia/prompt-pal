@@ -3928,7 +3928,19 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
               {/* Optional transcript control — the default watching experience
                   is video + synchronized subtitle only. */}
-              {!isFullscreen && studyMode && (
+              {mobileFocus && !mobileAhaDone && (
+                <div className="order-3 mx-auto w-full rounded-2xl border border-border bg-card px-4 py-3 text-center shadow-sm">
+                  <p className="text-sm font-semibold text-foreground">
+                    {explanationOpen ? "Read the meaning, then continue" : "Watch a few seconds"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {explanationOpen
+                      ? "Tap Continue to resume exactly where you paused."
+                      : "Didn't understand something? Tap it in the subtitle."}
+                  </p>
+                </div>
+              )}
+              {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone) && (
                 <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
@@ -4289,7 +4301,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
             {/* You may also like — kept OUT of the DOM until the learner
                 finishes the video or scrolls past the completion threshold. */}
-            {showRecommendations && (
+            {showRecommendations && !mobileFocus && (
               <LibraryStrip
                 source="player"
                 title="You may also like"
@@ -4312,7 +4324,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
 
             {/* After the demo: turn the visitor into a doer. */}
-            {isDemo && !transcriptOpen && !explanationOpen && (
+            {isDemo && !transcriptOpen && !explanationOpen && (!mobileFocus || mobileTryItVisible) && (
               <section className="relative mt-8 overflow-hidden rounded-3xl border border-primary/15 bg-secondary/60 px-5 py-8 text-center sm:px-10 sm:py-10">
                 <WatchCallout
                   className="left-6 top-1/2 -translate-y-1/2"
@@ -4384,7 +4396,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             {/* While the learner is actively reading a transcript or an
                 explanation, the learning interface owns the page — marketing
                 support content only returns once that state is closed. */}
-            {!transcriptOpen && !explanationOpen && (
+            {!transcriptOpen && !explanationOpen && !mobileFocus && (
               <section className="space-y-4 pt-8">
                 <HowItWorksStrip />
                 {isAuthenticated ? (
@@ -4420,23 +4432,23 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       >
         <SheetContent
           side="bottom"
-          className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-primary/20 bg-secondary p-4"
+          className="max-h-[68vh] overflow-y-auto rounded-t-2xl border-primary/20 bg-secondary p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           {explanationPanelNode}
         </SheetContent>
       </Sheet>
 
-      {showOnboarding && view === "demo" && studyMode && (
+      {showOnboarding && view === "demo" && studyMode && !mobileFocus && (
 
         <SentenceCoachmark
           containerRef={listRef}
           onDismiss={() => dismissOnboarding(false)}
         />
       )}
-      {showPlayNudge && view === "demo" && studyMode && (
+      {showPlayNudge && view === "demo" && studyMode && !mobileFocus && (
         <PlayNudge onDismiss={() => setShowPlayNudge(false)} />
       )}
-      {showFeedback ? (
+      {mobileFocus && !mobileAhaDone ? null : showFeedback ? (
         <FeedbackWidget
           triggerReason={feedbackTrigger}
           getContext={getFeedbackContext}
