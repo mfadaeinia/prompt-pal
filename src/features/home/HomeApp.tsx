@@ -3980,7 +3980,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   </p>
                 </div>
               )}
-              {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone) && (
+              {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone || transcriptOpen) && (
                 <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
@@ -4041,7 +4041,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                 }`}
               >
 
-                <aside className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]">
+                <aside
+                  ref={transcriptPanelRef}
+                  style={
+                    layoutMode === "sheet" && mobileTranscriptH
+                      ? { height: mobileTranscriptH, maxHeight: mobileTranscriptH }
+                      : undefined
+                  }
+                  className="relative flex max-h-[55vh] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_14px_40px_-28px_rgba(17,24,39,0.35)] lg:max-h-[60vh]"
+                >
 
 
                     {transcriptQuality && !qualityBannerDismissed && transcriptQuality.quality !== "high" && videoId !== DEMO_VIDEO_ID && (
@@ -4192,7 +4200,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                           full transcript stays reachable by scrolling. */}
                       <ol
                         ref={listRef}
-                        className="nf-slim-scroll h-[10.5rem] shrink-0 divide-y divide-border/40 overflow-y-auto overflow-x-hidden px-1 py-1"
+                        className={`nf-slim-scroll divide-y divide-border/40 overflow-y-auto overflow-x-hidden px-1 py-1 ${
+                          layoutMode === "sheet" ? "min-h-0 flex-1" : "h-[10.5rem] shrink-0"
+                        }`}
                       >
                         {/* In-list sticky row removed — the persistent
                             "Now playing" bar below the video already keeps the
