@@ -2285,7 +2285,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     const onScroll = () => {
       // Mark as user-driven; suppress autoscroll for 2s after last interaction.
       userScrollingUntilRef.current = performance.now() + 2000;
-      if (layoutMode !== "sheet" || playingId == null) return;
+      if (window.innerWidth >= 768 || playingId == null) return;
       const active = el.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
       if (!active) return;
       const visibleTop = active.offsetTop - el.scrollTop;
@@ -2303,7 +2303,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       el.removeEventListener("touchmove", mark);
       el.removeEventListener("keydown", mark);
     };
-  }, [videoId, playingId, layoutMode]);
+  }, [videoId, playingId]);
 
   // ── Discovery instrumentation ──────────────────────────────────────────
   // Answers "why are users watching but not clicking?". Each event fires at
@@ -2460,7 +2460,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // upcoming context remains visible. Tablet/desktop retain exact centering.
     const targetVisibleTop = Math.max(
       0,
-      layoutMode === "sheet" ? cHeight * 0.38 - eHeight / 2 : (cHeight - eHeight) / 2,
+      typeof window !== "undefined" && window.innerWidth < 768
+        ? cHeight * 0.38 - eHeight / 2
+        : (cHeight - eHeight) / 2,
     );
     const drift = visibleTop - targetVisibleTop;
     const band = 12; // px dead-zone — don't jitter on tiny drifts
