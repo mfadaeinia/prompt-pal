@@ -2285,6 +2285,12 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     const onScroll = () => {
       // Mark as user-driven; suppress autoscroll for 2s after last interaction.
       userScrollingUntilRef.current = performance.now() + 2000;
+      if (window.innerWidth >= 768 || playingId == null) return;
+      const active = el.querySelector<HTMLElement>(`[data-sid="${playingId}"]`);
+      if (!active) return;
+      const visibleTop = active.offsetTop - el.scrollTop;
+      const visibleBottom = visibleTop + active.offsetHeight;
+      setActiveOutOfView(visibleTop < 0 || visibleBottom > el.clientHeight);
     };
     // Only treat real user gestures (wheel/touch/keys) as user scrolling, not
     // the smooth-scroll we trigger ourselves.
@@ -2297,7 +2303,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       el.removeEventListener("touchmove", mark);
       el.removeEventListener("keydown", mark);
     };
-  }, [videoId]);
+  }, [videoId, playingId]);
 
   // ── Discovery instrumentation ──────────────────────────────────────────
   // Answers "why are users watching but not clicking?". Each event fires at
@@ -2450,9 +2456,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     // (see activeOutOfView below) so they can re-sync explicitly.
     if (performance.now() < userScrollingUntilRef.current) return;
 
-    // Keep the playing sentence in the MIDDLE row of the compact 3-row window
-    // so the previous and next sentences stay visible around it.
-    const targetVisibleTop = Math.max(0, (cHeight - eHeight) / 2);
+    // Mobile keeps the playing sentence around the upper-middle so more
+    // upcoming context remains visible. Tablet/desktop retain exact centering.
+    const targetVisibleTop = Math.max(
+      0,
+      typeof window !== "undefined" && window.innerWidth < 768
+        ? cHeight * 0.38 - eHeight / 2
+        : (cHeight - eHeight) / 2,
+    );
     const drift = visibleTop - targetVisibleTop;
     const band = 12; // px dead-zone — don't jitter on tiny drifts
     if (Math.abs(drift) < band && fullyVisible) return;
@@ -3227,14 +3238,6 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     if (!mobileFocus || !mobileTryItVisible) return;
     track("try_it_yourself_viewed", { video_id: videoId, source: "mobile_demo" });
   }, [mobileFocus, mobileTryItVisible, videoId]);
-  /** Guidance copy under the video mirrors the approved mobile mockup. */
-  const mobileStage: "watch" | "tap" | "explained" = mobileAhaDone
-    ? "explained"
-    : explanationOpen
-      ? "tap"
-      : "watch";
-
-
   // Track real fullscreen state of the video stage.
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -3722,7 +3725,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
             ) : (
             <div
-              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
+              className={`grid grid-cols-1 gap-3 transition-all duration-200 md:gap-8 ${
                 explanationOpen && layoutMode === "side" && !isFullscreen
                   ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,34%)] lg:items-start"
                   : ""
@@ -3875,7 +3878,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         }
                         emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
-                          subtitleHintVisible
+                          subtitleHintVisible && !(mobileFocus && transcriptOpen)
                             ? mobileFocus
                               ? "Didn't understand that? Tap it."
                               : "Click any subtitle to understand it"
@@ -3968,20 +3971,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
               {/* Optional transcript control — the default watching experience
                   is video + synchronized subtitle only. */}
-              {mobileFocus && !mobileAhaDone && (
-                <div className="order-3 mx-auto w-full rounded-2xl border border-border bg-card px-4 py-3 text-center shadow-sm">
-                  <p className="text-sm font-semibold text-foreground">
-                    {explanationOpen ? "Read the meaning, then continue" : "Watch a few seconds"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {explanationOpen
-                      ? "Tap Continue to resume exactly where you paused."
-                      : "Didn't understand something? Tap it in the subtitle."}
-                  </p>
-                </div>
-              )}
               {!isFullscreen && studyMode && (!mobileFocus || mobileAhaDone || transcriptOpen) && (
-                <div className="order-3 mx-auto flex w-full min-w-0 flex-wrap items-center gap-3 md:max-w-[760px] xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
+                <div className="order-3 mx-auto flex w-full min-w-0 flex-nowrap items-center gap-1.5 md:max-w-[760px] md:flex-wrap md:gap-3 xl:max-w-[900px] min-[1600px]:max-w-[1040px]">
                   <button
                     type="button"
                     onClick={toggleTranscript}
@@ -4102,7 +4093,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     )}
                     {/* Count + language selector live in the single control row
                         directly below the video. */}
-                    <div className="flex items-center justify-end gap-2 px-4 pt-3 text-xs font-medium text-muted-foreground empty:hidden">
+                    <div className="hidden items-center justify-end gap-2 px-4 pt-3 text-xs font-medium text-muted-foreground md:flex">
                       <div className="flex items-center gap-2">
 
 
@@ -4180,20 +4171,27 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     ) : (
                       <>
                         {isMobile && showSentenceHint && (
-                          <div className="mx-2 mb-4 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
-                            <MousePointerClick className="h-4 w-4 shrink-0" />
-                            <span className="flex-1 text-[13px] font-medium leading-snug">
-                              Tap any sentence to understand it instantly
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => dismissSentenceHint(false)}
-                              aria-label="Dismiss hint"
-                              className="-mr-1 rounded p-1 text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                          mobileFocus ? (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground animate-in fade-in slide-in-from-top-1">
+                              <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                              <span className="min-w-0 flex-1">Tap a sentence you don&apos;t understand</span>
+                            </div>
+                          ) : (
+                            <div className="mx-2 mb-4 flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground shadow-sm ring-1 ring-primary/40 animate-in fade-in slide-in-from-top-1">
+                              <MousePointerClick className="h-4 w-4 shrink-0" />
+                              <span className="flex-1 text-[13px] font-medium leading-snug">
+                                Tap any sentence to understand it instantly
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => dismissSentenceHint(false)}
+                                aria-label="Dismiss hint"
+                                className="-mr-1 rounded p-1 text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )
                         )}
                       {/* Compact 3-row transcript window: previous / current /
                           next. Fixed height regardless of sentence count; the
