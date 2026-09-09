@@ -3323,14 +3323,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       {!embedded && mobileFocus && (
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
           <div
-            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-2.5"
-            style={{ paddingTop: "max(0.625rem, env(safe-area-inset-top))" }}
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-1"
+            style={{ paddingTop: "max(0.25rem, env(safe-area-inset-top))" }}
           >
             <button
               type="button"
               onClick={goWatchHub}
               aria-label="Close the demo"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="h-5 w-5" />
             </button>
@@ -3532,7 +3532,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       )}
 
 
-      <main className="relative mx-auto max-w-6xl px-6">
+      <main className={`relative mx-auto max-w-6xl ${mobileFocus ? "px-2 pt-2" : "px-6"}`}>
         
 
 
@@ -3815,12 +3815,14 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     )}
                   </div>
                 )}
-                <div className="sticky top-[68px] z-10 lg:static">
+                <div className={`sticky z-10 lg:static ${mobileFocus ? "top-14" : "top-[68px]"}`}>
                   <div
                     className={
                       isFullscreen
                         ? ""
-                        : "mx-auto w-full rounded-2xl border border-border bg-card p-1.5 shadow-[0_18px_50px_-24px_rgba(17,24,39,0.35)] md:max-w-[772px] xl:max-w-[912px] min-[1600px]:max-w-[1052px]"
+                        : mobileFocus
+                          ? "mx-auto w-[calc(100vw-16px)] max-w-none rounded-xl"
+                          : "mx-auto w-full rounded-2xl border border-border bg-card p-1.5 shadow-[0_18px_50px_-24px_rgba(17,24,39,0.35)] md:max-w-[772px] xl:max-w-[912px] min-[1600px]:max-w-[1052px]"
                     }
                   >
                   <div
@@ -3977,13 +3979,15 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                     type="button"
                     onClick={toggleTranscript}
                     aria-expanded={transcriptOpen}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card font-semibold text-foreground shadow-sm transition-colors hover:bg-muted ${
+                      mobileFocus ? "px-3 py-1 text-[11px]" : "px-3.5 py-1.5 text-xs"
+                    }`}
                   >
                     <FileText className="h-3.5 w-3.5 text-primary" />
                     {transcriptOpen ? "Hide transcript" : "Open transcript"}
                   </button>
 
-                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground">
+                  <span className={`min-w-0 flex-1 truncate font-medium text-muted-foreground ${mobileFocus ? "text-[11px]" : "text-xs"}`}>
                     Transcript
                     {sentences.length > 0
                       ? ` · ${sentences.length} ${limitedMode ? "phrases" : "sentences"}`
@@ -4007,7 +4011,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                   {/* Explanation language — learners read meanings here. */}
                   <Select value={targetLang} onValueChange={changeExplanationLanguage}>
                     <SelectTrigger
-                      className="h-8 w-auto shrink-0 gap-1 rounded-full border-border bg-card px-3 text-[11px] font-medium shadow-sm"
+                      className={`w-auto shrink-0 gap-1 rounded-full border-border bg-card font-medium shadow-sm ${
+                        mobileFocus ? "h-7 px-2.5 text-[11px]" : "h-8 px-3 text-[11px]"
+                      }`}
                       aria-label="Explanation language"
                       title="Language used for meanings and explanations"
                     >
