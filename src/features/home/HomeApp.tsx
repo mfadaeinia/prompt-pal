@@ -3723,7 +3723,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
               </div>
             ) : (
             <div
-              className={`grid grid-cols-1 gap-8 transition-all duration-200 ${
+              className={`grid grid-cols-1 gap-3 transition-all duration-200 md:gap-8 ${
                 explanationOpen && layoutMode === "side" && !isFullscreen
                   ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,34%)] lg:items-start"
                   : ""
@@ -3876,7 +3876,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
                         }
                         emphasized={explanationOpen && selected?.id === currentSentence.id}
                         hint={
-                          subtitleHintVisible
+                          subtitleHintVisible && !(mobileFocus && transcriptOpen)
                             ? mobileFocus
                               ? "Didn't understand that? Tap it."
                               : "Click any subtitle to understand it"
