@@ -3323,8 +3323,8 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       {!embedded && mobileFocus && (
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
           <div
-            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-1"
-            style={{ paddingTop: "max(0.25rem, env(safe-area-inset-top))" }}
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-1.5"
+            style={{ paddingTop: "max(0.375rem, env(safe-area-inset-top))" }}
           >
             <button
               type="button"
@@ -3532,7 +3532,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       )}
 
 
-      <main className={`relative mx-auto max-w-6xl ${mobileFocus ? "px-2 pt-2" : "px-6"}`}>
+      <main className={`relative mx-auto max-w-6xl ${mobileFocus ? "px-2 pt-1" : "px-6"}`}>
         
 
 
@@ -3618,7 +3618,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         )}
 
         {view === "demo" && videoId && (
-          <div className={`mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
+          <div className={mobileFocus ? "mt-2 space-y-3 pb-24" : `mt-4 space-y-4 ${isMobile ? "pb-24" : ""}`}>
             {!isDemo && <ReadinessBadges videoId={videoId} />}
 
             {transcriptStatus !== "ready" &&
