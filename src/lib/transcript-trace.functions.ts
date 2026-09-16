@@ -167,43 +167,21 @@ async function step2Cache(videoId: string, expectedLanguage: string): Promise<Pi
     transcriptLengthChars: null,
     updatedAt: null,
     missReason: null,
+    pipelineVersion: null,
+    rowsAtCurrentVersion: 0,
+    staleVersions: [],
+    rejections: [],
     ...overrides,
   });
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("youtube_transcript_cache" as any)
-    .select(
-      "id, video_id, language, provider, requested_language, provider_response_language, cache_key, transcript_length_chars, updated_at, transcript_json",
-    )
-    .eq("video_id", videoId)
-    .order("updated_at", { ascending: false });
-  if (error) {
-    return empty({ status: "fail", missReason: `db_error: ${error.message}` });
+  // Use the LIVE pipeline's own cache lookup (read-only) so this trace can
+  // never disagree with what learners actually receive.
+  const { inspectTranscriptCache } = await import("@/lib/transcript.functions");
+  const details = await inspectTranscriptCache(videoId, expectedLanguage);
+  if (details.dbError) {
+    return empty({ status: "fail", missReason: details.missReason, pipelineVersion: details.pipelineVersion });
   }
-  const rows = (data ?? []) as any[];
-  if (!rows.length) {
-    return empty({ missReason: "no_rows_for_video_id" });
-  }
-  let picked: any | null = null;
-  let missReason: string | null = null;
-  let acceptedViaAnyShortcut = false;
-  if (expectedLanguage === "_any_") {
-    picked = rows[0];
-    acceptedViaAnyShortcut = true;
-  } else {
-    picked =
-      rows.find(
-        (r) =>
-          (r.requested_language && r.requested_language === expectedLanguage) ||
-          (r.provider_response_language && r.provider_response_language === expectedLanguage),
-      ) ?? null;
-    if (!picked) missReason = `no_row_matches_language:${expectedLanguage}`;
-  }
-  if (picked && (!picked.transcript_json || picked.transcript_json.length === 0)) {
-    missReason = "row_present_but_transcript_json_empty";
-    picked = null;
-  }
+  const picked = details.picked;
 
   // Lightweight text-based language validation for diagnostics.
   let textDetectedLanguage: string | null = null;
@@ -239,21 +217,25 @@ async function step2Cache(videoId: string, expectedLanguage: string): Promise<Pi
 
   return empty({
     hit: !!picked,
-    rowsForVideo: rows.length,
+    rowsForVideo: details.rowsForVideo,
     cacheRowId: picked?.id ?? null,
     cacheKey: picked?.cache_key ?? null,
     provider: picked?.provider ?? null,
     language: picked?.language ?? null,
     requestedLanguage: picked?.requested_language ?? null,
     providerResponseLanguage: picked?.provider_response_language ?? null,
-    acceptedViaAnyShortcut,
+    acceptedViaAnyShortcut: !!picked && expectedLanguage === "_any_",
     textDetectedLanguage,
     textDetectionConfidence,
     languageMismatchDetected,
     finalLanguageUsed,
     transcriptLengthChars: picked?.transcript_length_chars ?? null,
     updatedAt: picked?.updated_at ?? null,
-    missReason,
+    missReason: details.missReason,
+    pipelineVersion: details.pipelineVersion,
+    rowsAtCurrentVersion: details.rowsAtCurrentVersion,
+    staleVersions: details.staleVersions,
+    rejections: details.rejections,
   });
 }
 
