@@ -57,6 +57,32 @@ Timebox: 6–8 weeks, 40–60 founder-hours. Validate the Dutch YouTube wedge be
 - [ ] Kill if reliable users with an explicit return mission and their own content almost never return or pay.
 - [ ] Document the evidence, decision, and next scope.
 
+## Transcription diagnostics mismatch — status: fixed (not deployed)
+
+**Root cause.** The Founder transcript trace re-implemented the cache lookup instead of calling the
+production one, so diagnostics disagreed with what learners receive: no pipeline-version gate (rows
+below the current version are re-fetched in production but reported as cache hits), strict `===`
+language comparison (so `nl-NL` vs `nl` read as a miss) and no poisoned-row check.
+
+**Changes.** `src/lib/transcript.functions.ts` — one shared read-only lookup (`readCacheDetailed`,
+exposed as `inspectTranscriptCache`); `readCache` is now a thin wrapper over it, live selection logic
+unchanged. `src/lib/transcript-trace.functions.ts` — step 2 calls the shared lookup and reports the
+required pipeline version, rows at current version, stale versions and per-row rejection reasons.
+`src/routes/founder.tsx` — those four fields are shown in the Step 2 trace block.
+
+**Test evidence** (`inspectTranscriptCache` against production cache rows, `bunx tsgo --noEmit` clean):
+
+| Case | Video | Requested | Result |
+|---|---|---|---|
+| Stale rows only (v4) | `OBRABge6XJ4` | `nl` | miss `all_rows_below_pipeline_version` (previously reported as a hit) |
+| Fresh v5 row | `4EE7m94mJpk` | `nl` | hit |
+| Base-language match | `4EE7m94mJpk` | `nl-NL` | hit (previously reported as a miss) |
+| `_any_` row + stale sibling | `4GutxLa-p50` | `_any_` | hit, stale versions `[1]` reported |
+| Unknown video | `zzzzzzzzzzz` | `nl` | miss `no_rows_for_video_id` |
+
+**Not changed.** Provider architecture, CAPTCHA handling, transcript fetching/segmentation,
+explanation logic, analytics definitions, unrelated UI. Nothing deployed.
+
 ## Critical bug definition
 
 A critical bug blocks or materially damages the core loop: supported video processing, subtitle interaction, explanation display, playback resume, saving/review, mobile usability, or trustworthy measurement. Critical bugs block pilot launch until fixed or explicitly accepted with a documented workaround.

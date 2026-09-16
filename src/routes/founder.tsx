@@ -2982,6 +2982,20 @@ function TraceResult({ trace }: { trace: PipelineTrace }) {
         <Row k="final_language_used" v={trace.step2_cache.finalLanguageUsed ?? "—"} />
         <Row k="length_chars" v={trace.step2_cache.transcriptLengthChars ?? "—"} />
         <Row k="updated_at" v={trace.step2_cache.updatedAt ?? "—"} />
+        <Row k="pipeline_version_required" v={trace.step2_cache.pipelineVersion ?? "—"} />
+        <Row k="rows_at_current_version" v={trace.step2_cache.rowsAtCurrentVersion} />
+        <Row
+          k="stale_row_versions"
+          v={trace.step2_cache.staleVersions.length ? trace.step2_cache.staleVersions.join(", ") : "—"}
+        />
+        <Row
+          k="rejected_rows"
+          v={
+            trace.step2_cache.rejections.length
+              ? trace.step2_cache.rejections.map((r) => `${r.cacheRowId.slice(0, 8)}:${r.reason}`).join(" · ")
+              : "—"
+          }
+        />
         {!trace.step2_cache.hit && <Row k="miss_reason" v={trace.step2_cache.missReason ?? "—"} />}
       </TraceBlock>
 

@@ -822,31 +822,99 @@ function rowToProvenance(r: CacheRow): CacheProvenance {
  *   - We never silently return a row whose language disagrees with what
  *     was asked for.
  */
-async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
+export type CacheRejection = {
+  cacheRowId: string;
+  reason: "stale_pipeline_version" | "language_not_matching" | "poisoned_language" | "empty_transcript_json";
+  sourceVersion: number | null;
+  language: string | null;
+  requestedLanguage: string | null;
+  providerResponseLanguage: string | null;
+  provider: string | null;
+};
+
+/**
+ * Read-only diagnostics view of the SAME cache lookup the live pipeline uses.
+ * `readCache` is a thin wrapper over this, so the Founder trace can never
+ * disagree with what learners actually receive.
+ */
+export type CacheLookupDetails = {
+  dbError: string | null;
+  pipelineVersion: number;
+  rowsForVideo: number;
+  rowsAtCurrentVersion: number;
+  staleVersions: number[];
+  picked: CacheRow | null;
+  missReason: string | null;
+  rejections: CacheRejection[];
+};
+
+async function readCacheDetailed(
+  videoId: string,
+  requestedLanguage: string,
+): Promise<CacheLookupDetails> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
     .select("id, video_id, transcript_json, language, source, provider, requested_language, provider_response_language, source_version, cache_key, transcript_length_chars, created_at, updated_at")
     .eq("video_id", videoId)
     .order("updated_at", { ascending: false });
+  const base = (overrides: Partial<CacheLookupDetails>): CacheLookupDetails => ({
+    dbError: null,
+    pipelineVersion: TRANSCRIPT_PIPELINE_VERSION,
+    rowsForVideo: 0,
+    rowsAtCurrentVersion: 0,
+    staleVersions: [],
+    picked: null,
+    missReason: null,
+    rejections: [],
+    ...overrides,
+  });
   if (error) {
     console.warn("[transcript] cache read error", error.message);
-    return null;
+    return base({ dbError: error.message, missReason: `db_error: ${error.message}` });
   }
   const allRows = (data ?? []) as unknown as CacheRow[];
   // Pipeline-version gate: rows written by older pipelines are stale and
   // must be re-run. Do NOT delete them — bumping the version naturally
   // routes future writes to a fresh row.
   const rows = allRows.filter((r) => (r.source_version ?? 1) >= TRANSCRIPT_PIPELINE_VERSION);
+  const rejections: CacheRejection[] = [];
+  const reject = (r: CacheRow, reason: CacheRejection["reason"]) => {
+    rejections.push({
+      cacheRowId: r.id,
+      reason,
+      sourceVersion: r.source_version ?? null,
+      language: r.language ?? null,
+      requestedLanguage: r.requested_language ?? null,
+      providerResponseLanguage: r.provider_response_language ?? null,
+      provider: r.provider ?? r.source ?? null,
+    });
+  };
+  const staleVersions = allRows
+    .filter((r) => (r.source_version ?? 1) < TRANSCRIPT_PIPELINE_VERSION)
+    .map((r) => r.source_version ?? 1);
+  for (const r of allRows) {
+    if ((r.source_version ?? 1) < TRANSCRIPT_PIPELINE_VERSION) reject(r, "stale_pipeline_version");
+  }
+  const details = (overrides: Partial<CacheLookupDetails>): CacheLookupDetails =>
+    base({
+      rowsForVideo: allRows.length,
+      rowsAtCurrentVersion: rows.length,
+      staleVersions,
+      rejections,
+      ...overrides,
+    });
+
   if (allRows.length && !rows.length) {
     console.log("[transcript] cache rows present but all below current pipeline version — re-running", {
       videoId,
       requestedLanguage,
       currentVersion: TRANSCRIPT_PIPELINE_VERSION,
-      staleVersions: allRows.map((r) => r.source_version ?? 1),
+      staleVersions,
     });
   }
-  if (!rows.length) return null;
+  if (!allRows.length) return details({ missReason: "no_rows_for_video_id" });
+  if (!rows.length) return details({ missReason: "all_rows_below_pipeline_version" });
 
   const isPoisoned = (r: CacheRow): boolean => {
     // A cached row is poisoned when its TEXT contradicts either the language
@@ -879,20 +947,53 @@ async function readCache(videoId: string, requestedLanguage: string): Promise<Ca
     return true;
   };
 
-
-  if (requestedLanguage === "_any_") {
-    const picked = rows.find((r) => !isPoisoned(r));
-    return picked ?? null;
+  let picked: CacheRow | null = null;
+  for (const r of rows) {
+    if (requestedLanguage !== "_any_") {
+      const langMatch =
+        (r.requested_language && r.requested_language === requestedLanguage) ||
+        (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
+        (r.language && sameBaseLanguage(r.language, requestedLanguage));
+      if (!langMatch) {
+        reject(r, "language_not_matching");
+        continue;
+      }
+    }
+    if (isPoisoned(r)) {
+      reject(r, "poisoned_language");
+      continue;
+    }
+    picked = r;
+    break;
   }
-  const match = rows.find((r) => {
-    const langMatch =
-      (r.requested_language && r.requested_language === requestedLanguage) ||
-      (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
-      (r.language && sameBaseLanguage(r.language, requestedLanguage));
-    if (!langMatch) return false;
-    return !isPoisoned(r);
+
+  return details({
+    picked,
+    missReason: picked
+      ? null
+      : rejections.some((x) => x.reason === "poisoned_language")
+        ? "all_matching_rows_poisoned"
+        : requestedLanguage === "_any_"
+          ? "no_usable_row"
+          : `no_row_matches_language:${requestedLanguage}`,
   });
-  return match ?? null;
+}
+
+/** Live pipeline lookup — thin wrapper so diagnostics and production agree. */
+async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
+  const { picked } = await readCacheDetailed(videoId, requestedLanguage);
+  return picked;
+}
+
+/**
+ * Diagnostics-only entry point (read-only, no cache writes). Uses the exact
+ * same selection as the live pipeline.
+ */
+export async function inspectTranscriptCache(
+  videoId: string,
+  requestedLanguage: string,
+): Promise<CacheLookupDetails> {
+  return readCacheDetailed(videoId, requestedLanguage);
 }
 
 export type ValidationResult = {
