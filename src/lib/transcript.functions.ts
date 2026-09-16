@@ -878,15 +878,43 @@ async function readCacheDetailed(
   // must be re-run. Do NOT delete them — bumping the version naturally
   // routes future writes to a fresh row.
   const rows = allRows.filter((r) => (r.source_version ?? 1) >= TRANSCRIPT_PIPELINE_VERSION);
+  const rejections: CacheRejection[] = [];
+  const reject = (r: CacheRow, reason: CacheRejection["reason"]) => {
+    rejections.push({
+      cacheRowId: r.id,
+      reason,
+      sourceVersion: r.source_version ?? null,
+      language: r.language ?? null,
+      requestedLanguage: r.requested_language ?? null,
+      providerResponseLanguage: r.provider_response_language ?? null,
+      provider: r.provider ?? r.source ?? null,
+    });
+  };
+  const staleVersions = allRows
+    .filter((r) => (r.source_version ?? 1) < TRANSCRIPT_PIPELINE_VERSION)
+    .map((r) => r.source_version ?? 1);
+  for (const r of allRows) {
+    if ((r.source_version ?? 1) < TRANSCRIPT_PIPELINE_VERSION) reject(r, "stale_pipeline_version");
+  }
+  const details = (overrides: Partial<CacheLookupDetails>): CacheLookupDetails =>
+    base({
+      rowsForVideo: allRows.length,
+      rowsAtCurrentVersion: rows.length,
+      staleVersions,
+      rejections,
+      ...overrides,
+    });
+
   if (allRows.length && !rows.length) {
     console.log("[transcript] cache rows present but all below current pipeline version — re-running", {
       videoId,
       requestedLanguage,
       currentVersion: TRANSCRIPT_PIPELINE_VERSION,
-      staleVersions: allRows.map((r) => r.source_version ?? 1),
+      staleVersions,
     });
   }
-  if (!rows.length) return null;
+  if (!allRows.length) return details({ missReason: "no_rows_for_video_id" });
+  if (!rows.length) return details({ missReason: "all_rows_below_pipeline_version" });
 
   const isPoisoned = (r: CacheRow): boolean => {
     // A cached row is poisoned when its TEXT contradicts either the language
@@ -919,20 +947,53 @@ async function readCacheDetailed(
     return true;
   };
 
-
-  if (requestedLanguage === "_any_") {
-    const picked = rows.find((r) => !isPoisoned(r));
-    return picked ?? null;
+  let picked: CacheRow | null = null;
+  for (const r of rows) {
+    if (requestedLanguage !== "_any_") {
+      const langMatch =
+        (r.requested_language && r.requested_language === requestedLanguage) ||
+        (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
+        (r.language && sameBaseLanguage(r.language, requestedLanguage));
+      if (!langMatch) {
+        reject(r, "language_not_matching");
+        continue;
+      }
+    }
+    if (isPoisoned(r)) {
+      reject(r, "poisoned_language");
+      continue;
+    }
+    picked = r;
+    break;
   }
-  const match = rows.find((r) => {
-    const langMatch =
-      (r.requested_language && r.requested_language === requestedLanguage) ||
-      (r.provider_response_language && sameBaseLanguage(r.provider_response_language, requestedLanguage)) ||
-      (r.language && sameBaseLanguage(r.language, requestedLanguage));
-    if (!langMatch) return false;
-    return !isPoisoned(r);
+
+  return details({
+    picked,
+    missReason: picked
+      ? null
+      : rejections.some((x) => x.reason === "poisoned_language")
+        ? "all_matching_rows_poisoned"
+        : requestedLanguage === "_any_"
+          ? "no_usable_row"
+          : `no_row_matches_language:${requestedLanguage}`,
   });
-  return match ?? null;
+}
+
+/** Live pipeline lookup — thin wrapper so diagnostics and production agree. */
+async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
+  const { picked } = await readCacheDetailed(videoId, requestedLanguage);
+  return picked;
+}
+
+/**
+ * Diagnostics-only entry point (read-only, no cache writes). Uses the exact
+ * same selection as the live pipeline.
+ */
+export async function inspectTranscriptCache(
+  videoId: string,
+  requestedLanguage: string,
+): Promise<CacheLookupDetails> {
+  return readCacheDetailed(videoId, requestedLanguage);
 }
 
 export type ValidationResult = {
