@@ -353,6 +353,7 @@ export const traceTranscriptPipeline = createServerFn({ method: "POST" })
         textDetectedLanguage: null, textDetectionConfidence: null,
         languageMismatchDetected: false, finalLanguageUsed: null,
         validationStatus: null, transcriptLengthChars: null, updatedAt: null, missReason: null,
+        pipelineVersion: null, rowsAtCurrentVersion: 0, staleVersions: [], rejections: [],
       },
       step3_youtube: {
         attempted: false, status: "skipped", languageUsed: null,
