@@ -62,6 +62,20 @@ export type PipelineTrace = {
     transcriptLengthChars: number | null;
     updatedAt: string | null;
     missReason: string | null;
+    /** Pipeline version the live fetcher requires for a cache hit. */
+    pipelineVersion: number | null;
+    rowsAtCurrentVersion: number;
+    staleVersions: number[];
+    /** Why the live pipeline discarded each candidate row. */
+    rejections: Array<{
+      cacheRowId: string;
+      reason: string;
+      sourceVersion: number | null;
+      language: string | null;
+      requestedLanguage: string | null;
+      providerResponseLanguage: string | null;
+      provider: string | null;
+    }>;
   };
   step3_youtube: {
     attempted: boolean;
