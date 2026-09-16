@@ -296,13 +296,25 @@ function BrowsePage() {
     );
   }, [all, level, topics, durations, q, sort]);
 
-  const recommended = useMemo(
+  /** Founder-curated "Start here" set — fixed IDs, intentionally NOT score-derived. */
+  const FOUNDER_VIDEO_IDS = ["4EE7m94mJpk", "j_pcvfANUr4", "Ol67p_KBnp0"];
+
+  const founderPicked = useMemo(
+    () =>
+      FOUNDER_VIDEO_IDS.map((id) => all.find((v) => v.external_id === id)).filter(
+        (v): v is CuratedVideo => Boolean(v),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all],
+  );
+
+  const exploreVideos = useMemo(
     () =>
       [...all]
-        .filter((v) => !watched.has(v.id))
-        .sort((a, b) => Number(b.quality_score) - Number(a.quality_score))
-        .slice(0, 10),
-    [all, watched],
+        .filter((v) => !FOUNDER_VIDEO_IDS.includes(v.external_id))
+        .sort((a, b) => Number(b.quality_score) - Number(a.quality_score)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [all],
   );
 
   const continueVideo = useMemo(() => {
@@ -512,19 +524,21 @@ function BrowsePage() {
             </section>
           )}
 
-          {/* recommended carousel */}
-          {!filtering && recommended.length > 0 && (
+          {/* founder-picked "start here" */}
+          {!filtering && founderPicked.length > 0 && (
             <section className="mt-10">
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Recommended for you</h2>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Start here — founder-picked videos
+                  </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Hand-picked videos based on your level and interests.
+                    Hand-picked videos that work well with NativeFlow.
                   </p>
                 </div>
               </div>
               <div className="-mx-4 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:px-0">
-                {recommended.map((v) => (
+                {founderPicked.map((v) => (
                   <VideoCard
                     key={v.id}
                     v={v}
@@ -532,6 +546,31 @@ function BrowsePage() {
                     onOpen={() => openVideo(v, "browse_recommended")}
                     onToggleSave={() => toggleSave(v)}
                     className="w-[76%] shrink-0 snap-start sm:w-[280px]"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* explore: everything else, existing quality-score sorting */}
+          {!filtering && exploreVideos.length > 0 && (
+            <section className="mt-10">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Explore Dutch videos</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    The rest of the library, best first.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {exploreVideos.map((v) => (
+                  <VideoCard
+                    key={v.id}
+                    v={v}
+                    saved={bookmarked.has(v.id)}
+                    onOpen={() => openVideo(v, "browse_results")}
+                    onToggleSave={() => toggleSave(v)}
                   />
                 ))}
               </div>
