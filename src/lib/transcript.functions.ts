@@ -858,9 +858,20 @@ async function readCacheDetailed(
     .select("id, video_id, transcript_json, language, source, provider, requested_language, provider_response_language, source_version, cache_key, transcript_length_chars, created_at, updated_at")
     .eq("video_id", videoId)
     .order("updated_at", { ascending: false });
+  const base = (overrides: Partial<CacheLookupDetails>): CacheLookupDetails => ({
+    dbError: null,
+    pipelineVersion: TRANSCRIPT_PIPELINE_VERSION,
+    rowsForVideo: 0,
+    rowsAtCurrentVersion: 0,
+    staleVersions: [],
+    picked: null,
+    missReason: null,
+    rejections: [],
+    ...overrides,
+  });
   if (error) {
     console.warn("[transcript] cache read error", error.message);
-    return null;
+    return base({ dbError: error.message, missReason: `db_error: ${error.message}` });
   }
   const allRows = (data ?? []) as unknown as CacheRow[];
   // Pipeline-version gate: rows written by older pipelines are stale and
