@@ -64,21 +64,36 @@ production one, so diagnostics disagreed with what learners receive: no pipeline
 below the current version are re-fetched in production but reported as cache hits), strict `===`
 language comparison (so `nl-NL` vs `nl` read as a miss) and no poisoned-row check.
 
-**Changes.** `src/lib/transcript.functions.ts` — one shared read-only lookup (`readCacheDetailed`,
-exposed as `inspectTranscriptCache`); `readCache` is now a thin wrapper over it, live selection logic
-unchanged. `src/lib/transcript-trace.functions.ts` — step 2 calls the shared lookup and reports the
-required pipeline version, rows at current version, stale versions and per-row rejection reasons.
-`src/routes/founder.tsx` — those four fields are shown in the Step 2 trace block.
+**Changes.** `src/lib/transcript-cache-select.server.ts` (new) — the pure cache-row selection helper,
+no database access: pipeline-version gate, base-language matching (`nl-NL` ≡ `nl`, `dutch` ≡ `nl`),
+`_any_` auto-detection path and the poisoned-row check, with per-row rejection reasons. Selection input
+carries `source_version`, `language`, `requested_language`, `provider_response_language`, `provider`
+(with `source` fallback) and `transcript_json`. `src/lib/transcript.functions.ts` — `readCacheDetailed`
+now only reads the rows and delegates to that helper; `readCache` is a thin wrapper over it and live
+spoken-language resolution/normalization is unchanged; `inspectTranscriptCache` is the read-only
+diagnostics entry point. `src/lib/transcript-trace.functions.ts` — step 2 calls it and reports the
+required pipeline version, rows at current version, stale versions and rejections.
+`src/routes/founder.tsx` — those four fields appear in the Step 2 trace block.
 
-**Test evidence** (`inspectTranscriptCache` against production cache rows, `bunx tsgo --noEmit` clean):
+**Test evidence** — `bunx vitest run`: 6 files, 55 tests passing; `bunx tsgo --noEmit` clean.
 
-| Case | Video | Requested | Result |
-|---|---|---|---|
-| Stale rows only (v4) | `OBRABge6XJ4` | `nl` | miss `all_rows_below_pipeline_version` (previously reported as a hit) |
-| Fresh v5 row | `4EE7m94mJpk` | `nl` | hit |
-| Base-language match | `4EE7m94mJpk` | `nl-NL` | hit (previously reported as a miss) |
-| `_any_` row + stale sibling | `4GutxLa-p50` | `_any_` | hit, stale versions `[1]` reported |
-| Unknown video | `zzzzzzzzzzz` | `nl` | miss `no_rows_for_video_id` |
+Unit tests, `src/lib/transcript-cache-select.test.ts` (9 pure-selection cases): no rows; stale-only
+rows rejected; fresh row preferred over stale sibling; `nl-NL` ≡ `nl`; `dutch` ≡ `nl`; unrelated
+language rejected; poisoned row (Arabic text stored as `nl`) skipped; `_any_` accepts an
+auto-detected row; version gate still applies under `_any_`.
+
+Regression test, `src/lib/transcript-cache-parity.test.ts`: for the same video and the same resolved
+language, the diagnostics step and the live lookup agree on hit, picked row id, miss reason, row count
+and pipeline version across stale-only / fresh `nl` / fresh `nl-NL` / `_any_` / missing-video cases,
+plus explicit assertions that stale-only rows no longer report a hit and that `nl-NL` does.
+
+Live spot-check against production cache rows before the refactor: `OBRABge6XJ4` (`nl`) miss
+`all_rows_below_pipeline_version` (previously a false hit), `4EE7m94mJpk` (`nl` and `nl-NL`) hit,
+`4GutxLa-p50` (`_any_`) hit with stale versions `[1]` reported, unknown video miss.
+
+**Scope note.** This fixes diagnostic accuracy only. YouTube rate limiting and oversized Whisper audio
+are untouched; the next step is measuring the real production failure rate from now-trustworthy traces
+before addressing those separately.
 
 **Not changed.** Provider architecture, CAPTCHA handling, transcript fetching/segmentation,
 explanation logic, analytics definitions, unrelated UI. Nothing deployed.
