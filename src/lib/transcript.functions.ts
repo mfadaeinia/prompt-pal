@@ -822,7 +822,36 @@ function rowToProvenance(r: CacheRow): CacheProvenance {
  *   - We never silently return a row whose language disagrees with what
  *     was asked for.
  */
-async function readCache(videoId: string, requestedLanguage: string): Promise<CacheRow | null> {
+export type CacheRejection = {
+  cacheRowId: string;
+  reason: "stale_pipeline_version" | "language_not_matching" | "poisoned_language" | "empty_transcript_json";
+  sourceVersion: number | null;
+  language: string | null;
+  requestedLanguage: string | null;
+  providerResponseLanguage: string | null;
+  provider: string | null;
+};
+
+/**
+ * Read-only diagnostics view of the SAME cache lookup the live pipeline uses.
+ * `readCache` is a thin wrapper over this, so the Founder trace can never
+ * disagree with what learners actually receive.
+ */
+export type CacheLookupDetails = {
+  dbError: string | null;
+  pipelineVersion: number;
+  rowsForVideo: number;
+  rowsAtCurrentVersion: number;
+  staleVersions: number[];
+  picked: CacheRow | null;
+  missReason: string | null;
+  rejections: CacheRejection[];
+};
+
+async function readCacheDetailed(
+  videoId: string,
+  requestedLanguage: string,
+): Promise<CacheLookupDetails> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("youtube_transcript_cache" as any)
