@@ -146,7 +146,8 @@ async function step1Validate(videoId: string): Promise<PipelineTrace["step1_vali
   }
 }
 
-async function step2Cache(videoId: string, expectedLanguage: string): Promise<PipelineTrace["step2_cache"]> {
+/** Exported for the diagnostics/live regression test. */
+export async function step2Cache(videoId: string, expectedLanguage: string): Promise<PipelineTrace["step2_cache"]> {
   const empty = (overrides: Partial<PipelineTrace["step2_cache"]>): PipelineTrace["step2_cache"] => ({
     attempted: true,
     status: "ok",
