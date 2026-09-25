@@ -3323,21 +3323,27 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       {!embedded && mobileFocus && (
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
           <div
-            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-1.5"
+            className="grid grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] items-center px-2 py-1.5"
             style={{ paddingTop: "max(0.375rem, env(safe-area-inset-top))" }}
           >
             <button
               type="button"
               onClick={goWatchHub}
               aria-label="Close the demo"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-5 w-5" />
             </button>
             <div className="flex justify-center">
               <BrandLogo markClassName="h-7 w-7" />
             </div>
-            <span aria-hidden />
+            <Link
+              to="/library"
+              aria-label="Explore Dutch videos"
+              className="inline-flex min-h-10 items-center justify-end justify-self-end rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Explore Dutch
+            </Link>
           </div>
         </header>
       )}
