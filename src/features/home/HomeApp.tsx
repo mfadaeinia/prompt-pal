@@ -3323,21 +3323,27 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       {!embedded && mobileFocus && (
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-xl">
           <div
-            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center px-2 py-1.5"
+            className="grid grid-cols-[5.5rem_minmax(0,1fr)_5.5rem] items-center px-2 py-1.5"
             style={{ paddingTop: "max(0.375rem, env(safe-area-inset-top))" }}
           >
             <button
               type="button"
               onClick={goWatchHub}
               aria-label="Close the demo"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-5 w-5" />
             </button>
             <div className="flex justify-center">
               <BrandLogo markClassName="h-7 w-7" />
             </div>
-            <span aria-hidden />
+            <Link
+              to="/library"
+              aria-label="Explore Dutch videos"
+              className="inline-flex min-h-10 items-center justify-end justify-self-end rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Explore Dutch
+            </Link>
           </div>
         </header>
       )}
@@ -4489,6 +4495,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
           className="max-h-[68vh] overflow-y-auto rounded-t-2xl border-primary/20 bg-secondary p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
           {explanationPanelNode}
+          {/* The sheet is modal, so the header exit is unreachable while it is
+              open — mirror the same destination here so phones never trap. */}
+          <div className="mt-3 flex justify-center">
+            <Link
+              to="/library"
+              className="inline-flex min-h-10 items-center rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Explore Dutch videos →
+            </Link>
+          </div>
         </SheetContent>
       </Sheet>
 
