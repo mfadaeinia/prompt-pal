@@ -98,6 +98,22 @@ before addressing those separately.
 **Not changed.** Provider architecture, CAPTCHA handling, transcript fetching/segmentation,
 explanation logic, analytics definitions, unrelated UI. Nothing deployed.
 
+## Mobile/tablet watch view has no exit — status: fixed (not deployed)
+
+**Root cause.** On phones (<768px) the focus-mode header showed only a close “X” (to Find a video);
+the “Explore Dutch” link to `/library` lived only in the full header. The phone explanation bottom
+sheet is modal, so nothing behind it was reachable while it was open.
+
+**Changes (`src/features/home/HomeApp.tsx` only).** Phone focus header: added “Explore Dutch”
+`<Link to="/library">` (existing destination/pattern) in the empty right slot, `aria-label="Explore
+Dutch videos"`, 40px tap target, visible focus ring. Phone explanation sheet: same link below the
+explanation. Tablet/desktop header, player, transcription, explanations and analytics unchanged.
+
+**Test evidence (Playwright, demo video).** Visible, unobstructed `/library` link found in each state:
+- Phone 390×844 — loading ✓, ready ✓, explanation sheet open ✓ (link inside sheet); keyboard Enter → `/library` ✓.
+- Tablet 834×1194 — loading ✓, ready ✓, explanation open ✓ (existing header link); keyboard → `/library` ✓.
+- Desktop 1280×1800 — unchanged header link present in all three states; keyboard → `/library` ✓.
+
 ## Critical bug definition
 
 A critical bug blocks or materially damages the core loop: supported video processing, subtitle interaction, explanation display, playback resume, saving/review, mobile usability, or trustworthy measurement. Critical bugs block pilot launch until fixed or explicitly accepted with a documented workaround.
