@@ -1365,10 +1365,16 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
 
         let detected: string | null = null;
 
+        let terminated = false;
         const closeStream = () => {
+          terminated = true;
           try { es.close(); } catch {}
           if (streamRef.current === es) streamRef.current = null;
         };
+        // Events from a closed stream, or from a stream replaced by a newer
+        // request, must never touch the current video's transcript state.
+        const isStale = () =>
+          terminated || mySeq !== requestSeqRef.current || streamRef.current !== es;
 
         es.addEventListener("job", (ev) => {
           if (!perfFirstByteLoggedRef.current) {
@@ -1384,7 +1390,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         });
 
         es.addEventListener("chunk", (ev) => {
-          if (mySeq !== requestSeqRef.current) {
+          if (isStale()) {
             closeStream();
             return;
           }
@@ -1540,21 +1546,23 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
       setTranscriptVideoId(res.videoId);
       setSentences(res.sentences);
       setTranscriptRawChunks(res.rawChunks ?? []);
-      if (res.sentences.length < MIN_LEARNING_SENTENCES) {
-        console.error("[learning-mode][gate] transcript not usable", {
+      const readiness = transcriptReadiness(
+        res.sentences.length,
+        !!(payload as any).streaming,
+      );
+      if (readiness === "failed") {
+        console.error("[learning-mode][gate] transcript empty", {
           videoId: res.videoId,
-          transcriptLength: res.sentences.reduce((n, s) => n + s.text.length, 0),
           sentenceCount: res.sentences.length,
           transcriptSource: res.source,
           processingStage: "post_segmentation",
         });
-        setTranscriptStatus("failed");
-      } else if ((payload as any).streaming) {
-        // First chunk arrived; transcription continues in background.
-        setTranscriptStatus("partial");
       } else {
-        setTranscriptStatus("ready");
+        // Any non-empty transcript is usable: keep Learning Mode on.
+        setStudyMode(true);
+        setErrorPanelDismissedFor(null);
       }
+      setTranscriptStatus(readiness);
       setSlowTimeoutLevel(0);
 
       // ── Performance timings ───────────────────────────────────────────
