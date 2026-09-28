@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { transcriptReadiness } from "@/lib/transcript-readiness";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -1765,6 +1766,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     setTranscriptQuality(null);
     setVideoTitle(null);
     setTranscriptStatus("checking_cache");
+    // New load: restore Learning Mode and clear any prior failure dismissal.
+    setStudyMode(true);
+    setErrorPanelDismissedFor(null);
     setSlowTimeoutLevel(0);
     setPerfTimings({
       time_to_video_ready_ms: null,
