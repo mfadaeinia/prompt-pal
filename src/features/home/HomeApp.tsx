@@ -1445,7 +1445,7 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
         });
 
         es.addEventListener("complete", (ev) => {
-          if (mySeq !== requestSeqRef.current) {
+          if (isStale()) {
             closeStream();
             return;
           }
@@ -1478,15 +1478,17 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
             stage: payload?.stage ?? null,
             message: msg,
           });
+          const stale = isStale();
           closeStream();
+          if (stale) {
+            // Terminated or superseded stream: never touch current state.
+            if (!resolved) reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
+            return;
+          }
           if (resolved) {
             // Partial transcript already showing — promote to "ready" so the
             // UI stops the spinner; user has something to learn from.
             setTranscriptStatus("ready");
-            return;
-          }
-          if (mySeq !== requestSeqRef.current) {
-            reject(Object.assign(new Error(msg), { errorType: "asr_failed" }));
             return;
           }
           if (attempt < MAX_STREAM_ATTEMPTS) {
