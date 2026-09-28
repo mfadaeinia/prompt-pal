@@ -1766,6 +1766,9 @@ export function HomeApp({ experiment = false }: { experiment?: boolean }) {
     setTranscriptQuality(null);
     setVideoTitle(null);
     setTranscriptStatus("checking_cache");
+    // New load: restore Learning Mode and clear any prior failure dismissal.
+    setStudyMode(true);
+    setErrorPanelDismissedFor(null);
     setSlowTimeoutLevel(0);
     setPerfTimings({
       time_to_video_ready_ms: null,
