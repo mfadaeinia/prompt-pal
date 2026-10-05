@@ -79,6 +79,23 @@ describe("selectCacheRow", () => {
     expect(r.missReason).toBeNull();
   });
 
+  it("rejects a row with empty transcript_json (matches live cache-hit gate)", () => {
+    const r = select([row({ id: "empty", transcript_json: [] })], "nl");
+    expect(r.picked).toBeNull();
+    expect(r.rejections[0]!.reason).toBe("empty_transcript_json");
+  });
+
+  it("rejects a row with null transcript_json", () => {
+    const r = select([row({ id: "null", transcript_json: null })], "nl");
+    expect(r.picked).toBeNull();
+    expect(r.rejections[0]!.reason).toBe("empty_transcript_json");
+  });
+
+  it("skips an empty row and picks the next usable one", () => {
+    const r = select([row({ id: "empty", transcript_json: [] }), row({ id: "good" })], "nl");
+    expect(r.picked?.id).toBe("good");
+  });
+
   it("still applies the version gate under _any_", () => {
     const r = select([row({ id: "a", requested_language: "_any_", source_version: 4 })], "_any_");
     expect(r.picked).toBeNull();
