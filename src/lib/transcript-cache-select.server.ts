@@ -149,6 +149,12 @@ export function selectCacheRow<Row extends CacheSelectionRow>(input: {
         continue;
       }
     }
+    // A row with no transcript text is a miss in the live pipeline
+    // (`cached?.transcript_json?.length` gate), so diagnostics must agree.
+    if (!r.transcript_json?.length) {
+      reject(r, "empty_transcript_json");
+      continue;
+    }
     if (isPoisoned(r)) {
       reject(r, "poisoned_language");
       continue;
