@@ -58,7 +58,7 @@ export const Route = createFileRoute("/founder")({
   ssr: false,
   component: FounderGate,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-red-600">Error: {error.message}</div>
+    <div className="p-6 text-red-600">Error: {error instanceof Error ? error.message : String(error)}</div>
   ),
   notFoundComponent: () => <div className="p-6">Not found.</div>,
 });
