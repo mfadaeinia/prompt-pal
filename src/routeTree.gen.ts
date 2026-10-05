@@ -9,62 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SavedRouteImport } from './routes/saved'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as FounderRouteImport } from './routes/founder'
-import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
-import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LibraryIndexRouteImport } from './routes/library.index'
-import { Route as ExperimentsIndexRouteImport } from './routes/experiments.index'
-import { Route as LibraryLevelRouteImport } from './routes/library.$level'
-import { Route as ExperimentsPassiveLearningRouteImport } from './routes/experiments.passive-learning'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EnglishLearnersRouteImport } from './routes/english-learners'
+import { Route as FounderRouteImport } from './routes/founder'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
-import { Route as ApiPublicCurateRefreshRouteImport } from './routes/api/public/curate-refresh'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as ExperimentsIndexRouteImport } from './routes/experiments.index'
+import { Route as ExperimentsPassiveLearningRouteImport } from './routes/experiments.passive-learning'
+import { Route as LibraryIndexRouteImport } from './routes/library.index'
+import { Route as LibraryLevelRouteImport } from './routes/library.$level'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiPublicCurateRefreshRouteImport } from './routes/api/public/curate-refresh'
+import { Route as ApiPublicTranscriptStreamRouteImport } from './routes/api/public/transcript-stream'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SavedRoute = SavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FounderRoute = FounderRouteImport.update({
-  id: '/founder',
-  path: '/founder',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EnglishLearnersRoute = EnglishLearnersRouteImport.update({
-  id: '/english-learners',
-  path: '/english-learners',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -72,30 +42,45 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const EnglishLearnersRoute = EnglishLearnersRouteImport.update({
+  id: '/english-learners',
+  path: '/english-learners',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryIndexRoute = LibraryIndexRouteImport.update({
-  id: '/library/',
-  path: '/library/',
+const FounderRoute = FounderRouteImport.update({
+  id: '/founder',
+  path: '/founder',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ExperimentsIndexRoute = ExperimentsIndexRouteImport.update({
-  id: '/experiments/',
-  path: '/experiments/',
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LibraryLevelRoute = LibraryLevelRouteImport.update({
-  id: '/library/$level',
-  path: '/library/$level',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ExperimentsPassiveLearningRoute =
-  ExperimentsPassiveLearningRouteImport.update({
-    id: '/experiments/passive-learning',
-    path: '/experiments/passive-learning',
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -104,21 +89,30 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
+const ExperimentsIndexRoute = ExperimentsIndexRouteImport.update({
+  id: '/experiments/',
+  path: '/experiments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExperimentsPassiveLearningRoute =
+  ExperimentsPassiveLearningRouteImport.update({
+    id: '/experiments/passive-learning',
+    path: '/experiments/passive-learning',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicTranscriptStreamRoute =
-  ApiPublicTranscriptStreamRouteImport.update({
-    id: '/api/public/transcript-stream',
-    path: '/api/public/transcript-stream',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCurateRefreshRoute = ApiPublicCurateRefreshRouteImport.update({
-  id: '/api/public/curate-refresh',
-  path: '/api/public/curate-refresh',
+const LibraryIndexRoute = LibraryIndexRouteImport.update({
+  id: '/library/',
+  path: '/library/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryLevelRoute = LibraryLevelRouteImport.update({
+  id: '/library/$level',
+  path: '/library/$level',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -127,9 +121,25 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const ApiPublicCurateRefreshRoute = ApiPublicCurateRefreshRouteImport.update({
+  id: '/api/public/curate-refresh',
+  path: '/api/public/curate-refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTranscriptStreamRoute =
+  ApiPublicTranscriptStreamRouteImport.update({
+    id: '/api/public/transcript-stream',
+    path: '/api/public/transcript-stream',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailQueueProcessRoute =
@@ -138,16 +148,6 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -324,53 +324,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/saved': {
-      id: '/saved'
-      path: '/saved'
-      fullPath: '/saved'
-      preLoaderRoute: typeof SavedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/founder': {
-      id: '/founder'
-      path: '/founder'
-      fullPath: '/founder'
-      preLoaderRoute: typeof FounderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/english-learners': {
-      id: '/english-learners'
-      path: '/english-learners'
-      fullPath: '/english-learners'
-      preLoaderRoute: typeof EnglishLearnersRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -380,46 +338,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/english-learners': {
+      id: '/english-learners'
+      path: '/english-learners'
+      fullPath: '/english-learners'
+      preLoaderRoute: typeof EnglishLearnersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library/': {
-      id: '/library/'
-      path: '/library'
-      fullPath: '/library/'
-      preLoaderRoute: typeof LibraryIndexRouteImport
+    '/founder': {
+      id: '/founder'
+      path: '/founder'
+      fullPath: '/founder'
+      preLoaderRoute: typeof FounderRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/experiments/': {
-      id: '/experiments/'
-      path: '/experiments'
-      fullPath: '/experiments/'
-      preLoaderRoute: typeof ExperimentsIndexRouteImport
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library/$level': {
-      id: '/library/$level'
-      path: '/library/$level'
-      fullPath: '/library/$level'
-      preLoaderRoute: typeof LibraryLevelRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/experiments/passive-learning': {
-      id: '/experiments/passive-learning'
-      path: '/experiments/passive-learning'
-      fullPath: '/experiments/passive-learning'
-      preLoaderRoute: typeof ExperimentsPassiveLearningRouteImport
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -429,25 +394,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/transcript-stream': {
-      id: '/api/public/transcript-stream'
-      path: '/api/public/transcript-stream'
-      fullPath: '/api/public/transcript-stream'
-      preLoaderRoute: typeof ApiPublicTranscriptStreamRouteImport
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/curate-refresh': {
-      id: '/api/public/curate-refresh'
-      path: '/api/public/curate-refresh'
-      fullPath: '/api/public/curate-refresh'
-      preLoaderRoute: typeof ApiPublicCurateRefreshRouteImport
+    '/experiments/': {
+      id: '/experiments/'
+      path: '/experiments'
+      fullPath: '/experiments/'
+      preLoaderRoute: typeof ExperimentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/experiments/passive-learning': {
+      id: '/experiments/passive-learning'
+      path: '/experiments/passive-learning'
+      fullPath: '/experiments/passive-learning'
+      preLoaderRoute: typeof ExperimentsPassiveLearningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/': {
+      id: '/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof LibraryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/$level': {
+      id: '/library/$level'
+      path: '/library/$level'
+      fullPath: '/library/$level'
+      preLoaderRoute: typeof LibraryLevelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
@@ -457,11 +436,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/curate-refresh': {
+      id: '/api/public/curate-refresh'
+      path: '/api/public/curate-refresh'
+      fullPath: '/api/public/curate-refresh'
+      preLoaderRoute: typeof ApiPublicCurateRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/transcript-stream': {
+      id: '/api/public/transcript-stream'
+      path: '/api/public/transcript-stream'
+      fullPath: '/api/public/transcript-stream'
+      preLoaderRoute: typeof ApiPublicTranscriptStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -471,11 +471,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
