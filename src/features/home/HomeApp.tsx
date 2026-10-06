@@ -5031,7 +5031,7 @@ function ExplanationPanel({
 
 
   return (
-    <div className="rounded-2xl bg-muted/30 p-5 sm:p-6">
+    <div className="min-w-0 max-w-full rounded-2xl bg-muted/30 p-5 [overflow-wrap:anywhere] sm:p-6">
       {/* Sentence-first header. Reduced size so the learning content (Key Expression) leads the eye. */}
       <div>
         <p className="text-base leading-relaxed text-foreground sm:text-lg">
